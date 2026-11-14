@@ -56,8 +56,8 @@ export function categoriesPage(categories: Category[], signedIn: boolean) {
           ))}
         </div>
         <p class="meta">
-          Songs and previews come from Deezer and Apple Music. Each reveal links
-          to the track on the service it came from.
+          Charts come from Deezer and Apple Music. Every preview plays from
+          Deezer, and each reveal links to the track.
         </p>
       </>
     ),
@@ -163,7 +163,8 @@ export function questionPage(
   });
 }
 
-const serviceNames = { deezer: "Deezer", apple: "Apple Music" };
+const linkService = (link: string) =>
+  link.includes("apple.com") ? "Apple Music" : "Deezer";
 
 function revealPage(game: Game, result: RoundResult) {
   const heading = result.correct
@@ -193,9 +194,7 @@ function revealPage(game: Game, result: RoundResult) {
               <b>{result.title}</b>
               <small class="muted">{result.artist}</small>
               {result.link && (
-                <a href={result.link}>
-                  Listen on {serviceNames[result.service]}
-                </a>
+                <a href={result.link}>Listen on {linkService(result.link)}</a>
               )}
             </div>
           </div>

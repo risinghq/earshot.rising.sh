@@ -893,11 +893,13 @@ title.
   player's `track_totals`. A new category is a row.
 - **Sources.** Feeds come from the Deezer public API (`/chart/{genre}/tracks`,
   `/playlist/{id}/tracks`, `/track/{id}`, `/track/isrc:{isrc}` and `/search`)
-  and from Apple (`rss.marketingtools.apple.com/…/most-played/50/songs.json` for
-  the country charts, `itunes.apple.com/lookup` and `/search` for previews). A
-  "From my listening" track is found on Deezer by ISRC, then by an
-  artist-and-title search accepted only when the normalized artist matches, then
-  on Apple; a track no service previews is skipped. Every call goes through one
+  and from Apple's chart feed
+  (`rss.marketingtools.apple.com/…/most-played/50/songs.json`) for the country
+  charts. Every clip plays from Deezer: a Deezer feed track resolves by id, an
+  Apple chart track by an artist-and-title search accepted only when the
+  normalized artist matches, and a "From my listening" track by ISRC first, then
+  the same search. A track Deezer does not preview is skipped, and a category
+  whose tracks all fail shows its unavailable page. Every call goes through one
   module with an 8-second timeout, and a failed feed fails only that category.
 - **Caching.** A fetched track list stays in KV under `play:cat:{slug}` for six
   hours, so a catalog round costs at most one service call — its own preview

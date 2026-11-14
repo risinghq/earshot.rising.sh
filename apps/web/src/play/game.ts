@@ -3,13 +3,10 @@ import { normalizeText } from "../normalize";
 import type { Env } from "../types";
 import type { Category } from "./catalog";
 import {
-  applePreview,
-  appleSearchPreview,
   deezerIsrcPreview,
   deezerPreview,
   deezerSearchPreview,
   type Candidate,
-  type Service,
 } from "./sources";
 
 export const roundSeconds = 15;
@@ -26,7 +23,6 @@ export interface RoundResult {
   artist: string;
   cover: string | null;
   link: string | null;
-  service: Service;
   answer: string | null;
   correct: boolean;
   timedOut: boolean;
@@ -46,7 +42,7 @@ export interface Game {
   current: {
     index: number;
     servedAt: number;
-    reveal: { service: Service; link: string | null; cover: string | null };
+    reveal: { link: string | null; cover: string | null };
     // The distractor set is sampled once: re-sampling on each load would let
     // a reload narrow the answer to the title present in both lists.
     choices: string[];
@@ -105,8 +101,6 @@ export async function buildGame(
 async function candidatePreview(candidate: Candidate) {
   if (candidate.deezerId !== undefined)
     return deezerPreview(candidate.deezerId);
-  if (candidate.appleId !== undefined)
-    return applePreview(candidate.appleId, candidate.appleCountry ?? "us");
   if (candidate.isrc) {
     const byIsrc = await deezerIsrcPreview(
       candidate.isrc,
@@ -114,11 +108,7 @@ async function candidatePreview(candidate: Candidate) {
     ).catch(() => null);
     if (byIsrc) return byIsrc;
   }
-  const bySearch = await deezerSearchPreview(
-    candidate.artist,
-    candidate.title,
-  ).catch(() => null);
-  return bySearch ?? appleSearchPreview(candidate.artist, candidate.title);
+  return deezerSearchPreview(candidate.artist, candidate.title);
 }
 
 // Skips candidates with no resolvable preview; the round is served only once
@@ -144,7 +134,6 @@ export async function serveRound(env: Env, game: Game, now: number) {
       index,
       servedAt: now,
       reveal: {
-        service: preview.service,
         link: preview.link ?? candidate.link,
         cover: preview.cover ?? candidate.cover,
       },
@@ -238,7 +227,6 @@ export async function answerRound(
     artist: candidate.artist,
     cover: game.current.reveal.cover,
     link: game.current.reveal.link,
-    service: game.current.reveal.service,
     answer: given,
     correct,
     timedOut,

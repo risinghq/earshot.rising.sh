@@ -24,6 +24,14 @@ const deezerTrack = (id: number, title: string, preview = true) => ({
   album: { cover_medium: `https://cdn.example/${id}.jpg` },
 });
 
+const appleChartEntry = (i: number) => ({
+  id: `apple-${i}`,
+  name: `Chart Song ${i}`,
+  artistName: "Chart Artist",
+  url: `https://music.apple.com/song/${i}`,
+  artworkUrl100: `https://img.example/${i}.jpg`,
+});
+
 function stubFetch(
   handlers: Array<[RegExp, unknown | ((url: string) => unknown)]>,
 ) {
@@ -278,7 +286,6 @@ describe("/play", () => {
       artist: "Artist",
       cover: null,
       link: null,
-      service: "deezer",
       answer: "Only Song",
       correct: true,
       timedOut: false,
@@ -291,6 +298,54 @@ describe("/play", () => {
     expect(after.results.length).toBe(1);
     const missing = await answer("no-such-game", { choice: "x" });
     expect(missing.status).toBe(404);
+  });
+
+  it("serves an Apple chart track through a Deezer search preview", async () => {
+    const calls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        calls.push(url);
+        if (url.includes("rss.marketingtools.apple.com"))
+          return Response.json({
+            feed: { results: [1, 2, 3, 4, 5].map(appleChartEntry) },
+          });
+        if (url.includes("api.deezer.com/search"))
+          return Response.json({
+            data: [
+              { ...deezerTrack(42, "x"), artist: { name: "Chart Artist" } },
+            ],
+          });
+        return new Response("not found", { status: 404 });
+      }),
+    );
+    const id = await startGame("top-50-japan", "typed");
+    const response = await get(`/play/${id}`);
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    expect(body).toContain("https://cdn.example/42.mp3");
+    expect(calls.some((url) => url.includes("itunes.apple.com"))).toBe(false);
+  });
+
+  it("shows the category-unavailable page when no candidate resolves", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("rss.marketingtools.apple.com"))
+          return Response.json({
+            feed: { results: [1, 2, 3, 4, 5].map(appleChartEntry) },
+          });
+        return new Response("upstream down", { status: 502 });
+      }),
+    );
+    const id = await startGame("top-50-japan", "typed");
+    const response = await get(`/play/${id}`);
+    expect(response.status).toBe(502);
+    const body = await response.text();
+    expect(body).toContain("Top 50 Japan is not available right now");
+    expect(body).not.toContain("Game over");
   });
 });
 
@@ -353,7 +408,7 @@ describe("preview resolution", () => {
     expect(calls.some((url) => url.includes("/search?"))).toBe(false);
   });
 
-  it("rejects a search hit by another artist and falls back to Apple", async () => {
+  it("rejects a search hit by another artist and skips the track", async () => {
     stubFetch([
       [
         /api\.deezer\.com\/search/,
@@ -361,26 +416,12 @@ describe("preview resolution", () => {
           data: [{ ...deezerTrack(9, "Track"), artist: { name: "Remixer" } }],
         },
       ],
-      [
-        /itunes\.apple\.com\/search/,
-        {
-          results: [
-            {
-              trackName: "Track",
-              artistName: "Wanted Artist",
-              previewUrl: "https://audio.example/apple.m4a",
-              trackViewUrl: "https://music.apple.com/track",
-              artworkUrl100: "https://img.example/a.jpg",
-            },
-          ],
-        },
-      ],
     ]);
     const built = await game([
       { title: "Track", artist: "Wanted Artist", cover: null, link: null },
     ]);
     const served = await serveRound(testEnv() as never, built, Date.now());
-    expect(served.preview?.service).toBe("apple");
-    expect(served.preview?.url).toBe("https://audio.example/apple.m4a");
+    expect(served.preview).toBeNull();
+    expect(built.phase).toBe("done");
   });
 });

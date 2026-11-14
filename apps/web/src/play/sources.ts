@@ -1,8 +1,6 @@
 import { normalizeText } from "../normalize";
 import { fetchJson } from "./http";
 
-export type Service = "deezer" | "apple";
-
 // A candidate carries the ids a round needs to resolve a fresh preview: the
 // preview URL itself is signed and expires, so it is never stored.
 export interface Candidate {
@@ -12,13 +10,10 @@ export interface Candidate {
   link: string | null;
   isrc?: string;
   deezerId?: number;
-  appleId?: string;
-  appleCountry?: string;
 }
 
 export interface Preview {
   url: string;
-  service: Service;
   link: string | null;
   cover: string | null;
 }
@@ -81,28 +76,16 @@ export async function appleChart(country: string): Promise<Candidate[]> {
     .filter(
       (
         entry,
-      ): entry is Required<Pick<AppleFeedEntry, "id" | "name" | "artistName">> &
+      ): entry is Required<Pick<AppleFeedEntry, "name" | "artistName">> &
         AppleFeedEntry =>
-        typeof entry.id === "string" &&
-        typeof entry.name === "string" &&
-        typeof entry.artistName === "string",
+        typeof entry.name === "string" && typeof entry.artistName === "string",
     )
     .map((entry) => ({
       title: entry.name!,
       artist: entry.artistName!,
       cover: entry.artworkUrl100 ?? null,
       link: entry.url ?? null,
-      appleId: entry.id,
-      appleCountry: country,
     }));
-}
-
-interface AppleTrack {
-  trackName?: string;
-  artistName?: string;
-  previewUrl?: string;
-  trackViewUrl?: string;
-  artworkUrl100?: string;
 }
 
 export async function deezerPreview(deezerId: number): Promise<Preview | null> {
@@ -112,27 +95,8 @@ export async function deezerPreview(deezerId: number): Promise<Preview | null> {
   return typeof track.preview === "string" && track.preview
     ? {
         url: track.preview,
-        service: "deezer",
         link: track.link ?? null,
         cover: track.album?.cover_medium ?? null,
-      }
-    : null;
-}
-
-export async function applePreview(
-  appleId: string,
-  country: string,
-): Promise<Preview | null> {
-  const body = (await fetchJson(
-    `https://itunes.apple.com/lookup?id=${appleId}&entity=song&country=${country}`,
-  )) as { results?: AppleTrack[] };
-  const track = body.results?.[0];
-  return typeof track?.previewUrl === "string"
-    ? {
-        url: track.previewUrl,
-        service: "apple",
-        link: track.trackViewUrl ?? null,
-        cover: track.artworkUrl100 ?? null,
       }
     : null;
 }
@@ -161,7 +125,6 @@ export async function deezerSearchPreview(
   return hit
     ? {
         url: hit.preview!,
-        service: "deezer",
         link: hit.link ?? null,
         cover: hit.album?.cover_medium ?? null,
       }
@@ -181,31 +144,8 @@ export async function deezerIsrcPreview(
     artistMatches(track.artist?.name, artist)
     ? {
         url: track.preview,
-        service: "deezer",
         link: track.link ?? null,
         cover: track.album?.cover_medium ?? null,
-      }
-    : null;
-}
-
-export async function appleSearchPreview(
-  artist: string,
-  title: string,
-): Promise<Preview | null> {
-  const body = (await fetchJson(
-    `https://itunes.apple.com/search?term=${encodeURIComponent(`${artist} ${title}`)}&entity=song&country=us&limit=5`,
-  )) as { results?: AppleTrack[] };
-  const hit = (body.results ?? []).find(
-    (track) =>
-      typeof track.previewUrl === "string" &&
-      artistMatches(track.artistName, artist),
-  );
-  return hit
-    ? {
-        url: hit.previewUrl!,
-        service: "apple",
-        link: hit.trackViewUrl ?? null,
-        cover: hit.artworkUrl100 ?? null,
       }
     : null;
 }
