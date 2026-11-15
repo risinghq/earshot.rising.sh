@@ -261,6 +261,33 @@ describe("/play", () => {
     expect(game.results.at(-1)!.score).toBe(0);
   });
 
+  it("persists done when a guest's solo game ends", async () => {
+    stubFetch([
+      [
+        /api\.deezer\.com\/chart\/132\/tracks/,
+        {
+          data: Array.from({ length: 12 }, (_, i) =>
+            deezerTrack(i + 1, `Song ${i}`),
+          ),
+        },
+      ],
+      [
+        /api\.deezer\.com\/track\/\d+/,
+        (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
+      ],
+    ]);
+    const id = await startGame("pop", "choices");
+    for (let round = 0; round < 10; round += 1) {
+      await get(`/play/${id}`);
+      await answer(id, { choice: "Wrong" });
+      await next(id);
+    }
+    const game = (await getGame(testEnv() as never, id))!;
+    expect(game.phase).toBe("done");
+    const done = await get(`/play/${id}`);
+    expect(await done.text()).toContain("Game over");
+  });
+
   it("refuses answers once a game is finished or gone", async () => {
     stubFetch([
       [
