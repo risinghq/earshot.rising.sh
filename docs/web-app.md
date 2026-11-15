@@ -838,13 +838,14 @@ sign-in screen states that profiles are public.
 
 ## Public surface
 
-| Address        | Content                                                     |
-| -------------- | ----------------------------------------------------------- |
-| `/u/NAME`      | HTML profile. `?period=week` (default), `month`, `all`.     |
-| `/u/NAME.json` | The same figures as JSON.                                   |
-| `/u/NAME.svg`  | The card. `?period=`, `?n=1..10`, `?theme=light` or `dark`. |
-| `/play`        | The guess-the-song game.                                    |
-| `/party`       | Party playlist. `?u=NAME,NAME` (2 to 8), `?n=25` or `50`.   |
+| Address           | Content                                                     |
+| ----------------- | ----------------------------------------------------------- |
+| `/u/NAME`         | HTML profile. `?period=week` (default), `month`, `all`.     |
+| `/u/NAME.json`    | The same figures as JSON.                                   |
+| `/u/NAME.svg`     | The card. `?period=`, `?n=1..10`, `?theme=light` or `dark`. |
+| `/play`           | The guess-the-song game.                                    |
+| `/play/room/CODE` | A guess-the-song room for up to 8 players.                  |
+| `/party`          | Party playlist. `?u=NAME,NAME` (2 to 8), `?n=25` or `50`.   |
 
 - **Periods.** `week` is the last 7 days, `month` the last 30 days, both
   rolling, and `all` is everything. A calendar week would be empty on Monday
@@ -917,6 +918,47 @@ title.
 - **Attribution.** Each reveal names the title and artist, shows the cover and
   links to the track on Deezer or Apple Music with the service's name, which
   both services require.
+
+### Rooms
+
+`/play/room/CODE` is the same quiz played together: up to eight people answer
+each clip at the same time and the fastest right answer scores the most. The
+creator picks the category and the mode on `/play`; the game runs the same 10
+rounds of 15 seconds with the same candidates, choices, matching and scoring as
+the solo game.
+
+- **The object.** One Durable Object per room, addressed by `idFromName(CODE)`,
+  where `CODE` is six characters from an alphabet without `0`, `O`, `1`, `I` or
+  `L`. The object holds the whole room: the category and mode, the shuffled
+  candidates, the players and their scores, the open round and its clock. The
+  creator's browsers keep a per-room token; the one from the room's link marks
+  the creator, who alone can start the game or a rematch.
+- **Connection.** `GET /play/room/CODE/ws` upgrades to a WebSocket accepted with
+  the hibernation API, so an idle object can be evicted while its sockets stay
+  open. The page is a static shell; one small script in `public/room.js` renders
+  the phase the object broadcasts. A reload or a dropped connection rejoins by
+  sending the stored token, which keeps the nickname and the points. Nicknames
+  are 1 to 20 characters and unique in a room, case-insensitive.
+- **Messages.** The client sends `join` (nickname or token), `start` and
+  `answer`. The object answers `joined`, `error` (`name`, `taken`, `full`,
+  `gone`) and `state`, a snapshot of the phase, the players, the round number
+  and, while a round plays, the clip URL and the choices. The signed preview URL
+  is resolved when a round is served, sent only to the joined sockets and never
+  written to storage; an object reloaded mid-round resolves it again for
+  rejoining players.
+- **Timing.** The object is authoritative for the clock. It stamps the round
+  start when it broadcasts the clip — 1.5 seconds ahead, so every client starts
+  together — and scores an answer by the time it arrives, measured from that
+  start. A round closes at 15 seconds or as soon as every connected player has
+  answered. The reveal shows the title, the artist, the cover, the Deezer link
+  and each player's points for six seconds, then the next round starts on its
+  own. Round ends, reveal ends and Deezer quota retries all run on the object's
+  single alarm. A quota answer holds the same candidate and retries after 2.5
+  seconds; the players see a loading state, never a skip.
+- **Cleanup.** Rooms write nothing to D1 and keep no points between games. The
+  last client action sets an idle deadline; an hour later the alarm closes any
+  open sockets with code 1001 — the page shows the room has closed — and deletes
+  the object's storage.
 
 ### Party playlist
 
