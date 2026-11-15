@@ -1,0 +1,568 @@
+import { DurableObject } from "cloudflare:workers";
+import { base64url } from "../auth";
+import type { Env } from "../types";
+import type { Mode } from "./quiz";
+import {
+  candidatePreview,
+  matchTyped,
+  roundSeconds,
+  roundsPerGame,
+  sampleChoices,
+  scoreFor,
+  shuffled,
+} from "./quiz";
+import { QuotaError, type Candidate } from "./sources";
+
+export const maxPlayers = 8;
+export const nicknameMaxLength = 20;
+export const roomCodeLength = 6;
+// No 0/O, 1/I/L, so the code reads unambiguously out loud.
+const codeAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+const startLeadMs = 1500;
+const revealMs = 6000;
+const quotaRetryMs = 2500;
+const idleMs = 3600_000;
+
+export function newRoomCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(roomCodeLength));
+  return [...bytes]
+    .map((byte) => codeAlphabet[byte % codeAlphabet.length])
+    .join("");
+}
+
+export function newRoomSecret() {
+  return base64url(crypto.getRandomValues(new Uint8Array(16)));
+}
+
+interface Player {
+  id: string;
+  token: string;
+  name: string;
+  creator: boolean;
+  score: number;
+}
+
+interface RoundAnswer {
+  answer: string | null;
+  correct: boolean;
+  score: number;
+}
+
+interface Round {
+  index: number;
+  number: number;
+  startedAt: number;
+  endsAt: number;
+  choices: string[];
+  link: string | null;
+  cover: string | null;
+  answers: Record<string, RoundAnswer>;
+}
+
+interface Reveal {
+  number: number;
+  title: string;
+  artist: string;
+  cover: string | null;
+  link: string | null;
+  until: number;
+  results: {
+    name: string;
+    answer: string | null;
+    correct: boolean;
+    score: number;
+  }[];
+}
+
+interface Stored {
+  code: string;
+  categoryName: string;
+  mode: Mode;
+  candidates: Candidate[];
+  pool: string[];
+  creatorToken: string;
+  players: Player[];
+  next: number;
+  served: number;
+  phase: "lobby" | "loading" | "playing" | "reveal" | "done";
+  round: Round | null;
+  reveal: Reveal | null;
+  retryAt: number | null;
+  lastActive: number;
+}
+
+interface SocketInfo {
+  pid?: string;
+}
+
+const storageKey = "room";
+
+export class Room extends DurableObject<Env> {
+  private s?: Stored;
+  // The signed preview URL lives in memory only; it is never written to
+  // storage. An evicted object re-resolves it for players who reconnect.
+  private clip: string | null = null;
+
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+    ctx.blockConcurrencyWhile(async () => {
+      this.s = await ctx.storage.get<Stored>(storageKey);
+      if (this.s !== undefined && (await ctx.storage.getAlarm()) === null)
+        await this.schedule();
+    });
+  }
+
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    if (request.method === "POST" && url.pathname === "/init") {
+      if (this.s !== undefined)
+        return Response.json({ error: "room already exists" }, { status: 409 });
+      const body = (await request.json()) as {
+        code?: string;
+        categoryName?: string;
+        mode?: Mode;
+        candidates?: Candidate[];
+        creatorToken?: string;
+      };
+      if (
+        typeof body.code !== "string" ||
+        typeof body.categoryName !== "string" ||
+        (body.mode !== "choices" && body.mode !== "typed") ||
+        !Array.isArray(body.candidates) ||
+        typeof body.creatorToken !== "string"
+      )
+        return Response.json({ error: "bad init" }, { status: 400 });
+      const now = Date.now();
+      this.s = {
+        code: body.code,
+        categoryName: body.categoryName,
+        mode: body.mode,
+        candidates: body.candidates,
+        pool: [...new Set(body.candidates.map((track) => track.title))],
+        creatorToken: body.creatorToken,
+        players: [],
+        next: 0,
+        served: 0,
+        phase: "lobby",
+        round: null,
+        reveal: null,
+        retryAt: null,
+        lastActive: now,
+      };
+      await this.save();
+      return Response.json({ ok: true });
+    }
+    if (url.pathname === "/exists")
+      return new Response(null, { status: this.s === undefined ? 404 : 200 });
+    if (url.pathname === "/ws") {
+      const pair = new WebSocketPair();
+      this.ctx.acceptWebSocket(pair[1]);
+      return new Response(null, { status: 101, webSocket: pair[0] });
+    }
+    return new Response("not found", { status: 404 });
+  }
+
+  async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer) {
+    let message: {
+      type?: string;
+      name?: unknown;
+      token?: unknown;
+      answer?: unknown;
+    };
+    try {
+      message = JSON.parse(typeof raw === "string" ? raw : "");
+    } catch {
+      return;
+    }
+    const pid = this.pidOf(ws);
+    if (message.type === "join") {
+      await this.join(
+        ws,
+        typeof message.name === "string" ? message.name : undefined,
+        typeof message.token === "string" ? message.token : undefined,
+        Date.now(),
+      );
+    } else if (message.type === "start" && pid !== undefined) {
+      await this.start(pid, Date.now());
+    } else if (
+      message.type === "answer" &&
+      pid !== undefined &&
+      typeof message.answer === "string"
+    ) {
+      await this.answer(pid, message.answer.slice(0, 200), Date.now());
+    }
+  }
+
+  async webSocketClose() {
+    // The departed player no longer counts toward the round; if they were
+    // the last one unanswered, close it early like an answer would.
+    if (
+      this.s?.phase === "playing" &&
+      this.s.round !== null &&
+      this.everyoneAnswered()
+    ) {
+      this.closeRound(Date.now());
+      await this.save();
+    }
+    this.broadcast();
+  }
+
+  webSocketError() {
+    this.broadcast();
+  }
+
+  private pidOf(ws: WebSocket) {
+    return (ws.deserializeAttachment() as SocketInfo | null)?.pid;
+  }
+
+  private socketsOf(pid: string) {
+    return this.ctx.getWebSockets().filter((ws) => this.pidOf(ws) === pid);
+  }
+
+  private connectedPids() {
+    return new Set(
+      this.ctx
+        .getWebSockets()
+        .map((ws) => this.pidOf(ws))
+        .filter((pid): pid is string => pid !== undefined),
+    );
+  }
+
+  private send(ws: WebSocket, value: unknown) {
+    try {
+      ws.send(JSON.stringify(value));
+    } catch {
+      // A dying socket is dropped by the close handler.
+    }
+  }
+
+  private broadcast() {
+    if (this.s === undefined) return;
+    for (const ws of this.ctx.getWebSockets()) {
+      const pid = this.pidOf(ws);
+      if (pid !== undefined) this.send(ws, this.snapshot(pid));
+    }
+  }
+
+  private snapshot(pid: string) {
+    const s = this.s!;
+    const me = s.players.find((player) => player.id === pid);
+    const connected = this.connectedPids();
+    const snapshot: Record<string, unknown> = {
+      type: "state",
+      code: s.code,
+      category: s.categoryName,
+      mode: s.mode,
+      phase: s.phase,
+      now: Date.now(),
+      rounds: roundsPerGame,
+      you: { name: me?.name ?? "", creator: me?.creator ?? false },
+      players: s.players.map((player) => ({
+        name: player.name,
+        creator: player.creator,
+        score: player.score,
+        connected: connected.has(player.id),
+        answered: s.round?.answers[player.id] !== undefined,
+      })),
+    };
+    if (s.phase === "loading" && s.round === null)
+      snapshot.round = s.served + 1;
+    if (s.round) {
+      snapshot.round = s.round.number;
+      snapshot.startedAt = s.round.startedAt;
+      snapshot.endsAt = s.round.endsAt;
+      snapshot.choices = s.round.choices;
+      if (this.clip !== null) snapshot.clip = this.clip;
+    }
+    if (s.phase === "reveal" && s.reveal) snapshot.reveal = s.reveal;
+    if (s.phase === "done")
+      snapshot.standings = [...s.players]
+        .sort((a, b) => b.score - a.score)
+        .map((player) => ({ name: player.name, score: player.score }));
+    return snapshot;
+  }
+
+  private async save() {
+    if (this.s === undefined) return;
+    await this.ctx.storage.put(storageKey, this.s);
+    await this.schedule();
+  }
+
+  private async schedule() {
+    const s = this.s;
+    if (s === undefined) return;
+    const now = Date.now();
+    const due = [s.lastActive + idleMs];
+    if (s.phase === "playing" && s.round) due.push(s.round.endsAt);
+    if (s.phase === "reveal" && s.reveal) due.push(s.reveal.until);
+    if (s.phase === "loading" && s.retryAt !== null) due.push(s.retryAt);
+    // A deadline already past must not re-arm the alarm: an alarm in the
+    // past fires at once and reschedules itself forever.
+    const future = due.filter((time) => time > now);
+    if (future.length > 0) await this.ctx.storage.setAlarm(Math.min(...future));
+  }
+
+  async join(
+    ws: WebSocket,
+    name: string | undefined,
+    token: string | undefined,
+    now: number,
+  ) {
+    const s = this.s;
+    if (s === undefined) {
+      this.send(ws, { type: "error", code: "gone" });
+      ws.close(1000, "room closed");
+      return;
+    }
+    let player = s.players.find((p) => p.token === token);
+    if (player === undefined) {
+      const nickname = name?.trim() ?? "";
+      if (nickname === "" || [...nickname].length > nicknameMaxLength) {
+        this.send(ws, { type: "error", code: "name" });
+        return;
+      }
+      if (
+        s.players.some((p) => p.name.toLowerCase() === nickname.toLowerCase())
+      ) {
+        this.send(ws, { type: "error", code: "taken" });
+        return;
+      }
+      if (s.players.length >= maxPlayers) {
+        this.send(ws, { type: "error", code: "full" });
+        return;
+      }
+      player = {
+        id: base64url(crypto.getRandomValues(new Uint8Array(8))),
+        token: token ?? newRoomSecret(),
+        name: nickname,
+        creator: token !== undefined && token === s.creatorToken,
+        score: 0,
+      };
+      s.players.push(player);
+    }
+    ws.serializeAttachment({ pid: player.id } satisfies SocketInfo);
+    s.lastActive = now;
+    this.send(ws, {
+      type: "joined",
+      name: player.name,
+      token: player.token,
+      creator: player.creator,
+    });
+    await this.save();
+    this.broadcast();
+    if (this.clip === null) this.ensureClip();
+  }
+
+  async start(pid: string, now: number) {
+    const s = this.s;
+    if (s === undefined) return;
+    const player = s.players.find((p) => p.id === pid);
+    if (player === undefined || !player.creator) return;
+    if (s.phase !== "lobby" && s.phase !== "done") return;
+    for (const p of s.players) p.score = 0;
+    s.candidates = shuffled(s.candidates);
+    s.next = 0;
+    s.served = 0;
+    s.round = null;
+    s.reveal = null;
+    s.retryAt = null;
+    s.phase = "loading";
+    s.lastActive = now;
+    await this.save();
+    this.broadcast();
+    await this.serveNext();
+  }
+
+  async answer(pid: string, value: string, now: number) {
+    const s = this.s;
+    if (s === undefined || s.phase !== "playing" || s.round === null) return;
+    const player = s.players.find((p) => p.id === pid);
+    if (player === undefined || s.round.answers[pid] !== undefined) return;
+    const candidate = s.candidates[s.round.index];
+    // The round's clock starts when the clip does; anything earlier is a
+    // guess before anyone could hear it and does not count.
+    if (now < s.round.startedAt) return;
+    const elapsed = now - s.round.startedAt;
+    const timedOut = elapsed >= roundSeconds * 1000;
+    let given: string | null;
+    let correct: boolean;
+    if (s.mode === "choices") {
+      given = value;
+      correct = !timedOut && value === candidate.title;
+    } else {
+      given = value.trim();
+      correct = !timedOut && given !== "" && matchTyped(given, candidate.title);
+    }
+    const score = correct ? scoreFor(elapsed) : 0;
+    s.round.answers[pid] = { answer: given, correct, score };
+    player.score += score;
+    s.lastActive = now;
+    if (this.everyoneAnswered()) {
+      this.closeRound(now);
+    }
+    await this.save();
+    this.broadcast();
+  }
+
+  private everyoneAnswered() {
+    const s = this.s!;
+    const waiting = [...this.connectedPids()].filter(
+      (pid) => s.round!.answers[pid] === undefined,
+    );
+    return waiting.length === 0;
+  }
+
+  private closeRound(now: number) {
+    const s = this.s!;
+    const round = s.round!;
+    const candidate = s.candidates[round.index];
+    s.reveal = {
+      number: round.number,
+      title: candidate.title,
+      artist: candidate.artist,
+      cover: round.cover,
+      link: round.link,
+      until: now + revealMs,
+      results: s.players.map((player) => {
+        const answer = round.answers[player.id];
+        return {
+          name: player.name,
+          answer: answer?.answer ?? null,
+          correct: answer?.correct ?? false,
+          score: answer?.score ?? 0,
+        };
+      }),
+    };
+    s.round = null;
+    s.phase = "reveal";
+    this.clip = null;
+  }
+
+  // Resolves a clip for the next candidate and opens the round. A quota
+  // answer keeps the same candidate and retries after a short wait; a
+  // track with no resolvable preview is skipped.
+  private async serveNext() {
+    const s = this.s!;
+    s.retryAt = null;
+    while (s.next < s.candidates.length) {
+      const index = s.next;
+      s.next += 1;
+      const candidate = s.candidates[index];
+      let preview;
+      try {
+        preview = await candidatePreview(candidate);
+      } catch (error) {
+        if (error instanceof QuotaError) {
+          s.next = index;
+          s.retryAt = Date.now() + quotaRetryMs;
+          await this.save();
+          this.broadcast();
+          return;
+        }
+        continue;
+      }
+      if (preview === null) continue;
+      // The lead is measured from resolution, not from the request that
+      // started it: lookups and skipped candidates can take longer than
+      // the lead, and the clock must outlive the broadcast.
+      const startedAt = Date.now() + startLeadMs;
+      s.round = {
+        index,
+        number: s.served + 1,
+        startedAt,
+        endsAt: startedAt + roundSeconds * 1000,
+        choices:
+          s.mode === "choices" ? sampleChoices(s.pool, candidate.title) : [],
+        link: preview.link ?? candidate.link,
+        cover: preview.cover ?? candidate.cover,
+        answers: {},
+      };
+      s.served += 1;
+      s.phase = "playing";
+      this.clip = preview.url;
+      await this.save();
+      this.broadcast();
+      return;
+    }
+    s.phase = "done";
+    s.round = null;
+    await this.save();
+    this.broadcast();
+  }
+
+  // After an eviction the clip is gone; re-resolve the open round for
+  // players who reconnect, without touching the round's clock.
+  private ensureClip() {
+    const s = this.s;
+    if (s === undefined || s.phase !== "playing" || s.round === null) return;
+    const index = s.round.index;
+    const candidate = s.candidates[index];
+    this.ctx.waitUntil(
+      candidatePreview(candidate)
+        .then((preview) => {
+          // The lookup may resolve after the round moved on; an index that
+          // no longer matches must not overwrite the new clip.
+          if (
+            preview === null ||
+            this.s?.phase !== "playing" ||
+            this.s.round?.index !== index
+          )
+            return;
+          this.clip = preview.url;
+          this.broadcast();
+        })
+        .catch(() => undefined),
+    );
+  }
+
+  private async nextPhase() {
+    const s = this.s!;
+    if (s.served >= roundsPerGame || s.next >= s.candidates.length) {
+      s.phase = "done";
+      s.reveal = null;
+      await this.save();
+      this.broadcast();
+      return;
+    }
+    s.phase = "loading";
+    await this.serveNext();
+  }
+
+  async alarm() {
+    await this.tick(Date.now());
+  }
+
+  async tick(now: number) {
+    const s = this.s;
+    if (s === undefined) return;
+    if (now - s.lastActive >= idleMs) {
+      // An hour without client action ends the room whoever is connected;
+      // 1001 tells each page to show the closed state instead of retrying.
+      this.s = undefined;
+      for (const ws of this.ctx.getWebSockets()) ws.close(1001, "room closed");
+      await this.ctx.storage.deleteAll();
+      await this.ctx.storage.deleteAlarm();
+      return;
+    }
+    if (s.phase === "playing" && s.round !== null && now >= s.round.endsAt) {
+      this.closeRound(now);
+      await this.save();
+      this.broadcast();
+    } else if (
+      s.phase === "reveal" &&
+      s.reveal !== null &&
+      now >= s.reveal.until
+    ) {
+      await this.nextPhase();
+    } else if (
+      s.phase === "loading" &&
+      s.retryAt !== null &&
+      now >= s.retryAt
+    ) {
+      await this.serveNext();
+    } else {
+      await this.schedule();
+    }
+  }
+}

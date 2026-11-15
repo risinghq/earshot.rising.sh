@@ -671,6 +671,9 @@ button:disabled {
 .reveal .track a {
   align-self: flex-start;
 }
+[hidden] {
+  display: none !important;
+}
 
 @media (max-width: 1023px) {
   input[type="text"],

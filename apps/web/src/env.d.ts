@@ -2,6 +2,7 @@ declare namespace Cloudflare {
   interface Env {
     DB: D1Database;
     CACHE: KVNamespace;
+    ROOMS: DurableObjectNamespace<import("./play/room").Room>;
     GITHUB_CLIENT_ID?: string;
     GITHUB_CLIENT_SECRET?: string;
     SPOTIFY_CLIENT_ID?: string;

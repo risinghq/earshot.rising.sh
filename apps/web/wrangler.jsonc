@@ -21,4 +21,8 @@
       "id": "0d3598a079d34bab8e6422847cb34fd9",
     },
   ],
+  "durable_objects": {
+    "bindings": [{ "name": "ROOMS", "class_name": "Room" }],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["Room"] }],
 }

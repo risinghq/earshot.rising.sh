@@ -1,9 +1,10 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import { csrf } from "hono/csrf";
 import { notFoundPage } from "../app";
 import { sessionUser } from "../auth";
 import type { Env } from "../types";
-import { catalog, getCategory, listCategories } from "./catalog";
+import type { Candidate } from "./sources";
+import { catalog, getCategory, listCategories, type Category } from "./catalog";
 import {
   advance,
   answerRound,
@@ -14,18 +15,18 @@ import {
   type Mode,
 } from "./game";
 import { categoriesPage, feedErrorPage, gamePage } from "./pages";
+import { newRoomCode, newRoomSecret } from "./room";
+import { roomPage } from "./room-page";
 
 export const playApp = new Hono<{ Bindings: Env }>();
 
 playApp.use("*", csrf());
 
-playApp.get("/", async (context) => {
-  const user = await sessionUser(context);
-  const categories = await listCategories(context.env.DB);
-  return context.html(categoriesPage(categories, user !== null));
-});
-
-playApp.post("/", async (context) => {
+// One entry check for both game kinds: same form fields, same category and
+// mode validation, same catalogue fetch, same minimum track count.
+async function gameInput(
+  context: Context<{ Bindings: Env }>,
+): Promise<{ category: Category; mode: Mode; tracks: Candidate[] } | Response> {
   const body = await context.req.parseBody();
   const slug = typeof body.category === "string" ? body.category : "";
   const mode: Mode | null =
@@ -34,11 +35,11 @@ playApp.post("/", async (context) => {
     return context.text("Pick a category and a mode.", 400);
   const category = await getCategory(context.env.DB, slug);
   if (category === null) return context.html(notFoundPage(), 404);
+  if (!context.env.CACHE)
+    return context.html(feedErrorPage(category.name), 503);
   const user = await sessionUser(context);
   if (category.feed === "mine" && user === null)
     return context.redirect("/", 303);
-  if (!context.env.CACHE)
-    return context.html(feedErrorPage(category.name), 503);
   let tracks;
   try {
     tracks = await catalog(context.env, category, user?.id ?? null);
@@ -47,7 +48,63 @@ playApp.post("/", async (context) => {
     return context.html(feedErrorPage(category.name), 502);
   }
   if (tracks.length < 4) return context.html(feedErrorPage(category.name), 502);
-  const game = await buildGame(context.env, category, mode, tracks);
+  return { category, mode, tracks };
+}
+
+playApp.post("/room", async (context) => {
+  const input = await gameInput(context);
+  if (input instanceof Response) return input;
+  const code = newRoomCode();
+  const creatorToken = newRoomSecret();
+  const room = context.env.ROOMS.get(context.env.ROOMS.idFromName(code));
+  const init = await room.fetch(
+    new Request("https://room/init", {
+      method: "POST",
+      body: JSON.stringify({
+        code,
+        categoryName: input.category.name,
+        mode: input.mode,
+        candidates: input.tracks,
+        creatorToken,
+      }),
+    }),
+  );
+  if (!init.ok) return context.html(feedErrorPage(input.category.name), 502);
+  return context.redirect(`/play/room/${code}?k=${creatorToken}`, 303);
+});
+
+playApp.get("/room/:code/ws", async (context) => {
+  if (context.req.header("upgrade") !== "websocket")
+    return context.text("expected a WebSocket", 426);
+  const room = context.env.ROOMS.get(
+    context.env.ROOMS.idFromName(context.req.param("code")),
+  );
+  return room.fetch(new Request("https://room/ws", context.req.raw));
+});
+
+playApp.get("/room/:code", async (context) => {
+  const code = context.req.param("code");
+  const room = context.env.ROOMS.get(context.env.ROOMS.idFromName(code));
+  const exists = await room.fetch(new Request("https://room/exists"));
+  if (!exists.ok) return context.html(notFoundPage(), 404);
+  return context.html(roomPage(code));
+});
+
+playApp.get("/", async (context) => {
+  const user = await sessionUser(context);
+  const categories = await listCategories(context.env.DB);
+  return context.html(categoriesPage(categories, user !== null));
+});
+
+playApp.post("/", async (context) => {
+  const input = await gameInput(context);
+  if (input instanceof Response) return input;
+  const game = await buildGame(
+    context.env,
+    input.category,
+    input.mode,
+    input.tracks,
+  );
   return context.redirect(`/play/${game.id}`, 303);
 });
 

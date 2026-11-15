@@ -30,27 +30,59 @@ export function categoriesPage(categories: Category[], signedIn: boolean) {
                   Your own top tracks. <a href="/">Sign in</a> to play.
                 </p>
               ) : (
-                <form method="post" action="/play">
-                  <input type="hidden" name="category" value={category.slug} />
-                  <div class="modes">
-                    <button
-                      class="pill small primary"
-                      type="submit"
-                      name="mode"
-                      value="choices"
-                    >
-                      Choices
-                    </button>
-                    <button
-                      class="pill small"
-                      type="submit"
-                      name="mode"
-                      value="typed"
-                    >
-                      Type it
-                    </button>
-                  </div>
-                </form>
+                <>
+                  <form method="post" action="/play">
+                    <input
+                      type="hidden"
+                      name="category"
+                      value={category.slug}
+                    />
+                    <div class="modes">
+                      <button
+                        class="pill small primary"
+                        type="submit"
+                        name="mode"
+                        value="choices"
+                      >
+                        Choices
+                      </button>
+                      <button
+                        class="pill small"
+                        type="submit"
+                        name="mode"
+                        value="typed"
+                      >
+                        Type it
+                      </button>
+                    </div>
+                  </form>
+                  <form method="post" action="/play/room">
+                    <input
+                      type="hidden"
+                      name="category"
+                      value={category.slug}
+                    />
+                    <small class="hint">With friends</small>
+                    <div class="modes">
+                      <button
+                        class="pill small"
+                        type="submit"
+                        name="mode"
+                        value="choices"
+                      >
+                        Choices
+                      </button>
+                      <button
+                        class="pill small"
+                        type="submit"
+                        name="mode"
+                        value="typed"
+                      >
+                        Type it
+                      </button>
+                    </div>
+                  </form>
+                </>
               )}
             </section>
           ))}
