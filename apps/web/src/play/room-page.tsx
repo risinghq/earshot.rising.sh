@@ -140,6 +140,10 @@ export function roomPage(code: string) {
           </div>
           <div class="section-body">
             <ol class="ranked" id="standings" />
+            <p class="meta" id="points-hint" hidden>
+              <a href="/">Sign in</a> to keep your points on the{" "}
+              <a href="/play/board">board</a>.
+            </p>
             <div class="modes">
               <button
                 class="pill primary"

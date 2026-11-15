@@ -1,10 +1,13 @@
 import { PillButton, PillLink } from "../ui/pill";
+import { RankedList } from "../ui/ranked";
 import { Section } from "../ui/section";
+import { Segmented } from "../ui/segmented";
 import { Page } from "../ui/shell";
 import { Stats } from "../ui/stat";
 import { EmptyState } from "../ui/empty";
 import type { Category } from "./catalog";
 import type { Game, RoundResult } from "./game";
+import type { BoardEntry, BoardPeriod } from "./results";
 import { roundSeconds, roundsPerGame } from "./game";
 import type { Preview } from "./sources";
 
@@ -82,6 +85,21 @@ export function categoriesPage(categories: Category[], signedIn: boolean) {
                       </button>
                     </div>
                   </form>
+                  {category.feed !== "mine" && (
+                    <form method="post" action="/play/match">
+                      <input
+                        type="hidden"
+                        name="category"
+                        value={category.slug}
+                      />
+                      <small class="hint">With a stranger</small>
+                      <div class="modes">
+                        <button class="pill small" type="submit">
+                          Play someone random
+                        </button>
+                      </div>
+                    </form>
+                  )}
                 </>
               )}
             </section>
@@ -89,7 +107,8 @@ export function categoriesPage(categories: Category[], signedIn: boolean) {
         </div>
         <p class="meta">
           Charts come from Deezer and Apple Music. Every preview plays from
-          Deezer, and each reveal links to the track.
+          Deezer, and each reveal links to the track. The{" "}
+          <a href="/play/board">points board</a> ranks signed-in players.
         </p>
       </>
     ),
@@ -248,7 +267,7 @@ function resultLine(result: RoundResult) {
   return result.correct ? `+${result.score}` : result.timedOut ? "time" : "0";
 }
 
-export function finalPage(game: Game) {
+export function finalPage(game: Game, signedIn: boolean) {
   const correct = game.results.filter((result) => result.correct).length;
   return Page({
     title: `Game over · ${game.categoryName}`,
@@ -284,6 +303,12 @@ export function finalPage(game: Game) {
             ))}
           </ul>
         </Section>
+        {!signedIn && (
+          <p class="meta">
+            <a href="/">Sign in</a> to keep your points on the{" "}
+            <a href="/play/board">board</a>.
+          </p>
+        )}
         <p>
           <PillLink href="/play" variant="primary">
             Play again
@@ -303,10 +328,11 @@ export function gamePage(
     | { kind: "busy" }
     | { kind: "error" },
   now: number,
+  opts: { signedIn?: boolean } = {},
 ) {
   if (view.kind === "reveal")
     return revealPage(game, game.results[game.results.length - 1]);
-  if (view.kind === "done") return finalPage(game);
+  if (view.kind === "done") return finalPage(game, opts.signedIn === true);
   if (view.kind === "busy")
     return Page({
       title: "Clip service busy",
@@ -334,6 +360,140 @@ export function gamePage(
       ),
     });
   return questionPage(game, view.preview, view.choices, now);
+}
+
+const boardNames: Record<BoardPeriod, string> = {
+  week: "This week",
+  all: "All time",
+};
+
+export function boardPage(entries: BoardEntry[], period: BoardPeriod) {
+  return Page({
+    title: "Points board · Guess the song",
+    account: <a href="/play">Categories</a>,
+    children: (
+      <>
+        <div class="page-head">
+          <h1>Points board</h1>
+          <p class="meta">
+            Points from finished games, ranked by the total. The week starts
+            Monday 00:00 UTC.
+          </p>
+        </div>
+        <Segmented
+          label="Board period"
+          options={(["week", "all"] as const).map((value) => ({
+            label: boardNames[value],
+            href: `/play/board?period=${value}`,
+            current: period === value,
+          }))}
+        />
+        {entries.length === 0 ? (
+          <EmptyState
+            title="No scored games yet"
+            body="Signed-in players land here when they finish a game. Play one to open the board."
+            action={{ href: "/play", label: "Play a game" }}
+          />
+        ) : (
+          <Section title="Top 50" aside={boardNames[period]}>
+            <RankedList
+              items={entries.map((entry) => ({
+                title: entry.name,
+                href: `/u/${encodeURIComponent(entry.name)}`,
+                subtitle: `${entry.wins} ${entry.wins === 1 ? "win" : "wins"}`,
+                plays: entry.points,
+              }))}
+            />
+          </Section>
+        )}
+      </>
+    ),
+  });
+}
+
+export function matchPage(category: Category, signedIn: boolean) {
+  return Page({
+    title: `${category.name} · Play someone random`,
+    account: <a href="/play">Categories</a>,
+    children: (
+      <div
+        id="match"
+        data-category={category.slug}
+        data-signed-in={signedIn ? "1" : ""}
+        class="stack"
+      >
+        <div class="page-head">
+          <p class="meta">{category.name}</p>
+          <h1>Play someone random</h1>
+        </div>
+        <noscript>
+          <p class="meta">
+            Matchmaking needs JavaScript: it runs over a live connection.
+          </p>
+        </noscript>
+        <p class="form-error" id="match-error" hidden />
+
+        <section class="section" id="match-name-card" hidden>
+          <div class="section-head">
+            <h2>Pick a nickname</h2>
+          </div>
+          <div class="section-body">
+            <p class="meta">
+              Your opponent sees it during the game. <a href="/">Sign in</a> to
+              play under your own name and keep points.
+            </p>
+            <form id="match-name-form" class="guess">
+              <div class="field">
+                <label for="match-nickname">Nickname</label>
+                <input
+                  id="match-nickname"
+                  name="nickname"
+                  type="text"
+                  minlength={1}
+                  maxlength={20}
+                  autocomplete="off"
+                  required
+                />
+              </div>
+              <div>
+                <button class="pill primary" type="submit">
+                  Find a match
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <section class="section" id="match-search-card" hidden>
+          <div class="section-head">
+            <h2>Searching for a player</h2>
+            <small class="label">
+              <span id="match-waited">0</span> s
+            </small>
+          </div>
+          <div class="section-body">
+            <p class="meta" id="match-status">
+              Waiting for someone else to pick {category.name}…
+            </p>
+            <div class="modes" id="match-actions" hidden>
+              <form method="post" action="/play">
+                <input type="hidden" name="category" value={category.slug} />
+                <input type="hidden" name="mode" value="choices" />
+                <button class="pill" type="submit">
+                  Play solo
+                </button>
+              </form>
+              <button class="pill" id="match-stop" type="button">
+                Keep waiting
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <script src="/match.js" defer />
+      </div>
+    ),
+  });
 }
 
 export function feedErrorPage(name: string) {

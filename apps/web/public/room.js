@@ -104,9 +104,12 @@ function render(s) {
 
   if (s.phase === "lobby") {
     show($("start-button"), s.you.creator);
-    $("lobby-hint").textContent = s.you.creator
-      ? "You created this room. Start when everyone is in."
-      : "Waiting for the room's creator to start the game.";
+    $("lobby-hint").textContent =
+      s.kind === "match"
+        ? "The game starts as soon as everyone is connected."
+        : s.you.creator
+          ? "You created this room. Start when everyone is in."
+          : "Waiting for the room's creator to start the game.";
   }
   if (s.phase === "loading" || s.phase === "playing") renderRound(s);
   if (s.phase === "reveal") renderReveal(s);
@@ -260,6 +263,7 @@ function renderDone(s) {
       return li;
     }),
   );
+  show($("points-hint"), !s.you.user);
   const rematch = $("rematch-button");
   show(rematch, s.you.creator);
 }

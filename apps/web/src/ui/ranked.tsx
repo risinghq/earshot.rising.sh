@@ -1,6 +1,7 @@
 export interface RankedItem {
   title: string;
   subtitle?: string;
+  href?: string;
   plays: number;
 }
 
@@ -12,7 +13,13 @@ export function RankedList({ items }: { items: RankedItem[] }) {
         <li key={`${item.title}-${item.subtitle ?? ""}`}>
           <span class="rank">{index + 1}</span>
           <span class="track">
-            <b>{item.title}</b>
+            <b>
+              {item.href === undefined ? (
+                item.title
+              ) : (
+                <a href={item.href}>{item.title}</a>
+              )}
+            </b>
             {item.subtitle !== undefined && item.subtitle !== "" && (
               <small>{item.subtitle}</small>
             )}
