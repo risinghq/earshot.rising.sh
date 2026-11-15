@@ -104,6 +104,10 @@ request.
 The Gist counts a play if its timestamp is no more than `DAYS` times 24 hours
 old. The upload ignores `DAYS`. Because the timestamp is noon UTC of the
 heading's day, the Gist drops a play from yesterday with `DAYS=1` once 24 hours
-have passed since that noon. A play with no artist link is listed as
+have passed since that noon. A play with no artist link, such as a video a
+channel uploaded, takes its artist from its title: the title is split on the
+first hyphen, en dash or em dash with a space on each side, the left part
+becomes the artist and the right part the title, but only when both sides are
+non-empty and the left is at most 60 characters. Otherwise the play is listed as
 `Unknown Artist`. A play with several artist links is listed under the first
 one. A play with no title link is skipped.
