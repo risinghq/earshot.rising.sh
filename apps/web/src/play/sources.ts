@@ -18,6 +18,17 @@ export interface Preview {
   cover: string | null;
 }
 
+// Deezer answers quota overruns with HTTP 200 and
+// {"error":{"type":"Exception","code":4}}; the same body shape carries real
+// misses like code 800 for an unknown ISRC, which must stay skippable.
+export class QuotaError extends Error {}
+
+async function deezerGet(url: string): Promise<unknown> {
+  const body = (await fetchJson(url)) as { error?: { code?: number } };
+  if (body?.error?.code === 4) throw new QuotaError(url);
+  return body;
+}
+
 interface DeezerTrack {
   id?: number;
   title?: string;
@@ -44,7 +55,7 @@ function deezerCandidate(track: DeezerTrack): Candidate | null {
 }
 
 async function deezerList(url: string): Promise<Candidate[]> {
-  const body = (await fetchJson(url)) as { data?: DeezerTrack[] };
+  const body = (await deezerGet(url)) as { data?: DeezerTrack[] };
   return (body.data ?? [])
     .map(deezerCandidate)
     .filter((track): track is Candidate => track !== null);
@@ -89,9 +100,9 @@ export async function appleChart(country: string): Promise<Candidate[]> {
 }
 
 export async function deezerPreview(deezerId: number): Promise<Preview | null> {
-  const track = (await fetchJson(
+  const track = (await deezerGet(
     `https://api.deezer.com/track/${deezerId}`,
-  )) as DeezerTrack & { error?: { code?: number } };
+  )) as DeezerTrack;
   return typeof track.preview === "string" && track.preview
     ? {
         url: track.preview,
@@ -113,7 +124,7 @@ export async function deezerSearchPreview(
   artist: string,
   title: string,
 ): Promise<Preview | null> {
-  const body = (await fetchJson(
+  const body = (await deezerGet(
     `https://api.deezer.com/search?q=${encodeURIComponent(`${artist} ${title}`)}&limit=5`,
   )) as { data?: DeezerTrack[] };
   const hit = (body.data ?? []).find(
@@ -136,9 +147,9 @@ export async function deezerIsrcPreview(
   isrc: string,
   artist: string,
 ): Promise<Preview | null> {
-  const track = (await fetchJson(
+  const track = (await deezerGet(
     `https://api.deezer.com/track/isrc:${encodeURIComponent(isrc)}`,
-  )) as DeezerTrack & { error?: { code?: number } };
+  )) as DeezerTrack;
   return typeof track.preview === "string" &&
     track.preview &&
     artistMatches(track.artist?.name, artist)

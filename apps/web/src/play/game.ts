@@ -6,7 +6,9 @@ import {
   deezerIsrcPreview,
   deezerPreview,
   deezerSearchPreview,
+  QuotaError,
   type Candidate,
+  type Preview,
 } from "./sources";
 
 export const roundSeconds = 15;
@@ -103,28 +105,61 @@ async function candidatePreview(candidate: Candidate) {
     const byIsrc = await deezerIsrcPreview(
       candidate.isrc,
       candidate.artist,
-    ).catch(() => null);
+    ).catch((error) => {
+      if (error instanceof QuotaError) throw error;
+      return null;
+    });
     if (byIsrc) return byIsrc;
   }
   return deezerSearchPreview(candidate.artist, candidate.title);
 }
 
+export interface Served {
+  game: Game;
+  preview: Preview | null;
+  // A Deezer quota answer holds the round: nothing was written to KV, so a
+  // later request tries the same candidate again.
+  quota: boolean;
+}
+
 // Skips candidates with no resolvable preview; the round is served only once
 // a preview URL exists, so the timer never runs against a dead clip.
-export async function serveRound(env: Env, game: Game, now: number) {
+export async function serveRound(
+  env: Env,
+  game: Game,
+  now: number,
+): Promise<Served> {
   if (game.current !== null) {
     // A refresh re-resolves the preview; the round's clock keeps its first
     // servedAt, so a reload cannot buy time.
-    const preview = await candidatePreview(
-      game.candidates[game.current.index],
-    ).catch(() => null);
-    return { game, preview };
+    try {
+      const preview = await candidatePreview(
+        game.candidates[game.current.index],
+      );
+      return { game, preview, quota: false };
+    } catch (error) {
+      return {
+        game,
+        preview: null,
+        quota: error instanceof QuotaError,
+      };
+    }
   }
+  const held = game.next;
   while (game.next < game.candidates.length) {
     const index = game.next;
     game.next += 1;
     const candidate = game.candidates[index];
-    const preview = await candidatePreview(candidate).catch(() => null);
+    let preview: Preview | null;
+    try {
+      preview = await candidatePreview(candidate);
+    } catch (error) {
+      if (error instanceof QuotaError) {
+        game.next = held;
+        return { game, preview: null, quota: true };
+      }
+      continue;
+    }
     if (preview === null) continue;
     // The signed preview URL goes only to the page it was resolved for; the
     // stored round keeps the reveal data, never the URL itself.
@@ -139,11 +174,11 @@ export async function serveRound(env: Env, game: Game, now: number) {
     };
     game.served += 1;
     await putGame(env, game);
-    return { game, preview };
+    return { game, preview, quota: false };
   }
   game.phase = "done";
   await putGame(env, game);
-  return { game, preview: null };
+  return { game, preview: null, quota: false };
 }
 
 export function scoreFor(elapsedMs: number) {

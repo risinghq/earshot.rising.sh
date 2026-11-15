@@ -268,12 +268,26 @@ export function gamePage(
     | { kind: "question"; preview: Preview; choices: string[] }
     | { kind: "reveal" }
     | { kind: "done" }
+    | { kind: "busy" }
     | { kind: "error" },
   now: number,
 ) {
   if (view.kind === "reveal")
     return revealPage(game, game.results[game.results.length - 1]);
   if (view.kind === "done") return finalPage(game);
+  if (view.kind === "busy")
+    return Page({
+      title: "Clip service busy",
+      account: <a href="/settings">Account</a>,
+      children: (
+        <EmptyState
+          title="The clip service is busy"
+          body="Deezer is answering too many requests right now. The round is kept; try again in a few seconds."
+          action={{ href: `/play/${game.id}`, label: "Retry" }}
+          heading="h1"
+        />
+      ),
+    });
   if (view.kind === "error")
     return Page({
       title: "Preview unavailable",

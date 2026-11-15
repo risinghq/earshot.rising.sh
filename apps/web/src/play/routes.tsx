@@ -55,14 +55,15 @@ playApp.get("/:id", async (context) => {
   const game = await getGame(context.env, context.req.param("id"));
   if (game === null) return context.html(notFoundPage(), 404);
   const now = Date.now();
-  const { preview } =
+  const { preview, quota } =
     game.phase === "question"
       ? await serveRound(context.env, game, now)
-      : { preview: null };
+      : { preview: null, quota: false };
   if (game.phase === "done" && game.served === 0)
     return context.html(feedErrorPage(game.categoryName), 502);
   if (game.phase !== "question")
     return context.html(gamePage(game, { kind: game.phase }, now));
+  if (quota) return context.html(gamePage(game, { kind: "busy" }, now), 503);
   if (preview === null)
     return context.html(gamePage(game, { kind: "error" }, now));
   return context.html(
