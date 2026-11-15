@@ -111,6 +111,14 @@ afterEach(() => {
 });
 
 describe("/play", () => {
+  it("carries the site nav", async () => {
+    const response = await get("/play");
+    const body = await response.text();
+    expect(body).toContain('class="site-nav"');
+    for (const href of ["/play", "/play/board", "/party", "/auth/github"])
+      expect(body).toContain(`href="${href}"`);
+  });
+
   it("lists the seeded categories", async () => {
     const response = await get("/play");
     expect(response.status).toBe(200);

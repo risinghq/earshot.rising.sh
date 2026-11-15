@@ -72,19 +72,20 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("sign-in page", () => {
-  it("states that profiles are public", async () => {
+describe("home page", () => {
+  it("leads with the games and invites a signed-out visitor to sign in", async () => {
     const response = await app.fetch(
       new Request(`${origin}/`),
       testEnv() as never,
     );
     expect(response.status).toBe(200);
     const body = await response.text();
+    for (const href of ["/play", "/play/board", "/party", "/auth/github"])
+      expect(body).toContain(`href="${href}"`);
     expect(body).toContain("Profiles are public");
-    expect(body).toContain("/auth/github");
   });
 
-  it("redirects a signed-in visitor to settings", async () => {
+  it("serves the home page to a signed-in visitor with profile links", async () => {
     const { session } = await signIn({ id: 7, login: "octo" });
     const response = await app.fetch(
       new Request(`${origin}/`, {
@@ -92,8 +93,12 @@ describe("sign-in page", () => {
       }),
       testEnv() as never,
     );
-    expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toBe("/settings");
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    expect(body).toContain('href="/u/octo"');
+    expect(body).toContain('href="/settings"');
+    expect(body).toContain('href="/play"');
+    expect(body).toContain('href="/party"');
   });
 });
 
