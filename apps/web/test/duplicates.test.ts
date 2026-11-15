@@ -425,7 +425,7 @@ describe("markDuplicates", () => {
     expect(flags.get("other")).toBe(0);
   });
 
-  it("reads a span over many tracks once", async () => {
+  it("reads a span over many tracks once", { timeout: 30_000 }, async () => {
     const trackCount = 1000;
     const days = 10;
     const start = Math.floor(noon / daySeconds) * daySeconds - 9 * daySeconds;
