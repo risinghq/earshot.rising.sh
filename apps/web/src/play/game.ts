@@ -32,6 +32,7 @@ export interface RoundResult {
 
 export interface Game {
   id: string;
+  userId: number | null;
   mode: Mode;
   categorySlug: string;
   categoryName: string;
@@ -48,6 +49,7 @@ export interface Game {
   } | null;
   results: RoundResult[];
   total: number;
+  resultWritten?: boolean;
 }
 
 const gameKey = (id: string) => `play:game:${id}`;
@@ -69,9 +71,11 @@ export async function buildGame(
   category: Category,
   mode: Mode,
   candidates: Candidate[],
+  userId: number | null = null,
 ): Promise<Game> {
   const game: Game = {
     id: base64url(crypto.getRandomValues(new Uint8Array(16))),
+    userId,
     mode,
     categorySlug: category.slug,
     categoryName: category.name,

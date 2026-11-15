@@ -11,10 +11,13 @@ import {
   scoreFor,
   shuffled,
 } from "./quiz";
+import { recordResults, type ResultRow } from "./results";
 import { QuotaError, type Candidate } from "./sources";
 
 export const maxPlayers = 8;
 export const nicknameMaxLength = 20;
+// A signed-in seat keeps the GitHub login, which can run to 39 characters.
+export const signInNameMaxLength = 39;
 export const roomCodeLength = 6;
 // No 0/O, 1/I/L, so the code reads unambiguously out loud.
 const codeAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -23,6 +26,9 @@ const startLeadMs = 1500;
 const revealMs = 6000;
 const quotaRetryMs = 2500;
 const idleMs = 3600_000;
+// A match seat that never fills should not strand the player who did show
+// up: the game starts with whoever connected after this wait.
+const matchWaitMs = 90_000;
 
 export function newRoomCode() {
   const bytes = crypto.getRandomValues(new Uint8Array(roomCodeLength));
@@ -40,7 +46,16 @@ interface Player {
   token: string;
   name: string;
   creator: boolean;
+  userId: number | null;
   score: number;
+}
+
+export type RoomKind = "room" | "match";
+
+interface SeatedPlayer {
+  name: string;
+  token: string;
+  userId: number | null;
 }
 
 interface RoundAnswer {
@@ -77,12 +92,17 @@ interface Reveal {
 
 interface Stored {
   code: string;
+  kind: RoomKind;
+  categorySlug: string;
   categoryName: string;
   mode: Mode;
   candidates: Candidate[];
   pool: string[];
   creatorToken: string;
   players: Player[];
+  gameId: string;
+  seededAt: number;
+  playedBy: number;
   next: number;
   served: number;
   phase: "lobby" | "loading" | "playing" | "reveal" | "done";
@@ -94,9 +114,29 @@ interface Stored {
 
 interface SocketInfo {
   pid?: string;
+  uid?: number;
 }
 
 const storageKey = "room";
+
+function seatedOk(players: SeatedPlayer[]) {
+  const names = new Set<string>();
+  for (const player of players) {
+    const name = typeof player.name === "string" ? player.name.trim() : "";
+    const max =
+      player.userId === null ? nicknameMaxLength : signInNameMaxLength;
+    if (
+      name === "" ||
+      [...name].length > max ||
+      names.has(name.toLowerCase()) ||
+      typeof player.token !== "string" ||
+      (player.userId !== null && typeof player.userId !== "number")
+    )
+      return false;
+    names.add(name.toLowerCase());
+  }
+  return true;
+}
 
 export class Room extends DurableObject<Env> {
   private s?: Stored;
@@ -108,8 +148,15 @@ export class Room extends DurableObject<Env> {
     super(ctx, env);
     ctx.blockConcurrencyWhile(async () => {
       this.s = await ctx.storage.get<Stored>(storageKey);
-      if (this.s !== undefined && (await ctx.storage.getAlarm()) === null)
-        await this.schedule();
+      if (this.s !== undefined) {
+        this.s.kind ??= "room";
+        this.s.categorySlug ??= "";
+        this.s.gameId ??= "";
+        this.s.seededAt ??= this.s.lastActive;
+        this.s.playedBy ??= 0;
+        for (const player of this.s.players) player.userId ??= null;
+        if ((await ctx.storage.getAlarm()) === null) await this.schedule();
+      }
     });
   }
 
@@ -120,28 +167,48 @@ export class Room extends DurableObject<Env> {
         return Response.json({ error: "room already exists" }, { status: 409 });
       const body = (await request.json()) as {
         code?: string;
+        kind?: RoomKind;
+        categorySlug?: string;
         categoryName?: string;
         mode?: Mode;
         candidates?: Candidate[];
         creatorToken?: string;
+        players?: SeatedPlayer[];
       };
       if (
         typeof body.code !== "string" ||
+        (body.kind !== undefined &&
+          body.kind !== "room" &&
+          body.kind !== "match") ||
+        typeof body.categorySlug !== "string" ||
         typeof body.categoryName !== "string" ||
         (body.mode !== "choices" && body.mode !== "typed") ||
         !Array.isArray(body.candidates) ||
-        typeof body.creatorToken !== "string"
+        typeof body.creatorToken !== "string" ||
+        (body.players !== undefined && !seatedOk(body.players))
       )
         return Response.json({ error: "bad init" }, { status: 400 });
       const now = Date.now();
       this.s = {
         code: body.code,
+        kind: body.kind ?? "room",
+        categorySlug: body.categorySlug,
         categoryName: body.categoryName,
         mode: body.mode,
         candidates: body.candidates,
         pool: [...new Set(body.candidates.map((track) => track.title))],
         creatorToken: body.creatorToken,
-        players: [],
+        players: (body.players ?? []).map((seated) => ({
+          id: base64url(crypto.getRandomValues(new Uint8Array(8))),
+          token: seated.token,
+          name: seated.name,
+          creator: false,
+          userId: seated.userId,
+          score: 0,
+        })),
+        gameId: "",
+        seededAt: now,
+        playedBy: 0,
         next: 0,
         served: 0,
         phase: "lobby",
@@ -158,6 +225,12 @@ export class Room extends DurableObject<Env> {
     if (url.pathname === "/ws") {
       const pair = new WebSocketPair();
       this.ctx.acceptWebSocket(pair[1]);
+      // The Worker read the session and put the user id in the URL; the
+      // client cannot reach this handler except through that route.
+      const uid = Number(url.searchParams.get("u"));
+      pair[1].serializeAttachment({
+        uid: Number.isInteger(uid) && uid > 0 ? uid : undefined,
+      } satisfies SocketInfo);
       return new Response(null, { status: 101, webSocket: pair[0] });
     }
     return new Response("not found", { status: 404 });
@@ -216,6 +289,10 @@ export class Room extends DurableObject<Env> {
     return (ws.deserializeAttachment() as SocketInfo | null)?.pid;
   }
 
+  private uidOf(ws: WebSocket) {
+    return (ws.deserializeAttachment() as SocketInfo | null)?.uid ?? null;
+  }
+
   private socketsOf(pid: string) {
     return this.ctx.getWebSockets().filter((ws) => this.pidOf(ws) === pid);
   }
@@ -252,12 +329,17 @@ export class Room extends DurableObject<Env> {
     const snapshot: Record<string, unknown> = {
       type: "state",
       code: s.code,
+      kind: s.kind,
       category: s.categoryName,
       mode: s.mode,
       phase: s.phase,
       now: Date.now(),
       rounds: roundsPerGame,
-      you: { name: me?.name ?? "", creator: me?.creator ?? false },
+      you: {
+        name: me?.name ?? "",
+        creator: me?.creator ?? false,
+        user: me?.userId !== null && me?.userId !== undefined,
+      },
       players: s.players.map((player) => ({
         name: player.name,
         creator: player.creator,
@@ -294,6 +376,12 @@ export class Room extends DurableObject<Env> {
     if (s === undefined) return;
     const now = Date.now();
     const due = [s.lastActive + idleMs];
+    if (
+      s.kind === "match" &&
+      s.phase === "lobby" &&
+      s.players.some((p) => this.socketsOf(p.id).length > 0)
+    )
+      due.push(s.seededAt + matchWaitMs);
     if (s.phase === "playing" && s.round) due.push(s.round.endsAt);
     if (s.phase === "reveal" && s.reveal) due.push(s.reveal.until);
     if (s.phase === "loading" && s.retryAt !== null) due.push(s.retryAt);
@@ -317,6 +405,11 @@ export class Room extends DurableObject<Env> {
     }
     let player = s.players.find((p) => p.token === token);
     if (player === undefined) {
+      // A match admits only the players the matchmaker seated.
+      if (s.kind === "match") {
+        this.send(ws, { type: "error", code: "full" });
+        return;
+      }
       const nickname = name?.trim() ?? "";
       if (nickname === "" || [...nickname].length > nicknameMaxLength) {
         this.send(ws, { type: "error", code: "name" });
@@ -336,12 +429,19 @@ export class Room extends DurableObject<Env> {
         id: base64url(crypto.getRandomValues(new Uint8Array(8))),
         token: token ?? newRoomSecret(),
         name: nickname,
-        creator: token !== undefined && token === s.creatorToken,
+        creator:
+          s.creatorToken !== "" &&
+          token !== undefined &&
+          token === s.creatorToken,
+        userId: this.uidOf(ws),
         score: 0,
       };
       s.players.push(player);
     }
-    ws.serializeAttachment({ pid: player.id } satisfies SocketInfo);
+    ws.serializeAttachment({
+      pid: player.id,
+      uid: this.uidOf(ws) ?? undefined,
+    } satisfies SocketInfo);
     s.lastActive = now;
     this.send(ws, {
       type: "joined",
@@ -352,6 +452,15 @@ export class Room extends DurableObject<Env> {
     await this.save();
     this.broadcast();
     if (this.clip === null) this.ensureClip();
+    // A match has no creator to start it; it begins once every seat has a
+    // live socket.
+    if (
+      s.kind === "match" &&
+      s.phase === "lobby" &&
+      s.players.length > 0 &&
+      s.players.every((p) => this.socketsOf(p.id).length > 0)
+    )
+      await this.begin(now);
   }
 
   async start(pid: string, now: number) {
@@ -359,9 +468,22 @@ export class Room extends DurableObject<Env> {
     if (s === undefined) return;
     const player = s.players.find((p) => p.id === pid);
     if (player === undefined || !player.creator) return;
+    await this.begin(now);
+  }
+
+  // Starts a fresh game in the room; a random id keeps its result rows
+  // distinct from any earlier game played under a reused code.
+  private async begin(now: number) {
+    const s = this.s!;
     if (s.phase !== "lobby" && s.phase !== "done") return;
     for (const p of s.players) p.score = 0;
     s.candidates = shuffled(s.candidates);
+    s.gameId = base64url(crypto.getRandomValues(new Uint8Array(8)));
+    // A seat that never held a live socket did not play: the result rows
+    // count who was there at the start, not who was invited.
+    s.playedBy = s.players.filter(
+      (p) => this.socketsOf(p.id).length > 0,
+    ).length;
     s.next = 0;
     s.served = 0;
     s.round = null;
@@ -487,6 +609,7 @@ export class Room extends DurableObject<Env> {
     }
     s.phase = "done";
     s.round = null;
+    await this.recordResults();
     await this.save();
     this.broadcast();
   }
@@ -516,11 +639,37 @@ export class Room extends DurableObject<Env> {
     );
   }
 
+  // Writes one row per signed-in player when the game finishes. Guests and
+  // games that never served a round write nothing; the row id makes a
+  // repeated finish a no-op.
+  private async recordResults() {
+    const s = this.s!;
+    if (s.served === 0 || s.categorySlug === "" || s.gameId === "") return;
+    const ordered = [...s.players].sort((a, b) => b.score - a.score);
+    const rows: ResultRow[] = [];
+    for (const player of ordered) {
+      if (player.userId === null) continue;
+      const rank = 1 + ordered.filter((p) => p.score > player.score).length;
+      rows.push({
+        id: `r:${s.gameId}:${player.userId}`,
+        userId: player.userId,
+        finishedAt: Math.floor(Date.now() / 1000),
+        category: s.categorySlug,
+        kind: s.kind,
+        score: player.score,
+        rank,
+        players: s.playedBy === 0 ? s.players.length : s.playedBy,
+      });
+    }
+    await recordResults(this.env, rows);
+  }
+
   private async nextPhase() {
     const s = this.s!;
     if (s.served >= roundsPerGame || s.next >= s.candidates.length) {
       s.phase = "done";
       s.reveal = null;
+      await this.recordResults();
       await this.save();
       this.broadcast();
       return;
@@ -543,6 +692,15 @@ export class Room extends DurableObject<Env> {
       for (const ws of this.ctx.getWebSockets()) ws.close(1001, "room closed");
       await this.ctx.storage.deleteAll();
       await this.ctx.storage.deleteAlarm();
+      return;
+    }
+    if (
+      s.kind === "match" &&
+      s.phase === "lobby" &&
+      now >= s.seededAt + matchWaitMs &&
+      this.connectedPids().size > 0
+    ) {
+      await this.begin(now);
       return;
     }
     if (s.phase === "playing" && s.round !== null && now >= s.round.endsAt) {

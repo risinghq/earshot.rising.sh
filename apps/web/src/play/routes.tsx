@@ -14,7 +14,14 @@ import {
   serveRound,
   type Mode,
 } from "./game";
-import { categoriesPage, feedErrorPage, gamePage } from "./pages";
+import {
+  categoriesPage,
+  feedErrorPage,
+  gamePage,
+  boardPage,
+  matchPage,
+} from "./pages";
+import { readBoard, recordGame } from "./results";
 import { newRoomCode, newRoomSecret } from "./room";
 import { roomPage } from "./room-page";
 
@@ -24,9 +31,15 @@ playApp.use("*", csrf());
 
 // One entry check for both game kinds: same form fields, same category and
 // mode validation, same catalogue fetch, same minimum track count.
-async function gameInput(
-  context: Context<{ Bindings: Env }>,
-): Promise<{ category: Category; mode: Mode; tracks: Candidate[] } | Response> {
+async function gameInput(context: Context<{ Bindings: Env }>): Promise<
+  | {
+      category: Category;
+      mode: Mode;
+      tracks: Candidate[];
+      userId: number | null;
+    }
+  | Response
+> {
   const body = await context.req.parseBody();
   const slug = typeof body.category === "string" ? body.category : "";
   const mode: Mode | null =
@@ -48,7 +61,7 @@ async function gameInput(
     return context.html(feedErrorPage(category.name), 502);
   }
   if (tracks.length < 4) return context.html(feedErrorPage(category.name), 502);
-  return { category, mode, tracks };
+  return { category, mode, tracks, userId: user?.id ?? null };
 }
 
 playApp.post("/room", async (context) => {
@@ -62,6 +75,7 @@ playApp.post("/room", async (context) => {
       method: "POST",
       body: JSON.stringify({
         code,
+        categorySlug: input.category.slug,
         categoryName: input.category.name,
         mode: input.mode,
         candidates: input.tracks,
@@ -76,10 +90,61 @@ playApp.post("/room", async (context) => {
 playApp.get("/room/:code/ws", async (context) => {
   if (context.req.header("upgrade") !== "websocket")
     return context.text("expected a WebSocket", 426);
+  const user = await sessionUser(context);
   const room = context.env.ROOMS.get(
     context.env.ROOMS.idFromName(context.req.param("code")),
   );
-  return room.fetch(new Request("https://room/ws", context.req.raw));
+  const target =
+    user === null ? "https://room/ws" : `https://room/ws?u=${user.id}`;
+  return room.fetch(new Request(target, context.req.raw));
+});
+
+// The queue for a random match lives in one global Matchmaker object; the
+// player waits on its socket until a peer in the same category appears.
+playApp.post("/match", async (context) => {
+  const body = await context.req.parseBody();
+  const slug = typeof body.category === "string" ? body.category : "";
+  const category = slug === "" ? null : await getCategory(context.env.DB, slug);
+  if (category === null) return context.text("Pick a category.", 400);
+  // A stranger must never play someone's listening history.
+  if (category.feed === "mine")
+    return context.text("No random matches in this category.", 400);
+  return context.redirect(`/play/match/${category.slug}`, 303);
+});
+
+playApp.get("/match/:slug/ws", async (context) => {
+  if (context.req.header("upgrade") !== "websocket")
+    return context.text("expected a WebSocket", 426);
+  const slug = context.req.param("slug");
+  const category = await getCategory(context.env.DB, slug);
+  if (category === null || category.feed === "mine")
+    return context.text("no such category", 404);
+  const user = await sessionUser(context);
+  const params = new URLSearchParams({ category: category.slug });
+  if (user !== null) {
+    params.set("u", String(user.id));
+    params.set("n", user.name);
+  }
+  const matchmaker = context.env.MATCHMAKER.get(
+    context.env.MATCHMAKER.idFromName("global"),
+  );
+  return matchmaker.fetch(
+    new Request(`https://match/ws?${params}`, context.req.raw),
+  );
+});
+
+playApp.get("/match/:slug", async (context) => {
+  const category = await getCategory(context.env.DB, context.req.param("slug"));
+  if (category === null || category.feed === "mine")
+    return context.html(notFoundPage(), 404);
+  const user = await sessionUser(context);
+  return context.html(matchPage(category, user !== null));
+});
+
+playApp.get("/board", async (context) => {
+  const period = context.req.query("period") === "all" ? "all" : "week";
+  const entries = await readBoard(context.env, period);
+  return context.html(boardPage(entries, period));
 });
 
 playApp.get("/room/:code", async (context) => {
@@ -104,6 +169,7 @@ playApp.post("/", async (context) => {
     input.category,
     input.mode,
     input.tracks,
+    input.userId,
   );
   return context.redirect(`/play/${game.id}`, 303);
 });
@@ -116,10 +182,17 @@ playApp.get("/:id", async (context) => {
     game.phase === "question"
       ? await serveRound(context.env, game, now)
       : { preview: null, quota: false };
+  // A round that exhausts its candidates ends the game here; recordGame is a
+  // no-op once the flag is set, so a final-page reload never reaches D1.
+  if (game.phase === "done") await recordGame(context.env, game);
   if (game.phase === "done" && game.served === 0)
     return context.html(feedErrorPage(game.categoryName), 502);
   if (game.phase !== "question")
-    return context.html(gamePage(game, { kind: game.phase }, now));
+    return context.html(
+      gamePage(game, { kind: game.phase }, now, {
+        signedIn: (await sessionUser(context)) !== null,
+      }),
+    );
   if (quota) return context.html(gamePage(game, { kind: "busy" }, now), 503);
   if (preview === null)
     return context.html(gamePage(game, { kind: "error" }, now));
@@ -151,6 +224,9 @@ playApp.post("/:id/answer", async (context) => {
 playApp.post("/:id/next", async (context) => {
   const game = await getGame(context.env, context.req.param("id"));
   if (game === null) return context.html(notFoundPage(), 404);
-  if (advance(game)) await putGame(context.env, game);
+  if (advance(game)) {
+    await putGame(context.env, game);
+    if (game.phase === "done") await recordGame(context.env, game);
+  }
   return context.redirect(`/play/${game.id}`, 303);
 });

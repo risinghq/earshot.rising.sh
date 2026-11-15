@@ -4,6 +4,7 @@ export interface Env {
   DB: D1Database;
   CACHE?: KVNamespace;
   ROOMS: DurableObjectNamespace;
+  MATCHMAKER: DurableObjectNamespace;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   SPOTIFY_CLIENT_ID?: string;

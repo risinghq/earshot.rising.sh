@@ -3,6 +3,7 @@ declare namespace Cloudflare {
     DB: D1Database;
     CACHE: KVNamespace;
     ROOMS: DurableObjectNamespace<import("./play/room").Room>;
+    MATCHMAKER: DurableObjectNamespace<import("./play/match").Matchmaker>;
     GITHUB_CLIENT_ID?: string;
     GITHUB_CLIENT_SECRET?: string;
     SPOTIFY_CLIENT_ID?: string;
