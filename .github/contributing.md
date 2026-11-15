@@ -20,8 +20,8 @@ sudo apt install gcc
 installed:
 
 ```sh
-git clone https://github.com/totallynotdavid/music-stats
-cd music-stats
+git clone https://github.com/risinghq/earshot.rising.sh
+cd earshot.rising.sh
 mise install
 mise run install
 mise run build

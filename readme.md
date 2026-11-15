@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/music-stats?label=crates.io&logo=rust&color=orange)](https://crates.io/crates/music-stats)
 [![docs.rs](https://docs.rs/music-stats/badge.svg)](https://docs.rs/music-stats)
-[![codecov](https://codecov.io/gh/totallynotdavid/music-stats/graph/badge.svg)](https://codecov.io/gh/totallynotdavid/music-stats)
+[![codecov](https://codecov.io/gh/risinghq/earshot.rising.sh/graph/badge.svg)](https://codecov.io/gh/risinghq/earshot.rising.sh)
 
 music-stats writes your most played tracks of the last few days to a GitHub
 Gist. It reads your history from Last.fm (which collects plays from Spotify,
@@ -48,7 +48,7 @@ YouTube Music instead of, or as well as, Last.fm, see
 ## Run it on a schedule
 
 Create a repository from the
-[template](https://github.com/new?template_name=music-stats&template_owner=totallynotdavid),
+[template](https://github.com/new?template_name=earshot.rising.sh&template_owner=risinghq),
 add your credentials as Actions secrets, and the included workflow updates the
 Gist every day. `DAYS` and `TOP_N` are repository variables.
 [GitHub Actions](docs/github-actions.md) has the steps.

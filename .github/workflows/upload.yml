@@ -30,7 +30,7 @@ jobs:
     steps:
       - name: Download the binary the upstream repository released
         run: |
-          gh release download --repo totallynotdavid/music-stats \
+          gh release download --repo risinghq/earshot.rising.sh \
             --pattern music-stats
           chmod +x music-stats
         env:

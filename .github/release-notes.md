@@ -123,4 +123,4 @@ Upgrade with `cargo install music-stats --force`, or update the version in your
 configuration change. When the service opens, create an `UPLOAD_TOKEN` on its
 settings page and add it with `YOUTUBE_COOKIE` to your repository's secrets;
 `upload.yml` does the rest. Report problems at
-https://github.com/totallynotdavid/music-stats/issues.
+https://github.com/risinghq/earshot.rising.sh/issues.

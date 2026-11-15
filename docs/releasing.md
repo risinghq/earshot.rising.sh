@@ -5,7 +5,7 @@
 work. Only a tag uploads anything, so a release that would fail fails on the
 pull request. The workflow:
 
-1. Runs `scripts/preflight.sh`, in `totallynotdavid/music-stats` only. It fails
+1. Runs `scripts/preflight.sh`, in `risinghq/earshot.rising.sh` only. It fails
    when a job names an environment the repository lacks. It uses the job's
    `GITHUB_TOKEN` with `actions: read` and `deployments: read`.
 2. Runs `scripts/check-release.sh`. It fails when the first line of
@@ -28,7 +28,7 @@ rewrite `.github/release-notes.md` for the new version. Check them with
 `scripts/check-release.sh v<version>`, and open a pull request to see the dry
 run pass.
 
-The preflight and publish jobs run only in `totallynotdavid/music-stats`. A tag
+The preflight and publish jobs run only in `risinghq/earshot.rising.sh`. A tag
 in a repository made from the template builds a release and does not publish.
 
 ## Set up the release environment
@@ -47,11 +47,11 @@ the first version with `mise run publish`, with an API token in
 `CARGO_REGISTRY_TOKEN`. Then open the crate's Settings on crates.io, and add a
 trusted publisher with these values:
 
-| Field       | Value             |
-| ----------- | ----------------- |
-| Owner       | `totallynotdavid` |
-| Repository  | `music-stats`     |
-| Workflow    | `release.yml`     |
-| Environment | `release`         |
+| Field       | Value               |
+| ----------- | ------------------- |
+| Owner       | `risinghq`          |
+| Repository  | `earshot.rising.sh` |
+| Workflow    | `release.yml`       |
+| Environment | `release`           |
 
 The workflow publishes every later version.

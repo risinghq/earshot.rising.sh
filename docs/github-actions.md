@@ -17,7 +17,7 @@ machine of your own. The Gist stays the option that needs no account anywhere.
 ## Set up the Gist
 
 1. Create a repository from the
-   [template](https://github.com/new?template_name=music-stats&template_owner=totallynotdavid).
+   [template](https://github.com/new?template_name=earshot.rising.sh&template_owner=risinghq).
 2. Open the repository's Actions secrets settings and add:
 
    - `GIST_ID`
