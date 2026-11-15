@@ -428,6 +428,128 @@ describe("preview resolution", () => {
     expect(built.phase).toBe("done");
   });
 
+  const quotaBody = {
+    error: {
+      type: "Exception",
+      message: "Quota limit exceeded",
+      code: 4,
+    },
+  };
+
+  it.each([
+    {
+      name: "track lookup",
+      candidate: {
+        title: "Track",
+        artist: "Artist",
+        cover: null,
+        link: null,
+        deezerId: 7,
+      },
+      url: "api.deezer.com/track/7",
+    },
+    {
+      name: "isrc lookup",
+      candidate: {
+        title: "Track",
+        artist: "Artist",
+        cover: null,
+        link: null,
+        isrc: "USABC1234567",
+      },
+      url: "api.deezer.com/track/isrc:",
+    },
+    {
+      name: "search",
+      candidate: {
+        title: "Track",
+        artist: "Artist",
+        cover: null,
+        link: null,
+      },
+      url: "api.deezer.com/search",
+    },
+  ])(
+    "holds the round unserved when the $name answers quota",
+    async ({ candidate, url }) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (input: RequestInfo | URL) =>
+          Response.json(String(input).includes(url) ? quotaBody : { data: [] }),
+        ),
+      );
+      const built = await game([candidate]);
+      const served = await serveRound(testEnv() as never, built, Date.now());
+      expect(served.quota).toBe(true);
+      const stored = (await getGame(testEnv() as never, built.id))!;
+      expect(stored.next).toBe(0);
+      expect(stored.current).toBeNull();
+      expect(stored.served).toBe(0);
+    },
+  );
+
+  it("serves the held candidate on a retry after the quota lifts", async () => {
+    let limited = true;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.includes("api.deezer.com/track/"))
+          return Response.json(limited ? quotaBody : deezerTrack(7, "x"));
+        return Response.json({ data: [] });
+      }),
+    );
+    const built = await game([
+      {
+        title: "Kept Song",
+        artist: "Artist",
+        cover: null,
+        link: null,
+        deezerId: 7,
+      },
+    ]);
+    const first = await get(`/play/${built.id}`);
+    expect(first.status).toBe(503);
+    const body = await first.text();
+    expect(body).toContain("The clip service is busy");
+    expect(body).toContain(`/play/${built.id}`);
+    const held = (await getGame(testEnv() as never, built.id))!;
+    expect(held.next).toBe(0);
+    expect(held.current).toBeNull();
+    expect(held.served).toBe(0);
+    limited = false;
+    const retry = await get(`/play/${built.id}`);
+    expect(retry.status).toBe(200);
+    expect(await retry.text()).toContain("https://cdn.example/7.mp3");
+    const served = (await getGame(testEnv() as never, built.id))!;
+    expect(served.candidates[served.current!.index].title).toBe("Kept Song");
+  });
+
+  it("still skips a candidate whose Deezer error is not a quota", async () => {
+    stubFetch([
+      [
+        /api\.deezer\.com\/track\/(\d+)/,
+        (url: string) =>
+          /track\/(\d+)/.exec(url)![1] === "1"
+            ? { error: { type: "Exception", message: "no data", code: 800 } }
+            : deezerTrack(2, "x"),
+      ],
+    ]);
+    const built = await game([
+      { title: "Gone", artist: "Artist", cover: null, link: null, deezerId: 1 },
+      {
+        title: "Other Song",
+        artist: "Artist",
+        cover: null,
+        link: null,
+        deezerId: 2,
+      },
+    ]);
+    const served = await serveRound(testEnv() as never, built, Date.now());
+    expect(served.quota).toBe(false);
+    expect(served.preview?.url).toBe("https://cdn.example/2.mp3");
+  });
+
   it("serves every round when early shuffled candidates cannot resolve", async () => {
     const built = await game(
       Array.from({ length: 30 }, (_, i) => ({
