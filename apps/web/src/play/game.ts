@@ -12,7 +12,6 @@ import {
 export const roundSeconds = 15;
 export const roundsPerGame = 10;
 const gameTtlSeconds = 3600;
-const extraCandidates = 6;
 const maxChoices = 4;
 
 export type Mode = "choices" | "typed";
@@ -79,13 +78,12 @@ export async function buildGame(
   mode: Mode,
   candidates: Candidate[],
 ): Promise<Game> {
-  const picked = shuffled(candidates).slice(0, roundsPerGame + extraCandidates);
   const game: Game = {
     id: base64url(crypto.getRandomValues(new Uint8Array(16))),
     mode,
     categorySlug: category.slug,
     categoryName: category.name,
-    candidates: picked,
+    candidates: shuffled(candidates),
     pool: [...new Set(candidates.map((track) => track.title))],
     next: 0,
     served: 0,
