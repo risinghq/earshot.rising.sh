@@ -3,10 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import migrations from "virtual:web-migrations";
 import { app } from "../src/app";
 import {
+  advance,
+  answerRound,
   buildGame,
   getGame,
   matchTyped,
   putGame,
+  roundsPerGame,
   scoreFor,
   serveRound,
 } from "../src/play/game";
@@ -422,6 +425,43 @@ describe("preview resolution", () => {
     ]);
     const served = await serveRound(testEnv() as never, built, Date.now());
     expect(served.preview).toBeNull();
+    expect(built.phase).toBe("done");
+  });
+
+  it("serves every round when early shuffled candidates cannot resolve", async () => {
+    const built = await game(
+      Array.from({ length: 30 }, (_, i) => ({
+        title: `Track ${i}`,
+        artist: "Artist",
+        cover: null,
+        link: null,
+        deezerId: 500 + i,
+      })),
+    );
+    const dead = new Set(
+      built.candidates.slice(0, 15).map((candidate) => candidate.deezerId),
+    );
+    stubFetch([
+      [
+        /api\.deezer\.com\/track\/(\d+)/,
+        (url: string) => {
+          const id = Number(/track\/(\d+)/.exec(url)![1]);
+          return deezerTrack(id, "x", !dead.has(id));
+        },
+      ],
+    ]);
+    for (let round = 0; round < roundsPerGame; round += 1) {
+      const served = await serveRound(testEnv() as never, built, Date.now());
+      expect(served.preview).not.toBeNull();
+      await answerRound(
+        testEnv() as never,
+        built,
+        { typed: "wrong" },
+        Date.now(),
+      );
+      advance(built);
+    }
+    expect(built.results).toHaveLength(roundsPerGame);
     expect(built.phase).toBe("done");
   });
 });
