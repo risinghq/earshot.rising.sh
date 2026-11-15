@@ -5,7 +5,7 @@ import { app } from "../src/app";
 import { sourceRemovalStatements } from "../src/settings";
 
 const now = Math.floor(Date.now() / 1000);
-const origin = "https://music.rising.sh";
+const origin = "https://earshot.rising.sh";
 const session = `sess_${"s".repeat(40)}`;
 
 const testEnv = () => ({
@@ -207,7 +207,7 @@ describe("sources", () => {
     expect(body).toContain("Connect Spotify");
     expect(body).toContain("Phone scrobbler");
     expect(body).toContain("Pano Scrobbler");
-    expect(body).toContain("server https://music.rising.sh");
+    expect(body).toContain(`server ${origin}`);
     expect(body).not.toContain('action="/settings/sources"');
   });
 

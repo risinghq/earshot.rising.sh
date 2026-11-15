@@ -15,7 +15,7 @@ import {
 } from "../src/play/game";
 import type { Candidate } from "../src/play/sources";
 
-const origin = "https://music.rising.sh";
+const origin = "https://earshot.rising.sh";
 const testEnv = () => ({ DB: env.DB, CACHE: env.CACHE });
 
 const deezerTrack = (id: number, title: string, preview = true) => ({

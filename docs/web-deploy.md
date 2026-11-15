@@ -66,13 +66,14 @@ URI. Wildcard matching is off. Do not register a new OAuth App.
 
 The Worker sends `redirect_uri` as the origin of the request plus
 `/auth/github/callback` ([`apps/web/src/auth.ts`](../apps/web/src/auth.ts)). It
-is `https://music.rising.sh/auth/github/callback` when deployed and
+is `https://earshot.rising.sh/auth/github/callback` when deployed and
 `http://localhost:8787/auth/github/callback` under `wrangler dev`.
 
 Open the app as an organization owner: **risinghq → Settings → Developer
 settings → OAuth Apps → rising.sh**. Under **Authorization callback URLs**, add
 one entry for each of these that the app does not list yet:
 
+- `https://earshot.rising.sh/auth/github/callback`
 - `https://music.rising.sh/auth/github/callback`
 - `http://localhost/auth/github/callback`
 
@@ -101,9 +102,9 @@ GITHUB_CLIENT_SECRET=the-local-client-secret
 
 ## Attach the custom domain
 
-The `routes` entry in `apps/web/wrangler.jsonc` attaches `music.rising.sh` as a
-Worker custom domain. Ensure `rising.sh` is active in the same Cloudflare
-account, then deploy from the repository root:
+The `routes` entry in `apps/web/wrangler.jsonc` attaches `earshot.rising.sh` and
+`music.rising.sh` as Worker custom domains. Ensure `rising.sh` is active in the
+same Cloudflare account, then deploy from the repository root:
 
 ```sh
 npm --prefix apps/web ci
@@ -120,6 +121,7 @@ The pulled source is one shared Spotify app owned by the operator. In the
 [Spotify developer dashboard](https://developer.spotify.com/dashboard) create an
 app, select **Web API**, and add these redirect URIs:
 
+- `https://earshot.rising.sh/auth/spotify/callback`
 - `https://music.rising.sh/auth/spotify/callback`
 - `http://127.0.0.1:8787/auth/spotify/callback`
 
@@ -205,6 +207,6 @@ again and revoke the old row by setting `revoked_at`.
 
 Users issue a scrobbler token on the settings page under **Phone scrobbler** and
 paste it into a ListenBrainz-compatible app such as Pano Scrobbler, with
-`https://music.rising.sh` as the server. The source needs no Worker secret or
+`https://earshot.rising.sh` as the server. The source needs no Worker secret or
 OAuth app: the token lives hashed in the `tokens` table against the user's
 `listenbrainz` source.

@@ -4,7 +4,7 @@ import migrations from "virtual:web-migrations";
 import { app } from "../src/app";
 
 const now = Math.floor(Date.now() / 1000);
-const origin = "https://music.rising.sh";
+const origin = "https://earshot.rising.sh";
 
 const testEnv = () => ({
   DB: env.DB,

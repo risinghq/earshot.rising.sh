@@ -4,7 +4,10 @@
   "compatibility_date": "2026-11-12",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
-  "routes": [{ "pattern": "music.rising.sh", "custom_domain": true }],
+  "routes": [
+    { "pattern": "earshot.rising.sh", "custom_domain": true },
+    { "pattern": "music.rising.sh", "custom_domain": true },
+  ],
   "triggers": { "crons": ["* * * * *"] },
   "assets": { "directory": "./public" },
   "d1_databases": [

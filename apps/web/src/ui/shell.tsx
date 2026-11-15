@@ -24,13 +24,13 @@ export function Page({ title, head, user, footer, children }: PageOptions) {
           crossorigin="anonymous"
         />
         <link rel="stylesheet" href="/styles.css" />
-        <title>{`${title} · Music stats`}</title>
+        <title>{`${title} · Earshot`}</title>
       </head>
       <body>
         <header class="site-header">
           <div class="wrap">
             <a class="site-name" href="/">
-              Music stats
+              Earshot
             </a>
             <nav class="site-nav" aria-label="Site">
               <a href="/play">Play</a>

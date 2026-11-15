@@ -8,6 +8,7 @@ import {
   sessionUser,
   type SignedInUser,
 } from "./auth";
+import { legacyHostRedirect } from "./host";
 import { renderCard, type CardTheme } from "./card";
 import { pullDueSources } from "./cron";
 import { sourceNames } from "./names";
@@ -115,7 +116,7 @@ function homePage(user: SignedInUser | null) {
     children: (
       <>
         <div class="page-head">
-          <h1>Music stats</h1>
+          <h1>Earshot</h1>
           <p>
             Guess songs by ear. Play alone, open a room with friends or take on
             a stranger, and blend a party playlist from friends' listening.
@@ -157,7 +158,7 @@ function homePage(user: SignedInUser | null) {
           {user === null ? (
             <>
               <p class="muted">
-                Sign in with GitHub and Music stats stores the plays you connect
+                Sign in with GitHub and Earshot stores the plays you connect
                 from Spotify and YouTube Music. Your top tracks, top artists and
                 plays per day appear on a public page at <code>/u/name</code>.
               </p>
@@ -314,6 +315,8 @@ export function notFoundPage(user: SignedInUser | null = null) {
 
 export const app = new Hono<{ Bindings: Env }>();
 
+app.use("*", legacyHostRedirect);
+
 app.post(
   "/api/v1/upload",
   bodyLimit({
@@ -325,7 +328,7 @@ app.post(
 );
 
 // Pano Scrobbler joins the configured server to "1/" and the route name, so a
-// server entered as https://music.rising.sh or .../1 both reach these routes.
+// server entered as https://earshot.rising.sh or .../1 both reach these routes.
 app.on(
   "POST",
   ["/1/submit-listens", "/1/1/submit-listens"],

@@ -189,7 +189,7 @@ async function seedParty(withAliases = true) {
 
 describe("party route", () => {
   it("renders the form", async () => {
-    const response = await SELF.fetch("https://music.rising.sh/party");
+    const response = await SELF.fetch("https://earshot.rising.sh/party");
     expect(response.status).toBe(200);
     const html = await response.text();
     expect(html).toContain("Party playlist");
@@ -199,7 +199,7 @@ describe("party route", () => {
 
   it("redirects to the canonical shareable URL", async () => {
     const response = await SELF.fetch(
-      "https://music.rising.sh/party?u=Alice&u=bob",
+      "https://earshot.rising.sh/party?u=Alice&u=bob",
       { redirect: "manual" },
     );
     expect(response.status).toBe(303);
@@ -209,7 +209,7 @@ describe("party route", () => {
   it("blends two public profiles and lists tracks with no video id", async () => {
     await seedParty();
     const response = await SELF.fetch(
-      "https://music.rising.sh/party?u=alice,bob&n=25",
+      "https://earshot.rising.sh/party?u=alice,bob&n=25",
     );
     expect(response.status).toBe(200);
     const html = await response.text();
@@ -224,7 +224,7 @@ describe("party route", () => {
   it("lists every track when none has a YouTube link", async () => {
     await seedParty(false);
     const response = await SELF.fetch(
-      "https://music.rising.sh/party?u=alice,bob&n=25",
+      "https://earshot.rising.sh/party?u=alice,bob&n=25",
     );
     expect(response.status).toBe(200);
     const html = await response.text();
@@ -238,10 +238,10 @@ describe("party route", () => {
   it("refuses a private and an unknown profile the same way", async () => {
     await seedParty();
     const hidden = await SELF.fetch(
-      "https://music.rising.sh/party?u=alice,carol",
+      "https://earshot.rising.sh/party?u=alice,carol",
     );
     const unknown = await SELF.fetch(
-      "https://music.rising.sh/party?u=alice,nobody",
+      "https://earshot.rising.sh/party?u=alice,nobody",
     );
     expect(hidden.status).toBe(404);
     expect(unknown.status).toBe(404);
@@ -253,14 +253,17 @@ describe("party route", () => {
     async (query) => {
       await seedParty();
       const first = await SELF.fetch(
-        `https://music.rising.sh/party?${query}&n=25`,
+        `https://earshot.rising.sh/party?${query}&n=25`,
         { redirect: "manual" },
       );
       const location = first.headers.get("location");
       if (first.status === 303 && location !== null) {
-        const second = await SELF.fetch(`https://music.rising.sh${location}`, {
-          redirect: "manual",
-        });
+        const second = await SELF.fetch(
+          `https://earshot.rising.sh${location}`,
+          {
+            redirect: "manual",
+          },
+        );
         expect(second.status).toBe(404);
         return;
       }
@@ -270,7 +273,9 @@ describe("party route", () => {
   );
 
   it("prefills a single profile without an error", async () => {
-    const response = await SELF.fetch("https://music.rising.sh/party?u=alice");
+    const response = await SELF.fetch(
+      "https://earshot.rising.sh/party?u=alice",
+    );
     expect(response.status).toBe(200);
     const html = await response.text();
     expect(html).toContain('value="alice"');
@@ -279,10 +284,10 @@ describe("party route", () => {
 
   it("rejects a bad length and too many profiles", async () => {
     expect(
-      (await SELF.fetch("https://music.rising.sh/party?u=a,b&n=12")).status,
+      (await SELF.fetch("https://earshot.rising.sh/party?u=a,b&n=12")).status,
     ).toBe(400);
     expect(
-      (await SELF.fetch("https://music.rising.sh/party?u=a,b,c,d,e,f,g,h,i"))
+      (await SELF.fetch("https://earshot.rising.sh/party?u=a,b,c,d,e,f,g,h,i"))
         .status,
     ).toBe(400);
   });
