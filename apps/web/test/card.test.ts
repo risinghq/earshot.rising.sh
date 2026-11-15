@@ -143,7 +143,7 @@ describe("card", () => {
       .run();
     const card = await (await fetchCard("?period=month")).text();
     const profile = await (
-      await SELF.fetch("https://music.rising.sh/u/alice?period=month")
+      await SELF.fetch("https://earshot.rising.sh/u/alice?period=month")
     ).text();
     const updated = new Date(json.updated_at * 1000)
       .toISOString()

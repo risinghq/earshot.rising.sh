@@ -176,8 +176,8 @@ fn the_gist_needs_both_its_settings() {
 fn the_upload_defaults_to_the_hosted_service() {
     let base = [("YOUTUBE_COOKIE", "c"), ("UPLOAD_TOKEN", " msu_t\n")];
     let cases = [
-        (vec![], "https://music.rising.sh"),
-        (vec![("UPLOAD_URL", "")], "https://music.rising.sh"),
+        (vec![], "https://earshot.rising.sh"),
+        (vec![("UPLOAD_URL", "")], "https://earshot.rising.sh"),
         (
             vec![("UPLOAD_URL", " http://127.0.0.1:8787 ")],
             "http://127.0.0.1:8787",

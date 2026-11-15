@@ -3,6 +3,7 @@ import { bodyLimit } from "hono/body-limit";
 import type { Env, Period, PeriodStats } from "./types";
 import { getStats } from "./aggregate";
 import { beginGithub, githubCallback, sessionUser } from "./auth";
+import { legacyHostRedirect } from "./host";
 import { renderCard, type CardTheme } from "./card";
 import { pullDueSources } from "./cron";
 import { sourceNames } from "./names";
@@ -222,6 +223,8 @@ export function notFoundPage() {
 
 export const app = new Hono<{ Bindings: Env }>();
 
+app.use("*", legacyHostRedirect);
+
 app.post(
   "/api/v1/upload",
   bodyLimit({
@@ -233,7 +236,7 @@ app.post(
 );
 
 // Pano Scrobbler joins the configured server to "1/" and the route name, so a
-// server entered as https://music.rising.sh or .../1 both reach these routes.
+// server entered as https://earshot.rising.sh or .../1 both reach these routes.
 app.on(
   "POST",
   ["/1/submit-listens", "/1/1/submit-listens"],

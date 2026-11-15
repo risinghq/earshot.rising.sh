@@ -23,13 +23,13 @@ export function Page({ title, head, account, footer, children }: PageOptions) {
           crossorigin="anonymous"
         />
         <link rel="stylesheet" href="/styles.css" />
-        <title>{`${title} · Music stats`}</title>
+        <title>{`${title} · Earshot`}</title>
       </head>
       <body>
         <header class="site-header">
           <div class="wrap">
             <a class="site-name" href="/">
-              Music stats
+              Earshot
             </a>
             {account && (
               <nav class="account" aria-label="Account">

@@ -7,7 +7,7 @@ import { openSecret, sealSecret } from "../src/secret";
 import { pullIntervalSeconds } from "../src/ytmusic";
 
 const now = Math.floor(Date.now() / 1000);
-const origin = "https://music.rising.sh";
+const origin = "https://earshot.rising.sh";
 const session = `sess_${"s".repeat(40)}`;
 const cookie = "__Secure-3PAPISID=fake-sapisid; SID=fake-sid";
 const key = btoa(

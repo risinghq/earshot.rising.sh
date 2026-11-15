@@ -20,13 +20,20 @@ Phone ── Pano Scrobbler ── POST ─────────────�
                          /u/NAME    /u/NAME.json    /u/NAME.svg
 ```
 
-The site lives at `https://music.rising.sh`. A subdomain of the `rising.sh` zone
-fits the other projects on that zone, and a Worker
+The site is Earshot, at `https://earshot.rising.sh`. A subdomain of the
+`rising.sh` zone fits the other projects on that zone, and a Worker
 [custom domain](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)
 creates the DNS record and the certificate itself. Nothing speaks against it:
 the session cookie is a `__Host-` cookie, which browsers keep to one host, so no
 sibling subdomain can read it. The user-made SVG and JSON share the origin with
 the dashboard, so they carry the headers in [Public surface](#public-surface).
+
+The earlier `https://music.rising.sh` address stays a custom domain on the same
+Worker. On it, a GET or HEAD for a page answers `301` to the same path and query
+on `earshot.rising.sh`. Machine traffic is served as before, with no redirect:
+the API under `/api/`, the scrobbler routes under `/1/`, the sign-in routes
+under `/auth/`, the profile JSON and card under `/u/`, and every request that
+asks for a WebSocket upgrade. One middleware holds the rule and its path list.
 
 ## 1. Layout and languages
 
@@ -555,8 +562,8 @@ Content-Type: application/json
   once when the account is added and `submit-listens` for every play. Its other
   routes (listen history, now playing, loves, stats) get `404` with
   `{code: 404}` and fail only the feature that asked. A server entered as
-  `https://music.rising.sh` or `https://music.rising.sh/1` both work: the routes
-  are registered under `/1/` and `/1/1/`.
+  `https://earshot.rising.sh` or `https://earshot.rising.sh/1` both work: the
+  routes are registered under `/1/` and `/1/1/`.
 
 Checked by a throwaway simulation of the rule: 620,164 uploads from random
 histories of 2 to 4 distinct pairs and pages of 2 to 8 plays, where the new page
@@ -1228,7 +1235,7 @@ output, and the template repository's workflow gains an upload.
 
 The change is small and sits behind new settings:
 
-- `UPLOAD_URL` (default `https://music.rising.sh`) and `UPLOAD_TOKEN`. When
+- `UPLOAD_URL` (default `https://earshot.rising.sh`) and `UPLOAD_TOKEN`. When
   `UPLOAD_TOKEN` is set, the program posts the YouTube plays to `/api/v1/upload`
   through a new `src/output/upload.rs`. `GIST_ID` and `GH_TOKEN` become
   optional, and at least one output is required. `UPLOAD_TOKEN` needs

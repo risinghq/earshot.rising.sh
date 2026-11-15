@@ -58,7 +58,7 @@ failing run.
 
 `UPLOAD_URL` and `MUSIC_STATS_TZ` are optional repository variables.
 `UPLOAD_URL` points the upload at another service address
-(`https://music.rising.sh` when unset). `MUSIC_STATS_TZ` names the time zone
+(`https://earshot.rising.sh` when unset). `MUSIC_STATS_TZ` names the time zone
 that "Today" and "Yesterday" on the history page mean. See
 [Configuration](configuration.md).
 

@@ -10,7 +10,7 @@ import { app } from "../src/app";
 import type { Matchmaker } from "../src/play/match";
 import type { Room } from "../src/play/room";
 
-const origin = "https://music.rising.sh";
+const origin = "https://earshot.rising.sh";
 const testEnv = () => ({
   DB: env.DB,
   CACHE: env.CACHE,

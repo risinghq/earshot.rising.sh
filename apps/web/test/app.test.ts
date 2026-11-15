@@ -538,7 +538,7 @@ describe("profile API", () => {
     await env.DB.prepare(
       "INSERT INTO sources (id, user_id, kind) VALUES (11, 1, 'ytmusic')",
     ).run();
-    const response = await SELF.fetch("https://music.rising.sh/u/alice");
+    const response = await SELF.fetch("https://earshot.rising.sh/u/alice");
     expect(response.status).toBe(200);
     const html = await response.text();
     expect(html).toContain("<h1>alice</h1>");

@@ -286,7 +286,7 @@ export function renderCard(
         letter-spacing="1"
         fill="${colours.muted}"
       >
-        MUSIC STATS
+        EARSHOT
       </text>
       <text
         x="${PAD}"

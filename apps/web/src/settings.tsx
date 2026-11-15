@@ -118,9 +118,9 @@ export function signInPage() {
         <div class="page-head">
           <h1>Sign in</h1>
           <p>
-            Music stats stores the plays you connect from Spotify and YouTube
-            Music. It shows your top tracks, top artists and plays per day on a
-            public page at <code>/u/name</code>.
+            Earshot stores the plays you connect from Spotify and YouTube Music.
+            It shows your top tracks, top artists and plays per day on a public
+            page at <code>/u/name</code>.
           </p>
         </div>
         <div class="stack">
