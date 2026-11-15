@@ -9,12 +9,16 @@ import type { Category } from "./catalog";
 import type { Game, RoundResult } from "./game";
 import type { BoardEntry, BoardPeriod } from "./results";
 import { roundSeconds, roundsPerGame } from "./game";
+import type { SignedInUser } from "../auth";
 import type { Preview } from "./sources";
 
-export function categoriesPage(categories: Category[], signedIn: boolean) {
+export function categoriesPage(
+  categories: Category[],
+  user: SignedInUser | null,
+) {
   return Page({
     title: "Guess the song",
-    account: <a href="/settings">Account</a>,
+    user,
     children: (
       <>
         <div class="page-head">
@@ -28,9 +32,10 @@ export function categoriesPage(categories: Category[], signedIn: boolean) {
           {categories.map((category) => (
             <section class="play-card" key={category.slug}>
               <h2>{category.name}</h2>
-              {category.feed === "mine" && !signedIn ? (
+              {category.feed === "mine" && user === null ? (
                 <p class="hint">
-                  Your own top tracks. <a href="/">Sign in</a> to play.
+                  Your own top tracks. <a href="/auth/github">Sign in</a> to
+                  play.
                 </p>
               ) : (
                 <>
@@ -140,12 +145,13 @@ export function questionPage(
   preview: Preview,
   choices: string[],
   now: number,
+  user: SignedInUser | null,
 ) {
   const remaining = roundSeconds * 1000 - (now - game.current!.servedAt);
   const action = `/play/${game.id}/answer`;
   return Page({
     title: `${game.categoryName} · Guess the song`,
-    account: <a href="/settings">Account</a>,
+    user,
     children: (
       <>
         <div class="page-head">
@@ -217,7 +223,11 @@ export function questionPage(
 const linkService = (link: string) =>
   link.includes("apple.com") ? "Apple Music" : "Deezer";
 
-function revealPage(game: Game, result: RoundResult) {
+function revealPage(
+  game: Game,
+  result: RoundResult,
+  user: SignedInUser | null,
+) {
   const heading = result.correct
     ? "Correct"
     : result.timedOut
@@ -226,7 +236,7 @@ function revealPage(game: Game, result: RoundResult) {
   const last = game.results.length >= roundsPerGame;
   return Page({
     title: `${heading} · ${game.categoryName}`,
-    account: <a href="/settings">Account</a>,
+    user,
     children: (
       <>
         <div class="page-head">
@@ -267,11 +277,11 @@ function resultLine(result: RoundResult) {
   return result.correct ? `+${result.score}` : result.timedOut ? "time" : "0";
 }
 
-export function finalPage(game: Game, signedIn: boolean) {
+export function finalPage(game: Game, user: SignedInUser | null) {
   const correct = game.results.filter((result) => result.correct).length;
   return Page({
     title: `Game over · ${game.categoryName}`,
-    account: <a href="/settings">Account</a>,
+    user,
     children: (
       <>
         <div class="page-head">
@@ -303,9 +313,9 @@ export function finalPage(game: Game, signedIn: boolean) {
             ))}
           </ul>
         </Section>
-        {!signedIn && (
+        {user === null && (
           <p class="meta">
-            <a href="/">Sign in</a> to keep your points on the{" "}
+            <a href="/auth/github">Sign in</a> to keep your points on the{" "}
             <a href="/play/board">board</a>.
           </p>
         )}
@@ -328,15 +338,16 @@ export function gamePage(
     | { kind: "busy" }
     | { kind: "error" },
   now: number,
-  opts: { signedIn?: boolean } = {},
+  opts: { user?: SignedInUser | null } = {},
 ) {
+  const user = opts.user ?? null;
   if (view.kind === "reveal")
-    return revealPage(game, game.results[game.results.length - 1]);
-  if (view.kind === "done") return finalPage(game, opts.signedIn === true);
+    return revealPage(game, game.results[game.results.length - 1], user);
+  if (view.kind === "done") return finalPage(game, user);
   if (view.kind === "busy")
     return Page({
       title: "Clip service busy",
-      account: <a href="/settings">Account</a>,
+      user,
       children: (
         <EmptyState
           title="The clip service is busy"
@@ -349,7 +360,7 @@ export function gamePage(
   if (view.kind === "error")
     return Page({
       title: "Preview unavailable",
-      account: <a href="/settings">Account</a>,
+      user,
       children: (
         <EmptyState
           title="The preview could not be loaded"
@@ -359,7 +370,7 @@ export function gamePage(
         />
       ),
     });
-  return questionPage(game, view.preview, view.choices, now);
+  return questionPage(game, view.preview, view.choices, now, user);
 }
 
 const boardNames: Record<BoardPeriod, string> = {
@@ -367,10 +378,14 @@ const boardNames: Record<BoardPeriod, string> = {
   all: "All time",
 };
 
-export function boardPage(entries: BoardEntry[], period: BoardPeriod) {
+export function boardPage(
+  entries: BoardEntry[],
+  period: BoardPeriod,
+  user: SignedInUser | null,
+) {
   return Page({
     title: "Points board · Guess the song",
-    account: <a href="/play">Categories</a>,
+    user,
     children: (
       <>
         <div class="page-head">
@@ -411,15 +426,15 @@ export function boardPage(entries: BoardEntry[], period: BoardPeriod) {
   });
 }
 
-export function matchPage(category: Category, signedIn: boolean) {
+export function matchPage(category: Category, user: SignedInUser | null) {
   return Page({
     title: `${category.name} · Play someone random`,
-    account: <a href="/play">Categories</a>,
+    user,
     children: (
       <div
         id="match"
         data-category={category.slug}
-        data-signed-in={signedIn ? "1" : ""}
+        data-signed-in={user ? "1" : ""}
         class="stack"
       >
         <div class="page-head">
@@ -439,8 +454,9 @@ export function matchPage(category: Category, signedIn: boolean) {
           </div>
           <div class="section-body">
             <p class="meta">
-              Your opponent sees it during the game. <a href="/">Sign in</a> to
-              play under your own name and keep points.
+              Your opponent sees it during the game.{" "}
+              <a href="/auth/github">Sign in</a> to play under your own name and
+              keep points.
             </p>
             <form id="match-name-form" class="guess">
               <div class="field">
@@ -496,10 +512,10 @@ export function matchPage(category: Category, signedIn: boolean) {
   });
 }
 
-export function feedErrorPage(name: string) {
+export function feedErrorPage(name: string, user: SignedInUser | null) {
   return Page({
     title: "Category unavailable",
-    account: <a href="/settings">Account</a>,
+    user,
     children: (
       <EmptyState
         title={`${name} is not available right now`}

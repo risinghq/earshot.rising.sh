@@ -1,11 +1,12 @@
+import type { SignedInUser } from "../auth";
 import { Page } from "../ui/shell";
 
 // The room page is a static shell: every panel exists in the markup and the
 // client script in public/room.js shows the one matching the room's phase.
-export function roomPage(code: string) {
+export function roomPage(code: string, user: SignedInUser | null) {
   return Page({
     title: `Room ${code} · Guess the song`,
-    account: <a href="/play">Categories</a>,
+    user,
     children: (
       <div id="room" data-code={code} class="stack">
         <div class="page-head">
@@ -141,7 +142,7 @@ export function roomPage(code: string) {
           <div class="section-body">
             <ol class="ranked" id="standings" />
             <p class="meta" id="points-hint" hidden>
-              <a href="/">Sign in</a> to keep your points on the{" "}
+              <a href="/auth/github">Sign in</a> to keep your points on the{" "}
               <a href="/play/board">board</a>.
             </p>
             <div class="modes">

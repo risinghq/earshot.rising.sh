@@ -2,7 +2,12 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { Env, Period, PeriodStats } from "./types";
 import { getStats } from "./aggregate";
-import { beginGithub, githubCallback, sessionUser } from "./auth";
+import {
+  beginGithub,
+  githubCallback,
+  sessionUser,
+  type SignedInUser,
+} from "./auth";
 import { renderCard, type CardTheme } from "./card";
 import { pullDueSources } from "./cron";
 import { sourceNames } from "./names";
@@ -12,10 +17,11 @@ import { RankedList } from "./ui/ranked";
 import { Section } from "./ui/section";
 import { Segmented } from "./ui/segmented";
 import { Page } from "./ui/shell";
+import { PillLink } from "./ui/pill";
 import { Stats } from "./ui/stat";
 import { submitListens, validateToken } from "./listenbrainz";
 import { partyRoute } from "./party";
-import { settingsApp, signInPage } from "./settings";
+import { settingsApp } from "./settings";
 import { beginSpotify, spotifyCallback } from "./spotify";
 import { playApp } from "./play/routes";
 import { uploadPlays } from "./upload";
@@ -102,10 +108,95 @@ function sourceLine(kinds: string | null) {
   return names.size === 0 ? "None" : [...names].sort().join(", ");
 }
 
+function homePage(user: SignedInUser | null) {
+  return Page({
+    title: "Home",
+    user,
+    children: (
+      <>
+        <div class="page-head">
+          <h1>Music stats</h1>
+          <p>
+            Guess songs by ear. Play alone, open a room with friends or take on
+            a stranger, and blend a party playlist from friends' listening.
+          </p>
+        </div>
+        <div class="play-grid">
+          <section class="play-card">
+            <h2>Guess the song</h2>
+            <p class="hint">
+              Pick a category and ten short clips. Play solo, open a room with
+              friends, or take on a stranger.
+            </p>
+            <div class="modes">
+              <PillLink href="/play" variant="primary">
+                Play
+              </PillLink>
+            </div>
+          </section>
+          <section class="play-card">
+            <h2>Points board</h2>
+            <p class="hint">
+              Signed-in players ranked by points, this week and all time.
+            </p>
+            <div class="modes">
+              <PillLink href="/play/board">Board</PillLink>
+            </div>
+          </section>
+          <section class="play-card">
+            <h2>Party playlist</h2>
+            <p class="hint">
+              Blend the top tracks of two to eight profiles into one playlist.
+            </p>
+            <div class="modes">
+              <PillLink href="/party">Party</PillLink>
+            </div>
+          </section>
+        </div>
+        <Section title="Your listening">
+          {user === null ? (
+            <>
+              <p class="muted">
+                Sign in with GitHub and Music stats stores the plays you connect
+                from Spotify and YouTube Music. Your top tracks, top artists and
+                plays per day appear on a public page at <code>/u/name</code>.
+              </p>
+              <div>
+                <PillLink href="/auth/github" variant="primary">
+                  Sign in with GitHub
+                </PillLink>
+              </div>
+              <p class="hint">
+                Profiles are public until you hide them in settings.
+              </p>
+            </>
+          ) : (
+            <>
+              <p class="muted">
+                Signed in as <b>{user.name}</b>.
+              </p>
+              <div class="modes">
+                <PillLink
+                  href={`/u/${encodeURIComponent(user.name)}`}
+                  variant="primary"
+                >
+                  Your profile
+                </PillLink>
+                <PillLink href="/settings">Settings</PillLink>
+              </div>
+            </>
+          )}
+        </Section>
+      </>
+    ),
+  });
+}
+
 function profilePage(
   snapshot: PeriodStats,
   origin: string,
   kinds: string | null,
+  user: SignedInUser | null,
 ) {
   const days = snapshot.daily.slice(-dailyBars);
   const cardUrl = `${origin}/u/${encodeURIComponent(snapshot.user.name)}.svg`;
@@ -125,7 +216,7 @@ function profilePage(
         <meta property="og:image" content={cardUrl} />
       </>
     ),
-    account: <a href="/settings">Account</a>,
+    user,
     footer: (
       <>
         <a
@@ -206,9 +297,10 @@ function profilePage(
   });
 }
 
-export function notFoundPage() {
+export function notFoundPage(user: SignedInUser | null = null) {
   return Page({
     title: "Not found",
+    user,
     children: (
       <EmptyState
         title="Page not found"
@@ -256,8 +348,7 @@ app.all("/1/*", (context) =>
 
 app.get("/", async (context) => {
   const user = await sessionUser(context);
-  if (user !== null) return context.redirect("/settings", 303);
-  return context.html(signInPage());
+  return context.html(homePage(user));
 });
 
 app.get("/auth/github", (context) => beginGithub(context));
@@ -304,12 +395,12 @@ app.get("/u/:path", async (context) => {
   if (!name)
     return format === "json"
       ? context.json({ error: "not found" }, 404)
-      : context.html(notFoundPage(), 404);
+      : context.html(notFoundPage(await sessionUser(context)), 404);
   const user = await findUser(context.env.DB, name);
   if (!user)
     return format === "json"
       ? context.json({ error: "not found" }, 404)
-      : context.html(notFoundPage(), 404);
+      : context.html(notFoundPage(await sessionUser(context)), 404);
   const snapshot = await getSnapshot(
     context.env,
     user,
@@ -318,7 +409,12 @@ app.get("/u/:path", async (context) => {
   );
   if (format === "html")
     return context.html(
-      profilePage(snapshot, new URL(context.req.url).origin, user.kinds),
+      profilePage(
+        snapshot,
+        new URL(context.req.url).origin,
+        user.kinds,
+        await sessionUser(context),
+      ),
     );
   context.header(
     "Content-Security-Policy",
@@ -334,7 +430,9 @@ app.get("/u/:path", async (context) => {
   return context.json(snapshot);
 });
 
-app.notFound((context) => context.html(notFoundPage(), 404));
+app.notFound(async (context) =>
+  context.html(notFoundPage(await sessionUser(context)), 404),
+);
 
 export async function scheduled(_controller: ScheduledController, env: Env) {
   await pullDueSources(env);

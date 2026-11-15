@@ -1,5 +1,5 @@
 import type { Context } from "hono";
-import { validName } from "./auth";
+import { sessionUser, validName, type SignedInUser } from "./auth";
 import {
   blend,
   youtubePlaylistUrl,
@@ -150,10 +150,13 @@ interface FormOptions {
   error?: string;
 }
 
-function formPage({ names = [], n = "25", notice, error }: FormOptions) {
+function formPage(
+  { names = [], n = "25", notice, error }: FormOptions,
+  user: SignedInUser | null,
+) {
   return Page({
     title: "Party playlist",
-    account: <a href="/settings">Account</a>,
+    user,
     children: (
       <>
         <div class="page-head">
@@ -208,10 +211,10 @@ function formPage({ names = [], n = "25", notice, error }: FormOptions) {
   });
 }
 
-function unavailablePage() {
+function unavailablePage(user: SignedInUser | null) {
   return Page({
     title: "Party playlist",
-    account: <a href="/settings">Account</a>,
+    user,
     children: (
       <EmptyState
         heading="h1"
@@ -223,12 +226,16 @@ function unavailablePage() {
   });
 }
 
-function resultPage(names: string[], items: PartyTrack[]) {
+function resultPage(
+  names: string[],
+  items: PartyTrack[],
+  user: SignedInUser | null,
+) {
   const missing = items.filter((item) => item.videoId === null);
   const url = youtubePlaylistUrl(items);
   return Page({
     title: "Party playlist",
-    account: <a href="/settings">Account</a>,
+    user,
     children: (
       <>
         <div class="page-head">
@@ -293,13 +300,14 @@ function resultPage(names: string[], items: PartyTrack[]) {
 }
 
 export async function partyRoute(context: Context<{ Bindings: Env }>) {
+  const user = await sessionUser(context);
   const rawNames = context.req.queries("u") ?? [];
   const names = readNames(rawNames);
   const nParam = context.req.query("n");
   const hasInput = rawNames.length > 0 || nParam !== undefined;
   const n = nParam ?? "25";
   const form = (options: FormOptions, status: 200 | 400 = 200) =>
-    context.html(formPage(options), status);
+    context.html(formPage(options, user), status);
 
   if (!hasInput) return form({});
   if (n !== "25" && n !== "50")
@@ -307,7 +315,7 @@ export async function partyRoute(context: Context<{ Bindings: Env }>) {
   if (names.length === 0 || names.length > 8)
     return form({ names, error: "Pick two to eight profiles." }, 400);
   if (names.some((name) => !validName(name)))
-    return context.html(unavailablePage(), 404);
+    return context.html(unavailablePage(user), 404);
   if (names.length === 1)
     return form({
       names,
@@ -324,7 +332,7 @@ export async function partyRoute(context: Context<{ Bindings: Env }>) {
   }
 
   const users = await publicUsers(context.env.DB, names);
-  if (users === null) return context.html(unavailablePage(), 404);
+  if (users === null) return context.html(unavailablePage(user), 404);
 
   const cacheKey = `party:${n}:${names.join(",")}`;
   let items = await cachedParty(context.env, cacheKey);
@@ -339,8 +347,9 @@ export async function partyRoute(context: Context<{ Bindings: Env }>) {
   }
   return context.html(
     resultPage(
-      users.map((user) => user.name),
+      users.map((row) => row.name),
       items,
+      user,
     ),
   );
 }

@@ -1,14 +1,15 @@
 import type { Child } from "hono/jsx";
+import type { SignedInUser } from "../auth";
 
 interface PageOptions {
   title: string;
   head?: Child;
-  account?: Child;
+  user?: SignedInUser | null;
   footer?: Child;
   children: Child;
 }
 
-export function Page({ title, head, account, footer, children }: PageOptions) {
+export function Page({ title, head, user, footer, children }: PageOptions) {
   return (
     <html lang="en">
       <head>
@@ -31,11 +32,21 @@ export function Page({ title, head, account, footer, children }: PageOptions) {
             <a class="site-name" href="/">
               Music stats
             </a>
-            {account && (
-              <nav class="account" aria-label="Account">
-                {account}
-              </nav>
-            )}
+            <nav class="site-nav" aria-label="Site">
+              <a href="/play">Play</a>
+              <a href="/play/board">Board</a>
+              <a href="/party">Party</a>
+              {user ? (
+                <>
+                  <a href={`/u/${encodeURIComponent(user.name)}`}>
+                    {user.name}
+                  </a>
+                  <a href="/settings">Settings</a>
+                </>
+              ) : (
+                <a href="/auth/github">Sign in</a>
+              )}
+            </nav>
           </div>
         </header>
         <main class="wrap shell">{children}</main>

@@ -110,34 +110,6 @@ function sourceNote(source: SourceInfo) {
   return null;
 }
 
-export function signInPage() {
-  return Page({
-    title: "Sign in",
-    children: (
-      <>
-        <div class="page-head">
-          <h1>Sign in</h1>
-          <p>
-            Music stats stores the plays you connect from Spotify and YouTube
-            Music. It shows your top tracks, top artists and plays per day on a
-            public page at <code>/u/name</code>.
-          </p>
-        </div>
-        <div class="stack">
-          <div>
-            <PillLink href="/auth/github" variant="primary">
-              Sign in with GitHub
-            </PillLink>
-          </div>
-          <p class="hint">
-            Profiles are public until you hide them in settings.
-          </p>
-        </div>
-      </>
-    ),
-  });
-}
-
 interface PageOptions {
   notice?: string;
   error?: string;
@@ -196,16 +168,7 @@ function settingsPage(
   );
   return Page({
     title: "Settings",
-    account: (
-      <>
-        <a href={`/u/${encodeURIComponent(user.name)}`}>View profile</a>
-        <form method="post" action="/settings/sign-out">
-          <button class="link" type="submit">
-            Sign out
-          </button>
-        </form>
-      </>
-    ),
+    user,
     children: (
       <>
         <div class="page-head">
@@ -422,6 +385,9 @@ function settingsPage(
             type="module"
             dangerouslySetInnerHTML={{ __html: exportScript }}
           />
+          <form method="post" action="/settings/sign-out">
+            <PillButton small>Sign out</PillButton>
+          </form>
         </Section>
         <Section title="Delete account">
           <form method="post" action="/settings/delete" class="stack">

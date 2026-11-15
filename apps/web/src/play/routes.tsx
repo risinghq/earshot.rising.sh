@@ -46,11 +46,11 @@ async function gameInput(context: Context<{ Bindings: Env }>): Promise<
     body.mode === "choices" || body.mode === "typed" ? body.mode : null;
   if (slug === "" || mode === null)
     return context.text("Pick a category and a mode.", 400);
-  const category = await getCategory(context.env.DB, slug);
-  if (category === null) return context.html(notFoundPage(), 404);
-  if (!context.env.CACHE)
-    return context.html(feedErrorPage(category.name), 503);
   const user = await sessionUser(context);
+  const category = await getCategory(context.env.DB, slug);
+  if (category === null) return context.html(notFoundPage(user), 404);
+  if (!context.env.CACHE)
+    return context.html(feedErrorPage(category.name, user), 503);
   if (category.feed === "mine" && user === null)
     return context.redirect("/", 303);
   let tracks;
@@ -58,9 +58,10 @@ async function gameInput(context: Context<{ Bindings: Env }>): Promise<
     tracks = await catalog(context.env, category, user?.id ?? null);
   } catch (error) {
     console.error("play catalog failed", error);
-    return context.html(feedErrorPage(category.name), 502);
+    return context.html(feedErrorPage(category.name, user), 502);
   }
-  if (tracks.length < 4) return context.html(feedErrorPage(category.name), 502);
+  if (tracks.length < 4)
+    return context.html(feedErrorPage(category.name, user), 502);
   return { category, mode, tracks, userId: user?.id ?? null };
 }
 
@@ -83,7 +84,11 @@ playApp.post("/room", async (context) => {
       }),
     }),
   );
-  if (!init.ok) return context.html(feedErrorPage(input.category.name), 502);
+  if (!init.ok)
+    return context.html(
+      feedErrorPage(input.category.name, await sessionUser(context)),
+      502,
+    );
   return context.redirect(`/play/room/${code}?k=${creatorToken}`, 303);
 });
 
@@ -135,30 +140,31 @@ playApp.get("/match/:slug/ws", async (context) => {
 
 playApp.get("/match/:slug", async (context) => {
   const category = await getCategory(context.env.DB, context.req.param("slug"));
-  if (category === null || category.feed === "mine")
-    return context.html(notFoundPage(), 404);
   const user = await sessionUser(context);
-  return context.html(matchPage(category, user !== null));
+  if (category === null || category.feed === "mine")
+    return context.html(notFoundPage(user), 404);
+  return context.html(matchPage(category, user));
 });
 
 playApp.get("/board", async (context) => {
   const period = context.req.query("period") === "all" ? "all" : "week";
   const entries = await readBoard(context.env, period);
-  return context.html(boardPage(entries, period));
+  return context.html(boardPage(entries, period, await sessionUser(context)));
 });
 
 playApp.get("/room/:code", async (context) => {
   const code = context.req.param("code");
+  const user = await sessionUser(context);
   const room = context.env.ROOMS.get(context.env.ROOMS.idFromName(code));
   const exists = await room.fetch(new Request("https://room/exists"));
-  if (!exists.ok) return context.html(notFoundPage(), 404);
-  return context.html(roomPage(code));
+  if (!exists.ok) return context.html(notFoundPage(user), 404);
+  return context.html(roomPage(code, user));
 });
 
 playApp.get("/", async (context) => {
   const user = await sessionUser(context);
   const categories = await listCategories(context.env.DB);
-  return context.html(categoriesPage(categories, user !== null));
+  return context.html(categoriesPage(categories, user));
 });
 
 playApp.post("/", async (context) => {
@@ -176,7 +182,8 @@ playApp.post("/", async (context) => {
 
 playApp.get("/:id", async (context) => {
   const game = await getGame(context.env, context.req.param("id"));
-  if (game === null) return context.html(notFoundPage(), 404);
+  const user = await sessionUser(context);
+  if (game === null) return context.html(notFoundPage(user), 404);
   const now = Date.now();
   const { preview, quota } =
     game.phase === "question"
@@ -186,28 +193,27 @@ playApp.get("/:id", async (context) => {
   // no-op once the flag is set, so a final-page reload never reaches D1.
   if (game.phase === "done") await recordGame(context.env, game);
   if (game.phase === "done" && game.served === 0)
-    return context.html(feedErrorPage(game.categoryName), 502);
+    return context.html(feedErrorPage(game.categoryName, user), 502);
   if (game.phase !== "question")
-    return context.html(
-      gamePage(game, { kind: game.phase }, now, {
-        signedIn: (await sessionUser(context)) !== null,
-      }),
-    );
-  if (quota) return context.html(gamePage(game, { kind: "busy" }, now), 503);
+    return context.html(gamePage(game, { kind: game.phase }, now, { user }));
+  if (quota)
+    return context.html(gamePage(game, { kind: "busy" }, now, { user }), 503);
   if (preview === null)
-    return context.html(gamePage(game, { kind: "error" }, now));
+    return context.html(gamePage(game, { kind: "error" }, now, { user }));
   return context.html(
     gamePage(
       game,
       { kind: "question", preview, choices: game.current!.choices },
       now,
+      { user },
     ),
   );
 });
 
 playApp.post("/:id/answer", async (context) => {
   const game = await getGame(context.env, context.req.param("id"));
-  if (game === null) return context.html(notFoundPage(), 404);
+  if (game === null)
+    return context.html(notFoundPage(await sessionUser(context)), 404);
   const body = await context.req.parseBody();
   await answerRound(
     context.env,
@@ -223,7 +229,8 @@ playApp.post("/:id/answer", async (context) => {
 
 playApp.post("/:id/next", async (context) => {
   const game = await getGame(context.env, context.req.param("id"));
-  if (game === null) return context.html(notFoundPage(), 404);
+  if (game === null)
+    return context.html(notFoundPage(await sessionUser(context)), 404);
   if (advance(game)) {
     await putGame(context.env, game);
     if (game.phase === "done") await recordGame(context.env, game);
