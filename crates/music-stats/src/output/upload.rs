@@ -4,7 +4,7 @@ use reqwest::StatusCode;
 use reqwest::header::RETRY_AFTER;
 use serde::{Deserialize, Serialize};
 
-pub const DEFAULT_BASE_URL: &str = "https://music.rising.sh";
+pub const DEFAULT_BASE_URL: &str = "https://earshot.rising.sh";
 
 const UPLOAD_PATH: &str = "/api/v1/upload";
 const MAX_PLAYS: usize = 1000;

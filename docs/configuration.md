@@ -7,19 +7,19 @@ variable already set in the environment wins over the same variable in `.env`.
 
 ## Variables
 
-| Variable          | Required               | Default                   | Meaning                                                                                             |
-| ----------------- | ---------------------- | ------------------------- | --------------------------------------------------------------------------------------------------- |
-| `GIST_ID`         | with `GH_TOKEN`        |                           | ID of the Gist to update.                                                                           |
-| `GH_TOKEN`        | with `GIST_ID`         |                           | GitHub token with the Gists permission.                                                             |
-| `UPLOAD_TOKEN`    | no                     |                           | Token that lets the upload write your YouTube Music plays to the service.                           |
-| `UPLOAD_URL`      | no                     | `https://music.rising.sh` | Address of the service that receives the upload.                                                    |
-| `LASTFM_API_KEY`  | with `LASTFM_USERNAME` |                           | Last.fm API key.                                                                                    |
-| `LASTFM_USERNAME` | with `LASTFM_API_KEY`  |                           | Last.fm username.                                                                                   |
-| `YOUTUBE_COOKIE`  | see below              |                           | Cookie header of a signed-in YouTube Music tab.                                                     |
-| `MUSIC_STATS_TZ`  | no                     | `UTC`                     | IANA time zone name, such as `America/Lima`, that YouTube Music's "Today" and "Yesterday" refer to. |
-| `DAYS`            | no                     | `7`                       | How many days of history the Gist counts. At least 1.                                               |
-| `TOP_N`           | no                     | `5`                       | How many tracks to list. At least 1.                                                                |
-| `RUST_LOG`        | no                     | `info`                    | Log level, in the `tracing` filter syntax.                                                          |
+| Variable          | Required               | Default                     | Meaning                                                                                             |
+| ----------------- | ---------------------- | --------------------------- | --------------------------------------------------------------------------------------------------- |
+| `GIST_ID`         | with `GH_TOKEN`        |                             | ID of the Gist to update.                                                                           |
+| `GH_TOKEN`        | with `GIST_ID`         |                             | GitHub token with the Gists permission.                                                             |
+| `UPLOAD_TOKEN`    | no                     |                             | Token that lets the upload write your YouTube Music plays to the service.                           |
+| `UPLOAD_URL`      | no                     | `https://earshot.rising.sh` | Address of the service that receives the upload.                                                    |
+| `LASTFM_API_KEY`  | with `LASTFM_USERNAME` |                             | Last.fm API key.                                                                                    |
+| `LASTFM_USERNAME` | with `LASTFM_API_KEY`  |                             | Last.fm username.                                                                                   |
+| `YOUTUBE_COOKIE`  | see below              |                             | Cookie header of a signed-in YouTube Music tab.                                                     |
+| `MUSIC_STATS_TZ`  | no                     | `UTC`                       | IANA time zone name, such as `America/Lima`, that YouTube Music's "Today" and "Yesterday" refer to. |
+| `DAYS`            | no                     | `7`                         | How many days of history the Gist counts. At least 1.                                               |
+| `TOP_N`           | no                     | `5`                         | How many tracks to list. At least 1.                                                                |
+| `RUST_LOG`        | no                     | `info`                      | Log level, in the `tracing` filter syntax.                                                          |
 
 At least one output must be configured: the Gist (`GIST_ID` with `GH_TOKEN`), or
 the upload (`UPLOAD_TOKEN`). Both can run in one run. The Gist and the upload
