@@ -77,6 +77,21 @@ function artistRun(text: string) {
   };
 }
 
+function channelRun(text: string) {
+  return {
+    text,
+    navigationEndpoint: {
+      browseEndpoint: {
+        browseEndpointContextSupportedConfigs: {
+          browseEndpointContextMusicConfig: {
+            pageType: "MUSIC_PAGE_TYPE_USER_CHANNEL",
+          },
+        },
+      },
+    },
+  };
+}
+
 function item(title: string, videoId: string, artist = "Artist A") {
   return {
     musicResponsiveListItemRenderer: {
@@ -89,6 +104,34 @@ function item(title: string, videoId: string, artist = "Artist A") {
         {
           musicResponsiveListItemFlexColumnRenderer: {
             text: { runs: [artistRun(artist)] },
+          },
+        },
+      ],
+    },
+  };
+}
+
+// An item for a video a channel uploaded: the second column links to the
+// uploader's channel, followed by the separator and view count runs, as on
+// the recorded history page.
+function uploadedItem(title: string, videoId: string, channel = "Uploader") {
+  return {
+    musicResponsiveListItemRenderer: {
+      flexColumns: [
+        {
+          musicResponsiveListItemFlexColumnRenderer: {
+            text: { runs: [watchRun(title, videoId)] },
+          },
+        },
+        {
+          musicResponsiveListItemFlexColumnRenderer: {
+            text: {
+              runs: [
+                channelRun(channel),
+                { text: " • " },
+                { text: "1k views" },
+              ],
+            },
           },
         },
       ],
@@ -162,6 +205,10 @@ describe("history fixture", () => {
     expect(plays.find((play) => play.artist === "PENTAGON")?.title).toBe(
       "Shine (빛나리)",
     );
+    expect(
+      plays.find((play) => play.title === "Band In A Van | Live Studio")
+        ?.artist,
+    ).toBe("RYCE ft. Chevy & Zamir");
     expect(plays.every((play) => play.videoId !== null)).toBe(true);
     for (const play of plays)
       if (play.day !== null) expect(play.day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -250,5 +297,52 @@ describe("history json", () => {
       today,
     );
     expect(plays[0]?.artist).toBe("Unknown Artist");
+  });
+
+  it.each([
+    [
+      "(G)I-DLE - 'TOMBOY' + 'Nxde' + 'Queencard' [Intro + Dance Break] Award Show Perf. Concept",
+      "(G)I-DLE",
+      "'TOMBOY' + 'Nxde' + 'Queencard' [Intro + Dance Break] Award Show Perf. Concept",
+    ],
+    [
+      "Caravan Palace - 60 minute mix of Caravan Palace",
+      "Caravan Palace",
+      "60 minute mix of Caravan Palace",
+    ],
+    ["Artist – Title", "Artist", "Title"],
+    ["Artist — Title", "Artist", "Title"],
+    [
+      "A title with no separator",
+      "Unknown Artist",
+      "A title with no separator",
+    ],
+    [
+      "Artist-Title without spaces",
+      "Unknown Artist",
+      "Artist-Title without spaces",
+    ],
+    [" - Song", "Unknown Artist", " - Song"],
+    ["Artist - ", "Unknown Artist", "Artist - "],
+    [`${"A".repeat(61)} - Song`, "Unknown Artist", `${"A".repeat(61)} - Song`],
+  ])(
+    "an upload without an artist link reads %s",
+    (title, artist, expectedTitle) => {
+      const plays = parseHistoryJson(
+        historyJson([shelf("Today", [uploadedItem(title, "v")])]),
+        today,
+      );
+      expect(plays[0]?.artist).toBe(artist);
+      expect(plays[0]?.title).toBe(expectedTitle);
+    },
+  );
+
+  it("keeps a linked artist over the title's left side", () => {
+    const plays = parseHistoryJson(
+      historyJson([shelf("Today", [item("Left - Right", "v")])]),
+      today,
+    );
+    expect(plays[0]?.artist).toBe("Artist A");
+    expect(plays[0]?.title).toBe("Left - Right");
   });
 });

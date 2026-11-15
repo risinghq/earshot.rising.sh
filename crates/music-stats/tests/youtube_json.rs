@@ -2,7 +2,7 @@ mod common;
 
 use chrono::{NaiveDate, TimeZone, Utc};
 use chrono_tz::Tz;
-use common::{history_json, video_id_for};
+use common::{history_json, upload_history_json, video_id_for};
 use music_stats::providers::youtube_json::{parse_plays, parse_plays_on, today_in};
 use serde_json::Value;
 use tracing_test::traced_test;
@@ -281,4 +281,60 @@ fn play_without_artist_link_is_listed_as_unknown_artist() {
 
     assert_eq!(plays.len(), 1);
     assert_eq!(plays[0].scrobble.track.artist, "Unknown Artist");
+}
+
+#[test]
+fn an_upload_without_an_artist_link_takes_its_artist_from_the_title() {
+    let cases = [
+        (
+            "(G)I-DLE - 'TOMBOY' + 'Nxde' + 'Queencard' [Intro + Dance Break] Award Show Perf. Concept",
+            "(G)I-DLE",
+            "'TOMBOY' + 'Nxde' + 'Queencard' [Intro + Dance Break] Award Show Perf. Concept",
+        ),
+        (
+            "Caravan Palace - 60 minute mix of Caravan Palace",
+            "Caravan Palace",
+            "60 minute mix of Caravan Palace",
+        ),
+        ("Artist – Title", "Artist", "Title"),
+        ("Artist — Title", "Artist", "Title"),
+        (
+            "A title with no separator",
+            "Unknown Artist",
+            "A title with no separator",
+        ),
+        (
+            "Artist-Title without spaces",
+            "Unknown Artist",
+            "Artist-Title without spaces",
+        ),
+        (" - Song", "Unknown Artist", " - Song"),
+        ("Artist - ", "Unknown Artist", "Artist - "),
+    ];
+
+    for (title, artist, expected_title) in cases {
+        let json = upload_history_json(&[("2024-01-15", &[(title, "Uploader Channel")])]);
+
+        let plays = parse_plays(&json.to_string(), Tz::UTC).unwrap();
+
+        assert_eq!(plays.len(), 1, "{title}");
+        assert_eq!(plays[0].scrobble.track.artist, artist, "{title}");
+        assert_eq!(plays[0].scrobble.track.title, expected_title, "{title}");
+    }
+
+    let long = format!("{} - Song", "A".repeat(61));
+    let json = upload_history_json(&[("2024-01-15", &[(&long, "Uploader Channel")])]);
+    let plays = parse_plays(&json.to_string(), Tz::UTC).unwrap();
+    assert_eq!(plays[0].scrobble.track.artist, "Unknown Artist");
+    assert_eq!(plays[0].scrobble.track.title, long);
+}
+
+#[test]
+fn an_artist_link_wins_over_the_title_split() {
+    let json = history_json(&[("2024-01-15", &[("Left - Right", "Artist Name")])]).to_string();
+
+    let plays = parse_plays(&json, Tz::UTC).unwrap();
+
+    assert_eq!(plays[0].scrobble.track.artist, "Artist Name");
+    assert_eq!(plays[0].scrobble.track.title, "Left - Right");
 }

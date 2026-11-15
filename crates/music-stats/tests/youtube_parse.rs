@@ -35,6 +35,15 @@ fn reads_every_play_of_the_recorded_page() {
         korean.expect("track missing").scrobble.track.title,
         "Shine (빛나리)"
     );
+
+    let upload = plays
+        .iter()
+        .find(|s| s.scrobble.track.title == "Band In A Van | Live Studio");
+    assert_eq!(
+        upload.expect("track missing").scrobble.track.artist,
+        "RYCE ft. Chevy & Zamir",
+        "a channel upload takes its artist from the title, not the uploader"
+    );
 }
 
 #[test]

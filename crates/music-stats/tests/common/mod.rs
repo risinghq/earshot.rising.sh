@@ -5,6 +5,17 @@ use serde_json::{Value, json};
 /// Builds a YouTube Music history response from `(heading, plays)` shelves.
 /// Each play is a `(title, artist)` pair.
 pub fn history_json(shelves: &[(&str, &[(&str, &str)])]) -> Value {
+    build_history(shelves, item)
+}
+
+/// Like `history_json`, but each play's `(title, uploader)` pair links its
+/// second run to the uploader's channel instead of an artist page, as a video
+/// a channel uploaded does.
+pub fn upload_history_json(shelves: &[(&str, &[(&str, &str)])]) -> Value {
+    build_history(shelves, upload_item)
+}
+
+fn build_history(shelves: &[(&str, &[(&str, &str)])], item: fn(&str, &str) -> Value) -> Value {
     let shelves: Vec<Value> = shelves
         .iter()
         .map(|(heading, plays)| {
@@ -33,19 +44,40 @@ pub fn video_id_for(title: &str) -> String {
 
 fn item(title: &str, artist: &str) -> Value {
     json!({"musicResponsiveListItemRenderer": {"flexColumns": [
-        {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{
-            "text": title,
-            "navigationEndpoint": {"watchEndpoint": {"videoId": video_id_for(title)}},
-        }]}}},
-        {"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{
-            "text": artist,
-            "navigationEndpoint": {"browseEndpoint": {
-                "browseEndpointContextSupportedConfigs": {
-                    "browseEndpointContextMusicConfig": {"pageType": "MUSIC_PAGE_TYPE_ARTIST"}
-                }
-            }},
-        }]}}},
+        watch_column(title),
+        link_column(artist, "MUSIC_PAGE_TYPE_ARTIST"),
     ]}})
+}
+
+fn upload_item(title: &str, uploader: &str) -> Value {
+    let mut column = link_column(uploader, "MUSIC_PAGE_TYPE_USER_CHANNEL");
+    column
+        .pointer_mut("/musicResponsiveListItemFlexColumnRenderer/text/runs")
+        .and_then(Value::as_array_mut)
+        .unwrap()
+        .extend([json!({"text": " • "}), json!({"text": "1k views"})]);
+    json!({"musicResponsiveListItemRenderer": {"flexColumns": [
+        watch_column(title),
+        column,
+    ]}})
+}
+
+fn watch_column(title: &str) -> Value {
+    json!({"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{
+        "text": title,
+        "navigationEndpoint": {"watchEndpoint": {"videoId": video_id_for(title)}},
+    }]}}})
+}
+
+fn link_column(text: &str, page_type: &str) -> Value {
+    json!({"musicResponsiveListItemFlexColumnRenderer": {"text": {"runs": [{
+        "text": text,
+        "navigationEndpoint": {"browseEndpoint": {
+            "browseEndpointContextSupportedConfigs": {
+                "browseEndpointContextMusicConfig": {"pageType": page_type}
+            }
+        }},
+    }]}}})
 }
 
 /// Wraps history JSON in the JavaScript string used by YouTube Music, on a
