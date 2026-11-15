@@ -838,14 +838,16 @@ sign-in screen states that profiles are public.
 
 ## Public surface
 
-| Address           | Content                                                     |
-| ----------------- | ----------------------------------------------------------- |
-| `/u/NAME`         | HTML profile. `?period=week` (default), `month`, `all`.     |
-| `/u/NAME.json`    | The same figures as JSON.                                   |
-| `/u/NAME.svg`     | The card. `?period=`, `?n=1..10`, `?theme=light` or `dark`. |
-| `/play`           | The guess-the-song game.                                    |
-| `/play/room/CODE` | A guess-the-song room for up to 8 players.                  |
-| `/party`          | Party playlist. `?u=NAME,NAME` (2 to 8), `?n=25` or `50`.   |
+| Address            | Content                                                     |
+| ------------------ | ----------------------------------------------------------- |
+| `/u/NAME`          | HTML profile. `?period=week` (default), `month`, `all`.     |
+| `/u/NAME.json`     | The same figures as JSON.                                   |
+| `/u/NAME.svg`      | The card. `?period=`, `?n=1..10`, `?theme=light` or `dark`. |
+| `/play`            | The guess-the-song game.                                    |
+| `/play/room/CODE`  | A guess-the-song room for up to 8 players.                  |
+| `/play/match/SLUG` | Queue for a random opponent in one category.                |
+| `/play/board`      | The points board. `?period=week` (default) or `all`.        |
+| `/party`           | Party playlist. `?u=NAME,NAME` (2 to 8), `?n=25` or `50`.   |
 
 - **Periods.** `week` is the last 7 days, `month` the last 30 days, both
   rolling, and `all` is everything. A calendar week would be empty on Monday
@@ -955,10 +957,64 @@ the solo game.
   own. Round ends, reveal ends and Deezer quota retries all run on the object's
   single alarm. A quota answer holds the same candidate and retries after 2.5
   seconds; the players see a loading state, never a skip.
-- **Cleanup.** Rooms write nothing to D1 and keep no points between games. The
-  last client action sets an idle deadline; an hour later the alarm closes any
-  open sockets with code 1001 — the page shows the room has closed — and deletes
-  the object's storage.
+- **Players.** A player who joined through the WebSocket route while signed in
+  carries the session's user id; the route passes it to the object, the client
+  never sends one. A guest joins with a nickname and no user id.
+- **Cleanup.** Rooms keep no points between games. The last client action sets
+  an idle deadline; an hour later the alarm closes any open sockets with code
+  1001 — the page shows the room has closed — and deletes the object's storage.
+
+### Matches
+
+"Play someone random" on `/play` posts to `/play/match`, which sends the player
+to `/play/match/SLUG`. The page opens a WebSocket to `/play/match/SLUG/ws`,
+handled by one global Matchmaker Durable Object (`idFromName("global")`). A
+signed-in player's name and user id come from the session the route reads; a
+guest sends a nickname in its first message.
+
+- **The queue.** The whole queue is the attachment of each waiting socket, so
+  hibernation loses nothing and a closed tab leaves the queue on its own. When a
+  second socket waits in the same category, the object fetches the category's
+  candidates, creates a Room object with `kind: "match"`, both players seated
+  with a join token each, and answers `matched` with the room code and the
+  token. The page opens `/play/room/CODE?k=TOKEN`, which joins as the seated
+  player. A second player who picks the same nickname is sent back to pick
+  another. "From my listening" is never offered: a stranger must not play
+  someone's listening history.
+- **No creator.** A match room has no creator: it starts by itself once every
+  seated player holds a live socket, and if one never connects the game starts
+  with whoever showed up after 90 seconds. There is no rematch button, and
+  either player can leave. The game is the same 10 rounds in choices mode.
+- **Waiting.** The page shows the search and its elapsed time. After 60 seconds
+  it offers to keep waiting or to play solo.
+
+### Points
+
+A finished game writes one row per signed-in player to `game_results`: the user,
+the finish time, the category slug, the kind (`solo`, `room` or `match`), the
+score, the rank in that game and the number of players connected when the game
+started. The row id is the game's identity for that player — `s:GAME:USER` for
+solo and `r:GAMEID:USER` for a room or match game — so a finish processed twice
+inserts nothing the second time. Guests write nothing, and nothing is written
+per round: it is the only D1 write a game adds.
+
+```sql
+CREATE TABLE game_results (
+  id TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users (id),
+  finished_at INTEGER NOT NULL,
+  category TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('solo', 'room', 'match')),
+  score INTEGER NOT NULL,
+  rank INTEGER NOT NULL,
+  players INTEGER NOT NULL
+);
+```
+
+`/play/board` ranks the top 50 players by total points, this week (from Monday
+00:00 UTC) and all time, with a win count for `match` and `room` games (rank 1).
+Only users with `is_public` appear, each name links to `/u/NAME`, and the query
+result sits in KV for five minutes under `play:board:PERIOD`.
 
 ### Party playlist
 
