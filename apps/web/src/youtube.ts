@@ -16,6 +16,8 @@ const LAST_WEEK_OFFSET_DAYS = 4;
 const THIS_WEEK_OFFSET_DAYS = 3;
 const MONTH_MIN_AGE_DAYS = 14;
 const MAX_VIDEO_ID_LEN = 32;
+const MAX_TITLE_ARTIST_LEN = 60;
+const TITLE_SEPARATORS = [" - ", " – ", " — "];
 
 export class SignedOutError extends Error {}
 export class HistoryPageError extends Error {}
@@ -304,6 +306,25 @@ function readRuns(column: unknown) {
     : [];
 }
 
+// A video a channel uploaded carries no artist run, only a user-channel run
+// for the uploader, so the artist comes from the title's "Artist - Title"
+// shape. The uploader name is never used: fan and compilation channels would
+// become fake top artists.
+function splitTitleArtist(title: string) {
+  let split: { at: number; separator: number } | undefined;
+  for (const separator of TITLE_SEPARATORS) {
+    const at = title.indexOf(separator);
+    if (at >= 0 && (split === undefined || at < split.at))
+      split = { at, separator: separator.length };
+  }
+  if (split === undefined) return undefined;
+  const artist = title.slice(0, split.at).trim();
+  const track = title.slice(split.at + split.separator).trim();
+  if (artist === "" || track === "" || artist.length > MAX_TITLE_ARTIST_LEN)
+    return undefined;
+  return { artist, title: track };
+}
+
 function parseListItem(item: unknown, heading: Heading) {
   const renderer = (item as Record<string, unknown>)[
     "musicResponsiveListItemRenderer"
@@ -334,9 +355,10 @@ function parseListItem(item: unknown, heading: Heading) {
     }
   }
   if (title === undefined) return undefined;
+  const split = artist === undefined ? splitTitleArtist(title) : undefined;
   return {
-    artist: artist ?? "Unknown Artist",
-    title,
+    artist: artist ?? split?.artist ?? "Unknown Artist",
+    title: split?.title ?? title,
     videoId,
     day: heading.kind === "day" ? heading.day : null,
   } satisfies YouTubePlay;

@@ -10,6 +10,8 @@ const LAST_WEEK_OFFSET_DAYS: i64 = 4;
 const THIS_WEEK_OFFSET_DAYS: i64 = 3;
 const MONTH_MIN_AGE_DAYS: i64 = 14;
 const MAX_VIDEO_ID_LEN: usize = 32;
+const MAX_TITLE_ARTIST_LEN: usize = 60;
+const TITLE_SEPARATORS: [&str; 3] = [" - ", " – ", " — "];
 
 const NOON: NaiveTime = match NaiveTime::from_hms_opt(12, 0, 0) {
     Some(time) => time,
@@ -123,11 +125,34 @@ fn extract_title_and_artist(columns: &[Value]) -> Option<(String, String, Option
         }
     }
 
-    Some((
-        title?,
-        artist.unwrap_or_else(|| "Unknown Artist".to_string()),
-        video_id,
-    ))
+    let title = title?;
+    let (title, artist) = match artist {
+        Some(artist) => (title, artist),
+        None => match split_title_artist(&title) {
+            Some((artist, track)) => (track, artist),
+            None => (title, "Unknown Artist".to_string()),
+        },
+    };
+    Some((title, artist, video_id))
+}
+
+// A video a channel uploaded carries no artist run, only a user-channel run
+// for the uploader, so the artist comes from the title's "Artist - Title"
+// shape. The uploader name is never used: fan and compilation channels would
+// become fake top artists. The length is counted in UTF-16 units so the
+// TypeScript parser gives the same answer for the same item.
+fn split_title_artist(title: &str) -> Option<(String, String)> {
+    let (at, separator) = TITLE_SEPARATORS
+        .iter()
+        .filter_map(|&separator| title.find(separator).map(|at| (at, separator)))
+        .min_by_key(|(at, _)| *at)?;
+    let artist = title[..at].trim();
+    let track = title[at + separator.len()..].trim();
+    if artist.is_empty() || track.is_empty() || artist.encode_utf16().count() > MAX_TITLE_ARTIST_LEN
+    {
+        return None;
+    }
+    Some((artist.to_string(), track.to_string()))
 }
 
 fn is_video_id(id: &str) -> bool {
