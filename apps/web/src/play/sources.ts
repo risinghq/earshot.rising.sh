@@ -1,5 +1,5 @@
 import { normalizeText } from "../normalize";
-import { fetchJson } from "./http";
+import { FeedError, fetchJson } from "./http";
 
 // A candidate carries the ids a round needs to resolve a fresh preview: the
 // preview URL itself is signed and expires, so it is never stored.
@@ -82,14 +82,19 @@ interface DeezerArtist {
   picture_medium?: string;
 }
 
-// An unknown id answers a 200 body with an error code and no name.
+// Only Deezer's no-data error (code 800) means the artist does not exist.
+// Any other error body — code 700 is a busy service — or a failed fetch is a
+// failed lookup, which the caller keeps as the "Artist N" fallback instead
+// of turning a real artist into a 404.
 export async function deezerArtist(artistId: number) {
-  const body = (await deezerGet(
-    `https://api.deezer.com/artist/${artistId}`,
-  )) as DeezerArtist;
-  return typeof body.name === "string" && body.name !== ""
-    ? { id: artistId, name: body.name }
-    : null;
+  const url = `https://api.deezer.com/artist/${artistId}`;
+  const body = (await deezerGet(url)) as DeezerArtist & {
+    error?: { code?: number };
+  };
+  if (body.error?.code === 800) return null;
+  if (typeof body.name !== "string" || body.name === "")
+    throw new FeedError("artist lookup failed", url);
+  return { id: artistId, name: body.name };
 }
 
 export interface ArtistHit {

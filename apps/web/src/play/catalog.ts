@@ -26,14 +26,17 @@ const catalogTtlSeconds = 6 * 3600;
 const artistNameTtlSeconds = 24 * 3600;
 
 // An artist category is not a row: `artist-123` is one Deezer artist and
-// `artist-123-456` is two, so the slug alone decides the shape.
+// `artist-123-456` is two, so the slug alone decides the shape. A blend's ids
+// sort ascending, so `artist-85-27` and `artist-27-85` are one category, one
+// board and one cache entry.
 export function parseArtistSlug(slug: string): number[] | null {
   const match = /^artist-(\d{1,10})(?:-(\d{1,10}))?$/.exec(slug);
   if (match === null) return null;
   const ids = match
     .slice(1)
     .filter((part): part is string => part !== undefined)
-    .map((part) => Number(part));
+    .map((part) => Number(part))
+    .sort((a, b) => a - b);
   return ids[1] === ids[0] ? [ids[0]] : ids;
 }
 

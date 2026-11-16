@@ -115,6 +115,19 @@ describe("artist slugs", () => {
     expect(category?.ref).toBe("27,85");
   });
 
+  it("sorts a blend's ids, so both orders are one canonical category", async () => {
+    stubFetch([
+      [/api\.deezer\.com\/artist\/27$/, deezerArtist(27, "Radiohead")],
+      [/api\.deezer\.com\/artist\/85$/, deezerArtist(85, "Portishead")],
+    ]);
+    expect(parseArtistSlug("artist-85-27")).toEqual([27, 85]);
+    const category = await getCategory(testEnv() as never, "artist-85-27");
+    expect(category?.slug).toBe("artist-27-85");
+    const response = await get("/play/artist/85-27");
+    expect(response.status).toBe(301);
+    expect(response.headers.get("location")).toBe("/play/artist/27-85");
+  });
+
   it("returns null for a malformed artist slug, so the routes answer 404", async () => {
     expect(await getCategory(testEnv() as never, "artist-abc")).toBeNull();
     const response = await post("/play", {
@@ -236,6 +249,18 @@ describe("deezer_artist feed", () => {
       mode: "typed",
     });
     expect(response.status).toBe(404);
+  });
+
+  it("keeps the fallback name for a busy or failed lookup, not a 404", async () => {
+    stubFetch([[/api\.deezer\.com\/artist\/999$/, { error: { code: 700 } }]]);
+    const busy = await get("/play/artist/999");
+    expect(busy.status).toBe(200);
+    expect(await busy.text()).toContain("Artist 999");
+    const category = await getCategory(testEnv() as never, "artist-999");
+    expect(category?.name).toBe("Artist 999");
+    const dead = await get("/play/artist/888");
+    expect(dead.status).toBe(200);
+    expect(await dead.text()).toContain("Artist 888");
   });
 
   it("rejects a blend when one artist's top list is empty", async () => {
