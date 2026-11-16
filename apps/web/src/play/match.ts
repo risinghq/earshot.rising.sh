@@ -1,6 +1,6 @@
 import { DurableObject } from "cloudflare:workers";
 import type { Env } from "../types";
-import { catalog, getCategory } from "./catalog";
+import { catalog, enoughTracks, getCategory } from "./catalog";
 import { newRoomCode, newRoomSecret, nicknameMaxLength } from "./room";
 import type { Candidate } from "./sources";
 
@@ -125,7 +125,7 @@ export class Matchmaker extends DurableObject<Env> {
       this.send(a, { type: "error", code });
       this.send(b, { type: "error", code });
     };
-    const category = await getCategory(this.env.DB, seatA.category);
+    const category = await getCategory(this.env, seatA.category);
     let candidates: Candidate[] = [];
     if (category !== null) {
       try {
@@ -136,7 +136,7 @@ export class Matchmaker extends DurableObject<Env> {
         candidates = [];
       }
     }
-    const room = category !== null && candidates.length >= 4;
+    const room = category !== null && enoughTracks(category, candidates);
     if (!room) {
       fail("feed");
       return;

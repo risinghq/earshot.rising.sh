@@ -7,13 +7,81 @@ import { Stats } from "../ui/stat";
 import { EmptyState } from "../ui/empty";
 import type { Category } from "./catalog";
 import type { Game, RoundResult } from "./game";
-import type { BoardEntry, BoardPeriod } from "./results";
+import type { BoardEntry, BoardPeriod, CategoryBoardEntry } from "./results";
+import { categoryBoardDays } from "./results";
 import { roundSeconds, roundsPerGame } from "./game";
 import type { SignedInUser } from "../auth";
-import type { Preview } from "./sources";
+import type { ArtistHit, Preview } from "./sources";
+
+function playForms(category: Category) {
+  return (
+    <>
+      <form method="post" action="/play">
+        <input type="hidden" name="category" value={category.slug} />
+        <div class="modes">
+          <button
+            class="pill small primary"
+            type="submit"
+            name="mode"
+            value="choices"
+          >
+            Choices
+          </button>
+          <button class="pill small" type="submit" name="mode" value="typed">
+            Type it
+          </button>
+        </div>
+      </form>
+      <form method="post" action="/play/room">
+        <input type="hidden" name="category" value={category.slug} />
+        <small class="hint">With friends</small>
+        <div class="modes">
+          <button class="pill small" type="submit" name="mode" value="choices">
+            Choices
+          </button>
+          <button class="pill small" type="submit" name="mode" value="typed">
+            Type it
+          </button>
+        </div>
+      </form>
+      {category.feed !== "mine" && (
+        <form method="post" action="/play/match">
+          <input type="hidden" name="category" value={category.slug} />
+          <small class="hint">With a stranger</small>
+          <div class="modes">
+            <button class="pill small" type="submit">
+              Play someone random
+            </button>
+          </div>
+        </form>
+      )}
+    </>
+  );
+}
+
+export function CategoryBoard({ entries }: { entries: CategoryBoardEntry[] }) {
+  if (entries.length === 0)
+    return <p class="hint">No scores in the last {categoryBoardDays} days.</p>;
+  return (
+    <ul class="rows">
+      {entries.map((entry, index) => (
+        <li key={entry.name}>
+          <span class="rank">{index + 1}</span>
+          <div class="track">
+            <b>
+              <a href={`/u/${encodeURIComponent(entry.name)}`}>{entry.name}</a>
+            </b>
+          </div>
+          <span class="count">{entry.score.toLocaleString("en-US")}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export function categoriesPage(
   categories: Category[],
+  boards: Record<string, CategoryBoardEntry[]>,
   user: SignedInUser | null,
 ) {
   return Page({
@@ -28,6 +96,28 @@ export function categoriesPage(
             to 1,000 points, and the faster you answer the more it scores.
           </p>
         </div>
+        <Section title="Play an artist">
+          <form method="get" action="/play/artists" class="guess">
+            <div class="field">
+              <label for="artist-q">Artist</label>
+              <input
+                id="artist-q"
+                name="q"
+                type="text"
+                autocomplete="off"
+                required
+              />
+            </div>
+            <div class="modes">
+              <PillButton variant="primary" type="submit">
+                Search artists
+              </PillButton>
+            </div>
+          </form>
+          <p class="hint">
+            Play one artist's top tracks, or blend two artists into one game.
+          </p>
+        </Section>
         <div class="play-grid">
           {categories.map((category) => (
             <section class="play-card" key={category.slug}>
@@ -38,75 +128,12 @@ export function categoriesPage(
                   play.
                 </p>
               ) : (
-                <>
-                  <form method="post" action="/play">
-                    <input
-                      type="hidden"
-                      name="category"
-                      value={category.slug}
-                    />
-                    <div class="modes">
-                      <button
-                        class="pill small primary"
-                        type="submit"
-                        name="mode"
-                        value="choices"
-                      >
-                        Choices
-                      </button>
-                      <button
-                        class="pill small"
-                        type="submit"
-                        name="mode"
-                        value="typed"
-                      >
-                        Type it
-                      </button>
-                    </div>
-                  </form>
-                  <form method="post" action="/play/room">
-                    <input
-                      type="hidden"
-                      name="category"
-                      value={category.slug}
-                    />
-                    <small class="hint">With friends</small>
-                    <div class="modes">
-                      <button
-                        class="pill small"
-                        type="submit"
-                        name="mode"
-                        value="choices"
-                      >
-                        Choices
-                      </button>
-                      <button
-                        class="pill small"
-                        type="submit"
-                        name="mode"
-                        value="typed"
-                      >
-                        Type it
-                      </button>
-                    </div>
-                  </form>
-                  {category.feed !== "mine" && (
-                    <form method="post" action="/play/match">
-                      <input
-                        type="hidden"
-                        name="category"
-                        value={category.slug}
-                      />
-                      <small class="hint">With a stranger</small>
-                      <div class="modes">
-                        <button class="pill small" type="submit">
-                          Play someone random
-                        </button>
-                      </div>
-                    </form>
-                  )}
-                </>
+                playForms(category)
               )}
+              <small class="label">
+                Top scores · last {categoryBoardDays} days
+              </small>
+              <CategoryBoard entries={boards[category.slug] ?? []} />
             </section>
           ))}
         </div>
@@ -277,7 +304,167 @@ function resultLine(result: RoundResult) {
   return result.correct ? `+${result.score}` : result.timedOut ? "time" : "0";
 }
 
-export function finalPage(game: Game, user: SignedInUser | null) {
+export function artistsPage(
+  query: string,
+  results: ArtistHit[],
+  picked: { id: number; name: string } | null,
+  user: SignedInUser | null,
+) {
+  return Page({
+    title: "Find an artist · Guess the song",
+    user,
+    children: (
+      <>
+        <div class="page-head">
+          <p class="meta">
+            <a href="/play">Guess the song</a>
+          </p>
+          <h1>Find an artist</h1>
+          <p class="meta">
+            {picked === null
+              ? "Play one artist's top tracks, or blend two artists into one game."
+              : `Blending with ${picked.name}. Pick the second artist, or start over.`}
+          </p>
+        </div>
+        <Section title="Artist search">
+          <form method="get" action="/play/artists" class="guess">
+            {picked !== null && (
+              <>
+                <input type="hidden" name="with" value={picked.id} />
+                <input type="hidden" name="n" value={picked.name} />
+              </>
+            )}
+            <div class="field">
+              <label for="artist-q">
+                {picked === null ? "Artist" : "Second artist"}
+              </label>
+              <input
+                id="artist-q"
+                name="q"
+                type="text"
+                autocomplete="off"
+                value={query}
+                required
+              />
+            </div>
+            <div class="modes">
+              <PillButton variant="primary" type="submit">
+                Search artists
+              </PillButton>
+              {picked !== null && (
+                <PillLink href={`/play/artists?q=${encodeURIComponent(query)}`}>
+                  Start over
+                </PillLink>
+              )}
+            </div>
+          </form>
+        </Section>
+        {query !== "" &&
+          (results.length === 0 ? (
+            <EmptyState
+              title="No artists found"
+              body={`Deezer has no artist matching "${query}". Try another spelling.`}
+            />
+          ) : (
+            <Section title="Results" aside={`${results.length} on Deezer`}>
+              <ul class="rows hits">
+                {results.map((artist) => (
+                  <li key={artist.id}>
+                    {artist.picture !== null && (
+                      <img
+                        class="avatar"
+                        src={artist.picture}
+                        alt=""
+                        width="48"
+                        height="48"
+                        loading="lazy"
+                      />
+                    )}
+                    <div class="track">
+                      <b>{artist.name}</b>
+                      <small>{artist.fans.toLocaleString("en-US")} fans</small>
+                    </div>
+                    {picked === null ? (
+                      <span class="modes">
+                        <PillLink
+                          small
+                          href={`/play/artists?q=${encodeURIComponent(query)}&with=${artist.id}&n=${encodeURIComponent(artist.name)}`}
+                        >
+                          Blend
+                        </PillLink>
+                        <PillLink
+                          small
+                          variant="primary"
+                          href={`/play/artist/${artist.id}`}
+                        >
+                          Play
+                        </PillLink>
+                      </span>
+                    ) : artist.id === picked.id ? (
+                      <PillLink small href={`/play/artist/${artist.id}`}>
+                        Play solo
+                      </PillLink>
+                    ) : (
+                      <span class="modes">
+                        <PillLink small href={`/play/artist/${artist.id}`}>
+                          Play
+                        </PillLink>
+                        <PillLink
+                          small
+                          variant="primary"
+                          href={`/play/artist/${picked.id}-${artist.id}`}
+                        >
+                          Blend
+                        </PillLink>
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          ))}
+        <p class="meta">
+          Artist names, pictures and fan counts come from Deezer. Each reveal
+          links to the track on Deezer.
+        </p>
+      </>
+    ),
+  });
+}
+
+export function artistPage(
+  category: Category,
+  entries: CategoryBoardEntry[],
+  user: SignedInUser | null,
+) {
+  return Page({
+    title: `${category.name} · Guess the song`,
+    user,
+    children: (
+      <>
+        <div class="page-head">
+          <p class="meta">
+            <a href="/play/artists">Find an artist</a>
+          </p>
+          <h1>{category.name}</h1>
+          <p class="meta">
+            Ten rounds of top tracks, {roundSeconds} seconds each.
+          </p>
+        </div>
+        <Section title="Start a game">{playForms(category)}</Section>
+        <Section title="Top scores" aside={`Last ${categoryBoardDays} days`}>
+          <CategoryBoard entries={entries} />
+        </Section>
+      </>
+    ),
+  });
+}
+
+export function finalPage(
+  game: Game,
+  user: SignedInUser | null,
+  board: CategoryBoardEntry[],
+) {
   const correct = game.results.filter((result) => result.correct).length;
   return Page({
     title: `Game over · ${game.categoryName}`,
@@ -313,6 +500,12 @@ export function finalPage(game: Game, user: SignedInUser | null) {
             ))}
           </ul>
         </Section>
+        <Section
+          title="Top scores"
+          aside={`${game.categoryName} · last ${categoryBoardDays} days`}
+        >
+          <CategoryBoard entries={board} />
+        </Section>
         {user === null && (
           <p class="meta">
             <a href="/auth/github">Sign in</a> to keep your points on the{" "}
@@ -338,12 +531,12 @@ export function gamePage(
     | { kind: "busy" }
     | { kind: "error" },
   now: number,
-  opts: { user?: SignedInUser | null } = {},
+  opts: { user?: SignedInUser | null; board?: CategoryBoardEntry[] } = {},
 ) {
   const user = opts.user ?? null;
   if (view.kind === "reveal")
     return revealPage(game, game.results[game.results.length - 1], user);
-  if (view.kind === "done") return finalPage(game, user);
+  if (view.kind === "done") return finalPage(game, user, opts.board ?? []);
   if (view.kind === "busy")
     return Page({
       title: "Clip service busy",

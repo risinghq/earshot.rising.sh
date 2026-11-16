@@ -4,7 +4,13 @@ import { notFoundPage } from "../app";
 import { sessionUser } from "../auth";
 import type { Env } from "../types";
 import type { Candidate } from "./sources";
-import { catalog, getCategory, listCategories, type Category } from "./catalog";
+import {
+  catalog,
+  enoughTracks,
+  getCategory,
+  listCategories,
+  type Category,
+} from "./catalog";
 import {
   advance,
   answerRound,
@@ -15,13 +21,21 @@ import {
   type Mode,
 } from "./game";
 import {
+  artistPage,
+  artistsPage,
   categoriesPage,
   feedErrorPage,
   gamePage,
   boardPage,
   matchPage,
 } from "./pages";
-import { readBoard, recordGame } from "./results";
+import {
+  readBoard,
+  readCategoryBoard,
+  recordGame,
+  type CategoryBoardEntry,
+} from "./results";
+import { deezerSearchArtists } from "./sources";
 import { newRoomCode, newRoomSecret } from "./room";
 import { roomPage } from "./room-page";
 
@@ -47,7 +61,7 @@ async function gameInput(context: Context<{ Bindings: Env }>): Promise<
   if (slug === "" || mode === null)
     return context.text("Pick a category and a mode.", 400);
   const user = await sessionUser(context);
-  const category = await getCategory(context.env.DB, slug);
+  const category = await getCategory(context.env, slug);
   if (category === null) return context.html(notFoundPage(user), 404);
   if (!context.env.CACHE)
     return context.html(feedErrorPage(category.name, user), 503);
@@ -60,7 +74,7 @@ async function gameInput(context: Context<{ Bindings: Env }>): Promise<
     console.error("play catalog failed", error);
     return context.html(feedErrorPage(category.name, user), 502);
   }
-  if (tracks.length < 4)
+  if (!enoughTracks(category, tracks))
     return context.html(feedErrorPage(category.name, user), 502);
   return { category, mode, tracks, userId: user?.id ?? null };
 }
@@ -109,7 +123,7 @@ playApp.get("/room/:code/ws", async (context) => {
 playApp.post("/match", async (context) => {
   const body = await context.req.parseBody();
   const slug = typeof body.category === "string" ? body.category : "";
-  const category = slug === "" ? null : await getCategory(context.env.DB, slug);
+  const category = slug === "" ? null : await getCategory(context.env, slug);
   if (category === null) return context.text("Pick a category.", 400);
   // A stranger must never play someone's listening history.
   if (category.feed === "mine")
@@ -121,7 +135,7 @@ playApp.get("/match/:slug/ws", async (context) => {
   if (context.req.header("upgrade") !== "websocket")
     return context.text("expected a WebSocket", 426);
   const slug = context.req.param("slug");
-  const category = await getCategory(context.env.DB, slug);
+  const category = await getCategory(context.env, slug);
   if (category === null || category.feed === "mine")
     return context.text("no such category", 404);
   const user = await sessionUser(context);
@@ -139,7 +153,7 @@ playApp.get("/match/:slug/ws", async (context) => {
 });
 
 playApp.get("/match/:slug", async (context) => {
-  const category = await getCategory(context.env.DB, context.req.param("slug"));
+  const category = await getCategory(context.env, context.req.param("slug"));
   const user = await sessionUser(context);
   if (category === null || category.feed === "mine")
     return context.html(notFoundPage(user), 404);
@@ -161,10 +175,52 @@ playApp.get("/room/:code", async (context) => {
   return context.html(roomPage(code, user));
 });
 
+// The pick for a blend travels in the query: `with` holds the first artist's
+// id and `n` its name, so choosing the second needs no stored state.
+playApp.get("/artists", async (context) => {
+  const user = await sessionUser(context);
+  const query = context.req.query("q")?.trim() ?? "";
+  const withParam = context.req.query("with") ?? "";
+  const withName = context.req.query("n")?.trim() ?? "";
+  const picked = /^\d{1,10}$/.test(withParam)
+    ? { id: Number(withParam), name: withName || `Artist ${withParam}` }
+    : null;
+  if (query === "") return context.html(artistsPage(query, [], picked, user));
+  let results;
+  try {
+    results = await deezerSearchArtists(query);
+  } catch (error) {
+    console.error("artist search failed", error);
+    return context.html(feedErrorPage("Artist search", user), 502);
+  }
+  return context.html(artistsPage(query, results, picked, user));
+});
+
+playApp.get("/artist/:ids", async (context) => {
+  const user = await sessionUser(context);
+  const category = await getCategory(
+    context.env,
+    `artist-${context.req.param("ids")}`,
+  );
+  if (category === null) return context.html(notFoundPage(user), 404);
+  const entries = await readCategoryBoard(context.env, category.slug);
+  return context.html(artistPage(category, entries, user));
+});
+
 playApp.get("/", async (context) => {
   const user = await sessionUser(context);
   const categories = await listCategories(context.env.DB);
-  return context.html(categoriesPage(categories, user));
+  const boards = Object.fromEntries(
+    await Promise.all(
+      categories.map(
+        async (category): Promise<[string, CategoryBoardEntry[]]> => [
+          category.slug,
+          await readCategoryBoard(context.env, category.slug),
+        ],
+      ),
+    ),
+  );
+  return context.html(categoriesPage(categories, boards, user));
 });
 
 playApp.post("/", async (context) => {
@@ -195,7 +251,15 @@ playApp.get("/:id", async (context) => {
   if (game.phase === "done" && game.served === 0)
     return context.html(feedErrorPage(game.categoryName, user), 502);
   if (game.phase !== "question")
-    return context.html(gamePage(game, { kind: game.phase }, now, { user }));
+    return context.html(
+      gamePage(game, { kind: game.phase }, now, {
+        user,
+        board:
+          game.phase === "done"
+            ? await readCategoryBoard(context.env, game.categorySlug)
+            : [],
+      }),
+    );
   if (quota)
     return context.html(gamePage(game, { kind: "busy" }, now, { user }), 503);
   if (preview === null)

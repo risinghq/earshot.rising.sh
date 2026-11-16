@@ -71,6 +71,54 @@ export function deezerPlaylist(playlistId: string) {
   );
 }
 
+export function deezerArtistTop(artistId: number) {
+  return deezerList(`https://api.deezer.com/artist/${artistId}/top?limit=100`);
+}
+
+interface DeezerArtist {
+  id?: number;
+  name?: string;
+  nb_fan?: number;
+  picture_medium?: string;
+}
+
+// An unknown id answers a 200 body with an error code and no name.
+export async function deezerArtist(artistId: number) {
+  const body = (await deezerGet(
+    `https://api.deezer.com/artist/${artistId}`,
+  )) as DeezerArtist;
+  return typeof body.name === "string" && body.name !== ""
+    ? { id: artistId, name: body.name }
+    : null;
+}
+
+export interface ArtistHit {
+  id: number;
+  name: string;
+  fans: number;
+  picture: string | null;
+}
+
+// Deezer's own order leads with minor duplicates, so the hits are ranked by
+// fan count instead.
+export async function deezerSearchArtists(query: string): Promise<ArtistHit[]> {
+  const body = (await deezerGet(
+    `https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}`,
+  )) as { data?: DeezerArtist[] };
+  return (body.data ?? [])
+    .filter(
+      (artist): artist is DeezerArtist & { id: number; name: string } =>
+        typeof artist.id === "number" && typeof artist.name === "string",
+    )
+    .map((artist) => ({
+      id: artist.id,
+      name: artist.name,
+      fans: artist.nb_fan ?? 0,
+      picture: artist.picture_medium ?? null,
+    }))
+    .sort((a, b) => b.fans - a.fans);
+}
+
 interface AppleFeedEntry {
   id?: string;
   name?: string;
