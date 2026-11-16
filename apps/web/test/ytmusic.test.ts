@@ -6,7 +6,9 @@ import { pullDueSources } from "../src/cron";
 import { openSecret, sealSecret } from "../src/secret";
 import { pullIntervalSeconds } from "../src/ytmusic";
 
-const now = Math.floor(Date.now() / 1000);
+// Noon UTC today: pulls an hour apart must fall on the same civil day, or a
+// page's "Today" heading names two different dates.
+const now = Math.floor(Date.now() / 86_400_000) * 86_400 + 43_200;
 const origin = "https://earshot.rising.sh";
 const session = `sess_${"s".repeat(40)}`;
 const cookie = "__Secure-3PAPISID=fake-sapisid; SID=fake-sid";
