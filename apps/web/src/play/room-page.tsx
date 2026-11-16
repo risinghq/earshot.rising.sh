@@ -1,4 +1,5 @@
 import type { SignedInUser } from "../auth";
+import { ClipPlayer } from "../ui/player";
 import { Page } from "../ui/shell";
 
 // The room page is a static shell: every panel exists in the markup and the
@@ -85,16 +86,15 @@ export function roomPage(code: string, user: SignedInUser | null) {
         <section class="section" id="game-card" hidden>
           <div class="section-head">
             <h2 id="round-title">Which song is this?</h2>
-            <small class="label">
-              <span id="count-left">15</span> s left
-            </small>
           </div>
           <div class="section-body">
-            <div class="clip">
-              <audio id="clip" controls preload="auto" />
-              <div class="share">
-                <span id="count-bar" style="transform: scaleX(1)" />
-              </div>
+            <div id="player-wrap">
+              <ClipPlayer
+                audioId="clip"
+                toggleId="clip-toggle"
+                barId="count-bar"
+                leftId="count-left"
+              />
             </div>
             <p class="meta" id="clip-status" hidden>
               Loading the clip…

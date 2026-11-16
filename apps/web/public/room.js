@@ -23,6 +23,41 @@ let tickTimer = null;
 let playTimer = null;
 let answered = false;
 
+const clip = $("clip");
+const clipToggle = $("clip-toggle");
+clipToggle.hidden = false;
+clip.removeAttribute("controls");
+const setClipIcon = () => {
+  clipToggle.querySelector(".i-play").hidden = !clip.paused;
+  clipToggle.querySelector(".i-pause").hidden = clip.paused;
+};
+clip.onplay = setClipIcon;
+clip.onpause = setClipIcon;
+clipToggle.onclick = () => {
+  if (unlock()) return;
+  if (clip.paused) clip.play().catch(() => {});
+  else clip.pause();
+};
+clipToggle.classList.add("needs-click");
+let unlocked = false;
+function unlock() {
+  if (unlocked) return false;
+  unlocked = true;
+  clipToggle.classList.remove("needs-click");
+  // Gesture-bound media unlock: play and pause a silent clip on the element
+  // rounds use, so the WebSocket-driven play() keeps the user activation.
+  if (!clip.paused) return true;
+  clip.src = "/silence.wav";
+  clip.play().finally(() => {
+    clip.pause();
+    // Restore whatever clip the room last assigned, which may have changed
+    // while the silent play was settling.
+    if (clip.dataset.url) clip.src = clip.dataset.url;
+    else clip.removeAttribute("src");
+  });
+  return true;
+}
+
 function connect() {
   ws = new WebSocket(
     `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/play/room/${code}/ws`,
@@ -152,9 +187,8 @@ function renderRound(s) {
       : playing
         ? "Loading the clip…"
         : "Getting the next song ready…";
-  show($("count-bar").parentNode, playing);
-  const audio = $("clip");
-  show(audio, !s.screen);
+  show($("player-wrap"), playing && !s.screen);
+  const audio = clip;
   if (s.screen) {
     // The clip moved to the screen mid-round: a phone already playing must
     // go silent, not just hide its player. Clearing the cached url lets the
@@ -183,7 +217,9 @@ function renderRound(s) {
   // When the room is on a screen, the clip plays there and the phone only
   // opens its answers at the server's round start.
   const begin = () => {
-    if (!s.screen && s.clip) audio.play().catch(() => {});
+    if (!s.screen && s.clip) {
+      audio.play().catch(() => clipToggle.classList.add("needs-click"));
+    }
     openAnswers();
   };
   if (playing && (s.clip || s.screen)) {
@@ -305,6 +341,7 @@ function renderDone(s) {
 
 $("join-form").onsubmit = (event) => {
   event.preventDefault();
+  unlock();
   askedWithName = true;
   send({
     type: "join",
@@ -312,8 +349,14 @@ $("join-form").onsubmit = (event) => {
     token: localStorage.getItem(key) || undefined,
   });
 };
-$("start-button").onclick = () => send({ type: "start" });
-$("rematch-button").onclick = () => send({ type: "start" });
+$("start-button").onclick = () => {
+  unlock();
+  send({ type: "start" });
+};
+$("rematch-button").onclick = () => {
+  unlock();
+  send({ type: "start" });
+};
 $("typed-form").onsubmit = (event) => {
   event.preventDefault();
   const input = $("typed-answer");

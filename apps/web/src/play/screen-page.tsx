@@ -149,12 +149,15 @@ export function screenPage(code: string, joinUrl: string) {
               </div>
             </div>
             <p class="screen-note">
-              The winner starts a rematch from their phone.
+              The room's creator starts a rematch from their phone.
             </p>
           </section>
         </main>
         <audio id="screen-clip" preload="auto" />
         <button class="screen-sound" id="screen-sound" type="button" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 5v14l11-7z" />
+          </svg>
           Turn the sound on
         </button>
         <script src="/screen.js" defer />

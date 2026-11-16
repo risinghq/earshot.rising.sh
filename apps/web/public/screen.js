@@ -88,7 +88,10 @@ function render(s) {
   offset = s.now - Date.now();
   // The clip belongs to the playing phase only; every other phase silences
   // it, so a finished round cannot bleed into the reveal or the next load.
-  if (s.phase !== "playing") stopClip();
+  if (s.phase !== "playing") {
+    stopClip();
+    show($("screen-sound"), false);
+  }
   show($("screen-lobby"), s.phase === "lobby");
   show($("screen-game"), s.phase === "loading" || s.phase === "playing");
   show($("screen-reveal"), s.phase === "reveal");

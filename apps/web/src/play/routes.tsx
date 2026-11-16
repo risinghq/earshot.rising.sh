@@ -235,7 +235,17 @@ playApp.get("/", async (context) => {
       ),
     ),
   );
-  return context.html(categoriesPage(categories, boards, user));
+  const who = context.req.query("who");
+  const mode = context.req.query("mode");
+  return context.html(
+    categoriesPage(
+      categories,
+      boards,
+      user,
+      who === "room" || who === "stranger" ? who : "solo",
+      mode === "typed" ? "typed" : "choices",
+    ),
+  );
 });
 
 playApp.post("/", async (context) => {

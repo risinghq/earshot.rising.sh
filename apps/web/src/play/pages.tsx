@@ -2,6 +2,7 @@ import { PillButton, PillLink } from "../ui/pill";
 import { RankedList } from "../ui/ranked";
 import { Section } from "../ui/section";
 import { Segmented } from "../ui/segmented";
+import { ClipPlayer } from "../ui/player";
 import { Page } from "../ui/shell";
 import { Stats } from "../ui/stat";
 import { EmptyState } from "../ui/empty";
@@ -79,14 +80,89 @@ export function CategoryBoard({ entries }: { entries: CategoryBoardEntry[] }) {
   );
 }
 
+export type PlayWho = "solo" | "room" | "stranger";
+
+const whoActions: Record<PlayWho, string> = {
+  solo: "/play",
+  room: "/play/room",
+  stranger: "/play/match",
+};
+const setupScript = `
+const setup = document.getElementById("play-setup");
+const actions = { solo: "/play", room: "/play/room", stranger: "/play/match" };
+setup.addEventListener("change", () => {
+  const who = setup.querySelector('input[name="who"]:checked').value;
+  const mode = setup.querySelector('input[name="mode"]:checked').value;
+  document.getElementById("mode-field").disabled = who === "stranger";
+  document.querySelectorAll("form.tile").forEach((tile) => {
+    tile.action = actions[who];
+    tile.querySelector('input[name="mode"]').value = mode;
+  });
+});
+`;
+
+function tile(
+  category: Category,
+  top: CategoryBoardEntry | undefined,
+  who: PlayWho,
+  mode: "choices" | "typed",
+  user: SignedInUser | null,
+) {
+  const locked = category.feed === "mine" && user === null;
+  const score = locked ? (
+    "Your top tracks"
+  ) : top !== undefined ? (
+    <>
+      Top score: <a href={`/u/${encodeURIComponent(top.name)}`}>{top.name}</a> ·{" "}
+      {top.score.toLocaleString("en-US")}
+    </>
+  ) : category.feed === "mine" ? (
+    "Your top tracks"
+  ) : (
+    `No scores in the last ${categoryBoardDays} days`
+  );
+  if (locked)
+    return (
+      <div class="tile" key={category.slug}>
+        <a href="/auth/github">
+          <span class="tile-name">{category.name}</span>
+          <span class="tile-go">Sign in</span>
+          <span class="tile-score">{score}</span>
+        </a>
+      </div>
+    );
+  return (
+    <form
+      class="tile"
+      key={category.slug}
+      method="post"
+      action={whoActions[who]}
+    >
+      <input type="hidden" name="category" value={category.slug} />
+      <input type="hidden" name="mode" value={mode} />
+      <button type="submit">
+        <span class="tile-name">{category.name}</span>
+      </button>
+      <span class="tile-score">{score}</span>
+    </form>
+  );
+}
+
 export function categoriesPage(
   categories: Category[],
   boards: Record<string, CategoryBoardEntry[]>,
   user: SignedInUser | null,
+  who: PlayWho = "solo",
+  mode: "choices" | "typed" = "choices",
 ) {
+  const whoChecked = (value: PlayWho) =>
+    who === value ? { checked: true } : {};
+  const modeChecked = (value: string) =>
+    mode === value ? { checked: true } : {};
   return Page({
     title: "Guess the song",
     user,
+    nav: "play",
     children: (
       <>
         <div class="page-head">
@@ -96,6 +172,69 @@ export function categoriesPage(
             to 1,000 points, and the faster you answer the more it scores.
           </p>
         </div>
+        <form class="play-setup" id="play-setup" method="get" action="/play">
+          <fieldset>
+            <legend>How do you want to play?</legend>
+            <div class="segmented">
+              <label>
+                <input
+                  type="radio"
+                  name="who"
+                  value="solo"
+                  {...whoChecked("solo")}
+                />
+                Solo
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="who"
+                  value="room"
+                  {...whoChecked("room")}
+                />
+                Room with friends
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="who"
+                  value="stranger"
+                  {...whoChecked("stranger")}
+                />
+                A stranger
+              </label>
+            </div>
+          </fieldset>
+          <fieldset id="mode-field" disabled={who === "stranger"}>
+            <legend>Answers</legend>
+            <div class="segmented">
+              <label>
+                <input
+                  type="radio"
+                  name="mode"
+                  value="choices"
+                  {...modeChecked("choices")}
+                />
+                Choices
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="mode"
+                  value="typed"
+                  {...modeChecked("typed")}
+                />
+                Type it
+              </label>
+            </div>
+          </fieldset>
+          <noscript>
+            <button class="pill" type="submit">
+              Apply
+            </button>
+          </noscript>
+        </form>
+        <script dangerouslySetInnerHTML={{ __html: setupScript }} />
         <Section title="Play an artist">
           <form method="get" action="/play/artists" class="guess">
             <div class="field">
@@ -118,24 +257,10 @@ export function categoriesPage(
             Play one artist's top tracks, or blend two artists into one game.
           </p>
         </Section>
-        <div class="play-grid">
-          {categories.map((category) => (
-            <section class="play-card" key={category.slug}>
-              <h2>{category.name}</h2>
-              {category.feed === "mine" && user === null ? (
-                <p class="hint">
-                  Your own top tracks. <a href="/auth/github">Sign in</a> to
-                  play.
-                </p>
-              ) : (
-                playForms(category)
-              )}
-              <small class="label">
-                Top scores · last {categoryBoardDays} days
-              </small>
-              <CategoryBoard entries={boards[category.slug] ?? []} />
-            </section>
-          ))}
+        <div class="tiles">
+          {categories.map((category) =>
+            tile(category, boards[category.slug]?.[0], who, mode, user),
+          )}
         </div>
         <p class="meta">
           Charts come from Deezer and Apple Music. Every preview plays from
@@ -147,26 +272,6 @@ export function categoriesPage(
   });
 }
 
-const clipScript = (remainingMs: number) => `
-const clip = document.getElementById("clip");
-const bar = document.getElementById("count-bar");
-const left = document.getElementById("count-left");
-const answerForm = document.getElementById("answer-form");
-let deadline = performance.now() + ${Math.max(0, remainingMs)};
-clip.addEventListener("timeupdate", () => {
-  if (clip.currentTime >= ${roundSeconds}) clip.pause();
-});
-const tick = setInterval(() => {
-  const ms = Math.max(0, deadline - performance.now());
-  left.textContent = String(Math.ceil(ms / 1000));
-  bar.style.transform = "scaleX(" + ms / ${roundSeconds * 1000} + ")";
-  if (ms <= 0) {
-    clearInterval(tick);
-    answerForm.submit();
-  }
-}, 200);
-`;
-
 export function questionPage(
   game: Game,
   preview: Preview,
@@ -174,75 +279,99 @@ export function questionPage(
   now: number,
   user: SignedInUser | null,
 ) {
-  const remaining = roundSeconds * 1000 - (now - game.current!.servedAt);
+  const remaining = Math.max(
+    0,
+    roundSeconds * 1000 - (now - game.current!.servedAt),
+  );
   const action = `/play/${game.id}/answer`;
   return Page({
     title: `${game.categoryName} · Guess the song`,
     user,
     children: (
-      <>
-        <div class="page-head">
-          <p class="meta">
-            {game.categoryName} · Round {game.results.length + 1} of{" "}
-            {roundsPerGame} · Score {game.total}
-          </p>
-          <h1>Which song is this?</h1>
-        </div>
-        <Section
-          title="Listen"
-          aside={
-            <span>
-              <span id="count-left">{Math.ceil(remaining / 1000)}</span> s left
-            </span>
-          }
+      <div id="game">
+        <div
+          id="round"
+          data-phase="question"
+          data-src={preview.url}
+          data-remaining={String(remaining)}
+          aria-live="polite"
         >
-          <div class="clip">
-            {/* The player starts the clip; browsers block autoplay. */}
-            <audio id="clip" src={preview.url} controls preload="auto" />
-            <div class="share">
-              <span id="count-bar" style="transform: scaleX(1)" />
+          <div class="page-head">
+            <p class="meta">
+              {game.categoryName} · Round {game.results.length + 1} of{" "}
+              {roundsPerGame} · Score {game.total}
+            </p>
+            <h1>Which song is this?</h1>
+          </div>
+          <div class="game-grid">
+            <div class="stack">
+              <ClipPlayer
+                src={preview.url}
+                audioId="clip"
+                toggleId="clip-toggle"
+                barId="count-bar"
+                leftId="count-left"
+              />
+              <Stats
+                items={[
+                  {
+                    label: "Round",
+                    value: game.results.length + 1,
+                  },
+                  { label: "Score", value: game.total },
+                ]}
+              />
+            </div>
+            <div>
+              {game.mode === "choices" ? (
+                <form
+                  id="answer-form"
+                  class="choices"
+                  method="post"
+                  action={action}
+                  data-solo
+                >
+                  {choices.map((title) => (
+                    <button
+                      class="pill choice"
+                      type="submit"
+                      name="choice"
+                      value={title}
+                    >
+                      {title}
+                    </button>
+                  ))}
+                </form>
+              ) : (
+                <form
+                  id="answer-form"
+                  class="guess"
+                  method="post"
+                  action={action}
+                  data-solo
+                >
+                  <div class="field">
+                    <label for="typed-answer">Song title</label>
+                    <input
+                      id="typed-answer"
+                      name="answer"
+                      type="text"
+                      autocomplete="off"
+                      autofocus
+                    />
+                  </div>
+                  <div>
+                    <PillButton variant="primary" type="submit">
+                      Guess
+                    </PillButton>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
-          {game.mode === "choices" ? (
-            <form
-              id="answer-form"
-              class="choices"
-              method="post"
-              action={action}
-            >
-              {choices.map((title) => (
-                <button
-                  class="pill choice"
-                  type="submit"
-                  name="choice"
-                  value={title}
-                >
-                  {title}
-                </button>
-              ))}
-            </form>
-          ) : (
-            <form id="answer-form" class="guess" method="post" action={action}>
-              <div class="field">
-                <label for="typed-answer">Song title</label>
-                <input
-                  id="typed-answer"
-                  name="answer"
-                  type="text"
-                  autocomplete="off"
-                  autofocus
-                />
-              </div>
-              <div>
-                <PillButton variant="primary" type="submit">
-                  Guess
-                </PillButton>
-              </div>
-            </form>
-          )}
-        </Section>
-        <script dangerouslySetInnerHTML={{ __html: clipScript(remaining) }} />
-      </>
+        </div>
+        <script src="/solo.js" defer />
+      </div>
     ),
   });
 }
@@ -265,37 +394,39 @@ function revealPage(
     title: `${heading} · ${game.categoryName}`,
     user,
     children: (
-      <>
-        <div class="page-head">
-          <p class="meta">
-            {game.categoryName} · Round {game.results.length} of {roundsPerGame}{" "}
-            · Score {game.total}
-          </p>
-          <h1>{heading}</h1>
-        </div>
-        <Section title={result.title} aside={`+${result.score}`}>
-          <div class="reveal">
-            {result.cover && (
-              <img src={result.cover} alt="" width="96" height="96" />
-            )}
-            <div class="track">
-              <b>{result.title}</b>
-              <small class="muted">{result.artist}</small>
-              {result.link && (
-                <a href={result.link}>Listen on {linkService(result.link)}</a>
-              )}
-            </div>
+      <div id="game">
+        <div id="round" data-phase="reveal" aria-live="polite">
+          <div class="page-head">
+            <p class="meta">
+              {game.categoryName} · Round {game.results.length} of{" "}
+              {roundsPerGame} · Score {game.total}
+            </p>
+            <h1>{heading}</h1>
           </div>
-          {!result.correct && result.answer && (
-            <p class="meta">Your answer: {result.answer}</p>
-          )}
-          <form method="post" action={`/play/${game.id}/next`}>
-            <PillButton variant="primary" type="submit">
-              {last ? "See results" : "Next round"}
-            </PillButton>
-          </form>
-        </Section>
-      </>
+          <Section title={result.title} aside={`+${result.score}`}>
+            <div class="reveal">
+              {result.cover && (
+                <img src={result.cover} alt="" width="96" height="96" />
+              )}
+              <div class="track">
+                <small class="muted">{result.artist}</small>
+                {result.link && (
+                  <a href={result.link}>Listen on {linkService(result.link)}</a>
+                )}
+              </div>
+            </div>
+            {!result.correct && result.answer && (
+              <p class="meta">Your answer: {result.answer}</p>
+            )}
+            <form method="post" action={`/play/${game.id}/next`} data-solo>
+              <PillButton variant="primary" type="submit">
+                {last ? "See results" : "Next round"}
+              </PillButton>
+            </form>
+          </Section>
+        </div>
+        <script src="/solo.js" defer />
+      </div>
     ),
   });
 }
@@ -470,54 +601,59 @@ export function finalPage(
     title: `Game over · ${game.categoryName}`,
     user,
     children: (
-      <>
-        <div class="page-head">
-          <p class="meta">{game.categoryName}</p>
-          <h1>Game over</h1>
-        </div>
-        <Stats
-          items={[
-            { label: "Score", value: game.total },
-            { label: "Correct", value: correct },
-            { label: "Rounds", value: game.results.length },
-          ]}
-        />
-        <Section title="Rounds">
-          <ul class="rows">
-            {game.results.map((result) => (
-              <li>
-                <div class="track">
-                  <b>{result.title}</b>
-                  <small>
-                    {result.artist}
-                    {result.answer && !result.correct
-                      ? ` · your answer: ${result.answer}`
-                      : ""}
-                  </small>
-                </div>
-                <span class="count">{resultLine(result)}</span>
-              </li>
-            ))}
-          </ul>
-        </Section>
-        <Section
-          title="Top scores"
-          aside={`${game.categoryName} · last ${categoryBoardDays} days`}
-        >
-          <CategoryBoard entries={board} />
-        </Section>
-        {user === null && (
-          <p class="meta">
-            <a href="/auth/github">Sign in</a> to keep your points on the{" "}
-            <a href="/play/board">board</a>.
+      <div id="game">
+        <div id="round" data-phase="done" aria-live="polite">
+          <div class="page-head">
+            <p class="meta">{game.categoryName}</p>
+            <h1>Game over</h1>
+          </div>
+          <Stats
+            items={[
+              { label: "Score", value: game.total },
+              { label: "Correct", value: correct },
+              { label: "Rounds", value: game.results.length },
+            ]}
+          />
+          <div class="duo">
+            <Section title="Rounds">
+              <ul class="rows">
+                {game.results.map((result) => (
+                  <li>
+                    <div class="track">
+                      <b>{result.title}</b>
+                      <small>
+                        {result.artist}
+                        {result.answer && !result.correct
+                          ? ` · your answer: ${result.answer}`
+                          : ""}
+                      </small>
+                    </div>
+                    <span class="count">{resultLine(result)}</span>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+            <Section
+              title="Top scores"
+              aside={`${game.categoryName} · last ${categoryBoardDays} days`}
+            >
+              <CategoryBoard entries={board} />
+            </Section>
+          </div>
+          {user === null && (
+            <p class="meta">
+              <a href="/auth/github">Sign in</a> to keep your points on the{" "}
+              <a href="/play/board">board</a>.
+            </p>
+          )}
+          <p>
+            <PillLink href="/play" variant="primary">
+              Play again
+            </PillLink>
           </p>
-        )}
-        <p>
-          <PillLink href="/play" variant="primary">
-            Play again
-          </PillLink>
-        </p>
-      </>
+        </div>
+        <script src="/solo.js" defer />
+      </div>
     ),
   });
 }
