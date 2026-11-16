@@ -208,6 +208,40 @@ describe("/play", () => {
     expect(body).toContain(`${answer.deezerId}.mp3`);
   });
 
+  it("advances a round through the form endpoints the in-page script posts to", async () => {
+    stubFetch([
+      [
+        /api\.deezer\.com\/chart\/132\/tracks/,
+        {
+          data: [1, 2, 3, 4].map((i) => deezerTrack(i, `Song ${i}`)),
+        },
+      ],
+      [
+        /api\.deezer\.com\/track\/\d+/,
+        (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
+      ],
+    ]);
+    const id = await startGame("pop", "choices");
+    const question = await (await get(`/play/${id}`)).text();
+    expect(question).toContain('id="game"');
+    expect(question).toContain('data-phase="question"');
+    // solo.js follows each POST's redirect and swaps #game into the page, so
+    // the contract is: a 303 to /play/:id whose GET body carries that region.
+    const answered = await answer(id, { choice: "Song 0" });
+    expect(answered.status).toBe(303);
+    const reveal = await (await get(answered.headers.get("location")!)).text();
+    expect(reveal).toContain('id="game"');
+    expect(reveal).toContain('data-phase="reveal"');
+    const advanced = await next(id);
+    expect(advanced.status).toBe(303);
+    const nextRound = await (
+      await get(advanced.headers.get("location")!)
+    ).text();
+    expect(nextRound).toContain('id="game"');
+    expect(nextRound).toContain('data-phase="question"');
+    expect(nextRound).toContain('action="/play/' + id + '/answer"');
+  });
+
   it("scores by the time the server measured, not a client value", async () => {
     stubFetch([
       [

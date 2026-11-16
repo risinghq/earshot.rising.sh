@@ -148,6 +148,18 @@ describe("session and origin", () => {
     expect(response.status).toBe(403);
   });
 
+  it("reaches sign out from the account menu on any page", async () => {
+    await seedUser();
+    for (const path of ["/", "/play", "/settings"]) {
+      const body = await (await get(path)).text();
+      expect(body).toContain('details class="account"');
+      expect(body).toContain('action="/settings/sign-out"');
+      expect(body).toContain("Sign out");
+      expect(body).toContain('href="/settings"');
+      expect(body).toContain('href="/u/alice"');
+    }
+  });
+
   it("signs out by deleting the session row", async () => {
     await seedUser();
     const response = await post("/settings/sign-out", {});
