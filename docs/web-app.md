@@ -851,6 +851,8 @@ sign-in screen states that profiles are public.
 | `/u/NAME.json`     | The same figures as JSON.                                   |
 | `/u/NAME.svg`      | The card. `?period=`, `?n=1..10`, `?theme=light` or `dark`. |
 | `/play`            | The guess-the-song game.                                    |
+| `/play/artists`    | Artist search. `?q=` the query, `?with=`&`n=` a blend pick. |
+| `/play/artist/IDS` | Start page for `artist-ID` or `artist-IDA-IDB`.             |
 | `/play/room/CODE`  | A guess-the-song room for up to 8 players.                  |
 | `/play/match/SLUG` | Queue for a random opponent in one category.                |
 | `/play/board`      | The points board. `?period=week` (default) or `all`.        |
@@ -900,10 +902,19 @@ title.
   feed: a Deezer chart genre id, a Deezer playlist id or an Apple country chart.
   Migration `0008` seeds Pop, Rock, Metal, K-pop, Anime, Top 50 Japan, Top 50
   Peru, Top 50 Global and "From my listening", which reads the signed-in
-  player's `track_totals`. A new category is a row.
+  player's `track_totals`. A new curated category is a row.
+- **Artist categories.** The slug `artist-<id>` is one Deezer artist and
+  `artist-<idA>-<idB>` is two blended; `getCategory` resolves them at runtime
+  with `/artist/{id}` for the display name, so solo games, rooms and random
+  matches take them unchanged. The feed is the artist's `/artist/{id}/top`
+  tracks, two artists interleaved one for one. The player finds artists through
+  the search box on `/play`, which answers `/search/artist?q=` hits sorted by
+  fan count, and starts a game on `/play/artist/IDS`. A malformed slug is a 404;
+  an unknown id or an artist with fewer than four distinct titles shows the
+  category-unavailable page. No D1 row is written per artist.
 - **Sources.** Feeds come from the Deezer public API (`/chart/{genre}/tracks`,
-  `/playlist/{id}/tracks`, `/track/{id}`, `/track/isrc:{isrc}` and `/search`)
-  and from Apple's chart feed
+  `/playlist/{id}/tracks`, `/artist/{id}/top`, `/artist/{id}`, `/search/artist`,
+  `/track/{id}`, `/track/isrc:{isrc}` and `/search`) and from Apple's chart feed
   (`rss.marketingtools.apple.com/…/most-played/50/songs.json`) for the country
   charts. Every clip plays from Deezer: a Deezer feed track resolves by id, an
   Apple chart track by an artist-and-title search accepted only when the
@@ -1022,6 +1033,11 @@ CREATE TABLE game_results (
 00:00 UTC) and all time, with a win count for `match` and `room` games (rank 1).
 Only users with `is_public` appear, each name links to `/u/NAME`, and the query
 result sits in KV for five minutes under `play:board:PERIOD`.
+
+Each category also has a board: the best score each public player set there in
+the last 15 days, top 10, read through the `game_results_category` index added
+in migration `0010`. It shows on the `/play` cards, on `/play/artist/IDS` and on
+the game-over page, and sits in KV for five minutes under `play:catboard:SLUG`.
 
 ### Party playlist
 
