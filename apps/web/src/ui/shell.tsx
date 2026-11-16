@@ -1,7 +1,7 @@
 import type { Child } from "hono/jsx";
 import type { SignedInUser } from "../auth";
 
-export type NavSection = "play" | "board" | "party";
+export type NavSection = "play" | "board" | "groups";
 
 interface PageOptions {
   title: string;
@@ -67,8 +67,8 @@ export function Page({
               <a href="/play/board" {...current("board")}>
                 Board
               </a>
-              <a href="/party" {...current("party")}>
-                Party
+              <a href="/groups" {...current("groups")}>
+                Groups
               </a>
             </nav>
             {user ? (
@@ -79,6 +79,7 @@ export function Page({
                 </summary>
                 <div class="account-menu">
                   <a href={`/u/${encodeURIComponent(user.name)}`}>Profile</a>
+                  <a href="/friends">Friends</a>
                   <a href="/settings">Settings</a>
                   <form method="post" action="/settings/sign-out">
                     <button type="submit">Sign out</button>

@@ -3,6 +3,7 @@ export interface PlaylistEntry {
   title: string;
   artist: string;
   names: string[];
+  videoId?: string | null;
 }
 
 export function Playlist({ items }: { items: PlaylistEntry[] }) {
@@ -17,6 +18,7 @@ export function Playlist({ items }: { items: PlaylistEntry[] }) {
               {item.artist} · {item.names.join(" + ")}
             </small>
           </span>
+          {item.videoId === null && <span class="rank">no video</span>}
         </li>
       ))}
     </ol>

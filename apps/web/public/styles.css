@@ -574,6 +574,14 @@ fieldset legend,
   .duo {
     grid-template-columns: 1fr 1fr;
   }
+  .split {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+}
+.split {
+  align-items: start;
+  display: grid;
+  gap: var(--space-4);
 }
 
 .section {
@@ -887,7 +895,7 @@ button:disabled {
     font-size: clamp(2.5rem, 4vw, 3.5rem);
   }
 }
-.hero p {
+.hero-lead p {
   font-size: var(--text-lg);
   max-width: 46ch;
 }

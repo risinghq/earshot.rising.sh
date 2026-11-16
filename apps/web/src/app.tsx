@@ -21,7 +21,8 @@ import { Page } from "./ui/shell";
 import { PillLink } from "./ui/pill";
 import { Stats } from "./ui/stat";
 import { submitListens, validateToken } from "./listenbrainz";
-import { partyRoute } from "./party";
+import { friendsApp } from "./friends";
+import { groupsApp } from "./groups";
 import { settingsApp } from "./settings";
 import { beginSpotify, spotifyCallback } from "./spotify";
 import { listCategories, type Category } from "./play/catalog";
@@ -163,13 +164,13 @@ function homePage(user: SignedInUser | null, categories: Category[]) {
           </div>
         </div>
         <div class="duo">
-          <Section title="Party playlist">
+          <Section title="Groups">
             <p class="muted">
-              Blend the top tracks of two to eight profiles into one playlist
-              that opens on YouTube.
+              Friends make a group together, and the group's playlist blends
+              what each member plays into a list that opens on YouTube.
             </p>
             <div>
-              <PillLink href="/party">Make a playlist</PillLink>
+              <PillLink href="/groups">Open your groups</PillLink>
             </div>
           </Section>
           <Section title="Your listening">
@@ -218,6 +219,7 @@ function profilePage(
   origin: string,
   kinds: string | null,
   user: SignedInUser | null,
+  relation: "friends" | "sent" | "none" | "self" | "out",
 ) {
   const days = snapshot.daily.slice(-dailyBars);
   const cardUrl = `${origin}/u/${encodeURIComponent(snapshot.user.name)}.svg`;
@@ -245,9 +247,21 @@ function profilePage(
         >
           Data as JSON
         </a>
-        <a href={`/party?u=${encodeURIComponent(snapshot.user.name)}`}>
-          Make a party playlist with {snapshot.user.name}
-        </a>
+        {relation === "friends" && <a href="/friends">Friends</a>}
+        {relation === "sent" && <span class="meta">Request sent</span>}
+        {relation === "none" && (
+          <form method="post" action="/friends/request">
+            <input type="hidden" name="name" value={snapshot.user.name} />
+            <input
+              type="hidden"
+              name="next"
+              value={`/u/${encodeURIComponent(snapshot.user.name)}`}
+            />
+            <button class="pill small" type="submit">
+              Add friend
+            </button>
+          </form>
+        )}
       </>
     ),
     children: (
@@ -387,9 +401,13 @@ app.get("/auth/spotify/callback", (context) => spotifyCallback(context));
 
 app.route("/settings", settingsApp);
 
+app.route("/friends", friendsApp);
+
+app.route("/groups", groupsApp);
+
 app.route("/play", playApp);
 
-app.get("/party", partyRoute);
+app.get("/party", (context) => context.redirect("/groups", 301));
 
 app.get("/u/:path", async (context) => {
   const path = context.req.param("path") ?? "";
@@ -433,15 +451,38 @@ app.get("/u/:path", async (context) => {
     period,
     Math.floor(Date.now() / 1000),
   );
-  if (format === "html")
+  if (format === "html") {
+    const viewer = await sessionUser(context);
+    let relation: "friends" | "sent" | "none" | "self" | "out" = "out";
+    if (viewer !== null && viewer.id === user.id) relation = "self";
+    else if (viewer !== null) {
+      const [friends, sent] = await context.env.DB.batch([
+        context.env.DB.prepare(
+          `SELECT 1 AS yes FROM friendships
+           WHERE user_id = ?1 AND friend_id = ?2`,
+        ).bind(viewer.id, user.id),
+        context.env.DB.prepare(
+          `SELECT 1 AS yes FROM friend_requests
+           WHERE from_user = ?1 AND to_user = ?2`,
+        ).bind(viewer.id, user.id),
+      ]);
+      relation =
+        friends.results.length > 0
+          ? "friends"
+          : sent.results.length > 0
+            ? "sent"
+            : "none";
+    }
     return context.html(
       profilePage(
         snapshot,
         new URL(context.req.url).origin,
         user.kinds,
-        await sessionUser(context),
+        viewer,
+        relation,
       ),
     );
+  }
   context.header(
     "Content-Security-Policy",
     "default-src 'none'; style-src 'unsafe-inline'",

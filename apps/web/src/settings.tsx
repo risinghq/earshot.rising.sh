@@ -360,7 +360,8 @@ function settingsPage(
               </label>
               <small class="hint">
                 A hidden profile returns 404 for the page, the JSON and the
-                card.
+                card. Your plays still feed the playlist of any group you belong
+                to, and you can leave a group any time.
               </small>
             </div>
             <div>
@@ -482,6 +483,11 @@ export function deletionStatements(db: D1Database, userId: number) {
     db.prepare("DELETE FROM sources WHERE user_id = ?1").bind(userId),
     db.prepare("DELETE FROM sessions WHERE user_id = ?1").bind(userId),
     db.prepare("DELETE FROM users WHERE id = ?1").bind(userId),
+    // The cascade above can empty a group the deleted user did not make.
+    db.prepare(
+      `DELETE FROM friend_groups WHERE NOT EXISTS
+       (SELECT 1 FROM group_members WHERE group_id = friend_groups.id)`,
+    ),
   ];
 }
 
