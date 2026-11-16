@@ -904,7 +904,9 @@ title.
   Peru, Top 50 Global and "From my listening", which reads the signed-in
   player's `track_totals`. A new curated category is a row.
 - **Artist categories.** The slug `artist-<id>` is one Deezer artist and
-  `artist-<idA>-<idB>` is two blended; `getCategory` resolves them at runtime
+  `artist-<idA>-<idB>` is two blended; a blend sorts its ids, so the canonical
+  slug is unique — `artist-85-27` redirects to `artist-27-85`, and one slug
+  means one board and one cache entry. `getCategory` resolves them at runtime
   with `/artist/{id}` for the display name, so solo games, rooms and random
   matches take them unchanged. The feed is the artist's `/artist/{id}/top`
   tracks, two artists interleaved one for one. The player finds artists through
@@ -981,6 +983,17 @@ the solo game.
 - **Cleanup.** Rooms keep no points between games. The last client action sets
   an idle deadline; an hour later the alarm closes any open sockets with code
   1001 — the page shows the room has closed — and deletes the object's storage.
+- **The screen.** `/play/room/CODE/screen` is the room on a shared display,
+  rendered by `public/screen.js`. Its socket sends `watch` instead of `join`: it
+  holds no seat, scores nothing, and counts toward nothing a player counts
+  toward — not `maxPlayers`, not the seats a match waits for, not the
+  everyone-answered early close. While a screen watches, the snapshot sends the
+  clip URL to the screen only; the players' snapshots carry `screen: true` and
+  no URL, so a phone never plays the clip. The screen's lobby shows the room
+  code, the join link and a QR code of it, drawn on the server by
+  `src/play/qr.ts`. The finish also freezes the category board into the room
+  state, so the game-over card and the screen's standings show the same
+  `readCategoryBoard` board without another read.
 
 ### Matches
 
