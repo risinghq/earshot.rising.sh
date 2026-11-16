@@ -80,7 +80,7 @@ describe("home page", () => {
     );
     expect(response.status).toBe(200);
     const body = await response.text();
-    for (const href of ["/play", "/play/board", "/party", "/auth/github"])
+    for (const href of ["/play", "/play/board", "/groups", "/auth/github"])
       expect(body).toContain(`href="${href}"`);
     expect(body).toContain("Profiles are public");
   });
@@ -98,7 +98,8 @@ describe("home page", () => {
     expect(body).toContain('href="/u/octo"');
     expect(body).toContain('href="/settings"');
     expect(body).toContain('href="/play"');
-    expect(body).toContain('href="/party"');
+    expect(body).toContain('href="/groups"');
+    expect(body).toContain('href="/friends"');
   });
 });
 
