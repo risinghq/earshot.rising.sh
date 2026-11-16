@@ -100,8 +100,8 @@ page; both are progressive enhancement over working markup.
 
 ## 2. Data model
 
-All times are Unix seconds in UTC. The schema is three migrations. A table holds
-only what a query reads.
+All times are Unix seconds in UTC. The schema lives in `apps/web/migrations/`,
+numbered in order. A table holds only what a query reads.
 
 ```sql
 CREATE TABLE users (
@@ -816,7 +816,9 @@ and keeps no token, so the permissions model of a GitHub App buys nothing.
 
 **Privacy.** A profile is public by default. The settings page has one switch,
 `is_public`. A hidden profile answers `404` on all three addresses. The first
-sign-in screen states that profiles are public.
+sign-in screen states that profiles are public. A hidden member's plays still
+feed the playlist of each group they belong to; group members see the member
+list by name, and the member can leave any group.
 
 **Deleting data.** The settings page has two actions.
 
@@ -828,9 +830,10 @@ sign-in screen states that profiles are public.
 - **Delete the account.** The user types their name to confirm. One batch
   deletes `plays`, `track_totals`, `daily_totals`, `artist_totals`, `tokens`,
   `sources`, `sessions` and the `users` row, in that order, so no foreign key
-  fails. No cascade is declared, so D1 never scans a table to find children.
-  Cached snapshots in KV are keyed by the user id, which is never reused, and
-  expire within a day.
+  fails. The friends and groups tables declare `ON DELETE CASCADE`, so the
+  `users` delete takes the friendships, requests and memberships with it, and
+  the batch ends by deleting any group left with no members. Cached snapshots in
+  KV are keyed by the user id, which is never reused, and expire within a day.
 - D1 Time Travel keeps restore points for 30 days on Workers Paid
   ([limits](https://developers.cloudflare.com/d1/platform/limits/)). Deleted
   rows leave the restore points with them. The privacy text says so.
@@ -856,7 +859,10 @@ sign-in screen states that profiles are public.
 | `/play/room/CODE`  | A guess-the-song room for up to 8 players.                  |
 | `/play/match/SLUG` | Queue for a random opponent in one category.                |
 | `/play/board`      | The points board. `?period=week` (default) or `all`.        |
-| `/party`           | Party playlist. `?u=NAME,NAME` (2 to 8), `?n=25` or `50`.   |
+| `/friends`         | Friends, requests, and your friend link. Sign-in required.  |
+| `/friends/add/TKN` | Confirm page of a friend link. Sign-in required.            |
+| `/groups`          | Your groups and the new-group form. Sign-in required.       |
+| `/groups/ID`       | A group's members and blended playlist. Members only.       |
 
 - **Periods.** `week` is the last 7 days, `month` the last 30 days, both
   rolling, and `all` is everything. A calendar week would be empty on Monday
@@ -1052,17 +1058,33 @@ the last 15 days, top 10, read through the `game_results_category` index added
 in migration `0010`. It shows on the `/play` cards, on `/play/artist/IDS` and on
 the game-over page, and sits in KV for five minutes under `play:catboard:SLUG`.
 
-### Party playlist
+### Friends and groups
 
-`/party` blends the public profiles named in `u` into one playlist of `n`
-tracks, 25 or 50. Each person's candidates are their tracks with the most plays
-in the last 90 days, filled from their all-time top tracks when that list is
-short. Tracks that two or more people share come first, ordered by how many
-people share them. The rest are dealt round-robin, one per person in turn, so a
-heavy listener cannot fill the list. A track appears once, and an artist never
-sits in the previous three slots when another candidate allows it. A name that
-is not a public profile gets the same refusal whether the profile is hidden or
-missing. The blend is cached in KV for 10 minutes under `party:<n>:<names>`.
+Friendship is mutual and starts in two ways. A user's friend link lives on
+`/friends` (`users.friend_link`, a random 24-byte value); a signed-in visitor
+who opens `/friends/add/TOKEN` sees the owner's name and confirms with one POST,
+which writes both directions of `friendships` at once. Resetting the link
+replaces the value and stops the old one. The other way is a request by exact
+name into `friend_requests`; the addressee accepts or declines it on `/friends`,
+the sender can cancel it, and a user may have at most 20 requests outstanding. A
+request to a name that has no public profile gets the same "request sent" answer
+as any other, so the form cannot probe for an account.
+
+A group (`friend_groups`, members in `group_members`) is made on `/groups` with
+a name. Any member can add more of their own friends, any member can leave, and
+a group with no members is deleted. Only the creator can rename. Non-members get
+404 on the group page and its POST routes, so a group id reveals nothing.
+
+`/groups/ID` blends the members' top tracks into one playlist of 25. Each
+member's candidates are their tracks with the most plays in the last 90 days,
+filled from their all-time top tracks when that list is short. Tracks that two
+or more people share come first, ordered by how many people share them. The rest
+are dealt round-robin, one per person in turn, so a heavy listener cannot fill
+the list. A track appears once, and an artist never sits in the previous three
+slots when another candidate allows it. A hidden member's plays feed the
+playlist like any other's: `is_public` controls the profile page, the board and
+nothing else. The blend is cached in KV for 10 minutes under
+`group:<id>:<member ids>`, so a membership change builds a fresh playlist.
 
 "Play on YouTube" opens
 `https://www.youtube.com/watch_videos?video_ids=ID1,ID2,...`, built from the
