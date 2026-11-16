@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import migrations from "virtual:web-migrations";
 import { app } from "../src/app";
 import type { Room } from "../src/play/room";
+import { readCategoryBoard, recordResults } from "../src/play/results";
 
 const origin = "https://music.rising.sh";
 const testEnv = () => ({ DB: env.DB, CACHE: env.CACHE, ROOMS: env.ROOMS });
@@ -489,6 +490,180 @@ describe("rooms", () => {
     const reveal = await waitFor(ann, inPhase("reveal"));
     expect(reveal.type).toBe("state");
     ann.close();
+  });
+
+  it("lets a screen watch without taking a seat", async () => {
+    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    const { code, key } = await createRoom();
+    const screen = await connect(code);
+    screen.send({ type: "watch" });
+    const state = await waitFor(screen, inPhase("lobby"));
+    expect(state.watch).toBe(true);
+    expect((state.you as { name: string }).name).toBe("");
+    expect(screen.inbox.some(isType("joined"))).toBe(false);
+    expect((await stored(code)).players).toHaveLength(0);
+    const ann = await connect(code);
+    await join(ann, "Ann", key);
+    expect((await stored(code)).players).toHaveLength(1);
+    const roster = (await waitFor(
+      screen,
+      (m) =>
+        m.type === "state" && (m.players as { name: string }[]).length === 1,
+    )) as { players: { name: string }[] };
+    expect(roster.players[0].name).toBe("Ann");
+    ann.close();
+    screen.close();
+  });
+
+  it("keeps the clip on the screen while the phones get a screen flag", async () => {
+    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    const { code, key } = await createRoom();
+    const ann = await connect(code);
+    await join(ann, "Ann", key);
+    const screen = await connect(code);
+    screen.send({ type: "watch" });
+    const flagged = (await waitFor(
+      ann,
+      (m) => m.type === "state" && m.screen === true,
+    )) as { screen: boolean };
+    expect(flagged.screen).toBe(true);
+    ann.send({ type: "start" });
+    const phone = (await waitFor(ann, inPhase("playing"))) as {
+      clip?: string;
+      screen?: boolean;
+      choices?: string[];
+    };
+    expect(phone.clip).toBeUndefined();
+    expect(phone.screen).toBe(true);
+    expect(phone.choices).toHaveLength(4);
+    const tv = (await waitFor(screen, inPhase("playing"))) as {
+      clip?: string;
+    };
+    expect(tv.clip).toMatch(/^https:\/\/cdn\.example\//);
+    ann.close();
+    screen.close();
+  });
+
+  it("does not let a screen fill a seat, so a match still waits alone", async () => {
+    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    const code = "MATCHX";
+    const init = await stubFor(code).fetch(
+      new Request("https://room/init", {
+        method: "POST",
+        body: JSON.stringify({
+          code,
+          kind: "match",
+          categorySlug: "pop",
+          categoryName: "Pop",
+          mode: "choices",
+          candidates: Array.from({ length: 10 }, (_, i) => ({
+            title: `Song ${i}`,
+            artist: "Artist",
+            cover: null,
+            link: null,
+            deezerId: 100 + i,
+          })),
+          creatorToken: "",
+          players: [
+            { name: "Ann", token: "tok-a", userId: null },
+            { name: "Bob", token: "tok-b", userId: null },
+          ],
+        }),
+      }),
+    );
+    expect(init.ok).toBe(true);
+    const screen = await connect(code);
+    screen.send({ type: "watch" });
+    await waitFor(screen, inPhase("lobby"));
+    const ann = await connect(code);
+    await join(ann, undefined, "tok-a");
+    // One seated player and a screen is still only one player: the match
+    // does not start until every seat holds a live socket.
+    expect((await stored(code)).phase).toBe("lobby");
+    const bob = await connect(code);
+    await join(bob, undefined, "tok-b");
+    await waitFor(bob, inPhase("loading"));
+    ann.close();
+    bob.close();
+    screen.close();
+  });
+
+  it("adds the category board to the final standings", async () => {
+    const now = Math.floor(Date.now() / 1000);
+    await env.DB.prepare(
+      "INSERT INTO users (id, github_id, name, is_public, created_at) VALUES (1, 1, 'pro', 1, 1)",
+    ).run();
+    await env.DB.prepare(
+      `INSERT INTO game_results
+       (id, user_id, finished_at, category, kind, score, rank, players)
+       VALUES ('t:1:pop', 1, ?1, 'pop', 'solo', 7000, 1, 1)`,
+    )
+      .bind(now - 60)
+      .run();
+    stubChart(Array.from({ length: 30 }, (_, i) => `Song ${i}`));
+    const { code, key } = await createRoom();
+    const ann = await connect(code);
+    await join(ann, "Ann", key);
+    const screen = await connect(code);
+    screen.send({ type: "watch" });
+    await waitFor(screen, inPhase("lobby"));
+    ann.send({ type: "start" });
+    await waitFor(ann, inPhase("loading"));
+    for (let round = 0; round < 10; round += 1) {
+      const room = await stored(code);
+      const current = room.round as {
+        index: number;
+        startedAt: number;
+      } | null;
+      const title = (room.candidates as { title: string }[])[current!.index]
+        .title;
+      const pid = (room.players as { id: string }[])[0].id;
+      await call(code, (room) =>
+        room.answer(pid, title, current!.startedAt + 1_000),
+      );
+      const reveal = await stored(code);
+      const until = (reveal.reveal as { until: number }).until;
+      await call(code, (room) => room.tick(until + 1));
+    }
+    const done = [...ann.inbox].reverse().find((m) => m.type === "state") as {
+      phase: string;
+      board: { name: string; score: number }[];
+    };
+    expect(done.phase).toBe("done");
+    expect(done.board).toEqual([{ name: "pro", score: 7000 }]);
+    const screenDone = [...screen.inbox]
+      .reverse()
+      .find((m) => m.type === "state") as {
+      board: { name: string; score: number }[];
+    };
+    expect(screenDone.board).toEqual([{ name: "pro", score: 7000 }]);
+    ann.close();
+    screen.close();
+  });
+
+  it("refreshes a cached category board when results are written", async () => {
+    const now = Math.floor(Date.now() / 1000);
+    await env.DB.prepare(
+      "INSERT INTO users (id, github_id, name, is_public, created_at) VALUES (1, 1, 'pro', 1, 1)",
+    ).run();
+    // The board was read right before the game: its cache holds a stale,
+    // empty copy that must not survive the result write.
+    await env.CACHE.put("play:catboard:pop", JSON.stringify([]));
+    await recordResults(testEnv() as never, [
+      {
+        id: "t:stale:pop",
+        userId: 1,
+        finishedAt: now,
+        category: "pop",
+        kind: "room",
+        score: 5000,
+        rank: 1,
+        players: 2,
+      },
+    ]);
+    expect(await readCategoryBoard(testEnv() as never, "pop")).toEqual([
+      { name: "pro", score: 5000 },
+    ]);
   });
 
   it("deletes an idle room even with a socket open", async () => {

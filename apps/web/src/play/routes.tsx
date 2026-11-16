@@ -38,6 +38,7 @@ import {
 import { deezerSearchArtists } from "./sources";
 import { newRoomCode, newRoomSecret } from "./room";
 import { roomPage } from "./room-page";
+import { screenPage } from "./screen-page";
 
 export const playApp = new Hono<{ Bindings: Env }>();
 
@@ -166,6 +167,18 @@ playApp.get("/board", async (context) => {
   return context.html(boardPage(entries, period, await sessionUser(context)));
 });
 
+// The screen view is the room on a shared display: it watches the game and
+// plays the clip while the players answer on their phones.
+playApp.get("/room/:code/screen", async (context) => {
+  const code = context.req.param("code");
+  const user = await sessionUser(context);
+  const room = context.env.ROOMS.get(context.env.ROOMS.idFromName(code));
+  const exists = await room.fetch(new Request("https://room/exists"));
+  if (!exists.ok) return context.html(notFoundPage(user), 404);
+  const joinUrl = `${new URL(context.req.url).origin}/play/room/${code}`;
+  return context.html(screenPage(code, joinUrl));
+});
+
 playApp.get("/room/:code", async (context) => {
   const code = context.req.param("code");
   const user = await sessionUser(context);
@@ -203,6 +216,8 @@ playApp.get("/artist/:ids", async (context) => {
     `artist-${context.req.param("ids")}`,
   );
   if (category === null) return context.html(notFoundPage(user), 404);
+  if (category.slug !== `artist-${context.req.param("ids")}`)
+    return context.redirect(`/play/artist/${category.slug.slice(7)}`, 301);
   const entries = await readCategoryBoard(context.env, category.slug);
   return context.html(artistPage(category, entries, user));
 });

@@ -62,6 +62,13 @@ export function roomPage(code: string, user: SignedInUser | null) {
             <p class="meta" id="lobby-hint">
               Waiting for the room's creator to start the game.
             </p>
+            <p class="meta">
+              Playing together in one place?{" "}
+              <a href={`/play/room/${code}/screen`}>
+                Show this room on a TV or shared screen
+              </a>
+              .
+            </p>
             <div>
               <button
                 class="pill primary"
@@ -141,6 +148,13 @@ export function roomPage(code: string, user: SignedInUser | null) {
           </div>
           <div class="section-body">
             <ol class="ranked" id="standings" />
+            <div>
+              <small class="label">Top scores in this category</small>
+              <ul class="rows" id="board" />
+              <p class="hint" id="board-empty" hidden>
+                No scores in the last 15 days.
+              </p>
+            </div>
             <p class="meta" id="points-hint" hidden>
               <a href="/auth/github">Sign in</a> to keep your points on the{" "}
               <a href="/play/board">board</a>.

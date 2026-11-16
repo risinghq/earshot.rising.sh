@@ -11,7 +11,12 @@ import {
   scoreFor,
   shuffled,
 } from "./quiz";
-import { recordResults, type ResultRow } from "./results";
+import {
+  readCategoryBoard,
+  recordResults,
+  type CategoryBoardEntry,
+  type ResultRow,
+} from "./results";
 import { QuotaError, type Candidate } from "./sources";
 
 export const maxPlayers = 8;
@@ -108,6 +113,7 @@ interface Stored {
   phase: "lobby" | "loading" | "playing" | "reveal" | "done";
   round: Round | null;
   reveal: Reveal | null;
+  board: CategoryBoardEntry[];
   retryAt: number | null;
   lastActive: number;
 }
@@ -115,6 +121,7 @@ interface Stored {
 interface SocketInfo {
   pid?: string;
   uid?: number;
+  watch?: boolean;
 }
 
 const storageKey = "room";
@@ -154,6 +161,7 @@ export class Room extends DurableObject<Env> {
         this.s.gameId ??= "";
         this.s.seededAt ??= this.s.lastActive;
         this.s.playedBy ??= 0;
+        this.s.board ??= [];
         for (const player of this.s.players) player.userId ??= null;
         if ((await ctx.storage.getAlarm()) === null) await this.schedule();
       }
@@ -214,6 +222,7 @@ export class Room extends DurableObject<Env> {
         phase: "lobby",
         round: null,
         reveal: null,
+        board: [],
         retryAt: null,
         lastActive: now,
       };
@@ -249,7 +258,9 @@ export class Room extends DurableObject<Env> {
       return;
     }
     const pid = this.pidOf(ws);
-    if (message.type === "join") {
+    if (message.type === "watch") {
+      await this.watch(ws);
+    } else if (message.type === "join") {
       await this.join(
         ws,
         typeof message.name === "string" ? message.name : undefined,
@@ -314,18 +325,34 @@ export class Room extends DurableObject<Env> {
     }
   }
 
+  private watching(ws: WebSocket) {
+    return (ws.deserializeAttachment() as SocketInfo | null)?.watch === true;
+  }
+
+  private hasScreen() {
+    return this.ctx.getWebSockets().some((ws) => this.watching(ws));
+  }
+
   private broadcast() {
     if (this.s === undefined) return;
     for (const ws of this.ctx.getWebSockets()) {
-      const pid = this.pidOf(ws);
-      if (pid !== undefined) this.send(ws, this.snapshot(pid));
+      if (this.watching(ws)) {
+        this.send(ws, this.snapshot(undefined));
+      } else {
+        const pid = this.pidOf(ws);
+        if (pid !== undefined) this.send(ws, this.snapshot(pid));
+      }
     }
   }
 
-  private snapshot(pid: string) {
+  private snapshot(pid: string | undefined) {
     const s = this.s!;
-    const me = s.players.find((player) => player.id === pid);
+    const viewer = pid === undefined;
+    const me = viewer
+      ? undefined
+      : s.players.find((player) => player.id === pid);
     const connected = this.connectedPids();
+    const screened = this.hasScreen();
     const snapshot: Record<string, unknown> = {
       type: "state",
       code: s.code,
@@ -355,13 +382,20 @@ export class Room extends DurableObject<Env> {
       snapshot.startedAt = s.round.startedAt;
       snapshot.endsAt = s.round.endsAt;
       snapshot.choices = s.round.choices;
-      if (this.clip !== null) snapshot.clip = this.clip;
+      // While a screen watches, the clip plays there only: the players'
+      // phones get no URL and cannot start a second, quieter playback.
+      if (this.clip !== null && (viewer || !screened))
+        snapshot.clip = this.clip;
     }
+    if (viewer) snapshot.watch = true;
+    else if (screened) snapshot.screen = true;
     if (s.phase === "reveal" && s.reveal) snapshot.reveal = s.reveal;
-    if (s.phase === "done")
+    if (s.phase === "done") {
       snapshot.standings = [...s.players]
         .sort((a, b) => b.score - a.score)
         .map((player) => ({ name: player.name, score: player.score }));
+      snapshot.board = s.board;
+    }
     return snapshot;
   }
 
@@ -389,6 +423,28 @@ export class Room extends DurableObject<Env> {
     // past fires at once and reschedules itself forever.
     const future = due.filter((time) => time > now);
     if (future.length > 0) await this.ctx.storage.setAlarm(Math.min(...future));
+  }
+
+  // A screen opens as a viewer: it holds no seat, scores nothing, and its
+  // socket never counts as a connected player — not for maxPlayers, not for
+  // the seats a match waits for, and not for the no-one-here guard that
+  // stops a match room from starting alone.
+  async watch(ws: WebSocket) {
+    const s = this.s;
+    if (s === undefined) {
+      this.send(ws, { type: "error", code: "gone" });
+      ws.close(1000, "room closed");
+      return;
+    }
+    ws.serializeAttachment({
+      uid: this.uidOf(ws) ?? undefined,
+      watch: true,
+    } satisfies SocketInfo);
+    this.send(ws, this.snapshot(undefined));
+    // The players' snapshots change too: from now on the clip is the
+    // screen's, so their next state carries no URL.
+    this.broadcast();
+    if (this.clip === null) this.ensureClip();
   }
 
   async join(
@@ -609,7 +665,7 @@ export class Room extends DurableObject<Env> {
     }
     s.phase = "done";
     s.round = null;
-    await this.recordResults();
+    await this.finish();
     await this.save();
     this.broadcast();
   }
@@ -664,12 +720,24 @@ export class Room extends DurableObject<Env> {
     await recordResults(this.env, rows);
   }
 
+  // A finish also freezes the category board for the final standings, so a
+  // later snapshot — even after an eviction — shows the same board without
+  // another D1 read.
+  private async finish() {
+    const s = this.s!;
+    await this.recordResults();
+    s.board =
+      s.categorySlug === ""
+        ? []
+        : await readCategoryBoard(this.env, s.categorySlug).catch(() => []);
+  }
+
   private async nextPhase() {
     const s = this.s!;
     if (s.served >= roundsPerGame || s.next >= s.candidates.length) {
       s.phase = "done";
       s.reveal = null;
-      await this.recordResults();
+      await this.finish();
       await this.save();
       this.broadcast();
       return;

@@ -146,12 +146,26 @@ function renderRound(s) {
   const playing = s.phase === "playing";
   $("round-title").textContent = `Round ${s.round} of ${s.rounds}`;
   show($("clip-status"), !playing || !s.clip);
-  $("clip-status").textContent = playing
-    ? "Loading the clip…"
-    : "Getting the next song ready…";
+  $("clip-status").textContent =
+    playing && s.screen
+      ? "The clip plays on the room's screen."
+      : playing
+        ? "Loading the clip…"
+        : "Getting the next song ready…";
   show($("count-bar").parentNode, playing);
   const audio = $("clip");
-  if (playing && s.clip && audio.dataset.url !== s.clip) {
+  show(audio, !s.screen);
+  if (s.screen) {
+    // The clip moved to the screen mid-round: a phone already playing must
+    // go silent, not just hide its player. Clearing the cached url lets the
+    // next unscreened snapshot restore playback.
+    if (audio.dataset.url !== undefined) {
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+      delete audio.dataset.url;
+    }
+  } else if (playing && s.clip && audio.dataset.url !== s.clip) {
     audio.dataset.url = s.clip;
     audio.src = s.clip;
   }
@@ -166,18 +180,17 @@ function renderRound(s) {
   };
   show($("choices"), false);
   show($("typed-form"), false);
-  if (playing && s.clip) {
+  // When the room is on a screen, the clip plays there and the phone only
+  // opens its answers at the server's round start.
+  const begin = () => {
+    if (!s.screen && s.clip) audio.play().catch(() => {});
+    openAnswers();
+  };
+  if (playing && (s.clip || s.screen)) {
     const delay = s.startedAt - offset - Date.now();
-    if (delay > 0) {
-      clearTimeout(playTimer);
-      playTimer = setTimeout(() => {
-        audio.play().catch(() => {});
-        openAnswers();
-      }, delay);
-    } else {
-      audio.play().catch(() => {});
-      openAnswers();
-    }
+    clearTimeout(playTimer);
+    if (delay > 0) playTimer = setTimeout(begin, delay);
+    else begin();
   }
   if (s.mode === "choices" && s.choices) {
     const box = $("choices");
@@ -263,6 +276,28 @@ function renderDone(s) {
       return li;
     }),
   );
+  $("board").replaceChildren(
+    ...(s.board ?? []).map((entry, index) => {
+      const li = document.createElement("li");
+      const rank = document.createElement("span");
+      rank.className = "rank";
+      rank.textContent = index + 1;
+      const track = document.createElement("div");
+      track.className = "track";
+      const name = document.createElement("b");
+      const link = document.createElement("a");
+      link.href = `/u/${encodeURIComponent(entry.name)}`;
+      link.textContent = entry.name;
+      name.append(link);
+      track.append(name);
+      const score = document.createElement("span");
+      score.className = "count";
+      score.textContent = entry.score.toLocaleString("en-US");
+      li.append(rank, track, score);
+      return li;
+    }),
+  );
+  show($("board-empty"), (s.board ?? []).length === 0);
   show($("points-hint"), !s.you.user);
   const rematch = $("rematch-button");
   show(rematch, s.you.creator);

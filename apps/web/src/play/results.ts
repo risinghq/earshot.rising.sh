@@ -37,6 +37,15 @@ export async function recordResults(env: Env, rows: ResultRow[]) {
       ),
     ),
   );
+  // A written result changes its category's board, so the cached copy must
+  // not survive the write — a room finishing right after a board read would
+  // otherwise freeze the board without its own scores.
+  const categories = new Set(rows.map((row) => row.category));
+  await Promise.all(
+    [...categories].map((category) =>
+      env.CACHE?.delete(`play:catboard:${category}`).catch(() => undefined),
+    ),
+  );
 }
 
 // Writes the row at the finish transition only; the flag in KV turns every
