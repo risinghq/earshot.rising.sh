@@ -216,6 +216,8 @@ describe("connect", () => {
         ["Song C", "vidc"],
       ]),
     );
+    // Connecting schedules from the real clock, not the pinned noon.
+    const connectedAt = Math.floor(Date.now() / 1000);
     const response = await post("/settings/ytmusic", {
       cookie,
       tz: "Europe/Berlin",
@@ -232,7 +234,7 @@ describe("connect", () => {
     expect(await openSecret(testEnv() as never, secret)).toBe(cookie);
     expect(source?.tz).toBe("Europe/Berlin");
     expect(source?.next_pull_at).toBeGreaterThanOrEqual(
-      now + pullIntervalSeconds,
+      connectedAt + pullIntervalSeconds,
     );
     expect(await playsCount()).toBe(3);
 
@@ -269,6 +271,7 @@ describe("connect", () => {
   it("connects an empty history and schedules the pull", async () => {
     await seedUser();
     stubFetch(page([["Song A", "vida"]], "Last week"));
+    const connectedAt = Math.floor(Date.now() / 1000);
     const response = await post("/settings/ytmusic", {
       cookie,
       tz: "UTC",
@@ -279,7 +282,7 @@ describe("connect", () => {
     expect(source?.play_seq).toBe(0);
     expect(source?.status).toBe("active");
     expect(source?.next_pull_at).toBeGreaterThanOrEqual(
-      now + pullIntervalSeconds,
+      connectedAt + pullIntervalSeconds,
     );
     expect(await playsCount()).toBe(0);
   });
