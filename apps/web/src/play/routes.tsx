@@ -29,15 +29,13 @@ import {
   feedErrorPage,
   gamePage,
   boardPage,
+  categoryBoardPage,
   matchPage,
 } from "./pages";
-import {
-  readBoard,
-  readCategoryBoard,
-  recordGame,
-  type CategoryBoardEntry,
-} from "./results";
+import { readBoard, readCategoryBoard, recordGame } from "./results";
 import { deezerSearchArtists } from "./sources";
+import { byDecade, poolEras } from "./pool";
+import { anonKey, anonOf, playerKeyOf } from "./outcomes";
 import { newRoomCode, newRoomSecret } from "./room";
 import { roomPage } from "./room-page";
 import { screenPage } from "./screen-page";
@@ -54,6 +52,7 @@ async function gameInput(context: Context<{ Bindings: Env }>): Promise<
       mode: Mode;
       tracks: Candidate[];
       userId: number | null;
+      playerKey: string;
     }
   | Response
 > {
@@ -61,6 +60,7 @@ async function gameInput(context: Context<{ Bindings: Env }>): Promise<
   const slug = typeof body.category === "string" ? body.category : "";
   const mode: Mode | null =
     body.mode === "choices" || body.mode === "typed" ? body.mode : null;
+  const era = /^\d{3,4}$/.test(String(body.era)) ? Number(body.era) : null;
   if (slug === "" || mode === null)
     return context.text("Pick a category and a mode.", 400);
   const user = await sessionUser(context);
@@ -77,9 +77,17 @@ async function gameInput(context: Context<{ Bindings: Env }>): Promise<
     console.error("play catalog failed", error);
     return context.html(feedErrorPage(category.name, user), 502);
   }
+  if (era !== null) tracks = byDecade(tracks, era);
   if (!enoughTracks(category, tracks))
     return context.html(feedErrorPage(category.name, user), 502);
-  return { category, mode, tracks, userId: user?.id ?? null };
+  const anon = anonKey(context);
+  return {
+    category,
+    mode,
+    tracks,
+    userId: user?.id ?? null,
+    playerKey: playerKeyOf(user?.id ?? null, anon),
+  };
 }
 
 playApp.post("/room", async (context) => {
@@ -116,8 +124,13 @@ playApp.get("/room/:code/ws", async (context) => {
   const room = context.env.ROOMS.get(
     context.env.ROOMS.idFromName(context.req.param("code")),
   );
-  const target =
-    user === null ? "https://room/ws" : `https://room/ws?u=${user.id}`;
+  const params = new URLSearchParams();
+  if (user !== null) params.set("u", String(user.id));
+  else {
+    const anon = anonOf(context);
+    if (anon !== null) params.set("a", anon);
+  }
+  const target = `https://room/ws${params.size ? `?${params}` : ""}`;
   return room.fetch(new Request(target, context.req.raw));
 });
 
@@ -131,7 +144,9 @@ playApp.post("/match", async (context) => {
   // A stranger must never play someone's listening history.
   if (category.feed === "mine")
     return context.text("No random matches in this category.", 400);
-  return context.redirect(`/play/match/${category.slug}`, 303);
+  const era = /^\d{3,4}$/.test(String(body.era)) ? `?era=${body.era}` : "";
+  anonKey(context);
+  return context.redirect(`/play/match/${category.slug}${era}`, 303);
 });
 
 playApp.get("/match/:slug/ws", async (context) => {
@@ -143,9 +158,14 @@ playApp.get("/match/:slug/ws", async (context) => {
     return context.text("no such category", 404);
   const user = await sessionUser(context);
   const params = new URLSearchParams({ category: category.slug });
+  const era = context.req.query("era");
+  if (era !== undefined && /^\d{3,4}$/.test(era)) params.set("e", era);
   if (user !== null) {
     params.set("u", String(user.id));
     params.set("n", user.name);
+  } else {
+    const anon = anonOf(context);
+    if (anon !== null) params.set("a", anon);
   }
   const matchmaker = context.env.MATCHMAKER.get(
     context.env.MATCHMAKER.idFromName("global"),
@@ -160,13 +180,30 @@ playApp.get("/match/:slug", async (context) => {
   const user = await sessionUser(context);
   if (category === null || category.feed === "mine")
     return context.html(notFoundPage(user), 404);
-  return context.html(matchPage(category, user));
+  if (user === null) anonKey(context);
+  const era = context.req.query("era");
+  return context.html(
+    matchPage(
+      category,
+      user,
+      era !== undefined && /^\d{3,4}$/.test(era) ? Number(era) : null,
+    ),
+  );
 });
 
 playApp.get("/board", async (context) => {
+  const user = await sessionUser(context);
+  const slug = context.req.query("category");
+  if (slug !== undefined) {
+    const category = await getCategory(context.env, slug);
+    if (category !== null) {
+      const entries = await readCategoryBoard(context.env, slug);
+      return context.html(categoryBoardPage(category.name, entries, user));
+    }
+  }
   const period = context.req.query("period") === "all" ? "all" : "week";
   const entries = await readBoard(context.env, period);
-  return context.html(boardPage(entries, period, await sessionUser(context)));
+  return context.html(boardPage(entries, period, user));
 });
 
 // The screen view is the room on a shared display: it watches the game and
@@ -187,6 +224,7 @@ playApp.get("/room/:code", async (context) => {
   const room = context.env.ROOMS.get(context.env.ROOMS.idFromName(code));
   const exists = await room.fetch(new Request("https://room/exists"));
   if (!exists.ok) return context.html(notFoundPage(user), 404);
+  if (user === null) anonKey(context);
   return context.html(roomPage(code, user));
 });
 
@@ -224,17 +262,82 @@ playApp.get("/artist/:ids", async (context) => {
   return context.html(artistPage(category, entries, user));
 });
 
+const reportReasons = new Set([
+  "wrong_song",
+  "bad_clip",
+  "wrong_title",
+  "other",
+]);
+const reportLimitPerHour = 10;
+
+// A report needs the player key only to rate-limit it; signed-out players
+// report too, so the key may be the anonymous cookie.
+playApp.post("/report", async (context) => {
+  const body = await context.req.parseBody();
+  const reason = typeof body.reason === "string" ? body.reason : "";
+  const track = typeof body.track === "string" ? body.track : "";
+  const title = typeof body.title === "string" ? body.title.trim() : "";
+  const artist = typeof body.artist === "string" ? body.artist.trim() : "";
+  const back = typeof body.back === "string" ? body.back : "/play";
+  if (!reportReasons.has(reason) || track === "" || title === "")
+    return context.text("Bad report.", 400);
+  const user = await sessionUser(context);
+  // Reads the existing cookie without minting: a cookieless client lands in
+  // the shared `a:` bucket so the hourly limit still applies.
+  const playerKey = playerKeyOf(user?.id ?? null, anonOf(context));
+  const now = Math.floor(Date.now() / 1000);
+  const recent = await context.env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM track_reports
+     WHERE player_key = ?1 AND created_at > ?2`,
+  )
+    .bind(playerKey, now - 3600)
+    .first<{ n: number }>();
+  if ((recent?.n ?? 0) >= reportLimitPerHour)
+    return context.text("Too many reports. Try again later.", 429);
+  const category = typeof body.category === "string" ? body.category : "";
+  const detail = typeof body.detail === "string" ? body.detail.trim() : "";
+  const deezerId = track.startsWith("dz:") ? Number(track.slice(3)) : null;
+  await context.env.DB.prepare(
+    `INSERT INTO track_reports
+       (track_key, deezer_id, title, artist, category, reason, detail,
+        player_key, created_at)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`,
+  )
+    .bind(
+      track,
+      Number.isInteger(deezerId) ? deezerId : null,
+      title,
+      artist,
+      category || null,
+      reason,
+      detail || null,
+      playerKey,
+      now,
+    )
+    .run();
+  return context.redirect(
+    back.startsWith("/") && !back.startsWith("//") ? back : "/play",
+    303,
+  );
+});
+
 playApp.get("/", async (context) => {
   const user = await sessionUser(context);
   const categories = await listCategories(context.env.DB);
-  const boards = Object.fromEntries(
+  const eras = Object.fromEntries(
     await Promise.all(
-      categories.map(
-        async (category): Promise<[string, CategoryBoardEntry[]]> => [
-          category.slug,
-          await readCategoryBoard(context.env, category.slug),
-        ],
-      ),
+      categories
+        .filter((category) => category.feed === "deezer_playlist")
+        .map(async (category): Promise<[string, number[]]> => {
+          try {
+            return [
+              category.slug,
+              poolEras(await catalog(context.env, category, null)),
+            ];
+          } catch {
+            return [category.slug, []];
+          }
+        }),
     ),
   );
   const who = context.req.query("who");
@@ -242,7 +345,7 @@ playApp.get("/", async (context) => {
   return context.html(
     categoriesPage(
       categories,
-      boards,
+      eras,
       user,
       who === "room" || who === "stranger" ? who : "solo",
       mode === "typed" ? "typed" : "choices",
@@ -259,6 +362,7 @@ playApp.post("/", async (context) => {
     input.mode,
     input.tracks,
     input.userId,
+    input.playerKey,
   );
   return context.redirect(`/play/${game.id}`, 303);
 });

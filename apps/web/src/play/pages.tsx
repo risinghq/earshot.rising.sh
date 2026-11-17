@@ -101,33 +101,22 @@ setup.addEventListener("change", () => {
 });
 `;
 
+const eraLabel = (decade: number) => `${String(decade).slice(2)}s`;
+
 function tile(
   category: Category,
-  top: CategoryBoardEntry | undefined,
+  eras: number[],
   who: PlayWho,
   mode: "choices" | "typed",
   user: SignedInUser | null,
 ) {
   const locked = category.feed === "mine" && user === null;
-  const score = locked ? (
-    "Your top tracks"
-  ) : top !== undefined ? (
-    <>
-      Top score: <a href={`/u/${encodeURIComponent(top.name)}`}>{top.name}</a> ·{" "}
-      {top.score.toLocaleString("en-US")}
-    </>
-  ) : category.feed === "mine" ? (
-    "Your top tracks"
-  ) : (
-    `No scores in the last ${categoryBoardDays} days`
-  );
   if (locked)
     return (
       <div class="tile" key={category.slug}>
         <a href="/auth/github">
           <span class="tile-name">{category.name}</span>
           <span class="tile-go">Sign in</span>
-          <span class="tile-score">{score}</span>
         </a>
       </div>
     );
@@ -140,17 +129,50 @@ function tile(
     >
       <input type="hidden" name="category" value={category.slug} />
       <input type="hidden" name="mode" value={mode} />
-      <button type="submit">
-        <span class="tile-name">{category.name}</span>
-      </button>
-      <span class="tile-score">{score}</span>
+      {eras.length === 0 ? (
+        <>
+          <button type="submit">
+            <span class="tile-name">{category.name}</span>
+          </button>
+          <span class="tile-links">
+            <a
+              class="tile-score"
+              href={`/play/board?category=${category.slug}`}
+            >
+              Scores
+            </a>
+          </span>
+        </>
+      ) : (
+        <>
+          <span class="tile-name">
+            {category.name}
+            <a
+              class="tile-score"
+              href={`/play/board?category=${category.slug}`}
+            >
+              Scores
+            </a>
+          </span>
+          <span class="tile-eras">
+            <button class="chip" type="submit">
+              All
+            </button>
+            {eras.map((era) => (
+              <button class="chip" type="submit" name="era" value={era}>
+                {eraLabel(era)}
+              </button>
+            ))}
+          </span>
+        </>
+      )}
     </form>
   );
 }
 
 export function categoriesPage(
   categories: Category[],
-  boards: Record<string, CategoryBoardEntry[]>,
+  eras: Record<string, number[]>,
   user: SignedInUser | null,
   who: PlayWho = "solo",
   mode: "choices" | "typed" = "choices",
@@ -259,7 +281,7 @@ export function categoriesPage(
         </Section>
         <div class="tiles">
           {categories.map((category) =>
-            tile(category, boards[category.slug]?.[0], who, mode, user),
+            tile(category, eras[category.slug] ?? [], who, mode, user),
           )}
         </div>
         <p class="meta">
@@ -461,6 +483,34 @@ function revealPage(
                   {last ? "See results" : "Next round"}
                 </PillButton>
               </form>
+              <details class="report">
+                <summary>Report this clip</summary>
+                <form
+                  class="report-form"
+                  method="post"
+                  action="/play/report"
+                  data-solo
+                >
+                  <input type="hidden" name="track" value={result.trackKey} />
+                  <input type="hidden" name="title" value={result.title} />
+                  <input type="hidden" name="artist" value={result.artist} />
+                  <input
+                    type="hidden"
+                    name="category"
+                    value={game.categorySlug}
+                  />
+                  <input type="hidden" name="back" value={`/play/${game.id}`} />
+                  <select name="reason" required>
+                    <option value="wrong_song">Wrong song</option>
+                    <option value="bad_clip">Bad clip</option>
+                    <option value="wrong_title">Wrong title</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <PillButton small type="submit">
+                    Send report
+                  </PillButton>
+                </form>
+              </details>
             </div>
             <div>
               {result.choices.length > 0 ? (
@@ -794,6 +844,28 @@ const boardNames: Record<BoardPeriod, string> = {
   all: "All time",
 };
 
+export function categoryBoardPage(
+  name: string,
+  entries: CategoryBoardEntry[],
+  user: SignedInUser | null,
+) {
+  return Page({
+    title: `${name} scores · Guess the song`,
+    user,
+    children: (
+      <>
+        <div class="page-head">
+          <h1>{name}</h1>
+          <p class="meta">Top scores in this category.</p>
+        </div>
+        <Section title="Top scores" aside={`Last ${categoryBoardDays} days`}>
+          <CategoryBoard entries={entries} />
+        </Section>
+      </>
+    ),
+  });
+}
+
 export function boardPage(
   entries: BoardEntry[],
   period: BoardPeriod,
@@ -842,7 +914,11 @@ export function boardPage(
   });
 }
 
-export function matchPage(category: Category, user: SignedInUser | null) {
+export function matchPage(
+  category: Category,
+  user: SignedInUser | null,
+  era: number | null = null,
+) {
   return Page({
     title: `${category.name} · Play someone random`,
     user,
@@ -850,6 +926,7 @@ export function matchPage(category: Category, user: SignedInUser | null) {
       <div
         id="match"
         data-category={category.slug}
+        data-era={era ?? ""}
         data-signed-in={user ? "1" : ""}
         class="stack"
       >

@@ -140,6 +140,28 @@ export function roomPage(code: string, user: SignedInUser | null) {
               </div>
             </div>
             <ul class="rows" id="reveal-scores" />
+            <details class="report" id="reveal-report" hidden>
+              <summary>Report this clip</summary>
+              <form class="report-form" method="post" action="/play/report">
+                <input type="hidden" name="track" id="report-track" />
+                <input type="hidden" name="title" id="report-title" />
+                <input type="hidden" name="artist" id="report-artist" />
+                <input type="hidden" name="category" id="report-category" />
+                <input type="hidden" name="back" id="report-back" />
+                <select name="reason" required>
+                  <option value="wrong_song">Wrong song</option>
+                  <option value="bad_clip">Bad clip</option>
+                  <option value="wrong_title">Wrong title</option>
+                  <option value="other">Other</option>
+                </select>
+                <button class="pill small" type="submit">
+                  Send report
+                </button>
+                <small class="muted report-failed" hidden>
+                  Could not send the report. Try again later.
+                </small>
+              </form>
+            </details>
           </div>
         </section>
 

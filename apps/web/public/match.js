@@ -21,8 +21,9 @@ let startedAt = 0;
 
 function connect(name) {
   left = false;
+  const era = root.dataset.era ? `?era=${root.dataset.era}` : "";
   ws = new WebSocket(
-    `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/play/match/${slug}/ws`,
+    `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/play/match/${slug}/ws${era}`,
   );
   ws.onopen = () => {
     ws.send(JSON.stringify({ type: "join", name }));

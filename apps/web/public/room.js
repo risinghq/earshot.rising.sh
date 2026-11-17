@@ -16,6 +16,33 @@ if (params.get("k")) {
 }
 $("room-link").textContent = `${location.origin}/play/room/${code}`;
 
+// Reports go over fetch so the room socket stays connected.
+const reportEl = $("reveal-report");
+reportEl.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const form = event.target;
+  fetch(form.action, {
+    method: "POST",
+    redirect: "manual",
+    body: new URLSearchParams(new FormData(form)),
+  })
+    .then((response) => {
+      if (response.type === "opaqueredirect" || response.ok) {
+        form.reset();
+        reportEl.open = false;
+        return;
+      }
+      const hint = reportEl.querySelector(".report-failed");
+      if (hint) hint.hidden = false;
+    })
+    .catch(() => {
+      const hint = reportEl.querySelector(".report-failed");
+      if (hint) hint.hidden = false;
+    });
+});
+
+let revealedTrack = null;
+
 let ws;
 let askedWithName = false; // the last join sent carried a nickname
 let offset = 0; // server time minus local time
@@ -178,6 +205,7 @@ function render(s) {
   }
   if (s.phase === "loading" || s.phase === "playing") renderRound(s);
   if (s.phase === "reveal") renderReveal(s);
+  else revealedTrack = null;
   if (s.phase === "done") renderDone(s);
 }
 
@@ -314,6 +342,20 @@ function renderReveal(s) {
   const link = $("reveal-link");
   show(link, !!r.link);
   if (r.link) link.href = r.link;
+  const report = $("reveal-report");
+  show(report, !!r.track);
+  if (r.track && r.track !== revealedTrack) {
+    revealedTrack = r.track;
+    report.open = false;
+    report.querySelector("form").reset();
+    const hint = report.querySelector(".report-failed");
+    if (hint) hint.hidden = true;
+    $("report-track").value = r.track;
+    $("report-title").value = r.title;
+    $("report-artist").value = r.artist;
+    $("report-category").value = s.categorySlug || "";
+    $("report-back").value = location.pathname;
+  }
   $("reveal-scores").replaceChildren(
     ...r.results.map((result) => {
       const li = document.createElement("li");

@@ -624,6 +624,7 @@ ol.ranked li,
 ul.rows li {
   align-items: center;
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-4);
   justify-content: space-between;
   padding: var(--space-3) 0;
@@ -777,6 +778,7 @@ ol.ranked .track {
 }
 input[type="text"],
 input[type="password"],
+input[type="number"],
 select {
   background: var(--surface);
   border: 1px solid var(--edge-strong);
@@ -794,8 +796,15 @@ input[type="password"] {
   max-width: 100%;
   width: 22rem;
 }
+input[type="number"] {
+  width: 6rem;
+}
+select {
+  width: fit-content;
+}
 input[type="text"]:focus-visible,
 input[type="password"]:focus-visible,
+input[type="number"]:focus-visible,
 select:focus-visible {
   border-color: var(--accent-7);
   box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent-7) 30%, transparent);
@@ -1009,22 +1018,68 @@ button:disabled {
   transform: scale(0.97);
 }
 .tile-name {
+  display: block;
   font-size: var(--text-base);
   font-weight: var(--weight-strong);
+  padding: var(--space-4) var(--space-6) var(--space-2);
+}
+.tile > button > .tile-name,
+.tile > a > .tile-name {
+  padding: 0;
+}
+.tile-eras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: 0 var(--space-6) var(--space-4);
+}
+.tile-eras .chip {
+  font-size: var(--text-xs);
+  min-height: 28px;
+  padding: 0 var(--space-3);
+}
+.tile-links {
+  padding: 0 var(--space-6) var(--space-4);
 }
 .tile-score {
   color: var(--fg-muted);
   font-size: var(--text-xs);
-  padding: 0 var(--space-6) var(--space-4);
 }
-.tile > a > .tile-score {
-  padding: 0;
+.tile-name > .tile-score {
+  margin-left: var(--space-2);
 }
 .tile-go {
   color: var(--accent-text);
   font-size: var(--text-xs);
   font-weight: var(--weight-strong);
   margin-top: var(--space-2);
+}
+
+.report {
+  font-size: var(--text-sm);
+}
+
+.track-edit {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.track-edit input[name="answer_title"] {
+  width: 14rem;
+}
+.report summary {
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.report-form {
+  align-items: center;
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.report-form select {
+  font: inherit;
 }
 
 /* Solo game: clip and countdown beside the answer. */
@@ -1184,6 +1239,9 @@ button:disabled {
   input[type="text"],
   input[type="password"] {
     width: 100%;
+  }
+  .track-edit {
+    flex: 1 1 100%;
   }
   .site-header .wrap {
     flex-wrap: wrap;
