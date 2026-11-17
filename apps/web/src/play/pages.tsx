@@ -352,25 +352,14 @@ export function questionPage(
             <h1>Which song is this?</h1>
           </div>
           <div class="game-grid">
-            <div class="stack">
-              <ClipPlayer
-                src={preview.url}
-                audioId="clip"
-                toggleId="clip-toggle"
-                barId="count-bar"
-                leftId="count-left"
-                volumeId="clip-volume"
-              />
-              <Stats
-                items={[
-                  {
-                    label: "Round",
-                    value: game.results.length + 1,
-                  },
-                  { label: "Score", value: game.total },
-                ]}
-              />
-            </div>
+            <ClipPlayer
+              src={preview.url}
+              audioId="clip"
+              toggleId="clip-toggle"
+              barId="count-bar"
+              leftId="count-left"
+              volumeId="clip-volume"
+            />
             <div>
               {game.mode === "choices" ? (
                 <form
