@@ -924,6 +924,22 @@ title.
   first. A category with at least 20 playable tracks in a decade offers that
   decade as a chip on its `/play` tile next to "All"; a chip starts a game
   drawing only from that decade, for solo, rooms and random matches alike.
+- **For you.** The first tile on `/play` starts a solo game whose pool is scored
+  per player from D1 alone, in `src/play/foryou.ts`. An affinity per (category,
+  decade) comes from the player's `round_outcomes` — rounds played, correct rate
+  and answer speed — and, for a signed-in player, from the artists of their
+  "From my listening" top tracks, counted where those artists sit in
+  `catalog_members`. About seven of the ten rounds are known candidates:
+  unbanned catalog tracks from the player's top cells that the player has not
+  answered in 30 days. Three are new: tracks that share a source playlist with
+  tracks the player answered correctly, ranked by how many they sit beside and
+  excluding every answered track. A player with fewer than ten rounds and no
+  listening is cold: the pool is the most-played categories' catalogs across all
+  eras, and the tile says it learns their taste. The mix is computed per request
+  and held in KV for ten minutes under `play:foryou:{playerKey}`. Its rounds
+  record `round_outcomes` with the track's own source category, so every For you
+  game refines the next mix; it is solo only, since a shared game would play one
+  person's taste.
 - **Artist categories.** The slug `artist-<id>` is one Deezer artist and
   `artist-<idA>-<idB>` is two blended; a blend sorts its ids, so the canonical
   slug is unique — `artist-85-27` redirects to `artist-27-85`, and one slug
