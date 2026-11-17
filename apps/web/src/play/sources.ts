@@ -10,6 +10,8 @@ export interface Candidate {
   link: string | null;
   isrc?: string;
   deezerId?: number;
+  year?: number;
+  decade?: number;
 }
 
 export interface Preview {
@@ -34,7 +36,8 @@ interface DeezerTrack {
   title?: string;
   preview?: string;
   link?: string;
-  artist?: { name?: string };
+  release_date?: string;
+  artist?: { id?: number; name?: string };
   album?: { cover_medium?: string };
 }
 
@@ -69,6 +72,63 @@ export function deezerPlaylist(playlistId: string) {
   return deezerList(
     `https://api.deezer.com/playlist/${playlistId}/tracks?limit=100`,
   );
+}
+
+export interface PlaylistInfo {
+  id: number;
+  title: string;
+  owner: string;
+  tracks: number;
+}
+
+// The playlist pages its tracks 100 at a time through `index`; a response
+// shorter than the page size is the last page.
+export async function deezerPlaylistTracks(playlistId: string) {
+  const tracks: (DeezerTrack & { id: number })[] = [];
+  for (let index = 0; index < 1000; index += 100) {
+    const body = (await deezerGet(
+      `https://api.deezer.com/playlist/${playlistId}/tracks?limit=100&index=${index}`,
+    )) as { data?: DeezerTrack[] };
+    const page = (body.data ?? []).filter(
+      (track): track is DeezerTrack & { id: number } =>
+        typeof track.id === "number",
+    );
+    tracks.push(...page);
+    if (page.length < 100) break;
+  }
+  return tracks;
+}
+
+export async function deezerPlaylistInfo(
+  playlistId: string,
+): Promise<PlaylistInfo | null> {
+  const body = (await deezerGet(
+    `https://api.deezer.com/playlist/${playlistId}`,
+  )) as {
+    id?: number;
+    title?: string;
+    nb_tracks?: number;
+    creator?: { name?: string };
+    user?: { name?: string };
+    error?: { code?: number };
+  };
+  if (body.error?.code === 800) return null;
+  if (typeof body.title !== "string" || typeof body.nb_tracks !== "number")
+    throw new FeedError("playlist lookup failed", playlistId);
+  return {
+    id: body.id ?? Number(playlistId),
+    title: body.title,
+    owner: body.creator?.name ?? body.user?.name ?? "",
+    tracks: body.nb_tracks,
+  };
+}
+
+export async function deezerTrackYear(deezerId: number) {
+  const track = (await deezerGet(
+    `https://api.deezer.com/track/${deezerId}`,
+  )) as DeezerTrack;
+  const year = Number(track.release_date?.slice(0, 4));
+  return Number.isInteger(year) && year > 0 ? year : null;
 }
 
 export function deezerArtistTop(artistId: number) {
