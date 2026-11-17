@@ -22,17 +22,47 @@ let offset = 0; // server time minus local time
 let tickTimer = null;
 let playTimer = null;
 let answered = false;
+let loadedFor = 0; // the round number this device last reported ready
+
+// The page can set clip volume everywhere except iOS, where setting it is
+// silently ignored; the slider stays hidden there.
+const volumeProbe = document.createElement("audio");
+volumeProbe.volume = 0.5;
+const canSetVolume = volumeProbe.volume !== 1;
+const volumeKey = "earshot-volume";
+const savedVolume = localStorage.getItem(volumeKey);
+
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const clip = $("clip");
 const clipToggle = $("clip-toggle");
 clipToggle.hidden = false;
 clip.removeAttribute("controls");
+clip.volume = savedVolume === null ? 0.6 : Number(savedVolume) / 100;
+{
+  const volumeInput = $("clip-volume");
+  if (volumeInput && canSetVolume) {
+    volumeInput.hidden = false;
+    volumeInput.value = String(Math.round(clip.volume * 100));
+    volumeInput.oninput = () => {
+      const v = Number(volumeInput.value);
+      clip.volume = v / 100;
+      localStorage.setItem(volumeKey, String(v));
+    };
+  }
+}
+// The icon follows the media element's real state through its events.
+// `hidden` is set as an attribute because the icons are SVG, where the
+// .hidden property does not reflect.
 const setClipIcon = () => {
-  clipToggle.querySelector(".i-play").hidden = !clip.paused;
-  clipToggle.querySelector(".i-pause").hidden = clip.paused;
+  const playing = !clip.paused && !clip.ended;
+  clipToggle.querySelector(".i-play").toggleAttribute("hidden", playing);
+  clipToggle.querySelector(".i-pause").toggleAttribute("hidden", !playing);
+  document.body.classList.toggle("clip-live", playing);
 };
-clip.onplay = setClipIcon;
-clip.onpause = setClipIcon;
+["play", "playing", "pause", "ended"].forEach((event) =>
+  clip.addEventListener(event, setClipIcon),
+);
 clipToggle.onclick = () => {
   if (unlock()) return;
   if (clip.paused) clip.play().catch(() => {});
@@ -203,6 +233,17 @@ function renderRound(s) {
     audio.dataset.url = s.clip;
     audio.src = s.clip;
   }
+  // Each device tells the room once its clip can play (or that there is no
+  // clip to wait for, as on a screened room); the round starts on the last
+  // report or the server's timeout.
+  if (playing && s.round !== loadedFor) {
+    loadedFor = s.round;
+    if (s.screen || !s.clip) send({ type: "loaded" });
+    else
+      audio.addEventListener("canplay", () => send({ type: "loaded" }), {
+        once: true,
+      });
+  }
   const mine = s.players.find((p) => p.name === s.you.name);
   answered = !!(mine && mine.answered);
   show($("answer-status"), answered);
@@ -276,13 +317,15 @@ function renderReveal(s) {
   $("reveal-scores").replaceChildren(
     ...r.results.map((result) => {
       const li = document.createElement("li");
+      const mine = result.name === s.you.name;
+      if (mine) li.classList.add(result.correct ? "is-right" : "is-wrong");
       const track = document.createElement("div");
       track.className = "track";
       const name = document.createElement("b");
       name.textContent = result.name;
       const sub = document.createElement("small");
       sub.textContent = result.correct
-        ? "correct"
+        ? "correct" + (result.streak >= 2 ? ` · ${result.streak} in a row` : "")
         : result.answer
           ? `answered ${result.answer}`
           : "no answer";
@@ -290,6 +333,18 @@ function renderReveal(s) {
       const score = document.createElement("span");
       score.className = "count";
       score.textContent = `+${result.score}`;
+      // The player's own points count up; others show final numbers.
+      if (mine && result.score > 0 && !reducedMotion) {
+        const t0 = performance.now();
+        const step = (t) => {
+          const k = Math.min(1, (t - t0) / 500);
+          score.textContent = `+${Math.round(result.score * k)}`;
+          if (k < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }
+      if (mine && result.correct && "vibrate" in navigator)
+        navigator.vibrate(25);
       li.append(track, score);
       return li;
     }),

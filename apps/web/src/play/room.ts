@@ -28,6 +28,9 @@ export const roomCodeLength = 6;
 const codeAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
 const startLeadMs = 1500;
+// Devices get this long to report the clip loaded; after it the round starts
+// without the stragglers.
+const readyWaitMs = 4000;
 const revealMs = 6000;
 const quotaRetryMs = 2500;
 const idleMs = 3600_000;
@@ -53,6 +56,7 @@ interface Player {
   creator: boolean;
   userId: number | null;
   score: number;
+  streak: number;
 }
 
 export type RoomKind = "room" | "match";
@@ -72,8 +76,14 @@ interface RoundAnswer {
 interface Round {
   index: number;
   number: number;
+  // When the clip was broadcast. startedAt is provisional at
+  // servedAt + readyWaitMs + startLeadMs and moves earlier once every
+  // connected player (and a watching screen) has reported the clip loaded.
+  servedAt: number;
   startedAt: number;
   endsAt: number;
+  loaded: string[];
+  screenLoaded: boolean;
   choices: string[];
   link: string | null;
   cover: string | null;
@@ -92,6 +102,7 @@ interface Reveal {
     answer: string | null;
     correct: boolean;
     score: number;
+    streak: number;
   }[];
 }
 
@@ -162,7 +173,10 @@ export class Room extends DurableObject<Env> {
         this.s.seededAt ??= this.s.lastActive;
         this.s.playedBy ??= 0;
         this.s.board ??= [];
-        for (const player of this.s.players) player.userId ??= null;
+        for (const player of this.s.players) {
+          player.userId ??= null;
+          player.streak ??= 0;
+        }
         if ((await ctx.storage.getAlarm()) === null) await this.schedule();
       }
     });
@@ -213,6 +227,7 @@ export class Room extends DurableObject<Env> {
           creator: false,
           userId: seated.userId,
           score: 0,
+          streak: 0,
         })),
         gameId: "",
         seededAt: now,
@@ -269,6 +284,8 @@ export class Room extends DurableObject<Env> {
       );
     } else if (message.type === "start" && pid !== undefined) {
       await this.start(pid, Date.now());
+    } else if (message.type === "loaded") {
+      await this.markLoaded(ws, Date.now());
     } else if (
       message.type === "answer" &&
       pid !== undefined &&
@@ -279,14 +296,18 @@ export class Room extends DurableObject<Env> {
   }
 
   async webSocketClose() {
+    const now = Date.now();
     // The departed player no longer counts toward the round; if they were
-    // the last one unanswered, close it early like an answer would.
+    // the last one unanswered, close it early like an answer would. Their
+    // missing "loaded" report stops counting the same way.
     if (
       this.s?.phase === "playing" &&
       this.s.round !== null &&
       this.everyoneAnswered()
     ) {
-      this.closeRound(Date.now());
+      this.closeRound(now);
+      await this.save();
+    } else if (this.maybeStartEarly(now)) {
       await this.save();
     }
     this.broadcast();
@@ -491,6 +512,7 @@ export class Room extends DurableObject<Env> {
           token === s.creatorToken,
         userId: this.uidOf(ws),
         score: 0,
+        streak: 0,
       };
       s.players.push(player);
     }
@@ -532,7 +554,10 @@ export class Room extends DurableObject<Env> {
   private async begin(now: number) {
     const s = this.s!;
     if (s.phase !== "lobby" && s.phase !== "done") return;
-    for (const p of s.players) p.score = 0;
+    for (const p of s.players) {
+      p.score = 0;
+      p.streak = 0;
+    }
     s.candidates = shuffled(s.candidates);
     s.gameId = base64url(crypto.getRandomValues(new Uint8Array(8)));
     // A seat that never held a live socket did not play: the result rows
@@ -575,6 +600,7 @@ export class Room extends DurableObject<Env> {
     const score = correct ? scoreFor(elapsed) : 0;
     s.round.answers[pid] = { answer: given, correct, score };
     player.score += score;
+    player.streak = correct ? player.streak + 1 : 0;
     s.lastActive = now;
     if (this.everyoneAnswered()) {
       this.closeRound(now);
@@ -609,6 +635,7 @@ export class Room extends DurableObject<Env> {
           answer: answer?.answer ?? null,
           correct: answer?.correct ?? false,
           score: answer?.score ?? 0,
+          streak: player.streak,
         };
       }),
     };
@@ -643,13 +670,18 @@ export class Room extends DurableObject<Env> {
       if (preview === null) continue;
       // The lead is measured from resolution, not from the request that
       // started it: lookups and skipped candidates can take longer than
-      // the lead, and the clock must outlive the broadcast.
-      const startedAt = Date.now() + startLeadMs;
+      // the lead, and the clock must outlive the broadcast. The start is
+      // provisional: devices that report the clip loaded pull it earlier.
+      const served = Date.now();
+      const startedAt = served + readyWaitMs + startLeadMs;
       s.round = {
         index,
         number: s.served + 1,
+        servedAt: served,
         startedAt,
         endsAt: startedAt + roundSeconds * 1000,
+        loaded: [],
+        screenLoaded: false,
         choices:
           s.mode === "choices" ? sampleChoices(s.pool, candidate.title) : [],
         link: preview.link ?? candidate.link,
@@ -668,6 +700,42 @@ export class Room extends DurableObject<Env> {
     await this.finish();
     await this.save();
     this.broadcast();
+  }
+
+  // A device reports its clip ready. The round starts at the earliest of
+  // every connected player (and any screen) reporting, or the provisional
+  // servedAt + readyWaitMs deadline, plus the usual lead.
+  private async markLoaded(ws: WebSocket, now: number) {
+    const s = this.s;
+    if (s === undefined || s.phase !== "playing" || s.round === null) return;
+    if (this.watching(ws)) {
+      s.round.screenLoaded = true;
+    } else {
+      const pid = this.pidOf(ws);
+      if (pid === undefined) return;
+      if (!s.round.loaded.includes(pid)) s.round.loaded.push(pid);
+    }
+    if (this.maybeStartEarly(now)) {
+      await this.save();
+      this.broadcast();
+    }
+  }
+
+  // True when everyone expected has reported; moves the start up if the
+  // wait can end early. Safe to call on any state change.
+  private maybeStartEarly(now: number) {
+    const s = this.s;
+    if (s === undefined) return false;
+    const round = s.round;
+    if (s.phase !== "playing" || round === null) return false;
+    const expected = this.connectedPids();
+    if (![...expected].every((pid) => round.loaded.includes(pid))) return false;
+    if (this.hasScreen() && !round.screenLoaded) return false;
+    const start = now + startLeadMs;
+    if (start >= round.startedAt) return false;
+    round.startedAt = start;
+    round.endsAt = start + roundSeconds * 1000;
+    return true;
   }
 
   // After an eviction the clip is gone; re-resolve the open round for

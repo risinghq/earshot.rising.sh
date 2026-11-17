@@ -12,6 +12,56 @@ let ws;
 let offset = 0; // server time minus local time
 let tickTimer = null;
 let playTimer = null;
+let loadedFor = 0; // the round number this screen last reported ready
+
+// The page can set clip volume everywhere except iOS, where setting it is
+// silently ignored; the slider stays hidden there.
+const volumeProbe = document.createElement("audio");
+volumeProbe.volume = 0.5;
+const canSetVolume = volumeProbe.volume !== 1;
+const volumeKey = "earshot-volume";
+const savedVolume = localStorage.getItem(volumeKey);
+
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+{
+  const audio = $("screen-clip");
+  audio.volume = savedVolume === null ? 0.6 : Number(savedVolume) / 100;
+  const volumeInput = $("screen-volume");
+  if (volumeInput && canSetVolume) {
+    volumeInput.hidden = false;
+    volumeInput.value = String(Math.round(audio.volume * 100));
+    volumeInput.oninput = () => {
+      const v = Number(volumeInput.value);
+      audio.volume = v / 100;
+      localStorage.setItem(volumeKey, String(v));
+    };
+  }
+  // The sound button follows the media element's real state: it shows only
+  // while the round wants sound and a play attempt was blocked — a clip
+  // that is merely still loading must not raise it.
+  let wantsSound = false;
+  let blocked = false;
+  const syncSound = () =>
+    show($("screen-sound"), wantsSound && blocked && audio.paused);
+  audio.addEventListener("playing", () => {
+    blocked = false;
+    syncSound();
+  });
+  audio.syncSound = () => {
+    wantsSound = true;
+    syncSound();
+  };
+  audio.blockSound = () => {
+    blocked = true;
+    syncSound();
+  };
+  audio.stopSound = () => {
+    wantsSound = false;
+    blocked = false;
+    syncSound();
+  };
+}
 
 function connect() {
   ws = new WebSocket(
@@ -90,7 +140,7 @@ function render(s) {
   // it, so a finished round cannot bleed into the reveal or the next load.
   if (s.phase !== "playing") {
     stopClip();
-    show($("screen-sound"), false);
+    $("screen-clip").stopSound();
   }
   show($("screen-lobby"), s.phase === "lobby");
   show($("screen-game"), s.phase === "loading" || s.phase === "playing");
@@ -128,11 +178,22 @@ function renderRound(s) {
     audio.dataset.url = s.clip;
     audio.src = s.clip;
   }
+  // Like the phones, the screen tells the room once the clip can play; the
+  // round starts on the last report or the server's timeout.
+  if (playing && s.round !== loadedFor) {
+    loadedFor = s.round;
+    if (!s.clip) send({ type: "loaded" });
+    else
+      audio.addEventListener("canplay", () => send({ type: "loaded" }), {
+        once: true,
+      });
+  }
   if (playing && s.clip) {
+    audio.syncSound();
     // The clip starts on the server's stamp, the same moment the players'
     // phones open their answers — speed points stay fair.
     const begin = () => {
-      audio.play().catch(() => show($("screen-sound"), true));
+      audio.play().catch(() => audio.blockSound());
     };
     const delay = s.startedAt - offset - Date.now();
     clearTimeout(playTimer);
@@ -181,17 +242,30 @@ function renderReveal(s) {
   show(link, !!r.link);
   if (r.link) link.href = r.link;
   $("screen-reveal-scores").replaceChildren(
-    ...r.results.map((result) =>
-      row(
+    ...r.results.map((result) => {
+      const li = row(
         result.name,
         result.correct
-          ? "correct"
+          ? "correct" +
+              (result.streak >= 2 ? ` · ${result.streak} in a row` : "")
           : result.answer
             ? `answered ${result.answer}`
             : "no answer",
         `+${result.score}`,
-      ),
-    ),
+      );
+      li.classList.add(result.correct ? "is-right" : "is-wrong");
+      const count = li.querySelector(".count");
+      if (result.score > 0 && !reducedMotion) {
+        const t0 = performance.now();
+        const step = (t) => {
+          const k = Math.min(1, (t - t0) / 500);
+          count.textContent = `+${Math.round(result.score * k)}`;
+          if (k < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+      }
+      return li;
+    }),
   );
 }
 
@@ -238,7 +312,6 @@ function renderDone(s) {
 $("screen-sound").onclick = () => {
   $("screen-clip")
     .play()
-    .then(() => show($("screen-sound"), false))
     .catch(() => {});
 };
 
