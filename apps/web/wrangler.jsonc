@@ -6,7 +6,7 @@
   "workers_dev": false,
   "vars": {
     // Numeric GitHub ids, comma separated. Filled in per deployment.
-    "ADMIN_GITHUB_IDS": "",
+    "ADMIN_GITHUB_IDS": "20960328",
   },
   "routes": [
     { "pattern": "earshot.rising.sh", "custom_domain": true },
