@@ -154,6 +154,15 @@ export function screenPage(code: string, joinUrl: string) {
           </section>
         </main>
         <audio id="screen-clip" preload="auto" />
+        <input
+          type="range"
+          class="screen-volume"
+          id="screen-volume"
+          min="0"
+          max="100"
+          aria-label="Clip volume"
+          hidden
+        />
         <button class="screen-sound" id="screen-sound" type="button" hidden>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M8 5v14l11-7z" />

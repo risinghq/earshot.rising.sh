@@ -8,12 +8,14 @@ export function ClipPlayer({
   toggleId,
   barId,
   leftId,
+  volumeId,
 }: {
   src?: string;
   audioId: string;
   toggleId: string;
   barId: string;
   leftId: string;
+  volumeId?: string;
 }) {
   return (
     <div class="player">
@@ -37,6 +39,15 @@ export function ClipPlayer({
       <span class="player-time">
         <span id={leftId}>15</span> s
       </span>
+      <input
+        type="range"
+        class="player-volume"
+        id={volumeId}
+        min="0"
+        max="100"
+        aria-label="Clip volume"
+        hidden
+      />
       <audio id={audioId} src={src} controls preload="auto" />
       <noscript>
         <style

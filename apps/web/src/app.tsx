@@ -128,10 +128,12 @@ function homePage(user: SignedInUser | null, categories: Category[]) {
               runs out, alone, in a room with friends, or against a stranger.
             </p>
             <div class="hero-actions">
-              <PillLink href="/play" variant="primary">
+              <PillLink href="/play" variant="primary" large>
                 Play a game
               </PillLink>
-              <PillLink href="/play/board">Points board</PillLink>
+              <PillLink href="/play/board" large>
+                Points board
+              </PillLink>
             </div>
           </div>
           <div class="hero-cats">

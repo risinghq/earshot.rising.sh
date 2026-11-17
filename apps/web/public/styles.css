@@ -73,7 +73,11 @@
   --accent-text: var(--accent-11);
   --on-accent: var(--accent-1);
   --good: oklch(0.5 0.14 155);
+  --good-soft: oklch(0.93 0.05 155);
+  --good-ink: oklch(0.4 0.11 155);
   --danger: oklch(0.5 0.18 29);
+  --danger-soft: oklch(0.94 0.04 29);
+  --danger-ink: oklch(0.42 0.14 29);
   --bar-track: var(--neutral-3);
   --bar-fill: var(--accent-7);
   --ring: var(--accent-7);
@@ -162,7 +166,11 @@
     --accent-text: var(--accent-11);
     --on-accent: oklch(0.16 0.02 var(--hue));
     --good: oklch(0.72 0.15 155);
+    --good-soft: oklch(0.28 0.06 155);
+    --good-ink: oklch(0.84 0.1 155);
     --danger: oklch(0.7 0.16 29);
+    --danger-soft: oklch(0.3 0.07 29);
+    --danger-ink: oklch(0.85 0.11 29);
     --bar-track: var(--neutral-3);
     --bar-fill: var(--accent-7);
     --segment-on: var(--neutral-4);
@@ -905,7 +913,9 @@ button:disabled {
   flex-wrap: wrap;
   gap: var(--space-3);
 }
-.hero-actions .primary {
+/* One pill scale: default 40px, small 32px, large 48px. Side-by-side pills
+   take the same step. */
+.pill.large {
   font-size: var(--text-base);
   min-height: 48px;
   padding: 0 var(--space-8);
@@ -1025,11 +1035,6 @@ button:disabled {
 #round {
   display: grid;
   gap: var(--space-6);
-}
-#round[data-phase="reveal"] {
-  margin-inline: auto;
-  max-width: 44rem;
-  width: 100%;
 }
 .game-grid {
   align-items: start;
@@ -1430,6 +1435,266 @@ button:disabled {
   .screen-qr {
     justify-self: center;
   }
+}
+
+/* Clip volume: the slider hides where a page cannot set volume (iOS). */
+.player-volume {
+  accent-color: var(--accent-9);
+  flex: none;
+  width: 84px;
+}
+.screen-volume {
+  accent-color: var(--accent-9);
+  bottom: clamp(16px, 3vw, 40px);
+  left: clamp(16px, 3vw, 40px);
+  position: fixed;
+  width: clamp(120px, 14vw, 220px);
+}
+
+/* The header mark: a few bars that sit still until a clip plays, when the
+   page adds .clip-live to <body>. */
+.site-name {
+  gap: var(--space-2);
+}
+.sound-mark {
+  fill: var(--accent-9);
+  height: 18px;
+  width: 18px;
+}
+.sound-mark rect {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+.clip-live .sound-mark rect {
+  animation: sound-bar 900ms var(--ease) infinite;
+}
+.clip-live .sound-mark rect:nth-child(2) {
+  animation-delay: -300ms;
+}
+.clip-live .sound-mark rect:nth-child(3) {
+  animation-delay: -600ms;
+}
+.clip-live .sound-mark rect:nth-child(4) {
+  animation-delay: -450ms;
+}
+@keyframes sound-bar {
+  50% {
+    transform: scaleY(0.35);
+  }
+}
+
+/* A round arrives; choices stagger in after it. */
+#round {
+  animation: round-in 240ms var(--ease);
+}
+@keyframes round-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+#round[data-phase="question"] .choices .choice {
+  animation: choice-in 220ms var(--ease) backwards;
+}
+#round[data-phase="question"] .choices .choice:nth-child(2) {
+  animation-delay: 40ms;
+}
+#round[data-phase="question"] .choices .choice:nth-child(3) {
+  animation-delay: 80ms;
+}
+#round[data-phase="question"] .choices .choice:nth-child(4) {
+  animation-delay: 120ms;
+}
+@keyframes choice-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+/* The countdown runs on a JS tick; a linear tween smooths between updates. */
+.player-bar,
+.screen-bar span {
+  transition: transform 220ms linear;
+}
+
+/* The reveal keeps the round layout: the card takes the player's place and
+   the choices stay, marked right, wrong or faded. */
+.reveal-card {
+  justify-content: flex-start;
+  position: relative;
+}
+.reveal-card img {
+  border-radius: var(--radius-md);
+  flex: none;
+  height: 96px;
+  width: 96px;
+}
+.reveal-card .track {
+  display: grid;
+  flex: 1;
+  gap: var(--space-1);
+  justify-items: start;
+  min-width: 0;
+}
+.reveal-card .track a {
+  white-space: nowrap;
+}
+.reveal-card .track b {
+  overflow-wrap: anywhere;
+}
+.reveal-points {
+  align-self: flex-start;
+  color: var(--good-ink);
+  flex: none;
+  font-size: var(--text-lg);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-strong);
+  margin-left: auto;
+}
+.reveal-points.is-none {
+  color: var(--fg-muted);
+}
+.streak {
+  color: var(--accent-text);
+  font-weight: var(--weight-strong);
+  margin: 0;
+}
+.choices .choice[disabled] {
+  cursor: default;
+}
+.choices .choice[disabled]:hover {
+  background: var(--surface);
+}
+.reveal-choices .choice {
+  opacity: 0.45;
+  position: relative;
+}
+.reveal-choices .choice.is-right,
+.reveal-choices .choice.is-wrong {
+  opacity: 1;
+}
+.reveal-choices .choice.is-right {
+  background: var(--good-soft);
+  color: var(--good-ink);
+}
+.reveal-choices .choice.is-right[disabled]:hover {
+  background: var(--good-soft);
+}
+.reveal-choices .choice.is-wrong {
+  animation: shake 320ms var(--ease);
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+}
+.reveal-choices .choice.is-wrong[disabled]:hover {
+  background: var(--danger-soft);
+}
+@keyframes shake {
+  20% {
+    transform: translateX(-5px);
+  }
+  45% {
+    transform: translateX(4px);
+  }
+  70% {
+    transform: translateX(-2px);
+  }
+}
+.choice-mark {
+  fill: currentColor;
+  flex: none;
+  height: 20px;
+  width: 20px;
+}
+.choice-label {
+  flex: 1;
+}
+.burst {
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  position: absolute;
+}
+.burst i {
+  animation: burst-out 620ms var(--ease) forwards;
+  background: var(--good);
+  border-radius: 50%;
+  height: 6px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  width: 6px;
+}
+.burst i:nth-child(1) {
+  --bx: -52px;
+  --by: -34px;
+}
+.burst i:nth-child(2) {
+  --bx: -18px;
+  --by: -48px;
+}
+.burst i:nth-child(3) {
+  --bx: 16px;
+  --by: -44px;
+}
+.burst i:nth-child(4) {
+  --bx: 50px;
+  --by: -26px;
+}
+.burst i:nth-child(5) {
+  --bx: -56px;
+  --by: 26px;
+}
+.burst i:nth-child(6) {
+  --bx: -20px;
+  --by: 44px;
+}
+.burst i:nth-child(7) {
+  --bx: 18px;
+  --by: 48px;
+}
+.burst i:nth-child(8) {
+  --bx: 54px;
+  --by: 30px;
+}
+@keyframes burst-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--bx)), calc(-50% + var(--by)))
+      scale(0.4);
+  }
+}
+.reveal-typed {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+}
+.reveal-typed > div {
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-raised);
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-6);
+}
+.reveal-typed dt {
+  color: var(--fg-muted);
+  font-size: var(--text-xs);
+}
+.reveal-typed dd {
+  font-size: var(--text-base);
+  font-weight: var(--weight-strong);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.reveal-typed .choice-mark {
+  display: inline;
+  height: 16px;
+  vertical-align: -3px;
+  width: 16px;
 }
 
 @media (prefers-reduced-motion: reduce) {

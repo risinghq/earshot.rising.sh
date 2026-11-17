@@ -94,6 +94,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
                 toggleId="clip-toggle"
                 barId="count-bar"
                 leftId="count-left"
+                volumeId="clip-volume"
               />
             </div>
             <p class="meta" id="clip-status" hidden>
