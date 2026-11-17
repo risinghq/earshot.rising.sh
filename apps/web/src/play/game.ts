@@ -17,6 +17,9 @@ export { matchTyped, roundSeconds, roundsPerGame, scoreFor } from "./quiz";
 export type { Mode } from "./quiz";
 
 const gameTtlSeconds = 3600;
+// The longest a served round may wait for the client's "clip is playing"
+// report before the clock starts anyway.
+export const startCapMs = 5000;
 export type Phase = "question" | "reveal" | "done";
 
 export interface RoundResult {
@@ -28,6 +31,7 @@ export interface RoundResult {
   correct: boolean;
   timedOut: boolean;
   score: number;
+  choices: string[];
 }
 
 export interface Game {
@@ -43,8 +47,23 @@ export interface Game {
   phase: Phase;
   current: {
     index: number;
+    // When the round was handed to a page. The clock does not run from here:
+    // it runs from startedAt once the client reports the clip playing, and a
+    // report arriving later than startCapMs counts as servedAt + startCapMs.
+    // A report that never arrives leaves startedAt null and scoring falls
+    // back to servedAt, as a no-JS round always did.
     servedAt: number;
+    startedAt: number | null;
     reveal: { link: string | null; cover: string | null };
+    choices: string[];
+  } | null;
+  // The next round's clip, resolved while the reveal is shown, so Next does
+  // not wait on a lookup. The URL is held only until the round is served.
+  pending?: {
+    index: number;
+    url: string;
+    link: string | null;
+    cover: string | null;
     choices: string[];
   } | null;
   results: RoundResult[];
@@ -124,6 +143,30 @@ export async function serveRound(
     }
   }
   const held = game.next;
+  // A round prepared during the reveal is consumed as-is: its clip was
+  // already resolved and preloaded, so only the serve stamp is new.
+  if (game.pending !== undefined && game.pending !== null) {
+    const pending = game.pending;
+    game.pending = null;
+    game.current = {
+      index: pending.index,
+      servedAt: now,
+      startedAt: null,
+      reveal: { link: pending.link, cover: pending.cover },
+      choices: pending.choices,
+    };
+    game.served += 1;
+    await putGame(env, game);
+    return {
+      game,
+      preview: {
+        url: pending.url,
+        link: pending.link,
+        cover: pending.cover,
+      },
+      quota: false,
+    };
+  }
   while (game.next < game.candidates.length) {
     const index = game.next;
     game.next += 1;
@@ -144,6 +187,7 @@ export async function serveRound(
     game.current = {
       index,
       servedAt: now,
+      startedAt: null,
       reveal: {
         link: preview.link ?? candidate.link,
         cover: preview.cover ?? candidate.cover,
@@ -162,6 +206,79 @@ export async function serveRound(
   return { game, preview: null, quota: false };
 }
 
+// The client reports the clip actually playing; that moment starts the
+// round's clock, capped at startCapMs after the round was served so a late
+// report cannot buy time. Repeat reports keep the first start, so a reload
+// cannot move the clock either.
+export async function reportPlaying(
+  env: Env,
+  game: Game,
+  now: number,
+): Promise<number | null> {
+  if (game.phase !== "question" || game.current === null) return null;
+  if (game.current.startedAt === null) {
+    game.current.startedAt = Math.min(now, game.current.servedAt + startCapMs);
+    await putGame(env, game);
+  }
+  return Math.max(0, roundSeconds * 1000 - (now - game.current.startedAt));
+}
+
+// Resolves the clip for the round after the reveal so the client's preload
+// and the next serve need no new lookup. Pending data is consumed by
+// serveRound; a quota answer holds the candidates where they are.
+export async function prepareNext(
+  env: Env,
+  game: Game,
+): Promise<string | null> {
+  if (game.phase !== "reveal") return null;
+  if (game.pending !== undefined && game.pending !== null)
+    return game.pending.url;
+  if (game.results.length >= roundsPerGame) return null;
+  // Resolve on local counters: the awaited lookups may race a /next that
+  // serves the round, and saving this snapshot would erase it. State moves
+  // only after a fresh re-read below.
+  const held = game.next;
+  let nextIndex = held;
+  let pending: NonNullable<Game["pending"]> | null = null;
+  while (nextIndex < game.candidates.length) {
+    const index = nextIndex;
+    nextIndex += 1;
+    const candidate = game.candidates[index];
+    let preview: Preview | null;
+    try {
+      preview = await candidatePreview(candidate);
+    } catch (error) {
+      if (error instanceof QuotaError) return null;
+      continue;
+    }
+    if (preview === null) continue;
+    pending = {
+      index,
+      url: preview.url,
+      link: preview.link ?? candidate.link,
+      cover: preview.cover ?? candidate.cover,
+      choices:
+        game.mode === "choices"
+          ? sampleChoices(game.pool, candidate.title)
+          : [],
+    };
+    break;
+  }
+  if (pending === null) return null;
+  const fresh = await getGame(env, game.id);
+  if (
+    fresh === null ||
+    fresh.phase !== "reveal" ||
+    fresh.next !== held ||
+    fresh.results.length !== game.results.length
+  )
+    return null;
+  fresh.next = nextIndex;
+  fresh.pending = pending;
+  await putGame(env, fresh);
+  return pending.url;
+}
+
 export interface Answered {
   game: Game;
   result: RoundResult;
@@ -175,7 +292,7 @@ export async function answerRound(
 ): Promise<Answered | null> {
   if (game.phase !== "question" || game.current === null) return null;
   const candidate = game.candidates[game.current.index];
-  const elapsed = now - game.current.servedAt;
+  const elapsed = now - (game.current.startedAt ?? game.current.servedAt);
   const timedOut = elapsed >= roundSeconds * 1000;
   let given: string | null;
   let correct: boolean;
@@ -196,6 +313,7 @@ export async function answerRound(
     correct,
     timedOut,
     score,
+    choices: game.current.choices,
   };
   game.results.push(result);
   game.total += score;

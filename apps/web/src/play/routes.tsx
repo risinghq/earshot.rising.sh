@@ -16,7 +16,9 @@ import {
   answerRound,
   buildGame,
   getGame,
+  prepareNext,
   putGame,
+  reportPlaying,
   serveRound,
   type Mode,
 } from "./game";
@@ -314,6 +316,27 @@ playApp.post("/:id/answer", async (context) => {
     Date.now(),
   );
   return context.redirect(`/play/${game.id}`, 303);
+});
+
+// The page reports the clip actually playing; the clock starts at that
+// report, capped inside reportPlaying. A report with no open round (before a
+// serve or after the answer) is refused, so only the open round's own client
+// can start its clock.
+playApp.post("/:id/playing", async (context) => {
+  const game = await getGame(context.env, context.req.param("id"));
+  if (game === null) return context.json({ error: "no such game" }, 404);
+  const remaining = await reportPlaying(context.env, game, Date.now());
+  if (remaining === null) return context.json({ error: "no open round" }, 409);
+  return context.json({ remaining });
+});
+
+// While the reveal is up, the client asks for the next round's clip and
+// preloads it, so the Next form lands on a clip that is already fetched.
+playApp.post("/:id/prepare", async (context) => {
+  const game = await getGame(context.env, context.req.param("id"));
+  if (game === null) return context.json({ error: "no such game" }, 404);
+  const url = await prepareNext(context.env, game);
+  return context.json({ url });
 });
 
 playApp.post("/:id/next", async (context) => {

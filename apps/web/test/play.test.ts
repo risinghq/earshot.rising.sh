@@ -7,6 +7,7 @@ import {
   answerRound,
   buildGame,
   getGame,
+  prepareNext,
   matchTyped,
   putGame,
   roundsPerGame,
@@ -82,6 +83,16 @@ async function answer(id: string, fields: Record<string, string>) {
         origin,
       },
       body: new URLSearchParams(fields).toString(),
+    }),
+    testEnv() as never,
+  );
+}
+
+async function playing(id: string) {
+  return app.fetch(
+    new Request(`${origin}/play/${id}/playing`, {
+      method: "POST",
+      headers: { origin },
     }),
     testEnv() as never,
   );
@@ -362,6 +373,7 @@ describe("/play", () => {
       correct: true,
       timedOut: false,
       score: 900,
+      choices: [],
     });
     await putGame(testEnv() as never, game);
     const refused = await answer(id, { choice: "Only Song" });
@@ -419,6 +431,140 @@ describe("/play", () => {
     expect(body).toContain("Top 50 Japan is not available right now");
     expect(body).not.toContain("Game over");
   });
+});
+
+describe("the round clock", () => {
+  const chart = () =>
+    stubFetch([
+      [
+        /api\.deezer\.com\/chart\/132\/tracks/,
+        { data: [1, 2, 3, 4].map((i) => deezerTrack(i, `Song ${i}`)) },
+      ],
+      [
+        /api\.deezer\.com\/track\/\d+/,
+        (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
+      ],
+    ]);
+
+  it("starts the clock when the client reports the clip playing", async () => {
+    chart();
+    const id = await startGame("pop", "choices");
+    await get(`/play/${id}`);
+    const before = Date.now();
+    const response = await playing(id);
+    expect(response.status).toBe(200);
+    const { remaining } = (await response.json()) as { remaining: number };
+    const game = (await getGame(testEnv() as never, id))!;
+    const started = game.current!.startedAt!;
+    expect(started).toBeGreaterThanOrEqual(before);
+    expect(started).toBeLessThanOrEqual(Date.now());
+    expect(remaining).toBeGreaterThan(14_000);
+    expect(remaining).toBeLessThanOrEqual(15_000);
+    // Scoring measures from the report, not the serve: wind the clock back
+    // two seconds and a right answer scores as two seconds in.
+    game.current!.startedAt = Date.now() - 2_000;
+    await putGame(testEnv() as never, game);
+    const title = game.candidates[game.current!.index].title;
+    await answer(id, { choice: title });
+    const done = (await getGame(testEnv() as never, id))!;
+    expect(done.results[0].score).toBeGreaterThan(840);
+    expect(done.results[0].score).toBeLessThanOrEqual(910);
+  });
+
+  it("caps the wait at five seconds after the round was served", async () => {
+    chart();
+    const id = await startGame("pop", "choices");
+    await get(`/play/${id}`);
+    const game = (await getGame(testEnv() as never, id))!;
+    game.current!.servedAt = Date.now() - 8_000;
+    await putGame(testEnv() as never, game);
+    await playing(id);
+    const after = (await getGame(testEnv() as never, id))!;
+    expect(after.current!.startedAt).toBe(game.current!.servedAt + 5_000);
+  });
+
+  it("refuses a report before the round is served and after it ends", async () => {
+    chart();
+    const id = await startGame("pop", "choices");
+    const early = await playing(id);
+    expect(early.status).toBe(409);
+    await get(`/play/${id}`);
+    const game = (await getGame(testEnv() as never, id))!;
+    const title = game.candidates[game.current!.index].title;
+    await answer(id, { choice: title });
+    const late = await playing(id);
+    expect(late.status).toBe(409);
+  });
+
+  it("does not reset the clock on a reload", async () => {
+    chart();
+    const id = await startGame("pop", "choices");
+    await get(`/play/${id}`);
+    await playing(id);
+    const first = (await getGame(testEnv() as never, id))!;
+    const served = first.current!.servedAt;
+    const started = first.current!.startedAt;
+    await get(`/play/${id}`);
+    await playing(id);
+    const after = (await getGame(testEnv() as never, id))!;
+    expect(after.current!.servedAt).toBe(served);
+    expect(after.current!.startedAt).toBe(started);
+  });
+
+  it(
+    "keeps a round /next served while prepare was still resolving",
+    { timeout: 20_000 },
+    async () => {
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      let trackCalls = 0;
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (input: RequestInfo | URL) => {
+          const url = input.toString();
+          if (/api\.deezer\.com\/chart\/132\/tracks/.test(url))
+            return new Response(
+              JSON.stringify({
+                data: [1, 2, 3, 4].map((i) => deezerTrack(i, `Song ${i}`)),
+              }),
+              { headers: { "content-type": "application/json" } },
+            );
+          if (/api\.deezer\.com\/track\/\d+/.test(url)) {
+            trackCalls += 1;
+            // The second lookup is prepare's (the first served round 1);
+            // it hangs so /next's own resolve finishes first.
+            if (trackCalls === 2) await gate;
+            const n = Number(/track\/(\d+)/.exec(url)![1]);
+            return new Response(JSON.stringify(deezerTrack(n, "x")), {
+              headers: { "content-type": "application/json" },
+            });
+          }
+          return new Response("not found", { status: 404 });
+        }),
+      );
+      const id = await startGame("pop", "choices");
+      await get(`/play/${id}`);
+      const game = (await getGame(testEnv() as never, id))!;
+      const title = game.candidates[game.current!.index].title;
+      await answer(id, { choice: title });
+      const revealed = (await getGame(testEnv() as never, id))!;
+      expect(revealed.phase).toBe("reveal");
+      const prep = prepareNext(testEnv() as never, revealed);
+      await vi.waitFor(() => expect(trackCalls).toBe(2));
+      const served = await next(id);
+      expect(served.status).toBe(303);
+      // The GET serves the round while prepare's lookup is still held.
+      await get(`/play/${id}`);
+      release();
+      expect(await prep).toBeNull();
+      const after = (await getGame(testEnv() as never, id))!;
+      expect(after.phase).toBe("question");
+      expect(after.current).not.toBeNull();
+      expect(after.served).toBe(2);
+    },
+  );
 });
 
 describe("typed matching", () => {

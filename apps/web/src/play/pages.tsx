@@ -281,7 +281,8 @@ export function questionPage(
 ) {
   const remaining = Math.max(
     0,
-    roundSeconds * 1000 - (now - game.current!.servedAt),
+    roundSeconds * 1000 -
+      (now - (game.current!.startedAt ?? game.current!.servedAt)),
   );
   const action = `/play/${game.id}/answer`;
   return Page({
@@ -293,6 +294,7 @@ export function questionPage(
           id="round"
           data-phase="question"
           data-src={preview.url}
+          data-game={game.id}
           data-remaining={String(remaining)}
           aria-live="polite"
         >
@@ -311,6 +313,7 @@ export function questionPage(
                 toggleId="clip-toggle"
                 barId="count-bar"
                 leftId="count-left"
+                volumeId="clip-volume"
               />
               <Stats
                 items={[
@@ -390,12 +393,39 @@ function revealPage(
       ? "Time ran out"
       : "Not quite";
   const last = game.results.length >= roundsPerGame;
+  let streak = 0;
+  for (let i = game.results.length - 1; i >= 0 && game.results[i].correct; i--)
+    streak += 1;
+  const check = (
+    <svg viewBox="0 0 24 24" class="choice-mark" aria-hidden="true">
+      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+    </svg>
+  );
+  const cross = (
+    <svg viewBox="0 0 24 24" class="choice-mark" aria-hidden="true">
+      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+    </svg>
+  );
+  const choiceState = (title: string) =>
+    title === result.title
+      ? "is-right"
+      : !result.correct && title === result.answer
+        ? "is-wrong"
+        : "";
   return Page({
     title: `${heading} · ${game.categoryName}`,
     user,
     children: (
       <div id="game">
-        <div id="round" data-phase="reveal" aria-live="polite">
+        <div
+          id="round"
+          data-phase="reveal"
+          data-game={game.id}
+          data-correct={result.correct ? "1" : ""}
+          data-last={last ? "1" : ""}
+          data-score={String(result.score)}
+          aria-live="polite"
+        >
           <div class="page-head">
             <p class="meta">
               {game.categoryName} · Round {game.results.length} of{" "}
@@ -403,27 +433,84 @@ function revealPage(
             </p>
             <h1>{heading}</h1>
           </div>
-          <Section title={result.title} aside={`+${result.score}`}>
-            <div class="reveal">
-              {result.cover && (
-                <img src={result.cover} alt="" width="96" height="96" />
-              )}
-              <div class="track">
-                <small class="muted">{result.artist}</small>
-                {result.link && (
-                  <a href={result.link}>Listen on {linkService(result.link)}</a>
+          <div class="game-grid">
+            <div class="stack">
+              <div class="player reveal-card">
+                {result.cover && (
+                  <img src={result.cover} alt="" width="96" height="96" />
                 )}
+                <div class="track">
+                  <b>{result.title}</b>
+                  <small class="muted">{result.artist}</small>
+                  {result.link && (
+                    <a href={result.link}>
+                      Listen on {linkService(result.link)}
+                    </a>
+                  )}
+                </div>
+                <span
+                  class={`reveal-points${result.score > 0 ? "" : " is-none"}`}
+                  data-points={result.score}
+                >
+                  +{result.score}
+                </span>
               </div>
+              {streak >= 2 && <p class="streak">{streak} in a row</p>}
+              <form method="post" action={`/play/${game.id}/next`} data-solo>
+                <PillButton variant="primary" type="submit">
+                  {last ? "See results" : "Next round"}
+                </PillButton>
+              </form>
             </div>
-            {!result.correct && result.answer && (
-              <p class="meta">Your answer: {result.answer}</p>
-            )}
-            <form method="post" action={`/play/${game.id}/next`} data-solo>
-              <PillButton variant="primary" type="submit">
-                {last ? "See results" : "Next round"}
-              </PillButton>
-            </form>
-          </Section>
+            <div>
+              {result.choices.length > 0 ? (
+                <div class="choices reveal-choices">
+                  {result.choices.map((title) => (
+                    <button
+                      class={`pill choice ${choiceState(title)}`}
+                      type="button"
+                      disabled
+                    >
+                      {title === result.title && check}
+                      {!result.correct && title === result.answer && cross}
+                      <span class="choice-label">{title}</span>
+                      {title === result.title && result.correct && (
+                        <span class="burst" aria-hidden="true">
+                          <i />
+                          <i />
+                          <i />
+                          <i />
+                          <i />
+                          <i />
+                          <i />
+                          <i />
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <dl class="reveal-typed">
+                  <div>
+                    <dt>You typed</dt>
+                    <dd class={result.correct ? "good" : ""}>
+                      {result.answer === null || result.answer === ""
+                        ? result.timedOut
+                          ? "Nothing — time ran out"
+                          : "Nothing"
+                        : result.answer}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Right answer</dt>
+                    <dd class="good">
+                      {check} {result.title}
+                    </dd>
+                  </div>
+                </dl>
+              )}
+            </div>
+          </div>
         </div>
         <script src="/solo.js" defer />
       </div>
