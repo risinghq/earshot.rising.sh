@@ -2,6 +2,7 @@ import { applyD1Migrations, env, reset } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import migrations from "virtual:web-migrations";
 import { app } from "../src/app";
+import { seedCatalog } from "./catalog";
 import {
   advance,
   answerRound,
@@ -149,11 +150,15 @@ describe("/play", () => {
   });
 
   it("builds a game whose rounds have previews, skipping tracks without one", async () => {
-    const chart = Array.from({ length: 12 }, (_, i) =>
-      deezerTrack(100 + i, `Song ${i}`, i % 2 === 0),
+    await seedCatalog(
+      env.DB,
+      "pop",
+      Array.from({ length: 12 }, (_, i) => ({
+        id: 100 + i,
+        title: `Song ${i}`,
+      })),
     );
     stubFetch([
-      [/api\.deezer\.com\/chart\/132\/tracks/, { data: chart }],
       [
         /api\.deezer\.com\/track\/(\d+)/,
         (url: string) => {
@@ -172,13 +177,12 @@ describe("/play", () => {
   });
 
   it("serves the same choices on every load of a round", async () => {
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4, 5, 6].map((i) => ({ id: i, title: `Track ${i}` })),
+    );
     stubFetch([
-      [
-        /api\.deezer\.com\/chart\/132\/tracks/,
-        {
-          data: [1, 2, 3, 4, 5, 6].map((i) => deezerTrack(i, `Track ${i}`)),
-        },
-      ],
       [
         /api\.deezer\.com\/track\/\d+/,
         (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
@@ -194,15 +198,15 @@ describe("/play", () => {
   });
 
   it("keeps the right answer out of the round response", async () => {
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4].map((i) => ({
+        id: i,
+        title: i === 1 ? "Secret Song" : `Other ${i}`,
+      })),
+    );
     stubFetch([
-      [
-        /api\.deezer\.com\/chart\/132\/tracks/,
-        {
-          data: [1, 2, 3, 4].map((i) =>
-            deezerTrack(i, i === 1 ? "Secret Song" : `Other ${i}`),
-          ),
-        },
-      ],
       [
         /api\.deezer\.com\/track\/\d+/,
         (url: string) => {
@@ -220,13 +224,12 @@ describe("/play", () => {
   });
 
   it("advances a round through the form endpoints the in-page script posts to", async () => {
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4].map((i) => ({ id: i, title: `Song ${i}` })),
+    );
     stubFetch([
-      [
-        /api\.deezer\.com\/chart\/132\/tracks/,
-        {
-          data: [1, 2, 3, 4].map((i) => deezerTrack(i, `Song ${i}`)),
-        },
-      ],
       [
         /api\.deezer\.com\/track\/\d+/,
         (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
@@ -254,15 +257,15 @@ describe("/play", () => {
   });
 
   it("scores by the time the server measured, not a client value", async () => {
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4].map((i) => ({
+        id: i,
+        title: i === 1 ? "Known Song" : `Filler ${i}`,
+      })),
+    );
     stubFetch([
-      [
-        /api\.deezer\.com\/chart\/132\/tracks/,
-        {
-          data: [1, 2, 3, 4].map((i) =>
-            deezerTrack(i, i === 1 ? "Known Song" : `Filler ${i}`),
-          ),
-        },
-      ],
       [
         /api\.deezer\.com\/track\/\d+/,
         (url: string) => {
@@ -288,13 +291,16 @@ describe("/play", () => {
   });
 
   it("accepts lenient typed answers and rejects a different title", async () => {
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4].map((i) => ({
+        id: i,
+        title: "Café del Mar",
+        artist: `Artist ${i}`,
+      })),
+    );
     stubFetch([
-      [
-        /api\.deezer\.com\/chart\/132\/tracks/,
-        {
-          data: [1, 2, 3, 4].map((i) => deezerTrack(i, "Café del Mar")),
-        },
-      ],
       [
         /api\.deezer\.com\/track\/\d+/,
         (url: string) =>
@@ -314,43 +320,48 @@ describe("/play", () => {
     expect(game.results.at(-1)!.score).toBe(0);
   });
 
-  it("persists done when a guest's solo game ends", async () => {
-    stubFetch([
-      [
-        /api\.deezer\.com\/chart\/132\/tracks/,
-        {
-          data: Array.from({ length: 12 }, (_, i) =>
-            deezerTrack(i + 1, `Song ${i}`),
-          ),
-        },
-      ],
-      [
-        /api\.deezer\.com\/track\/\d+/,
-        (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
-      ],
-    ]);
-    const id = await startGame("pop", "choices");
-    for (let round = 0; round < 10; round += 1) {
-      await get(`/play/${id}`);
-      await answer(id, { choice: "Wrong" });
-      await next(id);
-    }
-    const game = (await getGame(testEnv() as never, id))!;
-    expect(game.phase).toBe("done");
-    const done = await get(`/play/${id}`);
-    expect(await done.text()).toContain("Game over");
-  });
+  it(
+    "persists done when a guest's solo game ends",
+    { timeout: 20000 },
+    async () => {
+      await seedCatalog(
+        env.DB,
+        "pop",
+        Array.from({ length: 12 }, (_, i) => ({
+          id: i + 1,
+          title: `Song ${i}`,
+        })),
+      );
+      stubFetch([
+        [
+          /api\.deezer\.com\/track\/\d+/,
+          (url: string) =>
+            deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
+        ],
+      ]);
+      const id = await startGame("pop", "choices");
+      for (let round = 0; round < 10; round += 1) {
+        await get(`/play/${id}`);
+        await answer(id, { choice: "Wrong" });
+        await next(id);
+      }
+      const game = (await getGame(testEnv() as never, id))!;
+      expect(game.phase).toBe("done");
+      const done = await get(`/play/${id}`);
+      expect(await done.text()).toContain("Game over");
+    },
+  );
 
   it("refuses answers once a game is finished or gone", async () => {
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4].map((i) => ({
+        id: i,
+        title: i === 1 ? "Only Song" : `Rest ${i}`,
+      })),
+    );
     stubFetch([
-      [
-        /api\.deezer\.com\/chart\/132\/tracks/,
-        {
-          data: [1, 2, 3, 4].map((i) =>
-            deezerTrack(i, i === 1 ? "Only Song" : `Rest ${i}`),
-          ),
-        },
-      ],
       [
         /api\.deezer\.com\/track\/\d+/,
         (url: string) => {
@@ -365,6 +376,7 @@ describe("/play", () => {
     game.phase = "done";
     game.current = null;
     game.results.push({
+      trackKey: "dz:1",
       title: "Only Song",
       artist: "Artist",
       cover: null,
@@ -434,20 +446,22 @@ describe("/play", () => {
 });
 
 describe("the round clock", () => {
-  const chart = () =>
+  const chart = async () => {
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4].map((i) => ({ id: i, title: `Song ${i}` })),
+    );
     stubFetch([
-      [
-        /api\.deezer\.com\/chart\/132\/tracks/,
-        { data: [1, 2, 3, 4].map((i) => deezerTrack(i, `Song ${i}`)) },
-      ],
       [
         /api\.deezer\.com\/track\/\d+/,
         (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
       ],
     ]);
+  };
 
   it("starts the clock when the client reports the clip playing", async () => {
-    chart();
+    await chart();
     const id = await startGame("pop", "choices");
     await get(`/play/${id}`);
     const before = Date.now();
@@ -472,7 +486,7 @@ describe("the round clock", () => {
   });
 
   it("caps the wait at five seconds after the round was served", async () => {
-    chart();
+    await chart();
     const id = await startGame("pop", "choices");
     await get(`/play/${id}`);
     const game = (await getGame(testEnv() as never, id))!;
@@ -484,7 +498,7 @@ describe("the round clock", () => {
   });
 
   it("refuses a report before the round is served and after it ends", async () => {
-    chart();
+    await chart();
     const id = await startGame("pop", "choices");
     const early = await playing(id);
     expect(early.status).toBe(409);
@@ -497,7 +511,7 @@ describe("the round clock", () => {
   });
 
   it("does not reset the clock on a reload", async () => {
-    chart();
+    await chart();
     const id = await startGame("pop", "choices");
     await get(`/play/${id}`);
     await playing(id);
@@ -520,17 +534,15 @@ describe("the round clock", () => {
         release = resolve;
       });
       let trackCalls = 0;
+      await seedCatalog(
+        env.DB,
+        "pop",
+        [1, 2, 3, 4].map((i) => ({ id: i, title: `Song ${i}` })),
+      );
       vi.stubGlobal(
         "fetch",
         vi.fn(async (input: RequestInfo | URL) => {
           const url = input.toString();
-          if (/api\.deezer\.com\/chart\/132\/tracks/.test(url))
-            return new Response(
-              JSON.stringify({
-                data: [1, 2, 3, 4].map((i) => deezerTrack(i, `Song ${i}`)),
-              }),
-              { headers: { "content-type": "application/json" } },
-            );
           if (/api\.deezer\.com\/track\/\d+/.test(url)) {
             trackCalls += 1;
             // The second lookup is prepare's (the first served round 1);

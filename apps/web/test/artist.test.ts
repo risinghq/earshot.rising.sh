@@ -401,6 +401,11 @@ describe("category board", () => {
       { name: "ann", score: 5000 },
       { name: "bob", score: 2000 },
     ]);
+    const play = await (await get("/play")).text();
+    expect(play).toContain("/play/board?category=pop");
+    const board = await (await get("/play/board?category=pop")).text();
+    expect(board).toContain("/u/ann");
+    expect(board).toContain("5,000");
   });
 
   it("boards artist slugs like any category and shows them on /play", async () => {
@@ -410,8 +415,9 @@ describe("category board", () => {
     await addResult(1, "pop", now - 60, 6100);
     const entries = await readCategoryBoard(testEnv() as never, "artist-27");
     expect(entries).toEqual([{ name: "ann", score: 4300 }]);
+    // Tiles show the name and eras only; scores live one click away on the board.
     const body = await (await get("/play")).text();
-    expect(body).toContain("/u/ann");
-    expect(body).toContain("6,100");
+    expect(body).not.toContain("/u/ann");
+    expect(body).not.toContain("6,100");
   });
 });

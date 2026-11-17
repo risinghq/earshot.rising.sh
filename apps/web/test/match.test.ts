@@ -7,6 +7,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import migrations from "virtual:web-migrations";
 import { app } from "../src/app";
+import { seedCatalog } from "./catalog";
 import type { Matchmaker } from "../src/play/match";
 import type { Room } from "../src/play/room";
 
@@ -27,15 +28,21 @@ const deezerTrack = (id: number, title: string) => ({
   album: { cover_medium: `https://cdn.example/${id}.jpg` },
 });
 
-function stubChart(titles: string[]) {
+async function stubChart(titles: string[]) {
+  await seedCatalog(
+    env.DB,
+    "pop",
+    titles.map((title, i) => ({ id: 100 + i, title })),
+  );
+  await seedCatalog(
+    env.DB,
+    "rock",
+    titles.map((title, i) => ({ id: 200 + i, title })),
+  );
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("api.deezer.com/chart/"))
-        return Response.json({
-          data: titles.map((title, i) => deezerTrack(100 + i, title)),
-        });
       const id = /track\/(\d+)/.exec(url)?.[1];
       if (id) return Response.json(deezerTrack(Number(id), "x"));
       return Response.json({ data: [] });
@@ -217,7 +224,7 @@ afterEach(() => {
 
 describe("matchmaker", () => {
   it("pairs two players queued in one category into one room", async () => {
-    stubChart(Array.from({ length: 12 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 12 }, (_, i) => `Song ${i}`));
     const ann = await queue("pop");
     ann.send({ type: "join", name: "Ann" });
     await waitFor(ann, isType("queued"));
@@ -253,7 +260,7 @@ describe("matchmaker", () => {
   });
 
   it("does not pair players queued in different categories", async () => {
-    stubChart(Array.from({ length: 12 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 12 }, (_, i) => `Song ${i}`));
     const ann = await queue("pop");
     ann.send({ type: "join", name: "Ann" });
     await waitFor(ann, isType("queued"));
@@ -269,7 +276,7 @@ describe("matchmaker", () => {
   });
 
   it("leaves the queue when the socket closes", async () => {
-    stubChart(Array.from({ length: 12 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 12 }, (_, i) => `Song ${i}`));
     const ann = await queue("pop");
     ann.send({ type: "join", name: "Ann" });
     await waitFor(ann, isType("queued"));
@@ -293,9 +300,9 @@ describe("matchmaker", () => {
 
   it(
     "writes one row per signed-in player, none for a guest, once",
-    { timeout: 20_000 },
+    { timeout: 20000 },
     async () => {
-      stubChart(Array.from({ length: 30 }, (_, i) => `Song ${i}`));
+      await stubChart(Array.from({ length: 30 }, (_, i) => `Song ${i}`));
       const ann = await signIn("ann");
       const queuedA = await queue("pop", `__Host-session=${ann.token}`);
       queuedA.send({ type: "join" });
@@ -343,9 +350,9 @@ describe("matchmaker", () => {
 
   it(
     "starts a match with whoever connected and writes players 1",
-    { timeout: 20_000 },
+    { timeout: 20000 },
     async () => {
-      stubChart(Array.from({ length: 30 }, (_, i) => `Song ${i}`));
+      await stubChart(Array.from({ length: 30 }, (_, i) => `Song ${i}`));
       const ann = await signIn("ann");
       const queuedA = await queue("pop", `__Host-session=${ann.token}`);
       queuedA.send({ type: "join" });
@@ -410,7 +417,7 @@ describe("matchmaker", () => {
   });
 
   it("refuses a stranger joining a match without a seated token", async () => {
-    stubChart(Array.from({ length: 12 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 12 }, (_, i) => `Song ${i}`));
     const ann = await queue("pop");
     ann.send({ type: "join", name: "Ann" });
     await waitFor(ann, isType("queued"));
@@ -469,13 +476,15 @@ describe("matchmaker", () => {
         return Response.json({ data: [] });
       }),
     );
-    const ann = await queue("pop");
+    // The gate holds the live chart fetch inside pair(); playlist-backed
+    // categories read D1 and would pair before the sockets can die.
+    const ann = await queue("top-50-global");
     ann.send({ type: "join", name: "Ann" });
     await waitFor(ann, isType("queued"));
-    const bob = await queue("pop");
+    const bob = await queue("top-50-global");
     bob.send({ type: "join", name: "Bob" });
     // Ann and Bob are marked pairing; Cat joins and waits alone.
-    const cat = await queue("pop");
+    const cat = await queue("top-50-global");
     cat.send({ type: "join", name: "Cat" });
     await waitFor(cat, isType("queued"));
     bob.close();
@@ -534,7 +543,7 @@ describe("matchmaker", () => {
   });
 
   it("asks a second guest with the same nickname to pick another", async () => {
-    stubChart(Array.from({ length: 12 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 12 }, (_, i) => `Song ${i}`));
     const ann = await queue("pop");
     ann.send({ type: "join", name: "Ann" });
     await waitFor(ann, isType("queued"));

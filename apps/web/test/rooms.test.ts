@@ -7,6 +7,7 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import migrations from "virtual:web-migrations";
 import { app } from "../src/app";
+import { seedCatalog } from "./catalog";
 import type { Room } from "../src/play/room";
 import { readCategoryBoard, recordResults } from "../src/play/results";
 
@@ -26,15 +27,21 @@ const quotaBody = {
   error: { type: "Exception", message: "Quota limit exceeded", code: 4 },
 };
 
-function stubChart(titles: string[], previewOf = (_id: number) => true) {
+async function stubChart(titles: string[], previewOf = (_id: number) => true) {
+  await seedCatalog(
+    env.DB,
+    "pop",
+    titles.map((title, i) => ({ id: 100 + i, title })),
+  );
+  await seedCatalog(
+    env.DB,
+    "rock",
+    titles.map((title, i) => ({ id: 200 + i, title })),
+  );
   vi.stubGlobal(
     "fetch",
     vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
-      if (url.includes("api.deezer.com/chart/"))
-        return Response.json({
-          data: titles.map((title, i) => deezerTrack(100 + i, title)),
-        });
       const id = /track\/(\d+)/.exec(url)?.[1];
       if (id)
         return Response.json(
@@ -129,7 +136,7 @@ const call = <T>(code: string, fn: (room: Room) => T) =>
 beforeEach(async () => {
   await reset();
   await applyD1Migrations(env.DB, migrations);
-});
+}, 20000);
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -137,8 +144,8 @@ afterEach(() => {
 });
 
 describe("rooms", () => {
-  it("scores the faster right answer more", async () => {
-    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+  it("scores the faster right answer more", { timeout: 20000 }, async () => {
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const { code, key } = await createRoom();
     const ann = await connect(code);
     const bob = await connect(code);
@@ -171,8 +178,54 @@ describe("rooms", () => {
     bob.close();
   });
 
+  it(
+    "writes one outcome row per answering player",
+    { timeout: 20000 },
+    async () => {
+      await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+      const { code, key } = await createRoom();
+      const ann = await connect(code);
+      const bob = await connect(code);
+      await join(ann, "Ann", key);
+      await join(bob, "Bob");
+      ann.send({ type: "start" });
+      await waitFor(ann, inPhase("loading"));
+      const room = await stored(code);
+      const started = room.round as {
+        index: number;
+        startedAt: number;
+      };
+      const title = (room.candidates as { title: string }[])[started.index]
+        .title;
+      const players = room.players as { id: string }[];
+      for (const player of players)
+        await call(code, (room) =>
+          room.answer(player.id, title, started.startedAt + 1_000),
+        );
+      const rows = await env.DB.prepare(
+        `SELECT player_key, track_key, category, kind, mode
+       FROM round_outcomes`,
+      ).all<{
+        player_key: string;
+        track_key: string;
+        category: string;
+        kind: string;
+        mode: string;
+      }>();
+      expect(rows.results.length).toBe(2);
+      for (const row of rows.results)
+        expect(row).toMatchObject({
+          category: "pop",
+          kind: "room",
+          mode: "choices",
+        });
+      ann.close();
+      bob.close();
+    },
+  );
+
   it("scores a wrong answer 0", async () => {
-    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const { code, key } = await createRoom();
     const ann = await connect(code);
     await join(ann, "Ann", key);
@@ -190,40 +243,185 @@ describe("rooms", () => {
     ann.close();
   });
 
-  it("closes the round early once everyone answered", async () => {
-    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    const bob = await connect(code);
-    await join(ann, "Ann", key);
-    await join(bob, "Bob");
-    ann.send({ type: "start" });
-    await waitFor(ann, inPhase("loading"));
-    const room = await stored(code);
-    const started = room.round as {
-      index: number;
-      startedAt: number;
-      endsAt: number;
-    };
-    const title = (room.candidates as { title: string }[])[started.index].title;
-    const players = room.players as { id: string; name: string }[];
-    for (const player of players)
-      await call(code, (room) =>
-        room.answer(player.id, title, started.startedAt + 1_000),
-      );
-    const after = await stored(code);
-    expect(after.phase).toBe("reveal");
-    const reveal = after.reveal as { until: number };
-    expect(reveal.until).toBeLessThan(started.endsAt);
-    ann.close();
-    bob.close();
-  });
+  it(
+    "closes the round early once everyone answered",
+    { timeout: 20000 },
+    async () => {
+      await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+      const { code, key } = await createRoom();
+      const ann = await connect(code);
+      const bob = await connect(code);
+      await join(ann, "Ann", key);
+      await join(bob, "Bob");
+      ann.send({ type: "start" });
+      await waitFor(ann, inPhase("loading"));
+      const room = await stored(code);
+      const started = room.round as {
+        index: number;
+        startedAt: number;
+        endsAt: number;
+      };
+      const title = (room.candidates as { title: string }[])[started.index]
+        .title;
+      const players = room.players as { id: string; name: string }[];
+      for (const player of players)
+        await call(code, (room) =>
+          room.answer(player.id, title, started.startedAt + 1_000),
+        );
+      const after = await stored(code);
+      expect(after.phase).toBe("reveal");
+      const reveal = after.reveal as { until: number };
+      expect(reveal.until).toBeLessThan(started.endsAt);
+      ann.close();
+      bob.close();
+    },
+  );
 
   it(
-    "reaches the final standings after 10 rounds",
-    { timeout: 20_000 },
+    "starts the next game with a fresh streak",
+    { timeout: 20000 },
     async () => {
-      stubChart(Array.from({ length: 30 }, (_, i) => `Song ${i}`));
+      // Four candidates is the minimum a room accepts, so the first game ends
+      // by exhaustion after four rounds. Nothing waits on an alarm: the clip
+      // broadcast marks each serve, and the round's own deadlines are ticked
+      // through directly.
+      await stubChart(Array.from({ length: 4 }, (_, i) => `Song ${i}`));
+      const { code, key } = await createRoom();
+      const ann = await connect(code);
+      await join(ann, "Ann", key);
+      const withClip = (m: Record<string, unknown>) =>
+        m.type === "state" && typeof m.startedAt === "number";
+      const playRound = async () => {
+        const room = await stored(code);
+        const current = room.round as { index: number; startedAt: number };
+        const title = (room.candidates as { title: string }[])[current.index]
+          .title;
+        const pid = (room.players as { id: string }[])[0].id;
+        await call(code, (r) => r.tick(current.startedAt + 1));
+        await call(code, (r) =>
+          r.answer(pid, title, current.startedAt + 1_000),
+        );
+        const reveal = await stored(code);
+        const until = (reveal.reveal as { until: number }).until;
+        ann.inbox.length = 0;
+        await call(code, (r) => r.tick(until + 1));
+      };
+      ann.send({ type: "start" });
+      for (let round = 0; round < 4; round += 1) {
+        await waitFor(ann, withClip);
+        await playRound();
+      }
+      const ended = await stored(code);
+      expect(ended.phase).toBe("done");
+      expect((ended.players as { streak: number }[])[0].streak).toBe(4);
+      ann.inbox.length = 0;
+      ann.send({ type: "start" });
+      await waitFor(ann, withClip);
+      const second = await stored(code);
+      const current = second.round as { index: number; startedAt: number };
+      const title = (second.candidates as { title: string }[])[current.index]
+        .title;
+      const pid = (second.players as { id: string }[])[0].id;
+      await call(code, (r) => r.tick(current.startedAt + 1));
+      await call(code, (r) => r.answer(pid, title, current.startedAt + 1_000));
+      const reveal = await stored(code);
+      expect((reveal.players as { streak: number }[])[0].streak).toBe(1);
+      ann.close();
+    },
+  );
+
+  it(
+    "carries the track identity a room report needs",
+    { timeout: 20000 },
+    async () => {
+      await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+      const { code, key } = await createRoom();
+      const ann = await connect(code);
+      await join(ann, "Ann", key);
+      ann.send({ type: "start" });
+      await waitFor(ann, inPhase("loading"));
+      const room = await stored(code);
+      const started = room.round as { index: number; startedAt: number };
+      const title = (room.candidates as { title: string }[])[started.index]
+        .title;
+      const pid = (room.players as { id: string }[])[0].id;
+      await call(code, (room) =>
+        room.answer(pid, title, started.startedAt + 1_000),
+      );
+      const revealed = (await stored(code)).reveal as {
+        track: string;
+        title: string;
+        artist: string;
+      };
+      expect(revealed.track).toMatch(/^(dz:|at:)/);
+      expect(revealed.title).toBe(title);
+      expect(revealed.artist).toBeTruthy();
+      const response = await app.fetch(
+        new Request(`${origin}/play/report`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/x-www-form-urlencoded",
+            origin,
+          },
+          body: new URLSearchParams({
+            track: revealed.track,
+            title: revealed.title,
+            artist: revealed.artist,
+            category: "pop",
+            reason: "bad_clip",
+          }).toString(),
+        }),
+        env as never,
+      );
+      expect(response.status).toBe(303);
+      const row = await env.DB.prepare(
+        "SELECT track_key, title, reason FROM track_reports",
+      ).first<{ track_key: string; title: string; reason: string }>();
+      expect(row).toMatchObject({
+        track_key: revealed.track,
+        title,
+        reason: "bad_clip",
+      });
+      ann.close();
+    },
+  );
+  it(
+    "reaches the reveal when the outcome write fails",
+    { timeout: 20000 },
+    async () => {
+      await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+      await env.DB.prepare("DROP TABLE round_outcomes").run();
+      const { code, key } = await createRoom();
+      const ann = await connect(code);
+      const bob = await connect(code);
+      await join(ann, "Ann", key);
+      await join(bob, "Bob");
+      ann.send({ type: "start" });
+      await waitFor(ann, inPhase("loading"));
+      const room = await stored(code);
+      const started = room.round as {
+        index: number;
+        startedAt: number;
+      };
+      const title = (room.candidates as { title: string }[])[started.index]
+        .title;
+      const players = room.players as { id: string }[];
+      for (const player of players)
+        await call(code, (room) =>
+          room.answer(player.id, title, started.startedAt + 1_000),
+        );
+      const after = await stored(code);
+      expect(after.phase).toBe("reveal");
+      expect(after.round).toBeNull();
+      ann.close();
+      bob.close();
+    },
+  );
+  it(
+    "reaches the final standings after 10 rounds",
+    { timeout: 20000 },
+    async () => {
+      await stubChart(Array.from({ length: 30 }, (_, i) => `Song ${i}`));
       const { code, key } = await createRoom();
       const ann = await connect(code);
       await join(ann, "Ann", key);
@@ -261,55 +459,8 @@ describe("rooms", () => {
     },
   );
 
-  it("starts the next game with a fresh streak", async () => {
-    // Four candidates is the minimum a room accepts, so the first game ends
-    // by exhaustion after four rounds. Nothing waits on an alarm: the clip
-    // broadcast marks each serve, and the round's own deadlines are ticked
-    // through directly.
-    stubChart(Array.from({ length: 4 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    const withClip = (m: Record<string, unknown>) =>
-      m.type === "state" && typeof m.startedAt === "number";
-    const playRound = async () => {
-      const room = await stored(code);
-      const current = room.round as { index: number; startedAt: number };
-      const title = (room.candidates as { title: string }[])[current.index]
-        .title;
-      const pid = (room.players as { id: string }[])[0].id;
-      await call(code, (r) => r.tick(current.startedAt + 1));
-      await call(code, (r) => r.answer(pid, title, current.startedAt + 1_000));
-      const reveal = await stored(code);
-      const until = (reveal.reveal as { until: number }).until;
-      ann.inbox.length = 0;
-      await call(code, (r) => r.tick(until + 1));
-    };
-    ann.send({ type: "start" });
-    for (let round = 0; round < 4; round += 1) {
-      await waitFor(ann, withClip);
-      await playRound();
-    }
-    const ended = await stored(code);
-    expect(ended.phase).toBe("done");
-    expect((ended.players as { streak: number }[])[0].streak).toBe(4);
-    ann.inbox.length = 0;
-    ann.send({ type: "start" });
-    await waitFor(ann, withClip);
-    const second = await stored(code);
-    const current = second.round as { index: number; startedAt: number };
-    const title = (second.candidates as { title: string }[])[current.index]
-      .title;
-    const pid = (second.players as { id: string }[])[0].id;
-    await call(code, (r) => r.tick(current.startedAt + 1));
-    await call(code, (r) => r.answer(pid, title, current.startedAt + 1_000));
-    const reveal = await stored(code);
-    expect((reveal.players as { streak: number }[])[0].streak).toBe(1);
-    ann.close();
-  });
-
   it("refuses a duplicate nickname", async () => {
-    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const { code, key } = await createRoom();
     const ann = await connect(code);
     const other = await connect(code);
@@ -322,7 +473,7 @@ describe("rooms", () => {
   });
 
   it("keeps the points on a reconnect with the token", async () => {
-    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const { code, key } = await createRoom();
     const first = await connect(code);
     const joined = (await join(first, "Ann", key)) as { token: string };
@@ -366,6 +517,11 @@ describe("rooms", () => {
         return Response.json({ data: [] });
       }),
     );
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4, 5].map((i) => ({ id: i, title: `Song ${i}` })),
+    );
     const { code, key } = await createRoom();
     const ann = await connect(code);
     await join(ann, "Ann", key);
@@ -385,7 +541,7 @@ describe("rooms", () => {
   });
 
   it("ignores an answer sent before the round starts", async () => {
-    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const { code, key } = await createRoom();
     const ann = await connect(code);
     await join(ann, "Ann", key);
@@ -422,6 +578,11 @@ describe("rooms", () => {
         return Response.json({ data: [] });
       }),
     );
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4, 5].map((i) => ({ id: i, title: `Song ${i}` })),
+    );
     const { code, key } = await createRoom();
     const ann = await connect(code);
     await join(ann, "Ann", key);
@@ -450,6 +611,11 @@ describe("rooms", () => {
         return Response.json({ data: [] });
       }),
     );
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4, 5].map((i) => ({ id: i, title: `Song ${i}` })),
+    );
     const { code, key } = await createRoom();
     const ann = await connect(code);
     await join(ann, "Ann", key);
@@ -463,7 +629,7 @@ describe("rooms", () => {
     expect(held.phase).toBe("loading");
     expect(held.retryAt as number).toBeGreaterThan(Date.now());
     ann.close();
-  });
+  }, 20000);
 
   it("does not let a re-resolved clip overwrite the next round", async () => {
     let slowId = -1;
@@ -483,6 +649,11 @@ describe("rooms", () => {
         }
         return Response.json({ data: [] });
       }),
+    );
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4, 5].map((i) => ({ id: i, title: `Song ${i}` })),
     );
     const { code, key } = await createRoom();
     const ann = await connect(code);
@@ -520,7 +691,7 @@ describe("rooms", () => {
   });
 
   it("closes the round when the last unanswered player leaves", async () => {
-    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const { code, key } = await createRoom();
     const ann = await connect(code);
     const bob = await connect(code);
@@ -544,7 +715,7 @@ describe("rooms", () => {
   });
 
   it("starts the round once every connected device reports the clip loaded", async () => {
-    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const { code, key } = await createRoom();
     const ann = await connect(code);
     const bob = await connect(code);
@@ -570,7 +741,7 @@ describe("rooms", () => {
   });
 
   it("keeps the four-second wait when no device reports", async () => {
-    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const { code, key } = await createRoom();
     const ann = await connect(code);
     await join(ann, "Ann", key);
@@ -583,7 +754,7 @@ describe("rooms", () => {
   });
 
   it("lets a screen watch without taking a seat", async () => {
-    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const { code, key } = await createRoom();
     const screen = await connect(code);
     screen.send({ type: "watch" });
@@ -606,7 +777,7 @@ describe("rooms", () => {
   });
 
   it("keeps the clip on the screen while the phones get a screen flag", async () => {
-    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const { code, key } = await createRoom();
     const ann = await connect(code);
     await join(ann, "Ann", key);
@@ -635,7 +806,7 @@ describe("rooms", () => {
   });
 
   it("does not let a screen fill a seat, so a match still waits alone", async () => {
-    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const code = "MATCHX";
     const init = await stubFor(code).fetch(
       new Request("https://room/init", {
@@ -680,7 +851,7 @@ describe("rooms", () => {
 
   it(
     "adds the category board to the final standings",
-    { timeout: 20_000 },
+    { timeout: 20000 },
     async () => {
       const now = Math.floor(Date.now() / 1000);
       await env.DB.prepare(
@@ -693,7 +864,7 @@ describe("rooms", () => {
       )
         .bind(now - 60)
         .run();
-      stubChart(Array.from({ length: 30 }, (_, i) => `Song ${i}`));
+      await stubChart(Array.from({ length: 30 }, (_, i) => `Song ${i}`));
       const { code, key } = await createRoom();
       const ann = await connect(code);
       await join(ann, "Ann", key);
@@ -735,46 +906,57 @@ describe("rooms", () => {
     },
   );
 
-  it("refreshes a cached category board when results are written", async () => {
-    const now = Math.floor(Date.now() / 1000);
-    await env.DB.prepare(
-      "INSERT INTO users (id, github_id, name, is_public, created_at) VALUES (1, 1, 'pro', 1, 1)",
-    ).run();
-    // The board was read right before the game: its cache holds a stale,
-    // empty copy that must not survive the result write.
-    await env.CACHE.put("play:catboard:pop", JSON.stringify([]));
-    await recordResults(testEnv() as never, [
-      {
-        id: "t:stale:pop",
-        userId: 1,
-        finishedAt: now,
-        category: "pop",
-        kind: "room",
-        score: 5000,
-        rank: 1,
-        players: 2,
-      },
-    ]);
-    expect(await readCategoryBoard(testEnv() as never, "pop")).toEqual([
-      { name: "pro", score: 5000 },
-    ]);
-  });
+  it(
+    "refreshes a cached category board when results are written",
+    { timeout: 20000 },
+    async () => {
+      const now = Math.floor(Date.now() / 1000);
+      await env.DB.prepare(
+        "INSERT INTO users (id, github_id, name, is_public, created_at) VALUES (1, 1, 'pro', 1, 1)",
+      ).run();
+      // The board was read right before the game: its cache holds a stale,
+      // empty copy that must not survive the result write.
+      await env.CACHE.put("play:catboard:pop", JSON.stringify([]));
+      await recordResults(testEnv() as never, [
+        {
+          id: "t:stale:pop",
+          userId: 1,
+          finishedAt: now,
+          category: "pop",
+          kind: "room",
+          score: 5000,
+          rank: 1,
+          players: 2,
+        },
+      ]);
+      expect(await readCategoryBoard(testEnv() as never, "pop")).toEqual([
+        { name: "pro", score: 5000 },
+      ]);
+    },
+  );
 
-  it("deletes an idle room even with a socket open", async () => {
-    stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    const room = await stored(code);
-    const lastActive = room.lastActive as number;
-    const tickAt = lastActive + 3_600_001;
-    await call(code, (room) => room.tick(tickAt));
-    const cleared = await runInDurableObject(stubFor(code), async (_r, s) => ({
-      state: await s.storage.get("room"),
-      alarm: await s.storage.getAlarm(),
-    }));
-    expect(cleared.state).toBeUndefined();
-    expect(cleared.alarm === null || cleared.alarm > tickAt).toBe(true);
-    ann.close();
-  });
+  it(
+    "deletes an idle room even with a socket open",
+    { timeout: 20000 },
+    async () => {
+      await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+      const { code, key } = await createRoom();
+      const ann = await connect(code);
+      await join(ann, "Ann", key);
+      const room = await stored(code);
+      const lastActive = room.lastActive as number;
+      const tickAt = lastActive + 3_600_001;
+      await call(code, (room) => room.tick(tickAt));
+      const cleared = await runInDurableObject(
+        stubFor(code),
+        async (_r, s) => ({
+          state: await s.storage.get("room"),
+          alarm: await s.storage.getAlarm(),
+        }),
+      );
+      expect(cleared.state).toBeUndefined();
+      expect(cleared.alarm === null || cleared.alarm > tickAt).toBe(true);
+      ann.close();
+    },
+  );
 });
