@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import type { Env } from "../types";
 import { catalog, enoughTracks, getCategory } from "./catalog";
+import { byDecade } from "./pool";
 import { newRoomCode, newRoomSecret, nicknameMaxLength } from "./room";
 import type { Candidate } from "./sources";
 
@@ -9,7 +10,9 @@ import type { Candidate } from "./sources";
 // closed socket leaves the queue by itself.
 interface Seat {
   category: string;
+  era: number | null;
   uid: number | null;
+  anon: string | null;
   name: string;
   queued: number;
 }
@@ -23,11 +26,14 @@ export class Matchmaker extends DurableObject<Env> {
       return new Response("not found", { status: 404 });
     const category = url.searchParams.get("category") ?? "";
     const uid = Number(url.searchParams.get("u"));
+    const era = Number(url.searchParams.get("e"));
     const seat: Seat = {
       category,
+      era: Number.isInteger(era) && era > 0 ? era : null,
       // The Worker read the session and set `u` and `n`; a client cannot
       // reach this handler except through that route.
       uid: Number.isInteger(uid) && uid > 0 ? uid : null,
+      anon: url.searchParams.get("a"),
       name: url.searchParams.get("n") ?? "",
       queued: 0,
     };
@@ -87,7 +93,8 @@ export class Matchmaker extends DurableObject<Env> {
   // line and is never refused for a name it already waited with.
   private async enqueue(ws: WebSocket, seat: Seat, refuseTaken: boolean) {
     const sameCategory = this.waiting().filter(
-      (entry) => entry.seat.category === seat.category,
+      (entry) =>
+        entry.seat.category === seat.category && entry.seat.era === seat.era,
     );
     const partner = sameCategory.find(
       (entry) => entry.seat.name.toLowerCase() !== seat.name.toLowerCase(),
@@ -135,6 +142,7 @@ export class Matchmaker extends DurableObject<Env> {
       } catch {
         candidates = [];
       }
+      if (seatA.era !== null) candidates = byDecade(candidates, seatA.era);
     }
     const room = category !== null && enoughTracks(category, candidates);
     if (!room) {
@@ -150,6 +158,7 @@ export class Matchmaker extends DurableObject<Env> {
       name: seat.name,
       token: newRoomSecret(),
       userId: seat.uid,
+      anon: seat.anon,
     }));
     const init = await this.env.ROOMS.get(
       this.env.ROOMS.idFromName(code),

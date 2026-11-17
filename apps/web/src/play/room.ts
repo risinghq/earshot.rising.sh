@@ -18,6 +18,7 @@ import {
   type ResultRow,
 } from "./results";
 import { QuotaError, type Candidate } from "./sources";
+import { playerKeyOf, recordOutcomes, trackKeyFor } from "./outcomes";
 
 export const maxPlayers = 8;
 export const nicknameMaxLength = 20;
@@ -55,6 +56,7 @@ interface Player {
   name: string;
   creator: boolean;
   userId: number | null;
+  anon: string | null;
   score: number;
   streak: number;
 }
@@ -65,12 +67,14 @@ interface SeatedPlayer {
   name: string;
   token: string;
   userId: number | null;
+  anon?: string | null;
 }
 
 interface RoundAnswer {
   answer: string | null;
   correct: boolean;
   score: number;
+  ms: number;
 }
 
 interface Round {
@@ -92,6 +96,7 @@ interface Round {
 
 interface Reveal {
   number: number;
+  track: string;
   title: string;
   artist: string;
   cover: string | null;
@@ -132,6 +137,7 @@ interface Stored {
 interface SocketInfo {
   pid?: string;
   uid?: number;
+  anon?: string;
   watch?: boolean;
 }
 
@@ -176,6 +182,7 @@ export class Room extends DurableObject<Env> {
         for (const player of this.s.players) {
           player.userId ??= null;
           player.streak ??= 0;
+          player.anon ??= null;
         }
         if ((await ctx.storage.getAlarm()) === null) await this.schedule();
       }
@@ -226,6 +233,7 @@ export class Room extends DurableObject<Env> {
           name: seated.name,
           creator: false,
           userId: seated.userId,
+          anon: seated.anon ?? null,
           score: 0,
           streak: 0,
         })),
@@ -254,6 +262,7 @@ export class Room extends DurableObject<Env> {
       const uid = Number(url.searchParams.get("u"));
       pair[1].serializeAttachment({
         uid: Number.isInteger(uid) && uid > 0 ? uid : undefined,
+        anon: url.searchParams.get("a") ?? undefined,
       } satisfies SocketInfo);
       return new Response(null, { status: 101, webSocket: pair[0] });
     }
@@ -305,7 +314,7 @@ export class Room extends DurableObject<Env> {
       this.s.round !== null &&
       this.everyoneAnswered()
     ) {
-      this.closeRound(now);
+      await this.closeRound(now);
       await this.save();
     } else if (this.maybeStartEarly(now)) {
       await this.save();
@@ -323,6 +332,10 @@ export class Room extends DurableObject<Env> {
 
   private uidOf(ws: WebSocket) {
     return (ws.deserializeAttachment() as SocketInfo | null)?.uid ?? null;
+  }
+
+  private anonOf(ws: WebSocket) {
+    return (ws.deserializeAttachment() as SocketInfo | null)?.anon ?? null;
   }
 
   private socketsOf(pid: string) {
@@ -379,6 +392,7 @@ export class Room extends DurableObject<Env> {
       code: s.code,
       kind: s.kind,
       category: s.categoryName,
+      categorySlug: s.categorySlug,
       mode: s.mode,
       phase: s.phase,
       now: Date.now(),
@@ -459,6 +473,7 @@ export class Room extends DurableObject<Env> {
     }
     ws.serializeAttachment({
       uid: this.uidOf(ws) ?? undefined,
+      anon: this.anonOf(ws) ?? undefined,
       watch: true,
     } satisfies SocketInfo);
     this.send(ws, this.snapshot(undefined));
@@ -511,6 +526,7 @@ export class Room extends DurableObject<Env> {
           token !== undefined &&
           token === s.creatorToken,
         userId: this.uidOf(ws),
+        anon: this.anonOf(ws),
         score: 0,
         streak: 0,
       };
@@ -519,6 +535,7 @@ export class Room extends DurableObject<Env> {
     ws.serializeAttachment({
       pid: player.id,
       uid: this.uidOf(ws) ?? undefined,
+      anon: this.anonOf(ws) ?? undefined,
     } satisfies SocketInfo);
     s.lastActive = now;
     this.send(ws, {
@@ -598,12 +615,12 @@ export class Room extends DurableObject<Env> {
       correct = !timedOut && given !== "" && matchTyped(given, candidate.title);
     }
     const score = correct ? scoreFor(elapsed) : 0;
-    s.round.answers[pid] = { answer: given, correct, score };
+    s.round.answers[pid] = { answer: given, correct, score, ms: elapsed };
     player.score += score;
     player.streak = correct ? player.streak + 1 : 0;
     s.lastActive = now;
     if (this.everyoneAnswered()) {
-      this.closeRound(now);
+      await this.closeRound(now);
     }
     await this.save();
     this.broadcast();
@@ -617,12 +634,28 @@ export class Room extends DurableObject<Env> {
     return waiting.length === 0;
   }
 
-  private closeRound(now: number) {
+  private async closeRound(now: number) {
     const s = this.s!;
     const round = s.round!;
     const candidate = s.candidates[round.index];
+    const outcomes =
+      s.categorySlug === ""
+        ? []
+        : s.players
+            .filter((player) => round.answers[player.id] !== undefined)
+            .map((player) => ({
+              playerKey: playerKeyOf(player.userId, player.anon),
+              userId: player.userId,
+              track: candidate,
+              category: s.categorySlug,
+              mode: s.mode,
+              kind: s.kind,
+              correct: round.answers[player.id].correct,
+              elapsedMs: round.answers[player.id].ms,
+            }));
     s.reveal = {
       number: round.number,
+      track: trackKeyFor(candidate),
       title: candidate.title,
       artist: candidate.artist,
       cover: round.cover,
@@ -642,6 +675,12 @@ export class Room extends DurableObject<Env> {
     s.round = null;
     s.phase = "reveal";
     this.clip = null;
+    // Recorded after the reveal is committed: a D1 await would otherwise
+    // reopen the input gate for a re-entrant close, and a D1 failure must
+    // not strand the room on the old round.
+    await recordOutcomes(this.env, outcomes, Math.floor(now / 1000)).catch(
+      (error) => console.error("room outcome write failed", error),
+    );
   }
 
   // Resolves a clip for the next candidate and opens the round. A quota
@@ -840,7 +879,7 @@ export class Room extends DurableObject<Env> {
       return;
     }
     if (s.phase === "playing" && s.round !== null && now >= s.round.endsAt) {
-      this.closeRound(now);
+      await this.closeRound(now);
       await this.save();
       this.broadcast();
     } else if (

@@ -1,4 +1,5 @@
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { mergeAnonOutcomes } from "./play/outcomes";
 import type { Context } from "hono";
 import type { Env } from "./types";
 
@@ -21,6 +22,7 @@ export const cookieClear = {
 
 export interface SignedInUser {
   id: number;
+  github_id: number;
   name: string;
   is_public: number;
 }
@@ -61,7 +63,7 @@ export async function sessionUser<E extends { Bindings: Env }>(
   const now = Math.floor(Date.now() / 1000);
   const hash = await sha256Bytes(value);
   return env.DB.prepare(
-    `SELECT users.id, users.name, users.is_public
+    `SELECT users.id, users.github_id, users.name, users.is_public
      FROM sessions JOIN users ON users.id = sessions.user_id
      WHERE sessions.hash = ?1 AND sessions.expires_at > ?2`,
   )
@@ -223,6 +225,9 @@ export async function githubCallback(context: AuthContext) {
 
   const now = Math.floor(Date.now() / 1000);
   const user = await findOrCreateUser(context.env.DB, github, now);
+  const anon = getCookie(context, "play-id", "host");
+  if (anon !== undefined)
+    await mergeAnonOutcomes(context.env.DB, anon, user.id);
   const session = await newSession(context.env.DB, user.id, now);
   setCookie(context, "session", session, {
     ...cookieBase,

@@ -1,6 +1,7 @@
 import { base64url } from "../auth";
 import type { Env } from "../types";
 import type { Category } from "./catalog";
+import { playerKeyOf, recordOutcomes, trackKeyFor } from "./outcomes";
 import {
   candidatePreview,
   roundSeconds,
@@ -23,6 +24,7 @@ export const startCapMs = 5000;
 export type Phase = "question" | "reveal" | "done";
 
 export interface RoundResult {
+  trackKey: string;
   title: string;
   artist: string;
   cover: string | null;
@@ -37,6 +39,7 @@ export interface RoundResult {
 export interface Game {
   id: string;
   userId: number | null;
+  playerKey: string;
   mode: Mode;
   categorySlug: string;
   categoryName: string;
@@ -91,10 +94,12 @@ export async function buildGame(
   mode: Mode,
   candidates: Candidate[],
   userId: number | null = null,
+  playerKey = playerKeyOf(userId, null),
 ): Promise<Game> {
   const game: Game = {
     id: base64url(crypto.getRandomValues(new Uint8Array(16))),
     userId,
+    playerKey,
     mode,
     categorySlug: category.slug,
     categoryName: category.name,
@@ -305,6 +310,7 @@ export async function answerRound(
   }
   const score = correct ? scoreFor(elapsed) : 0;
   const result: RoundResult = {
+    trackKey: trackKeyFor(candidate),
     title: candidate.title,
     artist: candidate.artist,
     cover: game.current.reveal.cover,
@@ -320,6 +326,18 @@ export async function answerRound(
   game.current = null;
   game.phase = "reveal";
   await putGame(env, game);
+  await recordOutcomes(env, [
+    {
+      playerKey: game.playerKey,
+      userId: game.userId,
+      track: candidate,
+      category: game.categorySlug,
+      mode: game.mode,
+      kind: "solo",
+      correct,
+      elapsedMs: elapsed,
+    },
+  ]).catch((error) => console.error("solo outcome write failed", error));
   return { game, result };
 }
 
