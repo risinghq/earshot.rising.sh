@@ -5,6 +5,7 @@ export interface Env {
   CACHE?: KVNamespace;
   ROOMS: DurableObjectNamespace;
   MATCHMAKER: DurableObjectNamespace;
+  ADMIN_GITHUB_IDS?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   SPOTIFY_CLIENT_ID?: string;

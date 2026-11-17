@@ -11,6 +11,7 @@ import {
 import { legacyHostRedirect } from "./host";
 import { renderCard, type CardTheme } from "./card";
 import { pullDueSources } from "./cron";
+import { refreshCatalog } from "./play/refresh";
 import { sourceNames } from "./names";
 import { DayBars } from "./ui/bars";
 import { EmptyState } from "./ui/empty";
@@ -25,6 +26,7 @@ import { friendsApp } from "./friends";
 import { groupsApp } from "./groups";
 import { settingsApp } from "./settings";
 import { beginSpotify, spotifyCallback } from "./spotify";
+import { adminApp } from "./admin";
 import { listCategories, type Category } from "./play/catalog";
 import { playApp } from "./play/routes";
 import { uploadPlays } from "./upload";
@@ -57,7 +59,8 @@ async function findUser(db: D1Database, name: string) {
        (
          SELECT group_concat(kind) FROM sources WHERE user_id = users.id
        ) AS kinds
-       FROM users WHERE name = ?1 COLLATE NOCASE AND is_public = 1`,
+       FROM users
+       WHERE name = ?1 COLLATE NOCASE AND is_public = 1 AND admin_hidden = 0`,
     )
     .bind(name)
     .first<{
@@ -409,6 +412,8 @@ app.route("/groups", groupsApp);
 
 app.route("/play", playApp);
 
+app.route("/admin", adminApp);
+
 app.get("/party", (context) => context.redirect("/groups", 301));
 
 app.get("/u/:path", async (context) => {
@@ -505,4 +510,5 @@ app.notFound(async (context) =>
 
 export async function scheduled(_controller: ScheduledController, env: Env) {
   await pullDueSources(env);
+  await refreshCatalog(env);
 }

@@ -368,6 +368,9 @@ function settingsPage(
               <PillButton variant="primary">Save profile</PillButton>
             </div>
           </form>
+          <p class="hint">
+            Your quiz answers are kept so the game can pick better songs.
+          </p>
           <p class="muted">
             Download your plays as NDJSON, one play per line. Without JavaScript
             the link returns the first 1,000 plays. The Link header of each page

@@ -4,6 +4,10 @@
   "compatibility_date": "2026-11-12",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
+  "vars": {
+    // Numeric GitHub ids, comma separated. Filled in per deployment.
+    "ADMIN_GITHUB_IDS": "",
+  },
   "routes": [
     { "pattern": "earshot.rising.sh", "custom_domain": true },
     { "pattern": "music.rising.sh", "custom_domain": true },

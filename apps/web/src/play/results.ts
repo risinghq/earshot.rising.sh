@@ -106,7 +106,8 @@ export async function readBoard(env: Env, period: BoardPeriod) {
                       AND game_results.players > 1 THEN 1 ELSE 0 END) AS wins
      FROM game_results
      JOIN users ON users.id = game_results.user_id
-     WHERE users.is_public = 1 AND game_results.finished_at >= ?1
+     WHERE users.is_public = 1 AND users.admin_hidden = 0
+       AND game_results.finished_at >= ?1
      GROUP BY game_results.user_id
      ORDER BY points DESC, users.name
      LIMIT 50`,
@@ -142,7 +143,7 @@ export async function readCategoryBoard(env: Env, slug: string) {
     `SELECT users.name, MAX(game_results.score) AS score
      FROM game_results
      JOIN users ON users.id = game_results.user_id
-     WHERE users.is_public = 1
+     WHERE users.is_public = 1 AND users.admin_hidden = 0
        AND game_results.category = ?1
        AND game_results.finished_at >= ?2
      GROUP BY game_results.user_id
