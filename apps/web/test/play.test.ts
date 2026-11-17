@@ -256,6 +256,41 @@ describe("/play", () => {
     expect(nextRound).toContain('action="/play/' + id + '/answer"');
   });
 
+  it("updates the header's round and score after an answer", async () => {
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4].map((i) => ({ id: i, title: `Song ${i}` })),
+    );
+    stubFetch([
+      [
+        /api\.deezer\.com\/track\/\d+/,
+        (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
+      ],
+    ]);
+    const id = await startGame("pop", "choices");
+    const question = await (await get(`/play/${id}`)).text();
+    expect(question).toContain(`Pop · Round 1 of ${roundsPerGame} · Score 0`);
+    const game = (await getGame(testEnv() as never, id))!;
+    const answerTitle = game.candidates[game.current!.index].title;
+    game.current!.servedAt = Date.now() - 5_000;
+    await putGame(testEnv() as never, game);
+    const answered = await answer(id, { choice: answerTitle });
+    const reveal = await (await get(answered.headers.get("location")!)).text();
+    const total = (await getGame(testEnv() as never, id))!.total;
+    expect(total).toBeGreaterThan(0);
+    expect(reveal).toContain(
+      `Pop · Round 1 of ${roundsPerGame} · Score ${total}`,
+    );
+    const advanced = await next(id);
+    const nextRound = await (
+      await get(advanced.headers.get("location")!)
+    ).text();
+    expect(nextRound).toContain(
+      `Pop · Round 2 of ${roundsPerGame} · Score ${total}`,
+    );
+  });
+
   it("scores by the time the server measured, not a client value", async () => {
     await seedCatalog(
       env.DB,
