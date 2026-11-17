@@ -12,7 +12,7 @@ export function decadeOf(year: number | null | undefined) {
     : null;
 }
 
-interface PoolRow {
+export interface PoolRow {
   deezer_id: number;
   title: string;
   artist: string;
@@ -20,6 +20,7 @@ interface PoolRow {
   link: string | null;
   year: number | null;
   decade: number | null;
+  category?: string | null;
 }
 
 // The pool is the union of a category's sources. The same recording can sit
@@ -44,6 +45,7 @@ export function dedupePool(rows: PoolRow[]): Candidate[] {
       deezerId: row.deezer_id,
       year: row.year ?? undefined,
       decade: row.decade ?? undefined,
+      category: row.category ?? undefined,
     });
   }
   return pool;

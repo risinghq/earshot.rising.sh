@@ -33,6 +33,7 @@ import {
   matchPage,
 } from "./pages";
 import { readBoard, readCategoryBoard, recordGame } from "./results";
+import { forYouCategory, forYouCold, forYouMix, forYouSlug } from "./foryou";
 import { deezerSearchArtists } from "./sources";
 import { byDecade, poolEras } from "./pool";
 import { anonKey, anonOf, playerKeyOf } from "./outcomes";
@@ -46,7 +47,10 @@ playApp.use("*", csrf());
 
 // One entry check for both game kinds: same form fields, same category and
 // mode validation, same catalogue fetch, same minimum track count.
-async function gameInput(context: Context<{ Bindings: Env }>): Promise<
+async function gameInput(
+  context: Context<{ Bindings: Env }>,
+  forYou = false,
+): Promise<
   | {
       category: Category;
       mode: Mode;
@@ -64,6 +68,25 @@ async function gameInput(context: Context<{ Bindings: Env }>): Promise<
   if (slug === "" || mode === null)
     return context.text("Pick a category and a mode.", 400);
   const user = await sessionUser(context);
+  // For you is a solo-only game: its pool is one player's mix, so a room or a
+  // match would sit everyone in the creator's taste.
+  if (slug === forYouSlug) {
+    if (!forYou) return context.html(notFoundPage(user), 404);
+    if (!context.env.CACHE)
+      return context.html(feedErrorPage(forYouCategory.name, user), 503);
+    const anon = anonKey(context);
+    const playerKey = playerKeyOf(user?.id ?? null, anon);
+    const tracks = await forYouMix(context.env, playerKey, user?.id ?? null);
+    if (!enoughTracks(forYouCategory, tracks))
+      return context.html(feedErrorPage(forYouCategory.name, user), 502);
+    return {
+      category: forYouCategory,
+      mode,
+      tracks,
+      userId: user?.id ?? null,
+      playerKey,
+    };
+  }
   const category = await getCategory(context.env, slug);
   if (category === null) return context.html(notFoundPage(user), 404);
   if (!context.env.CACHE)
@@ -342,6 +365,8 @@ playApp.get("/", async (context) => {
   );
   const who = context.req.query("who");
   const mode = context.req.query("mode");
+  const playerKey = playerKeyOf(user?.id ?? null, anonOf(context));
+  const cold = await forYouCold(context.env.DB, playerKey, user?.id ?? null);
   return context.html(
     categoriesPage(
       categories,
@@ -349,12 +374,13 @@ playApp.get("/", async (context) => {
       user,
       who === "room" || who === "stranger" ? who : "solo",
       mode === "typed" ? "typed" : "choices",
+      cold,
     ),
   );
 });
 
 playApp.post("/", async (context) => {
-  const input = await gameInput(context);
+  const input = await gameInput(context, true);
   if (input instanceof Response) return input;
   const game = await buildGame(
     context.env,
@@ -386,7 +412,7 @@ playApp.get("/:id", async (context) => {
       gamePage(game, { kind: game.phase }, now, {
         user,
         board:
-          game.phase === "done"
+          game.phase === "done" && game.categorySlug !== forYouSlug
             ? await readCategoryBoard(context.env, game.categorySlug)
             : [],
       }),

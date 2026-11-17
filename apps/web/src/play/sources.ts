@@ -12,6 +12,9 @@ export interface Candidate {
   deezerId?: number;
   year?: number;
   decade?: number;
+  // The catalog category the track was drawn from; set only by pools that mix
+  // categories, so a round can credit the outcome to the right one.
+  category?: string;
 }
 
 export interface Preview {

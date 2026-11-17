@@ -7,6 +7,7 @@ import { Page } from "../ui/shell";
 import { Stats } from "../ui/stat";
 import { EmptyState } from "../ui/empty";
 import type { Category } from "./catalog";
+import { forYouSlug } from "./foryou";
 import type { Game, RoundResult } from "./game";
 import type { BoardEntry, BoardPeriod, CategoryBoardEntry } from "./results";
 import { categoryBoardDays } from "./results";
@@ -95,7 +96,7 @@ setup.addEventListener("change", () => {
   const mode = setup.querySelector('input[name="mode"]:checked').value;
   document.getElementById("mode-field").disabled = who === "stranger";
   document.querySelectorAll("form.tile").forEach((tile) => {
-    tile.action = actions[who];
+    if (!tile.hasAttribute("data-solo")) tile.action = actions[who];
     tile.querySelector('input[name="mode"]').value = mode;
   });
 });
@@ -170,12 +171,34 @@ function tile(
   );
 }
 
+// The For you tile is a solo game on every "who" choice, so the setup script
+// leaves its action alone; the muted line stands where a Scores link would.
+function forYouTile(mode: "choices" | "typed", cold: boolean) {
+  return (
+    <form class="tile" method="post" action="/play" data-solo>
+      <input type="hidden" name="category" value={forYouSlug} />
+      <input type="hidden" name="mode" value={mode} />
+      <button type="submit">
+        <span class="tile-name">For you</span>
+      </button>
+      <span class="tile-links">
+        <span class="tile-score">
+          {cold
+            ? "Play a few games and this learns your taste"
+            : "Tracks you know, plus new ones"}
+        </span>
+      </span>
+    </form>
+  );
+}
+
 export function categoriesPage(
   categories: Category[],
   eras: Record<string, number[]>,
   user: SignedInUser | null,
   who: PlayWho = "solo",
   mode: "choices" | "typed" = "choices",
+  forYouColdStart = true,
 ) {
   const whoChecked = (value: PlayWho) =>
     who === value ? { checked: true } : {};
@@ -280,6 +303,7 @@ export function categoriesPage(
           </p>
         </Section>
         <div class="tiles">
+          {forYouTile(mode, forYouColdStart)}
           {categories.map((category) =>
             tile(category, eras[category.slug] ?? [], who, mode, user),
           )}
@@ -770,12 +794,14 @@ export function finalPage(
                 ))}
               </ul>
             </Section>
-            <Section
-              title="Top scores"
-              aside={`${game.categoryName} · last ${categoryBoardDays} days`}
-            >
-              <CategoryBoard entries={board} />
-            </Section>
+            {game.categorySlug !== forYouSlug && (
+              <Section
+                title="Top scores"
+                aside={`${game.categoryName} · last ${categoryBoardDays} days`}
+              >
+                <CategoryBoard entries={board} />
+              </Section>
+            )}
           </div>
           {user === null && (
             <p class="meta">

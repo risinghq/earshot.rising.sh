@@ -331,7 +331,7 @@ export async function answerRound(
       playerKey: game.playerKey,
       userId: game.userId,
       track: candidate,
-      category: game.categorySlug,
+      category: candidate.category ?? game.categorySlug,
       mode: game.mode,
       kind: "solo",
       correct,

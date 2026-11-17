@@ -1,6 +1,6 @@
 import type { Env } from "../types";
 import { catalogPool } from "./pool";
-import { answerKey } from "./quiz";
+import { answerKey, roundsPerGame } from "./quiz";
 import { FeedError } from "./http";
 import {
   appleChart,
@@ -18,7 +18,8 @@ export interface Category {
     | "deezer_playlist"
     | "deezer_artist"
     | "apple_chart"
-    | "mine";
+    | "mine"
+    | "for_you";
   ref: string | null;
 }
 
@@ -141,7 +142,8 @@ export function interleave(lists: Candidate[][]) {
 // A game needs at least four different answers so the choices mode can offer
 // four buttons; titles that only differ in a suffix count once. Artist feeds
 // are rejected below that line; the curated feeds keep the raw-count check
-// they always had.
+// they always had. For you builds its whole game from the mix, so it needs a
+// full game's worth of distinct answers, not just a round's.
 export function distinctAnswers(tracks: Candidate[]) {
   return new Set(
     tracks.map((track) => answerKey(track.title)).filter((key) => key !== ""),
@@ -149,6 +151,8 @@ export function distinctAnswers(tracks: Candidate[]) {
 }
 
 export function enoughTracks(category: Category, tracks: Candidate[]) {
+  if (category.feed === "for_you")
+    return distinctAnswers(tracks) >= roundsPerGame;
   return category.feed === "deezer_artist"
     ? distinctAnswers(tracks) >= 4
     : tracks.length >= 4;
