@@ -1,4 +1,5 @@
 import type { Env } from "../types";
+import { catalogPool } from "./pool";
 import { answerKey } from "./quiz";
 import { FeedError } from "./http";
 import {
@@ -6,7 +7,6 @@ import {
   deezerArtist,
   deezerArtistTop,
   deezerChart,
-  deezerPlaylist,
   type Candidate,
 } from "./sources";
 
@@ -42,7 +42,10 @@ export function parseArtistSlug(slug: string): number[] | null {
 
 export function listCategories(db: D1Database) {
   return db
-    .prepare("SELECT slug, name, feed, ref FROM categories ORDER BY rowid")
+    .prepare(
+      `SELECT slug, name, feed, ref FROM categories
+       WHERE hidden = 0 ORDER BY position, slug`,
+    )
     .all<Category>()
     .then((result) => result.results);
 }
@@ -89,7 +92,7 @@ export async function getCategory(env: Env, slug: string) {
   if (ids !== null) return artistCategory(env, ids);
   if (slug.startsWith("artist-")) return null;
   return env.DB.prepare(
-    "SELECT slug, name, feed, ref FROM categories WHERE slug = ?1",
+    "SELECT slug, name, feed, ref FROM categories WHERE slug = ?1 AND hidden = 0",
   )
     .bind(slug)
     .first<Category>();
@@ -169,7 +172,7 @@ export async function catalog(
   if (category.feed === "deezer_chart")
     tracks = await deezerChart(category.ref ?? "0");
   else if (category.feed === "deezer_playlist")
-    tracks = await deezerPlaylist(category.ref ?? "0");
+    tracks = await catalogPool(env.DB, category.slug);
   else if (category.feed === "deezer_artist") {
     const lists = await Promise.all(
       (category.ref ?? "").split(",").map((id) => deezerArtistTop(Number(id))),
