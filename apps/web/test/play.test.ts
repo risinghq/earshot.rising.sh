@@ -355,37 +355,45 @@ describe("/play", () => {
     expect(game.results.at(-1)!.score).toBe(0);
   });
 
-  it(
-    "persists done when a guest's solo game ends",
-    { timeout: 20000 },
-    async () => {
-      await seedCatalog(
-        env.DB,
-        "pop",
-        Array.from({ length: 12 }, (_, i) => ({
-          id: i + 1,
-          title: `Song ${i}`,
-        })),
+  it("persists done when a guest's solo game ends", async () => {
+    await seedCatalog(
+      env.DB,
+      "pop",
+      Array.from({ length: 4 }, (_, i) => ({
+        id: i + 1,
+        title: `Song ${i}`,
+      })),
+    );
+    stubFetch([
+      [
+        /api\.deezer\.com\/track\/\d+/,
+        (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
+      ],
+    ]);
+    const id = await startGame("pop", "choices");
+    // Four candidates is enough to reach done by exhaustion: all but the
+    // last round go through the game module; the last one goes through the
+    // routes so the finish still crosses answer → next → done over HTTP.
+    const game = (await getGame(testEnv() as never, id))!;
+    for (let round = 0; round < 3; round += 1) {
+      await serveRound(testEnv() as never, game, Date.now());
+      await answerRound(
+        testEnv() as never,
+        game,
+        { choice: "Wrong" },
+        Date.now(),
       );
-      stubFetch([
-        [
-          /api\.deezer\.com\/track\/\d+/,
-          (url: string) =>
-            deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
-        ],
-      ]);
-      const id = await startGame("pop", "choices");
-      for (let round = 0; round < 10; round += 1) {
-        await get(`/play/${id}`);
-        await answer(id, { choice: "Wrong" });
-        await next(id);
-      }
-      const game = (await getGame(testEnv() as never, id))!;
-      expect(game.phase).toBe("done");
-      const done = await get(`/play/${id}`);
-      expect(await done.text()).toContain("Game over");
-    },
-  );
+      advance(game);
+      await putGame(testEnv() as never, game);
+    }
+    await get(`/play/${id}`);
+    await answer(id, { choice: "Wrong" });
+    await next(id);
+    const stored = (await getGame(testEnv() as never, id))!;
+    expect(stored.phase).toBe("done");
+    const done = await get(`/play/${id}`);
+    expect(await done.text()).toContain("Game over");
+  });
 
   it("refuses answers once a game is finished or gone", async () => {
     await seedCatalog(
@@ -560,58 +568,54 @@ describe("the round clock", () => {
     expect(after.current!.startedAt).toBe(started);
   });
 
-  it(
-    "keeps a round /next served while prepare was still resolving",
-    { timeout: 20_000 },
-    async () => {
-      let release!: () => void;
-      const gate = new Promise<void>((resolve) => {
-        release = resolve;
-      });
-      let trackCalls = 0;
-      await seedCatalog(
-        env.DB,
-        "pop",
-        [1, 2, 3, 4].map((i) => ({ id: i, title: `Song ${i}` })),
-      );
-      vi.stubGlobal(
-        "fetch",
-        vi.fn(async (input: RequestInfo | URL) => {
-          const url = input.toString();
-          if (/api\.deezer\.com\/track\/\d+/.test(url)) {
-            trackCalls += 1;
-            // The second lookup is prepare's (the first served round 1);
-            // it hangs so /next's own resolve finishes first.
-            if (trackCalls === 2) await gate;
-            const n = Number(/track\/(\d+)/.exec(url)![1]);
-            return new Response(JSON.stringify(deezerTrack(n, "x")), {
-              headers: { "content-type": "application/json" },
-            });
-          }
-          return new Response("not found", { status: 404 });
-        }),
-      );
-      const id = await startGame("pop", "choices");
-      await get(`/play/${id}`);
-      const game = (await getGame(testEnv() as never, id))!;
-      const title = game.candidates[game.current!.index].title;
-      await answer(id, { choice: title });
-      const revealed = (await getGame(testEnv() as never, id))!;
-      expect(revealed.phase).toBe("reveal");
-      const prep = prepareNext(testEnv() as never, revealed);
-      await vi.waitFor(() => expect(trackCalls).toBe(2));
-      const served = await next(id);
-      expect(served.status).toBe(303);
-      // The GET serves the round while prepare's lookup is still held.
-      await get(`/play/${id}`);
-      release();
-      expect(await prep).toBeNull();
-      const after = (await getGame(testEnv() as never, id))!;
-      expect(after.phase).toBe("question");
-      expect(after.current).not.toBeNull();
-      expect(after.served).toBe(2);
-    },
-  );
+  it("keeps a round /next served while prepare was still resolving", async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let trackCalls = 0;
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4].map((i) => ({ id: i, title: `Song ${i}` })),
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = input.toString();
+        if (/api\.deezer\.com\/track\/\d+/.test(url)) {
+          trackCalls += 1;
+          // The second lookup is prepare's (the first served round 1);
+          // it hangs so /next's own resolve finishes first.
+          if (trackCalls === 2) await gate;
+          const n = Number(/track\/(\d+)/.exec(url)![1]);
+          return new Response(JSON.stringify(deezerTrack(n, "x")), {
+            headers: { "content-type": "application/json" },
+          });
+        }
+        return new Response("not found", { status: 404 });
+      }),
+    );
+    const id = await startGame("pop", "choices");
+    await get(`/play/${id}`);
+    const game = (await getGame(testEnv() as never, id))!;
+    const title = game.candidates[game.current!.index].title;
+    await answer(id, { choice: title });
+    const revealed = (await getGame(testEnv() as never, id))!;
+    expect(revealed.phase).toBe("reveal");
+    const prep = prepareNext(testEnv() as never, revealed);
+    await vi.waitFor(() => expect(trackCalls).toBe(2));
+    const served = await next(id);
+    expect(served.status).toBe(303);
+    // The GET serves the round while prepare's lookup is still held.
+    await get(`/play/${id}`);
+    release();
+    expect(await prep).toBeNull();
+    const after = (await getGame(testEnv() as never, id))!;
+    expect(after.phase).toBe("question");
+    expect(after.current).not.toBeNull();
+    expect(after.served).toBe(2);
+  });
 });
 
 describe("typed matching", () => {

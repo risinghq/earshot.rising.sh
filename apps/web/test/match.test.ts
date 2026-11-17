@@ -9,6 +9,7 @@ import migrations from "virtual:web-migrations";
 import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
 import type { Matchmaker } from "../src/play/match";
+import { scoreFor } from "../src/play/quiz";
 import type { Room } from "../src/play/room";
 
 const origin = "https://earshot.rising.sh";
@@ -187,29 +188,36 @@ async function untilQueued(count: number, timeoutMs = 5000) {
   throw new Error("queue did not reach the expected size");
 }
 
+// Drives a whole match game inside one visit to the object: each round
+// every seated player answers the served track, then the reveal deadline
+// is ticked past. A null round means the quota hold; its retry deadline is
+// the tick that moves it. Nothing waits on a real alarm.
 async function finishRoom(code: string) {
-  for (let round = 0; round < 10; round += 1) {
-    const room = await stored(code);
-    const current = room.round as {
-      index: number;
-      startedAt: number;
-      endsAt: number;
-    } | null;
-    if (current === null) {
-      const retryAt = (room.retryAt ?? 0) as number;
-      await call(code, (r) => r.tick(retryAt + 1));
-      round -= 1;
-      continue;
+  await runInDurableObject(roomStub(code), async (room, state) => {
+    const read = () =>
+      state.storage.get("room") as Promise<Record<string, never>>;
+    for (let round = 0; round < 10; round += 1) {
+      const s = await read();
+      if (s.phase === "done") return;
+      const current = s.round as {
+        index: number;
+        startedAt: number;
+      } | null;
+      if (current === null) {
+        const hold = (s.retryAt ??
+          (s.reveal as { until: number } | null)?.until ??
+          0) as number;
+        await room.tick(hold + 1);
+        round -= 1;
+        continue;
+      }
+      const title = (s.candidates as { title: string }[])[current.index].title;
+      for (const player of s.players as { id: string }[])
+        await room.answer(player.id, title, current.startedAt + 1_000);
+      // A tick past the round end also clears the reveal that followed.
+      await room.tick(current.startedAt + 60_000);
     }
-    const title = (room.candidates as { title: string }[])[current.index].title;
-    const players = room.players as { id: string }[];
-    for (const player of players)
-      await call(code, (r) =>
-        r.answer(player.id, title, current.startedAt + 1_000),
-      );
-    const reveal = (await stored(code)).reveal as { until: number };
-    await call(code, (r) => r.tick(reveal.until + 1));
-  }
+  });
 }
 
 beforeEach(async () => {
@@ -298,96 +306,99 @@ describe("matchmaker", () => {
     cid.close();
   });
 
-  it(
-    "writes one row per signed-in player, none for a guest, once",
-    { timeout: 20000 },
-    async () => {
-      await stubChart(Array.from({ length: 30 }, (_, i) => `Song ${i}`));
-      const ann = await signIn("ann");
-      const queuedA = await queue("pop", `__Host-session=${ann.token}`);
-      queuedA.send({ type: "join" });
-      await waitFor(queuedA, isType("queued"));
-      const guest = await queue("pop");
-      guest.send({ type: "join", name: "Guesty" });
-      const matched = (await waitFor(queuedA, isType("matched"))) as {
-        code: string;
-        token: string;
-      };
-      const matchedGuest = (await waitFor(guest, isType("matched"))) as {
-        token: string;
-      };
-      const code = matched.code;
-      const a = await joinRoom(
+  it("writes one row per signed-in player, none for a guest, once", async () => {
+    await stubChart(Array.from({ length: 4 }, (_, i) => `Song ${i}`));
+    const ann = await signIn("ann");
+    // Seats are planted through init and the game begun inside the object:
+    // the row-writing path under test starts at a full game anyway, and the
+    // queue/join wiring is covered by the pairing tests above.
+    const code = "MATCHROW";
+    await roomStub(code).fetch("http://room/init", {
+      method: "POST",
+      body: JSON.stringify({
         code,
-        matched.token,
-        `__Host-session=${ann.token}`,
-      );
-      const g = await joinRoom(code, matchedGuest.token);
-      await finishRoom(code);
-      expect((await stored(code)).phase).toBe("done");
-      const rows = await resultRows();
-      expect(rows).toHaveLength(1);
-      expect(rows[0]).toMatchObject({
-        user_id: ann.id,
-        category: "pop",
         kind: "match",
-        rank: 1,
-        players: 2,
-      });
-      expect(rows[0]!.score as number).toBeGreaterThan(9_000);
-      // A finish processed again — a late alarm or a repeated write — adds nothing.
-      await call(code, (room) =>
-        (room as unknown as { recordResults(): Promise<void> }).recordResults(),
+        categorySlug: "pop",
+        categoryName: "Pop",
+        mode: "choices",
+        candidates: Array.from({ length: 4 }, (_, i) => ({
+          deezerId: 100 + i,
+          title: `Song ${i}`,
+          artist: "Artist",
+          cover: null,
+          link: null,
+        })),
+        creatorToken: "",
+        players: [
+          { name: "Ann", token: "t1", userId: ann.id },
+          { name: "Guesty", token: "t2", userId: null },
+        ],
+      }),
+    });
+    await call(code, async (room) => {
+      await (room as unknown as { begin(now: number): Promise<void> }).begin(
+        Date.now(),
       );
-      await call(code, (room) => room.tick(Date.now() + 1));
-      expect(await resultRows()).toHaveLength(1);
-      queuedA.close();
-      guest.close();
-      a.close();
-      g.close();
-    },
-  );
+    });
+    await finishRoom(code);
+    expect((await stored(code)).phase).toBe("done");
+    const rows = await resultRows();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      user_id: ann.id,
+      category: "pop",
+      kind: "match",
+      rank: 1,
+      players: 2,
+    });
+    expect(rows[0]!.score as number).toBe(4 * scoreFor(1_000));
+    // A finish processed again — a late alarm or a repeated write — adds nothing.
+    await call(code, async (room) => {
+      await (
+        room as unknown as { recordResults(): Promise<void> }
+      ).recordResults();
+      await room.tick(Date.now() + 1);
+    });
+    expect(await resultRows()).toHaveLength(1);
+  });
 
-  it(
-    "starts a match with whoever connected and writes players 1",
-    { timeout: 20000 },
-    async () => {
-      await stubChart(Array.from({ length: 30 }, (_, i) => `Song ${i}`));
-      const ann = await signIn("ann");
-      const queuedA = await queue("pop", `__Host-session=${ann.token}`);
-      queuedA.send({ type: "join" });
-      await waitFor(queuedA, isType("queued"));
-      const guest = await queue("pop");
-      guest.send({ type: "join", name: "Guesty" });
-      const matched = (await waitFor(queuedA, isType("matched"))) as {
-        code: string;
-        token: string;
-      };
-      await waitFor(guest, isType("matched"));
-      const code = matched.code;
-      // Only one side shows up; the 90-second deadline starts the game.
-      const a = await joinRoom(
-        code,
-        matched.token,
-        `__Host-session=${ann.token}`,
-      );
-      await call(code, (room) => room.tick(Date.now() + 95_000));
-      await finishRoom(code);
-      expect((await stored(code)).phase).toBe("done");
-      const rows = await resultRows();
-      expect(rows).toHaveLength(1);
-      expect(rows[0]).toMatchObject({ user_id: ann.id, kind: "match" });
-      expect(rows[0]!.players).toBe(1);
-      await env.CACHE.delete("play:board:week");
-      const body = await (
-        await app.fetch(new Request(`${origin}/play/board`), testEnv() as never)
-      ).text();
-      expect(body).toContain("0 wins");
-      queuedA.close();
-      guest.close();
-      a.close();
-    },
-  );
+  it("starts a match with whoever connected and writes players 1", async () => {
+    await stubChart(Array.from({ length: 4 }, (_, i) => `Song ${i}`));
+    const ann = await signIn("ann");
+    const queuedA = await queue("pop", `__Host-session=${ann.token}`);
+    queuedA.send({ type: "join" });
+    await waitFor(queuedA, isType("queued"));
+    const guest = await queue("pop");
+    guest.send({ type: "join", name: "Guesty" });
+    const matched = (await waitFor(queuedA, isType("matched"))) as {
+      code: string;
+      token: string;
+    };
+    await waitFor(guest, isType("matched"));
+    const code = matched.code;
+    // Only one side shows up; the 90-second deadline starts the game.
+    const a = await joinRoom(
+      code,
+      matched.token,
+      `__Host-session=${ann.token}`,
+    );
+    await call(code, (room) => room.tick(Date.now() + 95_000));
+    await waitFor(a, (m) => m.type === "state" && m.phase === "playing");
+    await finishRoom(code);
+    expect((await stored(code)).phase).toBe("done");
+    const rows = await resultRows();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ user_id: ann.id, kind: "match" });
+    expect(rows[0]!.players).toBe(1);
+    await env.CACHE.delete("play:board:week");
+    const body = await (
+      await app.fetch(new Request(`${origin}/play/board`), testEnv() as never)
+    ).text();
+    expect(body).toContain("0 wins");
+    queuedA.close();
+    guest.close();
+    a.close();
+  });
 
   it("seats a signed-in name up to 39 characters, guests stay at 20", async () => {
     const init = (code: string, players: unknown) =>
