@@ -904,11 +904,26 @@ list by name, and the member can leave any group.
 picks a category and answers by choosing one of four titles or by typing the
 title.
 
-- **Categories.** The `categories` table lists a slug, a display name and a
-  feed: a Deezer chart genre id, a Deezer playlist id or an Apple country chart.
-  Migration `0008` seeds Pop, Rock, Metal, K-pop, Anime, Top 50 Japan, Top 50
-  Peru, Top 50 Global and "From my listening", which reads the signed-in
-  player's `track_totals`. A new curated category is a row.
+- **Categories.** The `categories` table lists a slug, a display name, a display
+  order, a hidden flag and a feed. Migration `0012` reseeds Pop, Rock, Metal,
+  K-pop and Anime plus a new Rock en Español category as playlist-backed feeds,
+  keeps Top 50 Japan, Top 50 Peru, Top 50 Global and "From my listening", which
+  reads the signed-in player's `track_totals`.
+- **Catalog.** A playlist-backed category keeps its track pool in D1 instead of
+  fetching a feed per game. `category_sources` lists one or more Deezer
+  playlists per category, `catalog_tracks` holds each track by Deezer id with
+  its title, artist, cover, link and release year plus the admin's answer-title
+  and answer-year overrides and a ban timestamp, and `catalog_members` joins
+  tracks to the sources they came from. The pool a game draws from is the union
+  of the category's sources deduplicated by Deezer id and by normalized answer
+  title per artist, banned tracks removed. The daily cron refetches each
+  source's playlist and upserts tracks, so an override or a ban survives a
+  refresh; it then fills missing years from `/track/{id}` at most 50 tracks per
+  run, marking tracks without a release date so they are not looked up again.
+- **Eras.** A track's decade comes from its year, the answer-year override
+  first. A category with at least 20 playable tracks in a decade offers that
+  decade as a chip on its `/play` tile next to "All"; a chip starts a game
+  drawing only from that decade, for solo, rooms and random matches alike.
 - **Artist categories.** The slug `artist-<id>` is one Deezer artist and
   `artist-<idA>-<idB>` is two blended; a blend sorts its ids, so the canonical
   slug is unique — `artist-85-27` redirects to `artist-27-85`, and one slug
@@ -946,6 +961,29 @@ title.
 - **Attribution.** Each reveal names the title and artist, shows the cover and
   links to the track on Deezer or Apple Music with the service's name, which
   both services require.
+- **Outcomes.** Every answered round — solo, room or match — writes one
+  `round_outcomes` row per answering player through `recordOutcomes`: a player
+  key, the track, the category, the mode and game kind, whether the answer was
+  right and how long it took, plus the track's decade. The player key is the
+  user id when signed in; a signed-out player gets a random id in the httpOnly
+  `__Host-play-id` cookie when a game starts, and their anonymous rows move to
+  the account on sign-in. Signed-in rows carry `user_id` and cascade with the
+  account. Apple-chart tracks have no Deezer id, so rows key the track by the
+  normalized artist and title instead.
+- **Reports.** A reveal has a "Report this clip" control — wrong song, bad clip,
+  wrong title or other — that posts a `track_reports` row. Signed-out players
+  report too; reports are capped at ten per hour per player key.
+- **Admin.** `/admin` serves catalog operations to the GitHub numeric ids listed
+  in the `ADMIN_GITHUB_IDS` variable in `wrangler.jsonc`, comma separated;
+  everyone else gets a 404 on every admin route, GET or POST. The pages create
+  and reorder categories, hide or show them, add or remove Deezer playlist
+  sources (a pasted URL or id is looked up live so its title and track count
+  show before saving) and refresh a category on demand; list a category's tracks
+  with play counts, correct rate and open reports, with search, a decade filter,
+  ban/unban and answer-title and year edits; resolve the report queue; and hide
+  a user from the boards and their public profile. Every action is a POST under
+  the same Origin check as the rest of the site and writes a row to
+  `admin_actions`.
 
 ### Rooms
 
