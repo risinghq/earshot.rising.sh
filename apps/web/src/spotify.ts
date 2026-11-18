@@ -137,8 +137,12 @@ export async function spotifyCallback(
     return context.text("The sign-in state does not match. Start again.", 400);
 
   const origin = new URL(context.req.url).origin;
-  const failed = () =>
-    context.text("Spotify sign-in failed. Start again.", 502);
+  // Spotify's error bodies carry no token, so they are safe to log; the
+  // reason only reaches the Worker log, never the page.
+  const failed = (step: string, status: number, detail?: unknown) => {
+    console.error("spotify callback failed", { step, status, detail });
+    return context.text("Spotify sign-in failed. Start again.", 502);
+  };
   const exchange = await tokenRequest(
     context.env,
     new URLSearchParams({
@@ -149,15 +153,15 @@ export async function spotifyCallback(
     fetcher,
   );
   if (exchange.status !== 200 || typeof exchange.body.access_token !== "string")
-    return failed();
+    return failed("token", exchange.status, exchange.body.error);
   const token = exchange.body;
 
   const me = await fetcher(`${apiBase}/v1/me`, {
     headers: { authorization: `Bearer ${token.access_token}` },
   });
-  if (!me.ok) return failed();
+  if (!me.ok) return failed("me", me.status, await me.text());
   const profile = (await me.json()) as { id?: string };
-  if (typeof profile.id !== "string") return failed();
+  if (typeof profile.id !== "string") return failed("me", me.status, "no id");
 
   const now = Math.floor(Date.now() / 1000);
   const secret = await sealTokens(context.env, {
@@ -165,7 +169,7 @@ export async function spotifyCallback(
     a: token.access_token,
     e: now + (token.expires_in ?? 3600),
   });
-  if (secret === undefined) return failed();
+  if (secret === undefined) return failed("seal", 0);
   await context.env.DB.prepare(
     `INSERT INTO sources (user_id, kind, account, secret, next_pull_at)
      VALUES (?1, 'spotify', ?2, ?3, ?4)
