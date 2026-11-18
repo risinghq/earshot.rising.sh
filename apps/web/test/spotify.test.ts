@@ -163,10 +163,9 @@ describe("connect", () => {
       apiFetch({
         "https://accounts.spotify.com/api/token": () => tokenOk(),
         "https://api.spotify.com/v1/me": () =>
-          new Response(
-            "The user is not registered for this application.",
-            { status: 403 },
-          ),
+          new Response("The user is not registered for this application.", {
+            status: 403,
+          }),
       }),
     );
     const response = await callback("code=c&state=good", "good");
