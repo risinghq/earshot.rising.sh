@@ -413,7 +413,7 @@ function settingsPage(
               />
             </div>
             <div>
-              <PillButton variant="danger">Delete account</PillButton>
+              <PillButton variant="danger-fill">Delete account</PillButton>
             </div>
           </form>
         </Section>

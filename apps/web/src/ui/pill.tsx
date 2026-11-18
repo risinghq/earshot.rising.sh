@@ -1,6 +1,12 @@
 import type { Child } from "hono/jsx";
 
-export type PillVariant = "default" | "primary" | "danger";
+export type PillVariant =
+  | "default"
+  | "primary"
+  | "outline"
+  | "ghost"
+  | "danger"
+  | "danger-fill";
 
 interface PillLinkOptions {
   href: string;
