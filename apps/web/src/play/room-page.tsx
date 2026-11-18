@@ -1,15 +1,28 @@
 import type { SignedInUser } from "../auth";
 import { ClipPlayer } from "../ui/player";
 import { Page } from "../ui/shell";
+import {
+  checkIcon,
+  coverTile,
+  crossIcon,
+  flagIcon,
+  gameBar,
+  quitDialog,
+} from "./pages";
+import { roundsPerGame } from "./quiz";
 
 // The room page is a static shell: every panel exists in the markup and the
 // client script in public/room.js shows the one matching the room's phase.
+// While a game runs it wears the same game bar and feedback sheet as solo;
+// room.js fills the sheet's fields and updates the bar by class selector.
 export function roomPage(code: string, user: SignedInUser | null) {
   return Page({
     title: `Room ${code} · Guess the song`,
     user,
+    chrome: "game",
     children: (
       <div id="room" data-code={code} class="stack">
+        {gameBar({ done: 0, total: roundsPerGame, score: 0, streak: 0 })}
         <div class="page-head">
           <p class="meta" id="room-meta">
             Room {code}
@@ -83,10 +96,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
           </div>
         </section>
 
-        <section class="section" id="game-card" hidden>
-          <div class="section-head">
-            <h2 id="round-title">Which song is this?</h2>
-          </div>
+        <section class="section game-section" id="game-card" hidden>
           <div class="section-body">
             <div id="player-wrap">
               <ClipPlayer
@@ -124,46 +134,63 @@ export function roomPage(code: string, user: SignedInUser | null) {
         </section>
 
         <section class="section" id="reveal-card" hidden>
-          <div class="section-head">
-            <h2 id="reveal-title">Reveal</h2>
-            <small class="label">Next round soon</small>
-          </div>
           <div class="section-body">
-            <div class="reveal">
-              <img id="reveal-cover" alt="" width="96" height="96" hidden />
+            <ul class="rows" id="reveal-scores" />
+          </div>
+        </section>
+
+        <div class="sheet" id="room-sheet" hidden>
+          <div class="sheet-in">
+            <div class="sheet-verdict">
+              <span id="sheet-check" hidden>
+                {checkIcon}
+              </span>
+              <span id="sheet-cross" hidden>
+                {crossIcon}
+              </span>
+              <b id="sheet-verdict" aria-live="polite" />
+              <span class="sheet-points" id="sheet-points" />
+            </div>
+            <div class="sheet-song">
+              {coverTile(null)}
               <div class="track">
-                <b id="reveal-track" />
-                <small class="muted" id="reveal-artist" />
-                <a id="reveal-link" href="#" hidden>
+                <b id="sheet-title" />
+                <small class="muted" id="sheet-artist" />
+                <a id="sheet-link" href="#" hidden>
                   Listen on Deezer
                 </a>
               </div>
+              <details class="report sheet-report" id="reveal-report" hidden>
+                <summary aria-label="Report this clip">
+                  <span class="report-flag">{flagIcon}</span>
+                  <span class="report-label">Report this clip</span>
+                </summary>
+                <form class="report-form" method="post" action="/play/report">
+                  <input type="hidden" name="track" id="report-track" />
+                  <input type="hidden" name="title" id="report-title" />
+                  <input type="hidden" name="artist" id="report-artist" />
+                  <input type="hidden" name="category" id="report-category" />
+                  <input type="hidden" name="back" id="report-back" />
+                  <select name="reason" required>
+                    <option value="wrong_song">Wrong song</option>
+                    <option value="bad_clip">Bad clip</option>
+                    <option value="wrong_title">Wrong title</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <button class="pill small" type="submit">
+                    Send report
+                  </button>
+                  <small class="muted report-failed" hidden>
+                    Could not send the report. Try again later.
+                  </small>
+                </form>
+              </details>
             </div>
-            <ul class="rows" id="reveal-scores" />
-            <details class="report" id="reveal-report" hidden>
-              <summary>Report this clip</summary>
-              <form class="report-form" method="post" action="/play/report">
-                <input type="hidden" name="track" id="report-track" />
-                <input type="hidden" name="title" id="report-title" />
-                <input type="hidden" name="artist" id="report-artist" />
-                <input type="hidden" name="category" id="report-category" />
-                <input type="hidden" name="back" id="report-back" />
-                <select name="reason" required>
-                  <option value="wrong_song">Wrong song</option>
-                  <option value="bad_clip">Bad clip</option>
-                  <option value="wrong_title">Wrong title</option>
-                  <option value="other">Other</option>
-                </select>
-                <button class="pill small" type="submit">
-                  Send report
-                </button>
-                <small class="muted report-failed" hidden>
-                  Could not send the report. Try again later.
-                </small>
-              </form>
-            </details>
+            <p class="sheet-next meta" id="sheet-next">
+              Next round soon
+            </p>
           </div>
-        </section>
+        </div>
 
         <section class="section" id="final-card" hidden>
           <div class="section-head">
@@ -207,6 +234,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
           </div>
         </section>
 
+        {quitDialog()}
         <script src="/room.js" defer />
       </div>
     ),

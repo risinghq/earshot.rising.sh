@@ -33,6 +33,7 @@ export interface RoundResult {
   correct: boolean;
   timedOut: boolean;
   score: number;
+  elapsedMs: number;
   choices: string[];
 }
 
@@ -319,6 +320,7 @@ export async function answerRound(
     correct,
     timedOut,
     score,
+    elapsedMs: elapsed,
     choices: game.current.choices,
   };
   game.results.push(result);

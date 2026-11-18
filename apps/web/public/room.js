@@ -193,6 +193,9 @@ function render(s) {
   show($("game-card"), s.phase === "loading" || s.phase === "playing");
   show($("reveal-card"), s.phase === "reveal");
   show($("final-card"), s.phase === "done");
+  show($("room-sheet"), s.phase === "reveal");
+  root.classList.toggle("sheet-open", s.phase === "reveal");
+  renderBar(s);
 
   if (s.phase === "lobby") {
     show($("start-button"), s.you.creator);
@@ -207,6 +210,35 @@ function render(s) {
   if (s.phase === "reveal") renderReveal(s);
   else revealedTrack = null;
   if (s.phase === "done") renderDone(s);
+}
+
+let lastStreak = 0;
+
+// The game bar follows the room's phase: segments fill as rounds finish,
+// the score is your running total, the streak shows once it reaches 2.
+function renderBar(s) {
+  const done =
+    s.phase === "done"
+      ? s.rounds
+      : s.phase === "reveal"
+        ? (s.reveal?.number ?? s.round ?? 0)
+        : s.phase === "playing" || s.phase === "loading"
+          ? s.round - 1
+          : 0;
+  const progress = root.querySelector(".game-progress");
+  const playing = s.phase === "playing" || s.phase === "loading";
+  progress.querySelectorAll(".seg").forEach((seg, i) => {
+    seg.classList.toggle("is-done", i < done);
+    seg.classList.toggle("is-current", i === done && playing);
+  });
+  const round = Math.min(done + (playing ? 1 : 0), s.rounds) || 1;
+  progress.setAttribute("aria-valuenow", String(round));
+  progress.setAttribute("aria-label", `Round ${round} of ${s.rounds}`);
+  const mine = s.players.find((p) => p.name === s.you.name);
+  root.querySelector(".game-score-n").textContent = (
+    mine?.score ?? 0
+  ).toLocaleString("en-US");
+  show(root.querySelector(".game-streak"), lastStreak >= 2);
 }
 
 function renderPlayers(s) {
@@ -237,7 +269,6 @@ function renderPlayers(s) {
 
 function renderRound(s) {
   const playing = s.phase === "playing";
-  $("round-title").textContent = `Round ${s.round} of ${s.rounds}`;
   show($("clip-status"), !playing || !s.clip);
   $("clip-status").textContent =
     playing && s.screen
@@ -302,11 +333,18 @@ function renderRound(s) {
     if (box.dataset.round !== String(s.round)) {
       box.dataset.round = String(s.round);
       box.replaceChildren(
-        ...s.choices.map((title) => {
+        ...s.choices.map((title, index) => {
           const button = document.createElement("button");
-          button.className = "pill choice";
+          button.className = "choice";
           button.type = "button";
-          button.textContent = title;
+          const key = document.createElement("span");
+          key.className = "choice-key";
+          key.setAttribute("aria-hidden", "true");
+          key.textContent = String(index + 1);
+          const label = document.createElement("span");
+          label.className = "choice-label";
+          label.textContent = title;
+          button.append(key, label);
           button.onclick = () => {
             send({ type: "answer", answer: title });
             answered = true;
@@ -333,15 +371,39 @@ function renderRound(s) {
 
 function renderReveal(s) {
   const r = s.reveal;
-  $("reveal-title").textContent = `Round ${r.number}`;
-  $("reveal-track").textContent = r.title;
-  $("reveal-artist").textContent = r.artist;
-  const cover = $("reveal-cover");
-  show(cover, !!r.cover);
-  if (r.cover) cover.src = r.cover;
-  const link = $("reveal-link");
+  const mine = r.results.find((result) => result.name === s.you.name);
+  const sheet = $("room-sheet");
+  sheet.classList.toggle("is-good", !!mine?.correct);
+  sheet.classList.toggle("is-bad", !mine?.correct);
+  show($("sheet-check"), !!mine?.correct);
+  show($("sheet-cross"), !mine?.correct);
+  $("sheet-verdict").textContent = mine?.correct
+    ? "Correct"
+    : mine?.answer
+      ? "Not quite"
+      : "No answer";
+  const points = $("sheet-points");
+  points.textContent = `+${mine?.score ?? 0}`;
+  points.classList.toggle("is-none", !(mine?.score > 0));
+  $("sheet-title").textContent = r.title;
+  $("sheet-artist").textContent = r.artist;
+  const tile = sheet.querySelector(".cover-tile");
+  tile.replaceChildren();
+  if (r.cover) {
+    const img = document.createElement("img");
+    img.src = r.cover;
+    img.alt = "";
+    tile.append(img);
+  }
+  const link = $("sheet-link");
   show(link, !!r.link);
   if (r.link) link.href = r.link;
+  $("sheet-next").textContent =
+    r.number >= s.rounds ? "Results soon" : "Next round soon";
+  lastStreak = mine?.streak ?? 0;
+  const streak = root.querySelector(".game-streak");
+  root.querySelector(".game-streak-n").textContent = String(lastStreak);
+  show(streak, lastStreak >= 2);
   const report = $("reveal-report");
   show(report, !!r.track);
   if (r.track && r.track !== revealedTrack) {
@@ -463,5 +525,31 @@ $("typed-form").onsubmit = (event) => {
   show($("typed-form"), false);
   show($("answer-status"), true);
 };
+
+// 1-4 answers while the choices are open, matching the card's number badge.
+document.addEventListener("keydown", (event) => {
+  if (event.repeat || document.querySelector("dialog[open]")) return;
+  if (!/^[1-4]$/.test(event.key) || answered) return;
+  if (event.target.closest?.("input, textarea, select")) return;
+  const box = $("choices");
+  if (box.hidden) return;
+  box.querySelectorAll(".choice")[Number(event.key) - 1]?.click();
+});
+
+// The quit control is a link so it works without this script; with JS it
+// opens the confirmation dialog instead.
+{
+  const quit = root.querySelector(".game-quit");
+  const dialog = $("quit-dialog");
+  if (quit && dialog?.showModal) {
+    quit.addEventListener("click", (event) => {
+      // The game being over means there is no progress left to lose, so
+      // the link just leaves.
+      if (!$("final-card").hidden) return;
+      event.preventDefault();
+      dialog.showModal();
+    });
+  }
+}
 
 connect();

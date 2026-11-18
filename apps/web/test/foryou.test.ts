@@ -339,6 +339,7 @@ describe("/play's For you tile", () => {
       correct: true,
       timedOut: false,
       score: 500,
+      elapsedMs: 0,
       choices: [],
     }));
     const game: Game = {

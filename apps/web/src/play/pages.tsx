@@ -318,6 +318,159 @@ export function categoriesPage(
   });
 }
 
+export const quitIcon = (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+  </svg>
+);
+const flameIcon = (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z" />
+  </svg>
+);
+export const checkIcon = (
+  <svg viewBox="0 0 24 24" class="choice-mark" aria-hidden="true">
+    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
+  </svg>
+);
+export const flagIcon = (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z" />
+  </svg>
+);
+
+export const crossIcon = (
+  <svg viewBox="0 0 24 24" class="choice-mark" aria-hidden="true">
+    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+  </svg>
+);
+
+function streakOf(results: Game["results"]) {
+  let streak = 0;
+  for (let i = results.length - 1; i >= 0 && results[i].correct; i--)
+    streak += 1;
+  return streak;
+}
+
+function bestStreak(results: Game["results"]) {
+  let best = 0;
+  let run = 0;
+  for (const result of results) {
+    run = result.correct ? run + 1 : 0;
+    if (run > best) best = run;
+  }
+  return best;
+}
+
+// The game's own top bar, shown in place of the site header while a game
+// runs: a way out, the segmented progress through the rounds, then the
+// streak and the score. Client scripts update it by id as rounds land.
+export function gameBar({
+  done,
+  total,
+  score,
+  streak,
+  quit = "/play",
+  current = true,
+}: {
+  done: number;
+  total: number;
+  score: number;
+  streak: number;
+  quit?: string;
+  current?: boolean;
+}) {
+  const round = current ? Math.min(done + 1, total) : Math.max(done, 1);
+  return (
+    <div class="game-bar">
+      <a class="game-quit" href={quit} aria-label="Leave the game">
+        {quitIcon}
+      </a>
+      <ol
+        class="game-progress"
+        role="progressbar"
+        aria-label={`Round ${round} of ${total}`}
+        aria-valuenow={round}
+        aria-valuemin={0}
+        aria-valuemax={total}
+      >
+        {Array.from({ length: total }, (_, i) => (
+          <li
+            key={i}
+            class={`seg${i < done ? " is-done" : ""}${current && i === done ? " is-current" : ""}`}
+          />
+        ))}
+      </ol>
+      <div class="game-side">
+        <span class="game-streak" hidden={streak < 2}>
+          {flameIcon}
+          <span class="game-streak-n">{streak}</span>
+        </span>
+        <span class="game-score">
+          <span class="game-score-n">{score.toLocaleString("en-US")}</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// The quit confirmation, shared by every game screen: one small dialog with
+// one primary and one quiet action. The quit control is a plain link, so a
+// no-JS page still leaves; the script opens the dialog instead.
+export function quitDialog(back: string = "/play") {
+  return (
+    <dialog class="quit-dialog" id="quit-dialog" aria-labelledby="quit-title">
+      <h2 id="quit-title">Leave the game?</h2>
+      <p class="meta">Your progress in this game is lost.</p>
+      <form method="dialog" class="quit-actions">
+        <a class="pill ghost" href={back}>
+          Quit
+        </a>
+        <button class="pill primary" type="submit" autofocus>
+          Keep playing
+        </button>
+      </form>
+    </dialog>
+  );
+}
+
+function reportForm(result: RoundResult, categorySlug: string, back: string) {
+  return (
+    <details class="report sheet-report">
+      <summary aria-label="Report this clip">
+        <span class="report-flag">{flagIcon}</span>
+        <span class="report-label">Report this clip</span>
+      </summary>
+      <form class="report-form" method="post" action="/play/report" data-solo>
+        <input type="hidden" name="track" value={result.trackKey} />
+        <input type="hidden" name="title" value={result.title} />
+        <input type="hidden" name="artist" value={result.artist} />
+        <input type="hidden" name="category" value={categorySlug} />
+        <input type="hidden" name="back" value={back} />
+        <select name="reason" required>
+          <option value="wrong_song">Wrong song</option>
+          <option value="bad_clip">Bad clip</option>
+          <option value="wrong_title">Wrong title</option>
+          <option value="other">Other</option>
+        </select>
+        <PillButton small type="submit">
+          Send report
+        </PillButton>
+      </form>
+    </details>
+  );
+}
+
+// The cover's tile always holds its space, so the artwork never pops the
+// sheet open late: a neutral square behind the image.
+export function coverTile(src: string | null, size = 56) {
+  return (
+    <span class="cover-tile" style={`width:${size}px;height:${size}px`}>
+      {src && <img src={src} alt="" width={size} height={size} />}
+    </span>
+  );
+}
+
 export function questionPage(
   game: Game,
   preview: Preview,
@@ -334,8 +487,15 @@ export function questionPage(
   return Page({
     title: `${game.categoryName} · Guess the song`,
     user,
+    chrome: "game",
     children: (
       <div id="game">
+        {gameBar({
+          done: game.results.length,
+          total: roundsPerGame,
+          score: game.total,
+          streak: streakOf(game.results),
+        })}
         <div
           id="round"
           data-phase="question"
@@ -345,69 +505,70 @@ export function questionPage(
           aria-live="polite"
         >
           <div class="page-head">
-            <p class="meta">
-              {game.categoryName} · Round {game.results.length + 1} of{" "}
-              {roundsPerGame} · Score {game.total}
-            </p>
             <h1>Which song is this?</h1>
           </div>
-          <div class="game-grid">
-            <ClipPlayer
-              src={preview.url}
-              audioId="clip"
-              toggleId="clip-toggle"
-              barId="count-bar"
-              leftId="count-left"
-              volumeId="clip-volume"
-            />
-            <div>
-              {game.mode === "choices" ? (
-                <form
-                  id="answer-form"
-                  class="choices"
-                  method="post"
-                  action={action}
-                  data-solo
+          <ClipPlayer
+            src={preview.url}
+            audioId="clip"
+            toggleId="clip-toggle"
+            barId="count-bar"
+            leftId="count-left"
+            volumeId="clip-volume"
+          />
+          {game.mode === "choices" ? (
+            <form
+              id="answer-form"
+              class="choices"
+              method="post"
+              action={action}
+              data-solo
+            >
+              {choices.map((title, index) => (
+                <button
+                  class="choice"
+                  type="submit"
+                  name="choice"
+                  value={title}
                 >
-                  {choices.map((title) => (
-                    <button
-                      class="pill choice"
-                      type="submit"
-                      name="choice"
-                      value={title}
-                    >
-                      {title}
-                    </button>
-                  ))}
-                </form>
-              ) : (
-                <form
-                  id="answer-form"
-                  class="guess"
-                  method="post"
-                  action={action}
-                  data-solo
-                >
-                  <div class="field">
-                    <label for="typed-answer">Song title</label>
-                    <input
-                      id="typed-answer"
-                      name="answer"
-                      type="text"
-                      autocomplete="off"
-                      autofocus
-                    />
-                  </div>
-                  <div>
-                    <PillButton variant="primary" type="submit">
-                      Guess
-                    </PillButton>
-                  </div>
-                </form>
-              )}
-            </div>
-          </div>
+                  <span class="choice-key" aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  <span class="choice-label">{title}</span>
+                </button>
+              ))}
+            </form>
+          ) : (
+            <form
+              id="answer-form"
+              class="guess"
+              method="post"
+              action={action}
+              data-solo
+            >
+              <div class="field">
+                <label for="typed-answer">Song title</label>
+                <input
+                  id="typed-answer"
+                  name="answer"
+                  type="text"
+                  autocomplete="off"
+                  autofocus
+                />
+              </div>
+              <div>
+                <PillButton variant="primary" type="submit">
+                  Guess
+                </PillButton>
+              </div>
+            </form>
+          )}
         </div>
+        {quitDialog()}
+        <noscript>
+          <p class="meta">
+            This game needs JavaScript: the clip and the timer run through it.
+          </p>
+        </noscript>
         <script src="/solo.js" defer />
       </div>
     ),
@@ -428,30 +589,22 @@ function revealPage(
       ? "Time ran out"
       : "Not quite";
   const last = game.results.length >= roundsPerGame;
-  let streak = 0;
-  for (let i = game.results.length - 1; i >= 0 && game.results[i].correct; i--)
-    streak += 1;
-  const check = (
-    <svg viewBox="0 0 24 24" class="choice-mark" aria-hidden="true">
-      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-    </svg>
-  );
-  const cross = (
-    <svg viewBox="0 0 24 24" class="choice-mark" aria-hidden="true">
-      <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-    </svg>
-  );
+  const streak = streakOf(game.results);
   const choiceState = (title: string) =>
-    title === result.title
-      ? "is-right"
-      : !result.correct && title === result.answer
-        ? "is-wrong"
-        : "";
+    `choice ${title === result.title ? "is-right" : !result.correct && title === result.answer ? "is-wrong" : ""}`;
   return Page({
     title: `${heading} · ${game.categoryName}`,
     user,
+    chrome: "game",
     children: (
       <div id="game">
+        {gameBar({
+          done: game.results.length,
+          total: roundsPerGame,
+          score: game.total,
+          streak,
+          current: false,
+        })}
         <div
           id="round"
           data-phase="reveal"
@@ -461,19 +614,66 @@ function revealPage(
           data-score={String(result.score)}
           aria-live="polite"
         >
-          <div class="page-head">
-            <p class="meta">
-              {game.categoryName} · Round {game.results.length} of{" "}
-              {roundsPerGame} · Score {game.total}
-            </p>
-            <h1>{heading}</h1>
-          </div>
-          <div class="game-grid">
-            <div class="stack">
-              <div class="player reveal-card">
-                {result.cover && (
-                  <img src={result.cover} alt="" width="96" height="96" />
-                )}
+          {result.choices.length > 0 ? (
+            <div class="choices reveal-choices">
+              {result.choices.map((title, index) => (
+                <button class={choiceState(title)} type="button" disabled>
+                  {title === result.title ? (
+                    checkIcon
+                  ) : !result.correct && title === result.answer ? (
+                    crossIcon
+                  ) : (
+                    <span class="choice-key" aria-hidden="true">
+                      {index + 1}
+                    </span>
+                  )}
+                  <span class="choice-label">{title}</span>
+                  {title === result.title && result.correct && (
+                    <span class="burst" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                      <i />
+                      <i />
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <dl class="reveal-typed">
+              <div>
+                <dt>You typed</dt>
+                <dd class={result.correct ? "good" : ""}>
+                  {result.answer === null || result.answer === ""
+                    ? result.timedOut
+                      ? "Nothing — time ran out"
+                      : "Nothing"
+                    : result.answer}
+                </dd>
+              </div>
+            </dl>
+          )}
+          <div
+            class={`sheet ${result.correct ? "is-good" : "is-bad"}`}
+            id="sheet"
+          >
+            <div class="sheet-in">
+              <div class="sheet-verdict">
+                {result.correct ? checkIcon : crossIcon}
+                <b>{heading}</b>
+                <span
+                  class={`sheet-points${result.score > 0 ? "" : " is-none"}`}
+                  data-points={result.score}
+                >
+                  +{result.score}
+                </span>
+              </div>
+              <div class="sheet-song">
+                {coverTile(result.cover)}
                 <div class="track">
                   <b>{result.title}</b>
                   <small class="muted">{result.artist}</small>
@@ -483,98 +683,26 @@ function revealPage(
                     </a>
                   )}
                 </div>
-                <span
-                  class={`reveal-points${result.score > 0 ? "" : " is-none"}`}
-                  data-points={result.score}
-                >
-                  +{result.score}
-                </span>
+                {reportForm(result, game.categorySlug, `/play/${game.id}`)}
               </div>
-              {streak >= 2 && <p class="streak">{streak} in a row</p>}
-              <form method="post" action={`/play/${game.id}/next`} data-solo>
-                <PillButton variant="primary" type="submit">
-                  {last ? "See results" : "Next round"}
+              <form
+                class="sheet-next"
+                method="post"
+                action={`/play/${game.id}/next`}
+                data-solo
+              >
+                <PillButton
+                  variant="primary"
+                  type="submit"
+                  id="continue-button"
+                >
+                  Continue
                 </PillButton>
               </form>
-              <details class="report">
-                <summary>Report this clip</summary>
-                <form
-                  class="report-form"
-                  method="post"
-                  action="/play/report"
-                  data-solo
-                >
-                  <input type="hidden" name="track" value={result.trackKey} />
-                  <input type="hidden" name="title" value={result.title} />
-                  <input type="hidden" name="artist" value={result.artist} />
-                  <input
-                    type="hidden"
-                    name="category"
-                    value={game.categorySlug}
-                  />
-                  <input type="hidden" name="back" value={`/play/${game.id}`} />
-                  <select name="reason" required>
-                    <option value="wrong_song">Wrong song</option>
-                    <option value="bad_clip">Bad clip</option>
-                    <option value="wrong_title">Wrong title</option>
-                    <option value="other">Other</option>
-                  </select>
-                  <PillButton small type="submit">
-                    Send report
-                  </PillButton>
-                </form>
-              </details>
-            </div>
-            <div>
-              {result.choices.length > 0 ? (
-                <div class="choices reveal-choices">
-                  {result.choices.map((title) => (
-                    <button
-                      class={`pill choice ${choiceState(title)}`}
-                      type="button"
-                      disabled
-                    >
-                      {title === result.title && check}
-                      {!result.correct && title === result.answer && cross}
-                      <span class="choice-label">{title}</span>
-                      {title === result.title && result.correct && (
-                        <span class="burst" aria-hidden="true">
-                          <i />
-                          <i />
-                          <i />
-                          <i />
-                          <i />
-                          <i />
-                          <i />
-                          <i />
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <dl class="reveal-typed">
-                  <div>
-                    <dt>You typed</dt>
-                    <dd class={result.correct ? "good" : ""}>
-                      {result.answer === null || result.answer === ""
-                        ? result.timedOut
-                          ? "Nothing — time ran out"
-                          : "Nothing"
-                        : result.answer}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Right answer</dt>
-                    <dd class="good">
-                      {check} {result.title}
-                    </dd>
-                  </div>
-                </dl>
-              )}
             </div>
           </div>
         </div>
+        {quitDialog()}
         <script src="/solo.js" defer />
       </div>
     ),
@@ -747,23 +875,48 @@ export function finalPage(
   board: CategoryBoardEntry[],
 ) {
   const correct = game.results.filter((result) => result.correct).length;
+  const fastest = game.results
+    .filter((result) => result.correct)
+    .reduce((best, result) => Math.min(best, result.elapsedMs), Infinity);
   return Page({
     title: `Game over · ${game.categoryName}`,
     user,
+    chrome: "game",
     children: (
       <div id="game">
+        {gameBar({
+          done: game.results.length,
+          total: roundsPerGame,
+          score: game.total,
+          streak: 0,
+          current: false,
+        })}
         <div id="round" data-phase="done" aria-live="polite">
           <div class="page-head">
-            <p class="meta">{game.categoryName}</p>
             <h1>Game over</h1>
           </div>
           <Stats
             items={[
-              { label: "Score", value: game.total },
-              { label: "Correct", value: correct },
-              { label: "Rounds", value: game.results.length },
+              { label: "Score", value: game.total.toLocaleString("en-US") },
+              {
+                label: "Correct",
+                value: `${correct} of ${game.results.length}`,
+              },
+              { label: "Best streak", value: bestStreak(game.results) },
+              {
+                label: "Fastest answer",
+                value:
+                  fastest === Infinity
+                    ? "—"
+                    : `${(fastest / 1000).toFixed(1)} s`,
+              },
             ]}
           />
+          <p>
+            <PillLink href="/play" variant="primary" large>
+              Play again
+            </PillLink>
+          </p>
           <div class="duo">
             <Section title="Rounds">
               <ul class="rows">
@@ -798,11 +951,6 @@ export function finalPage(
               <a href="/play/board">board</a>.
             </p>
           )}
-          <p>
-            <PillLink href="/play" variant="primary">
-              Play again
-            </PillLink>
-          </p>
         </div>
         <script src="/solo.js" defer />
       </div>

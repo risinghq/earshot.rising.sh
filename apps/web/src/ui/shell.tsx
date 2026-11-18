@@ -9,6 +9,9 @@ interface PageOptions {
   user?: SignedInUser | null;
   nav?: NavSection;
   footer?: Child;
+  // "game" drops the site header: while a game runs the page shows only the
+  // game, with its own top bar rendered by the page's children.
+  chrome?: "full" | "game";
   children: Child;
 }
 
@@ -30,10 +33,57 @@ export function Page({
   user,
   nav,
   footer,
+  chrome = "full",
   children,
 }: PageOptions) {
   const current = (section: NavSection) =>
     nav === section ? { "aria-current": "page" } : {};
+  const siteHeader = (
+    <header class="site-header">
+      <div class="wrap">
+        <a class="site-name" href="/">
+          <svg class="sound-mark" viewBox="0 0 18 18" aria-hidden="true">
+            <rect x="1" y="7" width="2.4" height="5" rx="1.2" />
+            <rect x="5.2" y="3.5" width="2.4" height="11" rx="1.2" />
+            <rect x="9.4" y="5.5" width="2.4" height="7" rx="1.2" />
+            <rect x="13.6" y="4" width="2.4" height="10" rx="1.2" />
+          </svg>
+          Earshot
+        </a>
+        <nav class="site-nav" aria-label="Site">
+          <a href="/play" {...current("play")}>
+            Play
+          </a>
+          <a href="/play/board" {...current("board")}>
+            Board
+          </a>
+          <a href="/groups" {...current("groups")}>
+            Groups
+          </a>
+        </nav>
+        {user ? (
+          <details class="account">
+            <summary>
+              <span class="account-name">{user.name}</span>
+              {caret}
+            </summary>
+            <div class="account-menu">
+              <a href={`/u/${encodeURIComponent(user.name)}`}>Profile</a>
+              <a href="/friends">Friends</a>
+              <a href="/settings">Settings</a>
+              <form method="post" action="/settings/sign-out">
+                <button type="submit">Sign out</button>
+              </form>
+            </div>
+          </details>
+        ) : (
+          <a class="pill" href="/auth/github">
+            Sign in
+          </a>
+        )}
+      </div>
+    </header>
+  );
   return (
     <html lang="en">
       <head>
@@ -51,55 +101,15 @@ export function Page({
         <script src="/site.js" defer />
         <title>{`${title} · Earshot`}</title>
       </head>
-      <body>
+      <body class={chrome === "game" ? "in-game" : ""}>
         <a class="skip" href="#main">
           Skip to content
         </a>
-        <header class="site-header">
-          <div class="wrap">
-            <a class="site-name" href="/">
-              <svg class="sound-mark" viewBox="0 0 18 18" aria-hidden="true">
-                <rect x="1" y="7" width="2.4" height="5" rx="1.2" />
-                <rect x="5.2" y="3.5" width="2.4" height="11" rx="1.2" />
-                <rect x="9.4" y="5.5" width="2.4" height="7" rx="1.2" />
-                <rect x="13.6" y="4" width="2.4" height="10" rx="1.2" />
-              </svg>
-              Earshot
-            </a>
-            <nav class="site-nav" aria-label="Site">
-              <a href="/play" {...current("play")}>
-                Play
-              </a>
-              <a href="/play/board" {...current("board")}>
-                Board
-              </a>
-              <a href="/groups" {...current("groups")}>
-                Groups
-              </a>
-            </nav>
-            {user ? (
-              <details class="account">
-                <summary>
-                  <span class="account-name">{user.name}</span>
-                  {caret}
-                </summary>
-                <div class="account-menu">
-                  <a href={`/u/${encodeURIComponent(user.name)}`}>Profile</a>
-                  <a href="/friends">Friends</a>
-                  <a href="/settings">Settings</a>
-                  <form method="post" action="/settings/sign-out">
-                    <button type="submit">Sign out</button>
-                  </form>
-                </div>
-              </details>
-            ) : (
-              <a class="pill" href="/auth/github">
-                Sign in
-              </a>
-            )}
-          </div>
-        </header>
-        <main class="wrap shell" id="main">
+        {chrome === "full" && siteHeader}
+        <main
+          class={chrome === "game" ? "wrap shell game-shell" : "wrap shell"}
+          id="main"
+        >
           {children}
         </main>
         {footer && <footer class="wrap footer">{footer}</footer>}

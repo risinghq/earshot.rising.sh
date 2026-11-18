@@ -26,6 +26,9 @@ const baseEl = () => ({
   removeAttribute() {},
   setAttribute() {},
   querySelector: null as never,
+  querySelectorAll() {
+    return [];
+  },
 });
 type Stub = Omit<ReturnType<typeof baseEl>, "querySelector"> & {
   querySelector: (sel: string) => Stub;
@@ -59,7 +62,6 @@ for (const id of [
   "nickname",
   "lobby-hint",
   "start-button",
-  "round-title",
   "count-left",
   "count-bar",
   "clip",
@@ -73,12 +75,17 @@ for (const id of [
   "points-hint",
   "players",
   "player-wrap",
-  "reveal-title",
-  "reveal-track",
-  "reveal-artist",
-  "reveal-cover",
-  "reveal-link",
   "reveal-scores",
+  "room-sheet",
+  "sheet-check",
+  "sheet-cross",
+  "sheet-verdict",
+  "sheet-points",
+  "sheet-title",
+  "sheet-artist",
+  "sheet-link",
+  "sheet-next",
+  "quit-dialog",
   "standings",
   "board",
   "board-empty",
@@ -139,6 +146,8 @@ const revealState = (track: string) => ({
 vi.stubGlobal("document", {
   getElementById: (id: string) => els.get(id),
   createElement: () => makeEl(),
+  addEventListener: () => {},
+  querySelector: () => null,
 });
 vi.stubGlobal("location", {
   protocol: "https:",
@@ -172,6 +181,20 @@ describe("room.js report details", () => {
     FakeSocket.last.deliver(revealState("dz:2"));
     expect(report.open).toBe(false);
     expect(form.reset).toHaveBeenCalled();
+  });
+
+  it("says results soon on the final reveal", () => {
+    FakeSocket.last.deliver({
+      ...revealState("dz:9"),
+      reveal: {
+        number: 10,
+        track: "dz:9",
+        title: "Song",
+        artist: "Artist",
+        results: [],
+      },
+    });
+    expect(els.get("sheet-next")!.textContent).toBe("Results soon");
   });
 
   it("shows the failure hint when the report is rejected", async () => {

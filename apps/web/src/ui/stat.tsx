@@ -1,6 +1,6 @@
 export interface StatItem {
   label: string;
-  value: number;
+  value: number | string;
 }
 
 export function Stats({ items }: { items: StatItem[] }) {

@@ -38,6 +38,7 @@ export function PillLink({
 interface PillButtonOptions {
   variant?: PillVariant;
   type?: "submit" | "button";
+  id?: string;
   small?: boolean;
   large?: boolean;
   children: Child;
@@ -46,13 +47,14 @@ interface PillButtonOptions {
 export function PillButton({
   variant = "default",
   type = "submit",
+  id,
   small,
   large,
   children,
 }: PillButtonOptions) {
   const cls = `pill${variant === "default" ? "" : ` ${variant}`}${small ? " small" : ""}${large ? " large" : ""}`;
   return (
-    <button class={cls} type={type}>
+    <button class={cls} type={type} id={id}>
       {children}
     </button>
   );

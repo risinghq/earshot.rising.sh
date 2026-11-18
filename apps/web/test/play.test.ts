@@ -270,7 +270,8 @@ describe("/play", () => {
     ]);
     const id = await startGame("pop", "choices");
     const question = await (await get(`/play/${id}`)).text();
-    expect(question).toContain(`Pop · Round 1 of ${roundsPerGame} · Score 0`);
+    expect(question).toContain(`aria-label="Round 1 of ${roundsPerGame}"`);
+    expect(question).toContain('<span class="game-score-n">0</span>');
     const game = (await getGame(testEnv() as never, id))!;
     const answerTitle = game.candidates[game.current!.index].title;
     game.current!.servedAt = Date.now() - 5_000;
@@ -280,14 +281,15 @@ describe("/play", () => {
     const total = (await getGame(testEnv() as never, id))!.total;
     expect(total).toBeGreaterThan(0);
     expect(reveal).toContain(
-      `Pop · Round 1 of ${roundsPerGame} · Score ${total}`,
+      `<span class="game-score-n">${total.toLocaleString("en-US")}</span>`,
     );
     const advanced = await next(id);
     const nextRound = await (
       await get(advanced.headers.get("location")!)
     ).text();
+    expect(nextRound).toContain(`aria-label="Round 2 of ${roundsPerGame}"`);
     expect(nextRound).toContain(
-      `Pop · Round 2 of ${roundsPerGame} · Score ${total}`,
+      `<span class="game-score-n">${total.toLocaleString("en-US")}</span>`,
     );
   });
 
@@ -428,6 +430,7 @@ describe("/play", () => {
       correct: true,
       timedOut: false,
       score: 900,
+      elapsedMs: 0,
       choices: [],
     });
     await putGame(testEnv() as never, game);

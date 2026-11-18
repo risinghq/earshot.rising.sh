@@ -115,7 +115,7 @@ function wirePlayer(round) {
 // A right answer counts the points up, taps the phone and bursts from the
 // picked button (the burst itself is markup + CSS); a miss shakes, via CSS.
 function celebrate(round) {
-  const points = round.querySelector(".reveal-points");
+  const points = round.querySelector(".sheet-points");
   const score = Number(round.dataset.score || 0);
   const correct = round.dataset.correct === "1";
   if (correct && "vibrate" in navigator) navigator.vibrate(25);
@@ -171,7 +171,22 @@ function wire(root) {
   } else {
     audio?.pause();
     document.body.classList.remove("clip-live");
-    if (round.dataset.phase === "reveal") celebrate(round);
+    if (round.dataset.phase === "reveal") {
+      celebrate(round);
+      // The sheet's Continue is the round's one next step; landing focus
+      // there keeps Enter and Space advancing without a tab stop.
+      document.getElementById("continue-button")?.focus();
+    }
+  }
+  // The quit control is a link so a no-JS page still leaves; with JS it
+  // opens the confirmation dialog instead.
+  const quit = root.querySelector(".game-quit");
+  const dialog = root.querySelector("#quit-dialog");
+  if (quit && dialog?.showModal) {
+    quit.addEventListener("click", (event) => {
+      event.preventDefault();
+      dialog.showModal();
+    });
   }
   root.querySelectorAll("form[data-solo]").forEach((form) => {
     form.addEventListener("submit", (event) => {
@@ -180,5 +195,28 @@ function wire(root) {
     });
   });
 }
+
+// Keyboard: 1-4 answers while a question is open, Enter or Space advances
+// from the sheet. Number keys do nothing once the sheet is up.
+document.addEventListener("keydown", (event) => {
+  if (event.repeat || document.querySelector("dialog[open]")) return;
+  const round = document.getElementById("round");
+  if (!round) return;
+  const phase = round.dataset.phase;
+  if (phase === "question" && /^[1-4]$/.test(event.key)) {
+    if (event.target.closest?.("input, textarea, select")) return;
+    document
+      .querySelectorAll("#answer-form .choice")
+      [Number(event.key) - 1]?.click();
+  } else if (
+    phase === "reveal" &&
+    (event.key === "Enter" || event.key === " ")
+  ) {
+    if (event.target.closest?.("button, a, summary, input, select, textarea"))
+      return;
+    event.preventDefault();
+    document.getElementById("continue-button")?.click();
+  }
+});
 
 wire(game);

@@ -967,4 +967,24 @@ describe("rooms", () => {
     expect(cleared.alarm === null || cleared.alarm > tickAt).toBe(true);
     ann.close();
   });
+
+  it("announces the sheet verdict in a live region", async () => {
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    const { code } = await createRoom();
+    let response = await app.fetch(
+      new Request(`${origin}/play/room/${code}`),
+      testEnv() as never,
+    );
+    if (response.status === 301 || response.status === 302) {
+      response = await app.fetch(
+        new Request(response.headers.get("location")!, {
+          headers: { cookie: response.headers.get("set-cookie") ?? "" },
+        }),
+        testEnv() as never,
+      );
+    }
+    expect(response.status).toBe(200);
+    const html = await response.text();
+    expect(html).toContain('id="sheet-verdict" aria-live="polite"');
+  });
 });
