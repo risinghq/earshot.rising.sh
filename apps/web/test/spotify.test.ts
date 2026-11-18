@@ -154,6 +154,28 @@ describe("connect", () => {
     expect(tokens.r).toBe("refresh-1");
     expect(tokens.a).toBe("access-1");
   });
+
+  it("names the allow list when Spotify refuses an unregistered account", async () => {
+    await seedUser();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.stubGlobal(
+      "fetch",
+      apiFetch({
+        "https://accounts.spotify.com/api/token": () => tokenOk(),
+        "https://api.spotify.com/v1/me": () =>
+          new Response(
+            "The user is not registered for this application.",
+            { status: 403 },
+          ),
+      }),
+    );
+    const response = await callback("code=c&state=good", "good");
+    expect(response.status).toBe(403);
+    expect(await response.text()).toContain("allowed list");
+    expect(
+      await env.DB.prepare("SELECT COUNT(*) AS n FROM sources").first(),
+    ).toEqual({ n: 0 });
+  });
 });
 
 describe("pull", () => {

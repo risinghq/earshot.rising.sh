@@ -139,9 +139,14 @@ export async function spotifyCallback(
   const origin = new URL(context.req.url).origin;
   // Spotify's error bodies carry no token, so they are safe to log; the
   // reason only reaches the Worker log, never the page.
-  const failed = (step: string, status: number, detail?: unknown) => {
+  const failed = (
+    step: string,
+    status: number,
+    detail?: unknown,
+    message = "Spotify sign-in failed. Start again.",
+  ) => {
     console.error("spotify callback failed", { step, status, detail });
-    return context.text("Spotify sign-in failed. Start again.", 502);
+    return context.text(message, status === 403 ? 403 : 502);
   };
   const exchange = await tokenRequest(
     context.env,
@@ -159,6 +164,15 @@ export async function spotifyCallback(
   const me = await fetcher(`${apiBase}/v1/me`, {
     headers: { authorization: `Bearer ${token.access_token}` },
   });
+  // A development-mode app answers 403 for any account the owner has not
+  // added under User Management in the Spotify dashboard.
+  if (me.status === 403)
+    return failed(
+      "me",
+      403,
+      await me.text(),
+      "This Spotify account is not on Earshot's allowed list yet. Ask the site owner to add it, then connect again.",
+    );
   if (!me.ok) return failed("me", me.status, await me.text());
   const profile = (await me.json()) as { id?: string };
   if (typeof profile.id !== "string") return failed("me", me.status, "no id");
