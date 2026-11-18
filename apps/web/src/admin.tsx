@@ -1,4 +1,5 @@
 import { Hono, type Context } from "hono";
+import type { Child } from "hono/jsx";
 import { csrf } from "hono/csrf";
 import { notFoundPage } from "./app";
 import { sessionUser, type SignedInUser } from "./auth";
@@ -11,7 +12,6 @@ import {
 import { deezerPlaylistInfo } from "./play/sources";
 import type { Env } from "./types";
 import { PillButton } from "./ui/pill";
-import { Section } from "./ui/section";
 import { Page } from "./ui/shell";
 
 type AdminContext = Context<{
@@ -35,6 +35,7 @@ interface AdminCategory {
   ref: string | null;
   position: number;
   hidden: number;
+  tracks?: number;
 }
 
 async function logAction(
@@ -79,47 +80,141 @@ function eraLabel(decade: number) {
 }
 const decadeChoices = ["1960", "1970", "1980", "1990", "2000", "2010", "2020"];
 
-function adminNav() {
+type AdminSection = "categories" | "reports" | "users";
+
+function kindLabel(kind: string) {
+  return kind.replaceAll("_", " ");
+}
+
+async function openReports(db: D1Database) {
+  const row = await db
+    .prepare(
+      "SELECT COUNT(*) AS n FROM track_reports WHERE resolved_at IS NULL",
+    )
+    .first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
+function adminNav(current: AdminSection, open: number) {
+  const items: { key: AdminSection; href: string; label: string }[] = [
+    { key: "categories", href: "/admin", label: "Categories" },
+    { key: "reports", href: "/admin/reports", label: "Reports" },
+    { key: "users", href: "/admin/users", label: "Users" },
+  ];
   return (
-    <p class="meta">
-      <a href="/admin">Categories</a> · <a href="/admin/reports">Reports</a> ·{" "}
-      <a href="/admin/users">Users</a>
-    </p>
+    <nav class="admin-nav" aria-label="Admin sections">
+      {items.map((item) => (
+        <a
+          href={item.href}
+          aria-current={item.key === current ? "page" : undefined}
+        >
+          {item.label}
+          {item.key === "reports" && open > 0 && (
+            <span class="nav-badge">{open}</span>
+          )}
+        </a>
+      ))}
+    </nav>
   );
 }
 
-function indexPage(user: SignedInUser, categories: AdminCategory[]) {
+function adminPage(
+  user: SignedInUser,
+  current: AdminSection,
+  open: number,
+  title: string,
+  caption: Child,
+  children: Child,
+) {
   return Page({
-    title: "Admin",
+    title: `${title} · Admin`,
     user,
     children: (
-      <>
-        <div class="page-head">
-          <h1>Admin</h1>
-          {adminNav()}
+      <div class="admin dense">
+        {adminNav(current, open)}
+        <div class="admin-main">
+          <div class="page-head">
+            <h1>{title}</h1>
+            <p class="meta">{caption}</p>
+          </div>
+          {children}
         </div>
-        <Section title="Categories">
-          <ul class="rows">
-            {categories.map((category) => (
-              <li key={category.slug}>
-                <span class="track">
-                  <b>
-                    <a href={`/admin/categories/${category.slug}`}>
-                      {category.name}
-                    </a>
-                  </b>
-                  <small>
-                    {category.slug} · order {category.position} ·{" "}
-                    {category.feed}
-                    {category.hidden === 1 ? " · hidden" : ""}
-                  </small>
-                </span>
-              </li>
-            ))}
-          </ul>
-          <form method="post" action="/admin/categories" class="stack">
-            <div class="field">
-              <label for="slug">Slug</label>
+      </div>
+    ),
+  });
+}
+
+function Group({
+  title,
+  aside,
+  children,
+}: {
+  title: string;
+  aside?: Child;
+  children: Child;
+}) {
+  return (
+    <section class="group">
+      <div class="group-head">
+        <h2>{title}</h2>
+        {aside && <small class="label">{aside}</small>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function indexPage(
+  user: SignedInUser,
+  categories: AdminCategory[],
+  open: number,
+) {
+  return adminPage(
+    user,
+    "categories",
+    open,
+    "Categories",
+    `${categories.length} ${categories.length === 1 ? "category" : "categories"} on /play.`,
+    <>
+      <Group title="Categories">
+        {categories.length === 0 ? (
+          <div class="group-row">
+            <p class="meta">No categories yet. Create the first one below.</p>
+          </div>
+        ) : (
+          categories.map((category) => (
+            <div class="group-row" key={category.slug}>
+              <span class="row-text">
+                <b>
+                  <a href={`/admin/categories/${category.slug}`}>
+                    {category.name}
+                  </a>
+                </b>
+                <small>
+                  {category.slug} · order {category.position}
+                </small>
+              </span>
+              <span class="badges">
+                <span class="badge">{kindLabel(category.feed)}</span>
+                {category.hidden === 1 && (
+                  <span class="badge accent">hidden</span>
+                )}
+                <span class="badge">{category.tracks} tracks</span>
+              </span>
+            </div>
+          ))
+        )}
+      </Group>
+      <Group title="New category">
+        <form method="post" action="/admin/categories">
+          <div class="group-row">
+            <span class="row-text">
+              <b>
+                <label for="slug">Slug</label>
+              </b>
+              <small>Lowercase letters, digits and hyphens.</small>
+            </span>
+            <span class="row-side">
               <input
                 id="slug"
                 name="slug"
@@ -128,19 +223,28 @@ function indexPage(user: SignedInUser, categories: AdminCategory[]) {
                 spellcheck={false}
                 autocomplete="off"
               />
-            </div>
-            <div class="field">
-              <label for="name">Name</label>
+            </span>
+          </div>
+          <div class="group-row">
+            <span class="row-text">
+              <b>
+                <label for="name">Name</label>
+              </b>
+              <small>Shown on /play and in admin.</small>
+            </span>
+            <span class="row-side">
               <input id="name" name="name" type="text" required />
-            </div>
-            <div>
+            </span>
+          </div>
+          <div class="group-row">
+            <span class="row-side">
               <PillButton variant="primary">Create category</PillButton>
-            </div>
-          </form>
-        </Section>
-      </>
-    ),
-  });
+            </span>
+          </div>
+        </form>
+      </Group>
+    </>,
+  );
 }
 
 function categoryPage(
@@ -148,96 +252,125 @@ function categoryPage(
   category: AdminCategory,
   sources: CategorySource[],
   pending: { ref: string; title: string; owner: string; tracks: number } | null,
+  open: number,
 ) {
-  return Page({
-    title: `${category.name} · Admin`,
+  return adminPage(
     user,
-    children: (
-      <>
-        <div class="page-head">
-          <h1>{category.name}</h1>
-          {adminNav()}
-        </div>
-        <Section title="Category">
-          <form method="post" action="/admin/categories/save" class="stack">
-            <input type="hidden" name="slug" value={category.slug} />
-            <div class="field">
-              <label for="name">Name</label>
+    "categories",
+    open,
+    category.name,
+    `${category.slug} · order ${category.position}${category.hidden === 1 ? " · hidden" : ""}`,
+    <>
+      <Group title="Category">
+        <form id="category-save" method="post" action="/admin/categories/save">
+          <input type="hidden" name="slug" value={category.slug} />
+          <div class="group-row">
+            <span class="row-text">
+              <b>
+                <label for="name">Name</label>
+              </b>
+              <small>Shown on /play and in admin.</small>
+            </span>
+            <span class="row-side">
               <input id="name" name="name" type="text" value={category.name} />
-            </div>
-            <div class="field">
-              <label for="position">Order</label>
+            </span>
+          </div>
+          <div class="group-row">
+            <span class="row-text">
+              <b>
+                <label for="position">Order</label>
+              </b>
+              <small>Categories sort by this number on /play.</small>
+            </span>
+            <span class="row-side">
               <input
                 id="position"
                 name="position"
                 type="number"
                 value={category.position}
               />
-            </div>
-            <div>
-              <label class="check" for="hidden">
-                <input
-                  id="hidden"
-                  name="hidden"
-                  type="checkbox"
-                  checked={category.hidden === 1}
-                />
-                <span>Hidden</span>
-              </label>
-              <small class="hint">
-                A hidden category leaves /play and its games return the
-                unavailable page.
+            </span>
+          </div>
+          <div class="group-row">
+            <span class="row-text">
+              <b>
+                <label for="hidden">Hidden</label>
+              </b>
+              <small>
+                A hidden category leaves /play; its games show the unavailable
+                page.
               </small>
-            </div>
-            <div>
-              <PillButton variant="primary">Save</PillButton>
-            </div>
-          </form>
-          <form method="post" action="/admin/refresh">
-            <input type="hidden" name="slug" value={category.slug} />
-            <PillButton small>Refresh sources now</PillButton>
-          </form>
-          <p>
-            <a href={`/admin/categories/${category.slug}/tracks`}>
-              Category tracks
+            </span>
+            <span class="row-side">
+              <input
+                id="hidden"
+                name="hidden"
+                type="checkbox"
+                class="switch"
+                checked={category.hidden === 1}
+              />
+            </span>
+          </div>
+        </form>
+        <div class="group-row">
+          <span class="row-side">
+            <button class="pill primary" type="submit" form="category-save">
+              Save category
+            </button>
+            <form method="post" action="/admin/refresh">
+              <input type="hidden" name="slug" value={category.slug} />
+              <button class="pill outline" type="submit">
+                Refresh sources
+              </button>
+            </form>
+            <a
+              class="pill ghost"
+              href={`/admin/categories/${category.slug}/tracks`}
+            >
+              Tracks
             </a>
-          </p>
-        </Section>
-        <Section title="Sources">
-          {sources.length === 0 ? (
-            <p class="muted">No sources.</p>
-          ) : (
-            <ul class="rows">
-              {sources.map((source) => (
-                <li key={source.id}>
-                  <span class="track">
-                    <b>{source.title ?? `playlist ${source.ref}`}</b>
-                    <small>
-                      {source.kind} · {source.ref}
-                      {source.decade !== null &&
-                        ` · ${eraLabel(source.decade)}`}
-                      {source.tracks_count !== null &&
-                        ` · ${source.tracks_count} tracks`}
-                      {source.refreshed_at !== null &&
-                        ` · refreshed ${new Date(source.refreshed_at * 1000)
-                          .toISOString()
-                          .slice(0, 10)}`}
-                    </small>
-                  </span>
-                  <form method="post" action="/admin/sources/remove">
-                    <input type="hidden" name="id" value={source.id} />
-                    <input
-                      type="hidden"
-                      name="category"
-                      value={category.slug}
-                    />
-                    <PillButton small>Remove</PillButton>
-                  </form>
-                </li>
-              ))}
-            </ul>
-          )}
-          {pending !== null && (
+          </span>
+        </div>
+      </Group>
+      <Group title="Sources" aside={`${sources.length}`}>
+        {sources.length === 0 && (
+          <div class="group-row">
+            <p class="meta">No sources yet. Add a Deezer playlist below.</p>
+          </div>
+        )}
+        {sources.map((source) => (
+          <div class="group-row" key={source.id}>
+            <span class="row-text">
+              <b>{source.title ?? `playlist ${source.ref}`}</b>
+              <small>
+                {source.ref}
+                {source.decade !== null && ` · ${eraLabel(source.decade)}`}
+                {source.tracks_count !== null &&
+                  ` · ${source.tracks_count} tracks`}
+                {source.refreshed_at !== null &&
+                  ` · refreshed ${new Date(source.refreshed_at * 1000)
+                    .toISOString()
+                    .slice(0, 10)}`}
+              </small>
+            </span>
+            <span class="badges">
+              <span class="badge">{kindLabel(source.kind)}</span>
+            </span>
+            <form
+              method="post"
+              action="/admin/sources/remove"
+              onsubmit="return confirm('Remove this source?')"
+            >
+              <input type="hidden" name="id" value={source.id} />
+              <input type="hidden" name="category" value={category.slug} />
+              <PillButton variant="danger" small>
+                Remove
+              </PillButton>
+            </form>
+          </div>
+        ))}
+        {pending !== null && (
+          <div class="group-row">
             <div class="notice" aria-label="Playlist found">
               <p>
                 <b>{pending.title}</b> by {pending.owner || "unknown"} ·{" "}
@@ -263,28 +396,33 @@ function categoryPage(
                 </PillButton>
               </form>
             </div>
-          )}
-          <form method="post" action="/admin/sources/lookup" class="stack">
-            <input type="hidden" name="category" value={category.slug} />
-            <div class="field">
-              <label for="url">Deezer playlist URL or id</label>
-              <input
-                id="url"
-                name="url"
-                type="text"
-                required
-                spellcheck={false}
-                autocomplete="off"
-              />
-            </div>
-            <div>
-              <PillButton small>Look up playlist</PillButton>
-            </div>
-          </form>
-        </Section>
-      </>
-    ),
-  });
+          </div>
+        )}
+        <form method="post" action="/admin/sources/lookup" class="group-row">
+          <input type="hidden" name="category" value={category.slug} />
+          <span class="row-text">
+            <b>
+              <label for="url">Add a source</label>
+            </b>
+            <small>Paste a Deezer playlist URL or id.</small>
+          </span>
+          <span class="row-side">
+            <input
+              id="url"
+              name="url"
+              type="text"
+              required
+              spellcheck={false}
+              autocomplete="off"
+            />
+            <PillButton variant="outline" small>
+              Look up
+            </PillButton>
+          </span>
+        </form>
+      </Group>
+    </>,
+  );
 }
 
 interface TrackRow {
@@ -307,89 +445,126 @@ function tracksPage(
   tracks: TrackRow[],
   q: string,
   decade: string,
+  open: number,
 ) {
-  const decades = decadeChoices;
-  return Page({
-    title: `${category.name} tracks · Admin`,
+  const filtered = q !== "" || decade !== "";
+  return adminPage(
     user,
-    children: (
-      <>
-        <div class="page-head">
-          <h1>{category.name} tracks</h1>
-          {adminNav()}
-        </div>
-        <Section title="Filter">
-          <form method="get" class="stack">
-            <div class="field">
-              <label for="q">Search title or artist</label>
-              <input id="q" name="q" type="text" value={q} />
-            </div>
-            <div class="field">
-              <label for="decade">Decade</label>
-              <select id="decade" name="decade">
-                <option value="">All</option>
-                {decades.map((d) => (
-                  <option value={d} selected={decade === d}>
-                    {eraLabel(Number(d))}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <PillButton small type="submit">
-                Filter
-              </PillButton>
-            </div>
-          </form>
-        </Section>
-        <Section title={`Tracks (${tracks.length})`}>
-          <ul class="rows">
-            {tracks.map((track) => (
-              <li key={track.deezer_id}>
-                <span class="track">
-                  <b>
-                    {track.answer_title ?? track.title}
-                    {track.banned_at !== null &&
-                      ` · banned${track.ban_reason ? ` (${track.ban_reason})` : ""}`}
-                  </b>
+    "categories",
+    open,
+    `${category.name} tracks`,
+    `Tracks served to ${category.name} games.`,
+    <>
+      <form method="get" class="toolbar" aria-label="Track filters">
+        <label for="q">Search</label>
+        <input
+          id="q"
+          name="q"
+          type="search"
+          value={q}
+          placeholder="Title or artist"
+        />
+        <label for="decade">Decade</label>
+        <select id="decade" name="decade">
+          <option value="">All</option>
+          {decadeChoices.map((d) => (
+            <option value={d} selected={decade === d}>
+              {eraLabel(Number(d))}
+            </option>
+          ))}
+        </select>
+        <PillButton variant="primary" small type="submit">
+          Filter
+        </PillButton>
+        <small class="toolbar-count">
+          {tracks.length} {tracks.length === 1 ? "track" : "tracks"}
+        </small>
+      </form>
+      <Group title="Tracks">
+        {tracks.length === 0 ? (
+          <div class="group-row">
+            <p class="meta">
+              {filtered ? (
+                <>
+                  No tracks match this filter.{" "}
+                  <a href={`/admin/categories/${category.slug}/tracks`}>
+                    Show all tracks
+                  </a>
+                </>
+              ) : (
+                <>
+                  No tracks in this category yet.{" "}
+                  <a href={`/admin/categories/${category.slug}`}>
+                    Refresh its sources
+                  </a>
+                </>
+              )}
+            </p>
+          </div>
+        ) : (
+          tracks.map((track) => (
+            <details class="track-row" key={track.deezer_id}>
+              <summary>
+                <span class="row-text">
+                  <b>{track.answer_title ?? track.title}</b>
                   <small>
                     {track.artist}
                     {track.year !== null && ` · ${track.year}`}
                     {` · ${track.plays} plays`}
                     {track.correct_rate !== null &&
                       ` · ${Math.round(track.correct_rate * 100)}% correct`}
-                    {track.open_reports > 0 &&
-                      ` · ${track.open_reports} open reports`}
+                    {track.banned_at !== null &&
+                      ` · banned${track.ban_reason ? ` (${track.ban_reason})` : ""}`}
                   </small>
                 </span>
-                <form
-                  method="post"
-                  action="/admin/tracks/save"
-                  class="track-edit"
-                >
+                <span class="badges">
+                  {track.banned_at !== null && (
+                    <span class="badge danger">banned</span>
+                  )}
+                  {track.open_reports > 0 && (
+                    <span class="badge danger">{track.open_reports} open</span>
+                  )}
+                </span>
+              </summary>
+              <div class="row-forms">
+                <form method="post" action="/admin/tracks/save">
                   <input type="hidden" name="category" value={category.slug} />
                   <input
                     type="hidden"
                     name="deezer_id"
                     value={track.deezer_id}
                   />
-                  <input
-                    name="answer_title"
-                    type="text"
-                    placeholder="answer title"
-                    value={track.answer_title ?? ""}
-                  />
-                  <input
-                    name="answer_year"
-                    type="number"
-                    placeholder="year"
-                    value={track.answer_year ?? ""}
-                  />
-                  <PillButton small type="submit">
+                  <span class="field">
+                    <label for={`at-${track.deezer_id}`}>Answer title</label>
+                    <input
+                      id={`at-${track.deezer_id}`}
+                      name="answer_title"
+                      type="text"
+                      value={track.answer_title ?? ""}
+                    />
+                  </span>
+                  <span class="field">
+                    <label for={`ay-${track.deezer_id}`}>Answer year</label>
+                    <input
+                      id={`ay-${track.deezer_id}`}
+                      name="answer_year"
+                      type="number"
+                      value={track.answer_year ?? ""}
+                    />
+                  </span>
+                  <PillButton variant="primary" small type="submit">
                     Save
                   </PillButton>
                 </form>
-                <form method="post" action="/admin/tracks/ban">
+                <form
+                  method="post"
+                  action="/admin/tracks/ban"
+                  onsubmit={
+                    track.banned_at === null
+                      ? "return confirm('Ban this track?')"
+                      : undefined
+                  }
+                >
                   <input type="hidden" name="category" value={category.slug} />
                   <input
                     type="hidden"
@@ -402,24 +577,30 @@ function tracksPage(
                     value={track.banned_at === null ? "1" : "0"}
                   />
                   {track.banned_at === null && (
-                    <input
-                      name="reason"
-                      type="text"
-                      placeholder="reason"
-                      value={track.ban_reason ?? ""}
-                    />
+                    <span class="field">
+                      <label for={`rs-${track.deezer_id}`}>Ban reason</label>
+                      <input
+                        id={`rs-${track.deezer_id}`}
+                        name="reason"
+                        type="text"
+                        value={track.ban_reason ?? ""}
+                      />
+                    </span>
                   )}
-                  <PillButton small>
+                  <PillButton
+                    variant={track.banned_at === null ? "danger" : "ghost"}
+                    small
+                  >
                     {track.banned_at === null ? "Ban" : "Unban"}
                   </PillButton>
                 </form>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      </>
-    ),
-  });
+              </div>
+            </details>
+          ))
+        )}
+      </Group>
+    </>,
+  );
 }
 
 interface ReportRow {
@@ -435,64 +616,62 @@ interface ReportRow {
 }
 
 function reportsPage(user: SignedInUser, reports: ReportRow[]) {
-  return Page({
-    title: "Reports · Admin",
+  return adminPage(
     user,
-    children: (
-      <>
-        <div class="page-head">
-          <h1>Reports</h1>
-          {adminNav()}
+    "reports",
+    reports.length,
+    "Reports",
+    "Reports players file from games.",
+    <Group title="Open reports" aside={`${reports.length}`}>
+      {reports.length === 0 ? (
+        <div class="group-row">
+          <p class="meta">
+            No open reports. Reports a player files during a game land here.
+          </p>
         </div>
-        <Section title={`Open reports (${reports.length})`}>
-          {reports.length === 0 ? (
-            <p class="muted">No open reports.</p>
-          ) : (
-            <ul class="rows">
-              {reports.map((report) => (
-                <li key={report.id}>
-                  <span class="track">
-                    <b>
-                      {report.title} — {report.artist}
-                    </b>
-                    <small>
-                      {report.reason.replaceAll("_", " ")}
-                      {report.detail && ` · ${report.detail}`}
-                      {report.category && ` · ${report.category}`}
-                      {` · ${new Date(report.created_at * 1000)
-                        .toISOString()
-                        .slice(0, 10)}`}
-                      {report.category && (
-                        <>
-                          {" · "}
-                          <a
-                            href={`/admin/categories/${report.category}/tracks?q=${encodeURIComponent(report.title)}`}
-                          >
-                            track
-                          </a>
-                        </>
-                      )}
-                    </small>
-                  </span>
-                  <form method="post" action="/admin/reports/resolve">
-                    <input type="hidden" name="id" value={report.id} />
-                    <input
-                      name="resolution"
-                      type="text"
-                      placeholder="resolution"
-                    />
-                    <PillButton small type="submit">
-                      Resolve
-                    </PillButton>
-                  </form>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
-      </>
-    ),
-  });
+      ) : (
+        reports.map((report) => (
+          <div class="group-row" key={report.id}>
+            <span class="row-text">
+              <b>
+                {report.title} — {report.artist}
+              </b>
+              <small>
+                {report.reason.replaceAll("_", " ")}
+                {report.detail && ` · ${report.detail}`}
+                {report.category && ` · ${report.category}`}
+                {` · ${new Date(report.created_at * 1000)
+                  .toISOString()
+                  .slice(0, 10)}`}
+                {report.category && (
+                  <>
+                    {" · "}
+                    <a
+                      href={`/admin/categories/${report.category}/tracks?q=${encodeURIComponent(report.title)}`}
+                    >
+                      track
+                    </a>
+                  </>
+                )}
+              </small>
+            </span>
+            <form
+              class="row-side"
+              method="post"
+              action="/admin/reports/resolve"
+            >
+              <input type="hidden" name="id" value={report.id} />
+              <label for={`res-${report.id}`}>Resolution</label>
+              <input id={`res-${report.id}`} name="resolution" type="text" />
+              <PillButton variant="primary" small type="submit">
+                Resolve
+              </PillButton>
+            </form>
+          </div>
+        ))
+      )}
+    </Group>,
+  );
 }
 
 interface UserRow {
@@ -503,63 +682,91 @@ interface UserRow {
   admin_hidden: number;
 }
 
-function usersPage(user: SignedInUser, users: UserRow[], q: string) {
-  return Page({
-    title: "Users · Admin",
+function usersPage(
+  user: SignedInUser,
+  users: UserRow[],
+  q: string,
+  open: number,
+) {
+  return adminPage(
     user,
-    children: (
-      <>
-        <div class="page-head">
-          <h1>Users</h1>
-          {adminNav()}
-        </div>
-        <Section title="Search">
-          <form method="get" class="stack">
-            <div class="field">
-              <label for="q">Name</label>
-              <input id="q" name="q" type="text" value={q} />
+    "users",
+    open,
+    "Users",
+    "Players and their visibility.",
+    <>
+      <form method="get" class="toolbar" aria-label="User search">
+        <label for="q">Name</label>
+        <input
+          id="q"
+          name="q"
+          type="search"
+          value={q}
+          placeholder="User name"
+        />
+        <PillButton variant="primary" small type="submit">
+          Search
+        </PillButton>
+        <small class="toolbar-count">
+          {users.length} {users.length === 1 ? "user" : "users"}
+        </small>
+      </form>
+      <Group title="Users">
+        {users.length === 0 ? (
+          <div class="group-row">
+            <p class="meta">
+              {q !== "" ? (
+                <>
+                  No users match “{q}”. <a href="/admin/users">Show everyone</a>
+                </>
+              ) : (
+                "No users yet."
+              )}
+            </p>
+          </div>
+        ) : (
+          users.map((row) => (
+            <div class="group-row" key={row.id}>
+              <span class="row-text">
+                <b>{row.name}</b>
+                <small>GitHub {row.github_id}</small>
+              </span>
+              <span class="badges">
+                {row.is_public === 0 && (
+                  <span class="badge accent">profile hidden</span>
+                )}
+                {row.admin_hidden === 1 && (
+                  <span class="badge danger">hidden</span>
+                )}
+              </span>
+              <form
+                method="post"
+                action="/admin/users/hide"
+                onsubmit={
+                  row.admin_hidden === 1
+                    ? undefined
+                    : "return confirm('Hide this user?')"
+                }
+              >
+                <input type="hidden" name="user_id" value={row.id} />
+                <input
+                  type="hidden"
+                  name="hidden"
+                  value={row.admin_hidden === 1 ? "0" : "1"}
+                />
+                <PillButton
+                  variant={row.admin_hidden === 1 ? "ghost" : "danger"}
+                  small
+                >
+                  {row.admin_hidden === 1 ? "Show" : "Hide"}
+                </PillButton>
+              </form>
             </div>
-            <div>
-              <PillButton small type="submit">
-                Search
-              </PillButton>
-            </div>
-          </form>
-        </Section>
-        <Section title={`Users (${users.length})`}>
-          {users.length === 0 ? (
-            <p class="muted">No users found.</p>
-          ) : (
-            <ul class="rows">
-              {users.map((row) => (
-                <li key={row.id}>
-                  <span class="track">
-                    <b>{row.name}</b>
-                    <small>
-                      GitHub {row.github_id}
-                      {row.is_public === 0 && " · profile hidden"}
-                      {row.admin_hidden === 1 && " · hidden by admin"}
-                    </small>
-                  </span>
-                  <form method="post" action="/admin/users/hide">
-                    <input type="hidden" name="user_id" value={row.id} />
-                    <input
-                      type="hidden"
-                      name="hidden"
-                      value={row.admin_hidden === 1 ? "0" : "1"}
-                    />
-                    <PillButton small>
-                      {row.admin_hidden === 1 ? "Show" : "Hide"}
-                    </PillButton>
-                  </form>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
-      </>
-    ),
-  });
+          ))
+        )}
+      </Group>
+    </>,
+  );
 }
 
 export const adminApp = new Hono<{
@@ -578,10 +785,20 @@ adminApp.use("*", async (context, next) => {
 adminApp.use("*", csrf());
 
 adminApp.get("/", async (context) => {
-  const categories = await context.env.DB.prepare(
-    "SELECT slug, name, feed, ref, position, hidden FROM categories ORDER BY position, slug",
-  ).all<AdminCategory>();
-  return context.html(indexPage(context.get("admin"), categories.results));
+  const [categories, open] = await Promise.all([
+    context.env.DB.prepare(
+      `SELECT c.slug, c.name, c.feed, c.ref, c.position, c.hidden,
+              (SELECT COUNT(DISTINCT cm.deezer_id)
+               FROM category_sources cs
+               JOIN catalog_members cm ON cm.source_id = cs.id
+               WHERE cs.category = c.slug) AS tracks
+       FROM categories c ORDER BY c.position, c.slug`,
+    ).all<AdminCategory>(),
+    openReports(context.env.DB),
+  ]);
+  return context.html(
+    indexPage(context.get("admin"), categories.results, open),
+  );
 });
 
 adminApp.post("/categories", async (context) => {
@@ -642,8 +859,9 @@ adminApp.get("/categories/:slug", async (context) => {
   )
     .bind(slug)
     .all<CategorySource>();
+  const open = await openReports(context.env.DB);
   return context.html(
-    categoryPage(context.get("admin"), category, sources.results, null),
+    categoryPage(context.get("admin"), category, sources.results, null, open),
   );
 });
 
@@ -662,25 +880,34 @@ adminApp.post("/sources/lookup", async (context) => {
     if (at !== -1 && /^\d+$/.test(segments[at + 1] ?? ""))
       id = segments[at + 1];
   }
-  const sources = await context.env.DB.prepare(
-    "SELECT * FROM category_sources WHERE category = ?1 ORDER BY position, id",
-  )
-    .bind(slug)
-    .all<CategorySource>();
+  const [sources, open] = await Promise.all([
+    context.env.DB.prepare(
+      "SELECT * FROM category_sources WHERE category = ?1 ORDER BY position, id",
+    )
+      .bind(slug)
+      .all<CategorySource>(),
+    openReports(context.env.DB),
+  ]);
   if (id === undefined)
     return context.html(
-      categoryPage(context.get("admin"), category, sources.results, null),
+      categoryPage(context.get("admin"), category, sources.results, null, open),
       400,
     );
   const info = await deezerPlaylistInfo(id).catch(() => null);
   if (info === null) return context.text("Playlist not found.", 404);
   return context.html(
-    categoryPage(context.get("admin"), category, sources.results, {
-      ref: id,
-      title: info.title,
-      owner: info.owner,
-      tracks: info.tracks,
-    }),
+    categoryPage(
+      context.get("admin"),
+      category,
+      sources.results,
+      {
+        ref: id,
+        title: info.title,
+        owner: info.owner,
+        tracks: info.tracks,
+      },
+      open,
+    ),
   );
 });
 
@@ -792,8 +1019,9 @@ adminApp.get("/categories/:slug/tracks", async (context) => {
   )
     .bind(...params)
     .all<TrackRow>();
+  const open = await openReports(context.env.DB);
   return context.html(
-    tracksPage(context.get("admin"), category, rows.results, q, decade),
+    tracksPage(context.get("admin"), category, rows.results, q, decade, open),
   );
 });
 
@@ -889,7 +1117,8 @@ adminApp.get("/users", async (context) => {
   )
     .bind(q, `%${q}%`)
     .all<UserRow>();
-  return context.html(usersPage(context.get("admin"), rows.results, q));
+  const open = await openReports(context.env.DB);
+  return context.html(usersPage(context.get("admin"), rows.results, q, open));
 });
 
 adminApp.post("/users/hide", async (context) => {
