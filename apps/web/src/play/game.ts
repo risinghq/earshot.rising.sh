@@ -17,7 +17,6 @@ import { QuotaError, type Candidate, type Preview } from "./sources";
 export { matchTyped, roundSeconds, roundsPerGame, scoreFor } from "./quiz";
 export type { Mode } from "./quiz";
 
-const gameTtlSeconds = 3600;
 // The longest a served round may wait for the client's "clip is playing"
 // report before the clock starts anyway.
 export const startCapMs = 5000;
@@ -75,18 +74,20 @@ export interface Game {
   resultWritten?: boolean;
 }
 
-const gameKey = (id: string) => `play:game:${id}`;
+const soloGame = (env: Env, id: string) =>
+  env.SOLO.get(env.SOLO.idFromName(id));
 
-export async function getGame(env: Env, id: string) {
-  return (
-    (await env.CACHE?.get<Game>(gameKey(id), "json").catch(() => null)) ?? null
-  );
+// Game ids are 16 random bytes in base64url; anything else is not a game, and
+// is refused before it can name a Durable Object.
+const gameIdPattern = /^[A-Za-z0-9_-]{22}$/;
+
+export async function getGame(env: Env, id: string): Promise<Game | null> {
+  if (!gameIdPattern.test(id)) return null;
+  return soloGame(env, id).read();
 }
 
 export async function putGame(env: Env, game: Game) {
-  await env.CACHE?.put(gameKey(game.id), JSON.stringify(game), {
-    expirationTtl: gameTtlSeconds,
-  });
+  await soloGame(env, game.id).write(game);
 }
 
 export async function buildGame(
@@ -285,9 +286,38 @@ export async function prepareNext(
   return pending.url;
 }
 
+// The prepared round as its question page would show it, without serving it:
+// nothing is stored and no clock is stamped. The client renders this from
+// memory on Continue, and the /next that follows serves the same round.
+export function previewNext(
+  game: Game,
+  now: number,
+): { game: Game; preview: Preview } | null {
+  const pending = game.pending;
+  if (game.phase !== "reveal" || pending === undefined || pending === null)
+    return null;
+  return {
+    game: {
+      ...game,
+      phase: "question",
+      served: game.served + 1,
+      pending: null,
+      current: {
+        index: pending.index,
+        servedAt: now,
+        startedAt: null,
+        reveal: { link: pending.link, cover: pending.cover },
+        choices: pending.choices,
+      },
+    },
+    preview: { url: pending.url, link: pending.link, cover: pending.cover },
+  };
+}
+
 export interface Answered {
   game: Game;
   result: RoundResult;
+  outcome: Promise<unknown>;
 }
 
 export async function answerRound(
@@ -328,7 +358,9 @@ export async function answerRound(
   game.current = null;
   game.phase = "reveal";
   await putGame(env, game);
-  await recordOutcomes(env, [
+  // The verdict does not wait on the D1 write: the caller decides whether to
+  // await it or hand it to waitUntil.
+  const outcome = recordOutcomes(env, [
     {
       playerKey: game.playerKey,
       userId: game.userId,
@@ -340,7 +372,7 @@ export async function answerRound(
       elapsedMs: elapsed,
     },
   ]).catch((error) => console.error("solo outcome write failed", error));
-  return { game, result };
+  return { game, result, outcome };
 }
 
 // The game ends when the round count is reached or the candidates ran out;

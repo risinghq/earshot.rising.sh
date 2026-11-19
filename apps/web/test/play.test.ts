@@ -18,7 +18,7 @@ import {
 import type { Candidate } from "../src/play/sources";
 
 const origin = "https://earshot.rising.sh";
-const testEnv = () => ({ DB: env.DB, CACHE: env.CACHE });
+const testEnv = () => ({ DB: env.DB, CACHE: env.CACHE, SOLO: env.SOLO });
 
 const deezerTrack = (id: number, title: string, preview = true) => ({
   id,
@@ -254,6 +254,57 @@ describe("/play", () => {
     expect(nextRound).toContain('id="game"');
     expect(nextRound).toContain('data-phase="question"');
     expect(nextRound).toContain('action="/play/' + id + '/answer"');
+  });
+
+  it("answers inline and serves the round /prepare already rendered", async () => {
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4, 5, 6].map((i) => ({ id: i, title: `Song ${i}` })),
+    );
+    stubFetch([
+      [
+        /api\.deezer\.com\/track\/\d+/,
+        (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
+      ],
+    ]);
+    const id = await startGame("pop", "choices");
+    await get(`/play/${id}`);
+    const inline = (path: string, fields: Record<string, string> = {}) =>
+      app.fetch(
+        new Request(`${origin}/play/${id}/${path}`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/x-www-form-urlencoded",
+            origin,
+            "x-solo": "1",
+          },
+          body: new URLSearchParams(fields).toString(),
+        }),
+        testEnv() as never,
+      );
+    const answered = await inline("answer", { choice: "Song 1" });
+    expect(answered.status).toBe(200);
+    expect(await answered.text()).toContain('data-phase="reveal"');
+    // A second answer to the same round neither scores nor moves the game.
+    const again = await inline("answer", { choice: "Song 2" });
+    expect(await again.text()).toContain('data-phase="reveal"');
+    expect((await getGame(testEnv() as never, id))!.results).toHaveLength(1);
+
+    const prepared = (await (await inline("prepare")).json()) as {
+      url: string;
+      html: string;
+    };
+    expect(prepared.html).toContain('data-phase="question"');
+    expect(prepared.html).toContain(`data-src="${prepared.url}"`);
+    const served = await inline("next");
+    expect(served.status).toBe(200);
+    const body = await served.text();
+    expect(body).toContain(`data-src="${prepared.url}"`);
+    const choices = (html: string) =>
+      [...html.matchAll(/name="choice" value="([^"]+)"/g)].map((m) => m[1]);
+    expect(choices(body)).toEqual(choices(prepared.html));
+    expect(choices(body)).toHaveLength(4);
   });
 
   it("updates the header's round and score after an answer", async () => {

@@ -32,10 +32,12 @@
     "bindings": [
       { "name": "ROOMS", "class_name": "Room" },
       { "name": "MATCHMAKER", "class_name": "Matchmaker" },
+      { "name": "SOLO", "class_name": "SoloGame" },
     ],
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["Room"] },
     { "tag": "v2", "new_sqlite_classes": ["Matchmaker"] },
+    { "tag": "v3", "new_sqlite_classes": ["SoloGame"] },
   ],
 }

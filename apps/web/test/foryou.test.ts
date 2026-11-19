@@ -9,7 +9,7 @@ import { getGame, putGame, type Game } from "../src/play/game";
 import type { Env } from "../src/types";
 
 const origin = "https://earshot.rising.sh";
-const testEnv = () => ({ DB: env.DB, CACHE: env.CACHE }) as Env;
+const testEnv = () => ({ DB: env.DB, CACHE: env.CACHE, SOLO: env.SOLO }) as Env;
 
 const deezerTrack = (id: number, title: string) => ({
   id,
@@ -343,7 +343,7 @@ describe("/play's For you tile", () => {
       choices: [],
     }));
     const game: Game = {
-      id: "for-you-finished",
+      id: "forYouFinished00000000",
       userId: 1,
       playerKey: "u:1",
       mode: "choices",
@@ -360,7 +360,7 @@ describe("/play's For you tile", () => {
     };
     await putGame(testEnv(), game);
     const response = await app.fetch(
-      new Request(`${origin}/play/for-you-finished`, {
+      new Request(`${origin}/play/forYouFinished00000000`, {
         headers: { cookie: await seedSession(7, "player") },
       }),
       testEnv() as never,

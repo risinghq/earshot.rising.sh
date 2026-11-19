@@ -17,9 +17,11 @@ import {
   buildGame,
   getGame,
   prepareNext,
+  previewNext,
   putGame,
   reportPlaying,
   serveRound,
+  type Game,
   type Mode,
 } from "./game";
 import {
@@ -393,50 +395,82 @@ playApp.post("/", async (context) => {
   return context.redirect(`/play/${game.id}`, 303);
 });
 
-playApp.get("/:id", async (context) => {
-  const game = await getGame(context.env, context.req.param("id"));
-  const user = await sessionUser(context);
-  if (game === null) return context.html(notFoundPage(user), 404);
+type PlayContext = Context<{ Bindings: Env }>;
+
+// solo.js sends this header and takes the page in the reply, saving the
+// redirect's second round trip. A form post without the script keeps the 303,
+// so a reload of the page cannot resubmit the form.
+const inline = (context: PlayContext) => context.req.header("x-solo") === "1";
+
+// Work the reply need not wait for runs after it. A test that calls app.fetch
+// without an execution context has nowhere to hand it, so it waits instead.
+async function after(context: PlayContext, work: Promise<unknown>) {
+  let waitUntil: ((work: Promise<unknown>) => void) | undefined;
+  try {
+    const ctx = context.executionCtx;
+    waitUntil = ctx.waitUntil.bind(ctx);
+  } catch {
+    waitUntil = undefined;
+  }
+  if (waitUntil) waitUntil(work);
+  else await work;
+}
+
+// The page of a game at its phase, serving the round when one is due. Game
+// chrome carries no site header, so the question and reveal pages skip the
+// session lookup; the pages that show the account still make it.
+async function renderGame(context: PlayContext, game: Game) {
   const now = Date.now();
   const { preview, quota } =
     game.phase === "question"
       ? await serveRound(context.env, game, now)
       : { preview: null, quota: false };
+  if (game.phase === "reveal")
+    return context.html(gamePage(game, { kind: "reveal" }, now));
+  if (game.phase === "question" && preview !== null)
+    return context.html(
+      gamePage(
+        game,
+        { kind: "question", preview, choices: game.current!.choices },
+        now,
+      ),
+    );
+  const user = await sessionUser(context);
   // A round that exhausts its candidates ends the game here; recordGame is a
   // no-op once the flag is set, so a final-page reload never reaches D1.
   if (game.phase === "done") await recordGame(context.env, game);
   if (game.phase === "done" && game.served === 0)
     return context.html(feedErrorPage(game.categoryName, user), 502);
-  if (game.phase !== "question")
+  if (game.phase === "done")
     return context.html(
-      gamePage(game, { kind: game.phase }, now, {
+      gamePage(game, { kind: "done" }, now, {
         user,
         board:
-          game.phase === "done" && game.categorySlug !== forYouSlug
+          game.categorySlug !== forYouSlug
             ? await readCategoryBoard(context.env, game.categorySlug)
             : [],
       }),
     );
   if (quota)
     return context.html(gamePage(game, { kind: "busy" }, now, { user }), 503);
-  if (preview === null)
-    return context.html(gamePage(game, { kind: "error" }, now, { user }));
-  return context.html(
-    gamePage(
-      game,
-      { kind: "question", preview, choices: game.current!.choices },
-      now,
-      { user },
-    ),
-  );
+  return context.html(gamePage(game, { kind: "error" }, now, { user }));
+}
+
+playApp.get("/:id", async (context) => {
+  const game = await getGame(context.env, context.req.param("id"));
+  if (game === null)
+    return context.html(notFoundPage(await sessionUser(context)), 404);
+  return renderGame(context, game);
 });
 
+// A second answer to the same round finds the game at its reveal and gets the
+// reveal back unchanged, so a double tap cannot score twice.
 playApp.post("/:id/answer", async (context) => {
   const game = await getGame(context.env, context.req.param("id"));
   if (game === null)
     return context.html(notFoundPage(await sessionUser(context)), 404);
   const body = await context.req.parseBody();
-  await answerRound(
+  const answered = await answerRound(
     context.env,
     game,
     {
@@ -445,6 +479,8 @@ playApp.post("/:id/answer", async (context) => {
     },
     Date.now(),
   );
+  if (answered !== null) await after(context, answered.outcome);
+  if (inline(context)) return renderGame(context, game);
   return context.redirect(`/play/${game.id}`, 303);
 });
 
@@ -461,12 +497,30 @@ playApp.post("/:id/playing", async (context) => {
 });
 
 // While the reveal is up, the client asks for the next round's clip and
-// preloads it, so the Next form lands on a clip that is already fetched.
+// preloads it, with the question page it will show, so Continue paints from
+// memory while /next serves the same round.
 playApp.post("/:id/prepare", async (context) => {
   const game = await getGame(context.env, context.req.param("id"));
   if (game === null) return context.json({ error: "no such game" }, 404);
   const url = await prepareNext(context.env, game);
-  return context.json({ url });
+  if (url === null) return context.json({ url: null, html: null });
+  const fresh = await getGame(context.env, game.id);
+  const next = fresh && previewNext(fresh, Date.now());
+  const html =
+    next === null
+      ? null
+      : (
+          await gamePage(
+            next.game,
+            {
+              kind: "question",
+              preview: next.preview,
+              choices: next.game.current!.choices,
+            },
+            Date.now(),
+          )
+        ).toString();
+  return context.json({ url, html });
 });
 
 playApp.post("/:id/next", async (context) => {
@@ -477,5 +531,6 @@ playApp.post("/:id/next", async (context) => {
     await putGame(context.env, game);
     if (game.phase === "done") await recordGame(context.env, game);
   }
+  if (inline(context)) return renderGame(context, game);
   return context.redirect(`/play/${game.id}`, 303);
 });

@@ -1357,8 +1357,10 @@ button:disabled {
   transition:
     transform var(--duration-fast) var(--ease),
     box-shadow var(--duration-fast) var(--ease),
-    background-color var(--duration-fast) var(--ease),
-    border-color var(--duration-fast) var(--ease);
+    background-color var(--duration-base) var(--ease),
+    border-color var(--duration-base) var(--ease),
+    color var(--duration-base) var(--ease),
+    opacity var(--duration-slow) var(--ease);
   width: 100%;
 }
 @media (hover: hover) and (pointer: fine) {
@@ -1369,6 +1371,17 @@ button:disabled {
 .choices .choice:not([disabled]):active {
   box-shadow: 0 0 0 var(--neutral-5);
   transform: translateY(4px);
+}
+/* The tap is answered before the server is: the picked card stays sunk and
+   marked while the verdict is on its way, and the others stop taking input. */
+.choices .choice.is-picked {
+  background: var(--accent-2);
+  border-color: var(--accent-7);
+  box-shadow: 0 0 0 var(--accent-7);
+  transform: translateY(4px);
+}
+.choices.is-locked .choice {
+  cursor: default;
 }
 .choice-key {
   align-items: center;
@@ -1763,17 +1776,19 @@ button:disabled {
     transform: translateY(8px);
   }
 }
+/* The stagger stays short: the last card is in place by 260ms, before a
+   player has read the first title. */
 #round[data-phase="question"] .choices .choice {
-  animation: choice-in 220ms var(--ease) backwards;
+  animation: choice-in 200ms var(--ease) backwards;
 }
 #round[data-phase="question"] .choices .choice:nth-child(2) {
-  animation-delay: 40ms;
+  animation-delay: 20ms;
 }
 #round[data-phase="question"] .choices .choice:nth-child(3) {
-  animation-delay: 80ms;
+  animation-delay: 40ms;
 }
 #round[data-phase="question"] .choices .choice:nth-child(4) {
-  animation-delay: 120ms;
+  animation-delay: 60ms;
 }
 @keyframes choice-in {
   from {
@@ -1781,10 +1796,18 @@ button:disabled {
     transform: translateY(6px);
   }
 }
-/* The countdown runs on a JS tick; a linear tween smooths between updates. */
+/* Room countdowns run on a JS tick; a linear tween smooths between updates.
+   solo.js overrides it with one transition across the whole round. */
 .player-bar,
 .screen-bar span {
   transition: transform 220ms linear;
+}
+/* After the answer the clip's player stays in place, quieted. */
+.player {
+  transition: opacity var(--duration-slow) var(--ease);
+}
+.player.is-over {
+  opacity: 0.5;
 }
 
 /* The reveal keeps the round layout: the card takes the player's place and
@@ -2279,15 +2302,28 @@ button:disabled {
   min-width: 0;
   padding: 0;
 }
+/* A finished round fills its segment from the left; the fill is a scaled
+   layer, so it runs on the compositor. */
 .game-progress .seg {
   background: var(--fill);
   border-radius: var(--radius-pill);
   flex: 1;
   height: 8px;
+  overflow: hidden;
+  position: relative;
   transition: background-color var(--duration-base) var(--ease);
 }
-.game-progress .seg.is-done {
+.game-progress .seg::after {
   background: var(--accent-7);
+  content: "";
+  inset: 0;
+  position: absolute;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 400ms var(--ease);
+}
+.game-progress .seg.is-done::after {
+  transform: scaleX(1);
 }
 .game-progress .seg.is-current {
   background: var(--accent-4);
@@ -2418,7 +2454,21 @@ button:disabled {
   display: block;
   height: 100%;
   object-fit: cover;
+  transition: opacity var(--duration-base) var(--ease);
   width: 100%;
+}
+.cover-tile img.is-loading {
+  opacity: 0;
+}
+.report-done {
+  flex: none;
+  margin: 0 0 0 auto;
+}
+/* Continue with no prefetched round waits on the server; the button says so
+   rather than looking dead. */
+.sheet-next .pill.is-busy {
+  cursor: progress;
+  opacity: 0.7;
 }
 .sheet-report {
   flex: none;

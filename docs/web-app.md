@@ -965,15 +965,29 @@ title.
   hours, so a catalog round costs at most one service call — its own preview
   lookup. Preview URLs are signed and expire, so they are resolved when a round
   is served and never stored.
-- **State and scoring.** A game lives in KV under `play:game:{id}` for one hour:
-  the ordered candidates, the open round's served time and the results so far.
-  No D1 write happens per round. The server times a round from serving it to the
+- **State and scoring.** A game lives in its own `SoloGame` Durable Object,
+  addressed by `idFromName(id)`: the ordered candidates, the open round's served
+  time and the results so far. Each write pushes an alarm one hour out, and the
+  alarm deletes the game. A Durable Object write commits locally and a read sees
+  it at once; a KV put took about half a second and KV did not promise that a
+  read would see it. No D1 write happens per round; the outcome row is written
+  after the response, through `waitUntil`. The server times a round from serving it to the
   answer arriving; the client sends only the answer, never a score or a time. A
   right answer scores 1,000 falling linearly to 100 over the 15 seconds, and a
   wrong answer, a timeout or an answer to a finished or expired game scores 0.
   Typed answers are compared through `normalizeText`, which folds case, accents,
   punctuation, a "feat." credit and bracketed suffixes, plus a small edit
   distance for typos. The answer never reaches the browser before it is guessed.
+- **The page.** `solo.js` posts each answer and Continue with an `x-solo: 1`
+  header, and the server answers with the next page in the same response
+  instead of a 303, so a tap costs one round trip. Without the header, or
+  without scripts, the same forms redirect. On a pick the answer locks and
+  marks the choice at once, and the verdict then morphs the open question in
+  place. While the reveal shows, `/prepare` resolves the next round and returns
+  its clip URL and rendered question. The script preloads that clip, and
+  Continue shows the prepared question at once while `/next` commits it. The
+  server's reply replaces the page only when it differs. The server still
+  judges every answer and starts the clock on the playing report.
 - **Attribution.** Each reveal names the title and artist, shows the cover and
   links to the track on Deezer or Apple Music with the service's name, which
   both services require.

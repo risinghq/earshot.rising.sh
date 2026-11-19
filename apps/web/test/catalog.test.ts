@@ -11,7 +11,7 @@ import { mergeAnonOutcomes } from "../src/play/outcomes";
 
 const origin = "https://earshot.rising.sh";
 const testEnv = (extra: Record<string, unknown> = {}) =>
-  ({ DB: env.DB, CACHE: env.CACHE, ...extra }) as never;
+  ({ DB: env.DB, CACHE: env.CACHE, SOLO: env.SOLO, ...extra }) as never;
 
 const get = (path: string, extra: Record<string, unknown> = {}) =>
   app.fetch(new Request(`${origin}${path}`), testEnv(extra) as never);
@@ -216,9 +216,11 @@ describe("round outcomes", () => {
   });
 
   it("records the source decade, not the Deezer year, as the era", async () => {
+    // Rock, not the previous test's pop: under load local KV can commit that
+    // test's cached pool after reset(), and a stale pop pool has no decade.
     await seedCatalog(
       env.DB,
-      "pop",
+      "rock",
       [1, 2, 3, 4].map((i) => ({ id: i, title: `Song ${i}`, year: 2012 })),
       2000,
     );
@@ -227,10 +229,11 @@ describe("round outcomes", () => {
       vi.fn(async () => Response.json(deezerTrack(1))),
     );
     const started = await post("/play", {
-      category: "pop",
+      category: "rock",
       mode: "choices",
       era: "2000",
     });
+    expect(started.status).toBe(303);
     const id = started.headers.get("location")!.slice(6);
     await get(`/play/${id}`);
     const cookie = started.headers.get("set-cookie") ?? "";

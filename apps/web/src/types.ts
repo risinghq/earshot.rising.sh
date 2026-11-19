@@ -5,6 +5,7 @@ export interface Env {
   CACHE?: KVNamespace;
   ROOMS: DurableObjectNamespace;
   MATCHMAKER: DurableObjectNamespace;
+  SOLO: DurableObjectNamespace<import("./play/solo-store").SoloGame>;
   ADMIN_GITHUB_IDS?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
