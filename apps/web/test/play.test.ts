@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import migrations from "virtual:web-migrations";
 import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
+import { eraMinTracks } from "../src/play/pool";
 import {
   advance,
   answerRound,
@@ -129,6 +130,31 @@ describe("/play", () => {
     expect(body).toContain('class="site-nav"');
     for (const href of ["/play", "/play/board", "/groups", "/auth/github"])
       expect(body).toContain(`href="${href}"`);
+  });
+
+  it("starts a game from the home page in one tap, with covers and decades", async () => {
+    await seedCatalog(
+      env.DB,
+      "pop",
+      Array.from({ length: eraMinTracks }, (_, i) => ({
+        id: 500 + i,
+        title: `Song ${i}`,
+        artist: `Artist ${i}`,
+        year: 1990 + (i % 10),
+      })),
+    );
+    await env.DB.prepare(
+      "UPDATE catalog_tracks SET cover = 'https://cdn.test/' || deezer_id || '.jpg' WHERE deezer_id >= 500",
+    ).run();
+    const body = await (await get("/")).text();
+    const pop = body.slice(body.indexOf('value="pop"'));
+    expect(pop.slice(0, pop.indexOf("</form>"))).toContain(
+      'name="era" value="1990"',
+    );
+    expect(body.match(/src="https:\/\/cdn\.test\/\d+\.jpg"/g)).toHaveLength(4);
+    const leaders = body.indexOf("This week&#39;s leaders");
+    expect(body.indexOf('class="tiles"')).toBeGreaterThan(0);
+    expect(body.indexOf('class="tiles"')).toBeLessThan(leaders);
   });
 
   it("lists the seeded categories", async () => {

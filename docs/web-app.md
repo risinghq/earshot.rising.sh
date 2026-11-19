@@ -853,7 +853,8 @@ list by name, and the member can leave any group.
 | `/u/NAME`          | HTML profile. `?period=week` (default), `month`, `all`.     |
 | `/u/NAME.json`     | The same figures as JSON.                                   |
 | `/u/NAME.svg`      | The card. `?period=`, `?n=1..10`, `?theme=light` or `dark`. |
-| `/play`            | The guess-the-song game.                                    |
+| `/`                | The hub as home page, with the week's leaders below it.     |
+| `/play`            | The hub: mode choice and one tile per category.             |
 | `/play/artists`    | Artist search. `?q=` the query, `?with=`&`n=` a blend pick. |
 | `/play/artist/IDS` | Start page for `artist-ID` or `artist-IDA-IDB`.             |
 | `/play/room/CODE`  | A guess-the-song room for up to 8 players.                  |
@@ -922,8 +923,14 @@ title.
   run, marking tracks without a release date so they are not looked up again.
 - **Eras.** A track's decade comes from its year, the answer-year override
   first. A category with at least 20 playable tracks in a decade offers that
-  decade as a chip on its `/play` tile next to "All"; a chip starts a game
-  drawing only from that decade, for solo, rooms and random matches alike.
+  decade as a chip under its hub tile; the tile itself starts a game on the
+  whole pool, and a chip starts one drawing only from that decade, for solo,
+  rooms and random matches alike.
+- **Hub tiles.** A tile shows four distinct covers from its pool, or one when
+  fewer exist. A playlist category reads its pool, which the era chips need
+  anyway; a chart category shows covers only when `play:cat:SLUG` is already in
+  KV, so rendering the hub never fetches from Deezer or Apple. The code is
+  `src/play/hub.ts`.
 - **For you.** The first tile on `/play` starts a solo game whose pool is scored
   per player from D1 alone, in `src/play/foryou.ts`. An affinity per (category,
   decade) comes from the player's `round_outcomes` — rounds played, correct rate
@@ -1124,8 +1131,9 @@ result sits in KV for five minutes under `play:board:PERIOD`.
 
 Each category also has a board: the best score each public player set there in
 the last 15 days, top 10, read through the `game_results_category` index added
-in migration `0010`. It shows on the `/play` cards, on `/play/artist/IDS` and on
-the game-over page, and sits in KV for five minutes under `play:catboard:SLUG`.
+in migration `0010`. It shows at `/play/board?category=SLUG`, linked from
+`/play/board`, on `/play/artist/IDS` and on the game-over page, and sits in KV
+for five minutes under `play:catboard:SLUG`.
 
 ### Friends and groups
 

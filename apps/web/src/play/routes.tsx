@@ -27,17 +27,19 @@ import {
 import {
   artistPage,
   artistsPage,
-  categoriesPage,
   feedErrorPage,
   gamePage,
   boardPage,
   categoryBoardPage,
+  hubPage,
+  hubVariants,
   matchPage,
 } from "./pages";
+import { tileFacts } from "./hub";
 import { readBoard, readCategoryBoard, recordGame } from "./results";
 import { forYouCategory, forYouCold, forYouMix, forYouSlug } from "./foryou";
 import { deezerSearchArtists } from "./sources";
-import { byDecade, poolEras } from "./pool";
+import { byDecade } from "./pool";
 import { anonKey, anonOf, playerKeyOf } from "./outcomes";
 import { newRoomCode, newRoomSecret } from "./room";
 import { roomPage } from "./room-page";
@@ -219,16 +221,19 @@ playApp.get("/match/:slug", async (context) => {
 playApp.get("/board", async (context) => {
   const user = await sessionUser(context);
   const slug = context.req.query("category");
+  const categories = await listCategories(context.env.DB);
   if (slug !== undefined) {
     const category = await getCategory(context.env, slug);
     if (category !== null) {
       const entries = await readCategoryBoard(context.env, slug);
-      return context.html(categoryBoardPage(category.name, entries, user));
+      return context.html(
+        categoryBoardPage(category, entries, user, categories),
+      );
     }
   }
   const period = context.req.query("period") === "all" ? "all" : "week";
   const entries = await readBoard(context.env, period);
-  return context.html(boardPage(entries, period, user));
+  return context.html(boardPage(entries, period, user, categories));
 });
 
 // The screen view is the room on a shared display: it watches the game and
@@ -346,40 +351,35 @@ playApp.post("/report", async (context) => {
   );
 });
 
-playApp.get("/", async (context) => {
+// The play hub: GET / and GET /play render it, and the home page adds this
+// week's leaders.
+export async function renderHub(context: PlayContext, home: boolean) {
   const user = await sessionUser(context);
   const categories = await listCategories(context.env.DB);
-  const eras = Object.fromEntries(
-    await Promise.all(
-      categories
-        .filter((category) => category.feed === "deezer_playlist")
-        .map(async (category): Promise<[string, number[]]> => {
-          try {
-            return [
-              category.slug,
-              poolEras(await catalog(context.env, category, null)),
-            ];
-          } catch {
-            return [category.slug, []];
-          }
-        }),
-    ),
-  );
+  const playerKey = playerKeyOf(user?.id ?? null, anonOf(context));
+  const [facts, cold, leaders] = await Promise.all([
+    tileFacts(context.env, categories),
+    forYouCold(context.env.DB, playerKey, user?.id ?? null),
+    home ? readBoard(context.env, "week") : Promise.resolve([]),
+  ]);
   const who = context.req.query("who");
   const mode = context.req.query("mode");
-  const playerKey = playerKeyOf(user?.id ?? null, anonOf(context));
-  const cold = await forYouCold(context.env.DB, playerKey, user?.id ?? null);
+  const variant = context.req.query("variant");
   return context.html(
-    categoriesPage(
+    hubPage({
       categories,
-      eras,
+      facts,
       user,
-      who === "room" || who === "stranger" ? who : "solo",
-      mode === "typed" ? "typed" : "choices",
-      cold,
-    ),
+      who: who === "room" || who === "stranger" ? who : "solo",
+      mode: mode === "typed" ? "typed" : "choices",
+      forYouColdStart: cold,
+      variant: hubVariants.find((name) => name === variant),
+      home: home ? { leaders } : undefined,
+    }),
   );
-});
+}
+
+playApp.get("/", (context) => renderHub(context, false));
 
 playApp.post("/", async (context) => {
   const input = await gameInput(context, true);

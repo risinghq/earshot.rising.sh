@@ -8,6 +8,7 @@ import { Stats } from "../ui/stat";
 import { EmptyState } from "../ui/empty";
 import type { Category } from "./catalog";
 import { forYouSlug } from "./foryou";
+import { tileCovers, type TileFacts } from "./hub";
 import type { Game, RoundResult } from "./game";
 import type { BoardEntry, BoardPeriod, CategoryBoardEntry } from "./results";
 import { categoryBoardDays } from "./results";
@@ -83,6 +84,11 @@ export function CategoryBoard({ entries }: { entries: CategoryBoardEntry[] }) {
 
 export type PlayWho = "solo" | "room" | "stranger";
 
+// Three looks for the same hub markup, compared through ?variant=. The first
+// is the default.
+export const hubVariants = ["crate", "sleeve", "tracklist"] as const;
+export type HubVariant = (typeof hubVariants)[number];
+
 const whoActions: Record<PlayWho, string> = {
   solo: "/play",
   room: "/play/room",
@@ -104,20 +110,67 @@ setup.addEventListener("change", () => {
 
 const eraLabel = (decade: number) => `${String(decade).slice(2)}s`;
 
+const soundMark = (
+  <svg class="sound-mark" viewBox="0 0 18 18" aria-hidden="true">
+    <rect x="1" y="7" width="2.4" height="5" rx="1.2" />
+    <rect x="5.2" y="3.5" width="2.4" height="11" rx="1.2" />
+    <rect x="9.4" y="5.5" width="2.4" height="7" rx="1.2" />
+    <rect x="13.6" y="4" width="2.4" height="10" rx="1.2" />
+  </svg>
+);
+
+// Four covers make a mosaic; fewer show the first one whole, and none shows
+// the mark on a tint.
+function tileArt(covers: string[]) {
+  if (covers.length === 0)
+    return (
+      <span class="tile-art is-blank" aria-hidden="true">
+        {soundMark}
+      </span>
+    );
+  const shown = covers.length >= tileCovers ? covers : covers.slice(0, 1);
+  return (
+    <span
+      class={shown.length === 1 ? "tile-art is-single" : "tile-art"}
+      aria-hidden="true"
+    >
+      {shown.map((src) => (
+        <img
+          src={src}
+          alt=""
+          width="120"
+          height="120"
+          loading="lazy"
+          decoding="async"
+        />
+      ))}
+    </span>
+  );
+}
+
+function tileText(name: string, note?: string) {
+  return (
+    <span class="tile-text">
+      <span class="tile-name">{name}</span>
+      {note && <span class="tile-note">{note}</span>}
+    </span>
+  );
+}
+
+// The tile starts a game on the whole pool; a decade chip narrows it.
 function tile(
   category: Category,
-  eras: number[],
+  facts: TileFacts,
   who: PlayWho,
   mode: "choices" | "typed",
   user: SignedInUser | null,
 ) {
-  const locked = category.feed === "mine" && user === null;
-  if (locked)
+  if (category.feed === "mine" && user === null)
     return (
       <div class="tile" key={category.slug}>
-        <a href="/auth/github">
-          <span class="tile-name">{category.name}</span>
-          <span class="tile-go">Sign in</span>
+        <a class="tile-main" href="/auth/github">
+          {tileArt([])}
+          {tileText(category.name, "Sign in to play your own plays")}
         </a>
       </div>
     );
@@ -130,96 +183,164 @@ function tile(
     >
       <input type="hidden" name="category" value={category.slug} />
       <input type="hidden" name="mode" value={mode} />
-      {eras.length === 0 ? (
-        <>
-          <button type="submit">
-            <span class="tile-name">{category.name}</span>
-          </button>
-          <span class="tile-links">
-            <a
-              class="tile-score"
-              href={`/play/board?category=${category.slug}`}
+      <button class="tile-main" type="submit">
+        {tileArt(facts.covers)}
+        {tileText(
+          category.name,
+          category.feed === "mine" ? "Songs from your plays" : undefined,
+        )}
+      </button>
+      {facts.eras.length > 0 && (
+        <span
+          class="tile-eras"
+          role="group"
+          aria-label={`${category.name} by decade`}
+        >
+          {facts.eras.map((era) => (
+            <button
+              class="chip"
+              type="submit"
+              name="era"
+              value={era}
+              aria-label={`${category.name}, ${era}s`}
             >
-              Scores
-            </a>
-          </span>
-        </>
-      ) : (
-        <>
-          <span class="tile-name">
-            {category.name}
-            <a
-              class="tile-score"
-              href={`/play/board?category=${category.slug}`}
-            >
-              Scores
-            </a>
-          </span>
-          <span class="tile-eras">
-            <button class="chip" type="submit">
-              All
+              {eraLabel(era)}
             </button>
-            {eras.map((era) => (
-              <button class="chip" type="submit" name="era" value={era}>
-                {eraLabel(era)}
-              </button>
-            ))}
-          </span>
-        </>
+          ))}
+        </span>
       )}
     </form>
   );
 }
 
 // The For you tile is a solo game on every "who" choice, so the setup script
-// leaves its action alone; the muted line stands where a Scores link would.
+// leaves its action alone.
 function forYouTile(mode: "choices" | "typed", cold: boolean) {
   return (
     <form class="tile" method="post" action="/play" data-solo>
       <input type="hidden" name="category" value={forYouSlug} />
       <input type="hidden" name="mode" value={mode} />
-      <button type="submit">
-        <span class="tile-name">For you</span>
-      </button>
-      <span class="tile-links">
-        <span class="tile-score">
-          {cold
+      <button class="tile-main" type="submit">
+        {tileArt([])}
+        {tileText(
+          "For you",
+          cold
             ? "Play a few games and this learns your taste"
-            : "Tracks you know, plus new ones"}
-        </span>
-      </span>
+            : "Tracks you know, plus new ones",
+        )}
+      </button>
     </form>
   );
 }
 
-export function categoriesPage(
-  categories: Category[],
-  eras: Record<string, number[]>,
-  user: SignedInUser | null,
-  who: PlayWho = "solo",
-  mode: "choices" | "typed" = "choices",
+export interface HubOptions {
+  categories: Category[];
+  facts: Record<string, TileFacts>;
+  user: SignedInUser | null;
+  who?: PlayWho;
+  mode?: "choices" | "typed";
+  forYouColdStart?: boolean;
+  variant?: HubVariant;
+  // The home page is the hub plus this week's leaders and the rest of the
+  // site; /play is the hub alone.
+  home?: { leaders: BoardEntry[] };
+}
+
+const homeLeaders = 5;
+
+function homeSections(user: SignedInUser | null, leaders: BoardEntry[]) {
+  return (
+    <>
+      <Section
+        title="This week's leaders"
+        aside={<a href="/play/board">Full board</a>}
+      >
+        {leaders.length === 0 ? (
+          <p class="muted">
+            No scored games this week yet. Finish a game signed in and you open
+            the board.
+          </p>
+        ) : (
+          <RankedList
+            items={leaders.slice(0, homeLeaders).map((entry) => ({
+              title: entry.name,
+              href: `/u/${encodeURIComponent(entry.name)}`,
+              plays: entry.points,
+            }))}
+          />
+        )}
+      </Section>
+      <div class="more">
+        <section>
+          <h2>Groups</h2>
+          <p class="muted">
+            Friends make a group, and its playlist blends what each member plays
+            into one list that opens on YouTube.
+          </p>
+          <a href="/groups">Open your groups</a>
+        </section>
+        <section>
+          <h2>Your listening</h2>
+          {user === null ? (
+            <>
+              <p class="muted">
+                Connect Spotify or YouTube Music and your top tracks, artists
+                and plays per day get a public page at <code>/u/name</code>. You
+                can hide it in settings.
+              </p>
+              <a href="/auth/github">Sign in with GitHub</a>
+            </>
+          ) : (
+            <>
+              <p class="muted">
+                Your top tracks, artists and plays per day, from the sources you
+                connected.
+              </p>
+              <span class="links">
+                <a href={`/u/${encodeURIComponent(user.name)}`}>Your profile</a>
+                <a href="/settings">Settings</a>
+              </span>
+            </>
+          )}
+        </section>
+      </div>
+    </>
+  );
+}
+
+export function hubPage({
+  categories,
+  facts,
+  user,
+  who = "solo",
+  mode = "choices",
   forYouColdStart = true,
-) {
+  variant = "crate",
+  home,
+}: HubOptions) {
   const whoChecked = (value: PlayWho) =>
     who === value ? { checked: true } : {};
   const modeChecked = (value: string) =>
     mode === value ? { checked: true } : {};
   return Page({
-    title: "Guess the song",
+    title: home ? "Home" : "Guess the song",
     user,
-    nav: "play",
+    nav: home ? undefined : "play",
+    bodyClass: `hub-${variant}`,
     children: (
       <>
         <div class="page-head">
-          <h1>Guess the song</h1>
+          <h1>
+            {home ? "How well do you know your music?" : "Guess the song"}
+          </h1>
           <p class="meta">
-            Ten rounds, {roundSeconds} seconds each. A right answer is worth up
-            to 1,000 points, and the faster you answer the more it scores.
+            Ten clips, {roundSeconds} seconds each. Pick a category and name the
+            song; a faster right answer scores more.
           </p>
         </div>
         <form class="play-setup" id="play-setup" method="get" action="/play">
           <fieldset>
-            <legend>How do you want to play?</legend>
+            <legend>Play</legend>
             <div class="segmented">
               <label>
                 <input
@@ -237,7 +358,7 @@ export function categoriesPage(
                   value="room"
                   {...whoChecked("room")}
                 />
-                Room with friends
+                Friends
               </label>
               <label>
                 <input
@@ -246,7 +367,7 @@ export function categoriesPage(
                   value="stranger"
                   {...whoChecked("stranger")}
                 />
-                A stranger
+                Stranger
               </label>
             </div>
           </fieldset>
@@ -280,38 +401,40 @@ export function categoriesPage(
           </noscript>
         </form>
         <script dangerouslySetInnerHTML={{ __html: setupScript }} />
-        <Section title="Play an artist">
-          <form method="get" action="/play/artists" class="guess">
-            <div class="field">
-              <label for="artist-q">Artist</label>
-              <input
-                id="artist-q"
-                name="q"
-                type="text"
-                autocomplete="off"
-                required
-              />
-            </div>
-            <div class="modes">
-              <PillButton variant="primary" type="submit">
-                Search artists
-              </PillButton>
-            </div>
-          </form>
-          <p class="hint">
-            Play one artist's top tracks, or blend two artists into one game.
-          </p>
-        </Section>
         <div class="tiles">
           {forYouTile(mode, forYouColdStart)}
           {categories.map((category) =>
-            tile(category, eras[category.slug] ?? [], who, mode, user),
+            tile(
+              category,
+              facts[category.slug] ?? { eras: [], covers: [] },
+              who,
+              mode,
+              user,
+            ),
           )}
         </div>
+        <section class="artist-search" aria-labelledby="artist-title">
+          <h2 id="artist-title">Play an artist</h2>
+          <form method="get" action="/play/artists" class="inline-form">
+            <input
+              id="artist-q"
+              name="q"
+              type="search"
+              autocomplete="off"
+              placeholder="Artist name"
+              aria-labelledby="artist-title"
+              required
+            />
+            <PillButton type="submit">Search</PillButton>
+          </form>
+          <p class="hint">
+            One artist's top tracks, or two artists blended into one game.
+          </p>
+        </section>
+        {home && homeSections(user, home.leaders)}
         <p class="meta">
           Charts come from Deezer and Apple Music. Every preview plays from
-          Deezer, and each reveal links to the track. The{" "}
-          <a href="/play/board">points board</a> ranks signed-in players.
+          Deezer, and each reveal links to the track.
         </p>
       </>
     ),
@@ -1008,35 +1131,62 @@ const boardNames: Record<BoardPeriod, string> = {
 };
 
 export function categoryBoardPage(
-  name: string,
+  category: Category,
   entries: CategoryBoardEntry[],
   user: SignedInUser | null,
+  categories: Category[] = [],
 ) {
   return Page({
-    title: `${name} scores · Guess the song`,
+    title: `${category.name} scores · Guess the song`,
     user,
+    nav: "board",
     children: (
       <>
         <div class="page-head">
-          <h1>{name}</h1>
-          <p class="meta">Top scores in this category.</p>
+          <a class="back" href="/play/board">
+            Points board
+          </a>
+          <h1>{category.name}</h1>
+          <p class="meta">
+            Each player's best game in this category over the last{" "}
+            {categoryBoardDays} days.
+          </p>
         </div>
-        <Section title="Top scores" aside={`Last ${categoryBoardDays} days`}>
-          <CategoryBoard entries={entries} />
-        </Section>
+        {categoryLinks(categories, category.slug)}
+        <CategoryBoard entries={entries} />
       </>
     ),
   });
+}
+
+function categoryLinks(categories: Category[], current: string | null) {
+  return (
+    <nav class="chips" aria-label="Scores by category">
+      {categories
+        .filter((category) => category.feed !== "mine")
+        .map((category) => (
+          <a
+            class="chip"
+            href={`/play/board?category=${category.slug}`}
+            aria-current={category.slug === current ? "page" : undefined}
+          >
+            {category.name}
+          </a>
+        ))}
+    </nav>
+  );
 }
 
 export function boardPage(
   entries: BoardEntry[],
   period: BoardPeriod,
   user: SignedInUser | null,
+  categories: Category[] = [],
 ) {
   return Page({
     title: "Points board · Guess the song",
     user,
+    nav: "board",
     children: (
       <>
         <div class="page-head">
@@ -1070,6 +1220,11 @@ export function boardPage(
                 plays: entry.points,
               }))}
             />
+          </Section>
+        )}
+        {categories.length > 0 && (
+          <Section title="By category" aside={`Last ${categoryBoardDays} days`}>
+            {categoryLinks(categories, null)}
           </Section>
         )}
       </>

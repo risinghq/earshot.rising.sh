@@ -12,6 +12,7 @@ interface PageOptions {
   // "game" drops the site header: while a game runs the page shows only the
   // game, with its own top bar rendered by the page's children.
   chrome?: "full" | "game";
+  bodyClass?: string;
   children: Child;
 }
 
@@ -27,6 +28,24 @@ const caret = (
   </svg>
 );
 
+// The icons show only where the nav becomes the phone's bottom tab bar.
+const navIcon = (path: string) => (
+  <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
+    <path d={path} />
+  </svg>
+);
+const navIcons: Record<NavSection, Child> = {
+  play: navIcon(
+    "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-2 14.5v-9l6 4.5-6 4.5z",
+  ),
+  board: navIcon(
+    "M7 3h10v2h4v3a5 5 0 0 1-4.6 5A5 5 0 0 1 13 15.9V18h3v3H8v-3h3v-2.1A5 5 0 0 1 7.6 13 5 5 0 0 1 3 8V5h4V3zm0 4H5v1a3 3 0 0 0 2 2.8V7zm12 0h-2v3.8A3 3 0 0 0 19 8V7z",
+  ),
+  groups: navIcon(
+    "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm8 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM1 20c0-3.3 3.6-6 8-6s8 2.7 8 6v1H1v-1zm17.2 1H23v-1c0-2.6-2.4-4.6-5.6-5 1.5 1.3 2.4 3 2.4 5v1h-1.6z",
+  ),
+};
+
 export function Page({
   title,
   head,
@@ -34,6 +53,7 @@ export function Page({
   nav,
   footer,
   chrome = "full",
+  bodyClass,
   children,
 }: PageOptions) {
   const current = (section: NavSection) =>
@@ -52,12 +72,15 @@ export function Page({
         </a>
         <nav class="site-nav" aria-label="Site">
           <a href="/play" {...current("play")}>
+            {navIcons.play}
             Play
           </a>
           <a href="/play/board" {...current("board")}>
+            {navIcons.board}
             Board
           </a>
           <a href="/groups" {...current("groups")}>
+            {navIcons.groups}
             Groups
           </a>
         </nav>
@@ -88,7 +111,10 @@ export function Page({
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
         {head}
         <link
           rel="preload"
@@ -101,7 +127,13 @@ export function Page({
         <script src="/site.js" defer />
         <title>{`${title} · Earshot`}</title>
       </head>
-      <body class={chrome === "game" ? "in-game" : ""}>
+      <body
+        class={
+          [chrome === "game" ? "in-game" : "", bodyClass ?? ""]
+            .filter(Boolean)
+            .join(" ") || undefined
+        }
+      >
         <a class="skip" href="#main">
           Skip to content
         </a>

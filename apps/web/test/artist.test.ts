@@ -401,8 +401,8 @@ describe("category board", () => {
       { name: "ann", score: 5000 },
       { name: "bob", score: 2000 },
     ]);
-    const play = await (await get("/play")).text();
-    expect(play).toContain("/play/board?category=pop");
+    const weekly = await (await get("/play/board")).text();
+    expect(weekly).toContain("/play/board?category=pop");
     const board = await (await get("/play/board?category=pop")).text();
     expect(board).toContain("/u/ann");
     expect(board).toContain("5,000");

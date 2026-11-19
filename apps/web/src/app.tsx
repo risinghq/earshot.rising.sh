@@ -19,7 +19,6 @@ import { RankedList } from "./ui/ranked";
 import { Section } from "./ui/section";
 import { Segmented } from "./ui/segmented";
 import { Page } from "./ui/shell";
-import { PillLink } from "./ui/pill";
 import { Stats } from "./ui/stat";
 import { submitListens, validateToken } from "./listenbrainz";
 import { friendsApp } from "./friends";
@@ -27,8 +26,7 @@ import { groupsApp } from "./groups";
 import { settingsApp } from "./settings";
 import { beginSpotify, spotifyCallback } from "./spotify";
 import { adminApp } from "./admin";
-import { listCategories, type Category } from "./play/catalog";
-import { playApp } from "./play/routes";
+import { playApp, renderHub } from "./play/routes";
 import { uploadPlays } from "./upload";
 
 const periods: Period[] = ["week", "month", "all"];
@@ -112,111 +110,6 @@ function sourceLine(kinds: string | null) {
     (kinds?.split(",") ?? []).map((kind) => sourceNames[kind] ?? kind),
   );
   return names.size === 0 ? "None" : [...names].sort().join(", ");
-}
-
-function homePage(user: SignedInUser | null, categories: Category[]) {
-  const playable = categories.filter(
-    (category) => category.feed !== "mine" || user !== null,
-  );
-  return Page({
-    title: "Home",
-    user,
-    children: (
-      <>
-        <div class="hero">
-          <div class="hero-lead">
-            <h1>How well do you know your music?</h1>
-            <p>
-              Ten clips, fifteen seconds each. Name the song before the time
-              runs out, alone, in a room with friends, or against a stranger.
-            </p>
-            <div class="hero-actions">
-              <PillLink href="/play" variant="primary" large>
-                Play a game
-              </PillLink>
-              <PillLink href="/play/board" large>
-                Points board
-              </PillLink>
-            </div>
-          </div>
-          <div class="hero-cats">
-            <p class="label">Start with a category</p>
-            <div class="chips">
-              {playable.map((category) =>
-                category.feed === "mine" ? (
-                  <a class="chip" href="/play" key={category.slug}>
-                    {category.name}
-                  </a>
-                ) : (
-                  <form method="post" action="/play" key={category.slug}>
-                    <input
-                      type="hidden"
-                      name="category"
-                      value={category.slug}
-                    />
-                    <input type="hidden" name="mode" value="choices" />
-                    <button class="chip" type="submit">
-                      {category.name}
-                    </button>
-                  </form>
-                ),
-              )}
-            </div>
-            <p class="hint">
-              A chip starts a solo game with four choices. More modes and
-              categories are on the <a href="/play">play page</a>.
-            </p>
-          </div>
-        </div>
-        <div class="duo">
-          <Section title="Groups">
-            <p class="muted">
-              Friends make a group together, and the group's playlist blends
-              what each member plays into a list that opens on YouTube.
-            </p>
-            <div>
-              <PillLink href="/groups">Open your groups</PillLink>
-            </div>
-          </Section>
-          <Section title="Your listening">
-            {user === null ? (
-              <>
-                <p class="muted">
-                  Sign in with GitHub and Earshot stores the plays you connect
-                  from Spotify and YouTube Music. Your top tracks, top artists
-                  and plays per day appear on a public page at{" "}
-                  <code>/u/name</code>.
-                </p>
-                <div>
-                  <PillLink href="/auth/github" variant="primary">
-                    Sign in with GitHub
-                  </PillLink>
-                </div>
-                <p class="hint">
-                  Profiles are public until you hide them in settings.
-                </p>
-              </>
-            ) : (
-              <>
-                <p class="muted">
-                  Signed in as <b>{user.name}</b>.
-                </p>
-                <div class="modes">
-                  <PillLink
-                    href={`/u/${encodeURIComponent(user.name)}`}
-                    variant="primary"
-                  >
-                    Your profile
-                  </PillLink>
-                  <PillLink href="/settings">Settings</PillLink>
-                </div>
-              </>
-            )}
-          </Section>
-        </div>
-      </>
-    ),
-  });
 }
 
 function profilePage(
@@ -390,11 +283,7 @@ app.all("/1/*", (context) =>
   context.json({ code: 404, error: "Not found." }, 404),
 );
 
-app.get("/", async (context) => {
-  const user = await sessionUser(context);
-  const categories = await listCategories(context.env.DB);
-  return context.html(homePage(user, categories));
-});
+app.get("/", (context) => renderHub(context, true));
 
 app.get("/auth/github", (context) => beginGithub(context));
 
