@@ -12,6 +12,7 @@ import { legacyHostRedirect } from "./host";
 import { renderCard, type CardTheme } from "./card";
 import { pullDueSources } from "./cron";
 import { refreshCatalog } from "./play/refresh";
+import { warmChartCache } from "./play/catalog";
 import { sourceNames } from "./names";
 import { DayBars } from "./ui/bars";
 import { EmptyState } from "./ui/empty";
@@ -400,4 +401,5 @@ app.notFound(async (context) =>
 export async function scheduled(_controller: ScheduledController, env: Env) {
   await pullDueSources(env);
   await refreshCatalog(env);
+  await warmChartCache(env);
 }

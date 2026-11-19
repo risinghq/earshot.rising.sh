@@ -5,7 +5,7 @@ import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
 import { sha256Bytes } from "../src/auth";
 import { catalogPool, poolEras, byDecade } from "../src/play/pool";
-import { catalog } from "../src/play/catalog";
+import { catalog, warmChartCache } from "../src/play/catalog";
 import { refreshSource } from "../src/play/refresh";
 import { mergeAnonOutcomes } from "../src/play/outcomes";
 
@@ -628,5 +628,37 @@ describe("admin", () => {
       "SELECT name FROM categories WHERE slug = 'pop'",
     ).first<{ name: string }>();
     expect(name!.name).toBe("Pop Music");
+  });
+});
+
+describe("chart warming", () => {
+  it("loads one cold chart per run and shows its covers on the home tile", async () => {
+    const requested: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        requested.push(url);
+        const country = /api\/v2\/(\w+)\//.exec(url)?.[1] ?? "xx";
+        return Response.json({
+          feed: {
+            results: [1, 2, 3, 4].map((n) => ({
+              name: `Song ${n}`,
+              artistName: `Artist ${n}`,
+              artworkUrl100: `https://art.example/${country}-${n}.jpg`,
+            })),
+          },
+        });
+      }),
+    );
+    await warmChartCache(testEnv() as never);
+    expect(requested).toHaveLength(1);
+    expect(requested[0]).toContain("/jp/");
+    await warmChartCache(testEnv() as never);
+    expect(requested).toHaveLength(2);
+    expect(requested[1]).toContain("/pe/");
+
+    const home = await (await get("/")).text();
+    expect(home).toContain("https://art.example/jp-1.jpg");
   });
 });

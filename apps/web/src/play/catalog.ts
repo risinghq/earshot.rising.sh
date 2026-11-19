@@ -123,6 +123,26 @@ async function userCatalog(db: D1Database, userId: number) {
   }));
 }
 
+// The hub reads chart covers from the cache only, so the cron reloads one
+// expired chart per run: at most one upstream request a minute, and a chart
+// tile shows covers whether or not anyone played it lately.
+export async function warmChartCache(env: Env) {
+  if (!env.CACHE) return;
+  const charts = await env.DB.prepare(
+    `SELECT slug, name, feed, ref FROM categories
+     WHERE feed IN ('deezer_chart', 'apple_chart') AND hidden = 0
+     ORDER BY position`,
+  ).all<Category>();
+  for (const chart of charts.results) {
+    const cached = await env.CACHE.get(`play:cat:${chart.slug}`).catch(
+      () => null,
+    );
+    if (cached !== null) continue;
+    await catalog(env, chart, null).catch(() => undefined);
+    return;
+  }
+}
+
 // A blended category alternates the artists' top tracks; when the shorter
 // list runs out, the rest of the longer one follows.
 export function interleave(lists: Candidate[][]) {
