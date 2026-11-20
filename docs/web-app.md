@@ -965,19 +965,18 @@ title.
     artists with the seed's name, the one with most fans is taken. An artist
     seed may pin its Deezer, iTunes or kworb id, or set `kworb: false` when
     kworb's accent-folded name match finds another act. A song Deezer cannot
-    preview falls back to the artist's iTunes track, stored with its preview
-    URL and Apple Music link. Two cuts of one song (same artist, same folded
-    title) keep the first.
+    preview falls back to the artist's iTunes track, stored with its preview URL
+    and Apple Music link. Two cuts of one song (same artist, same folded title)
+    keep the first.
   - A title in Han, kana or hangul is anchored on the iTunes track first, and
     the US store's name for it (`lookup?id=&country=US`) is its Latin name.
     Deezer romanizes some titles (紅蓮華 is "Gurenge") and translates others, so
     a Deezer track counts only when it is the same artist and has the native
-    title, the Latin name, or a length within 1.5 s of the iTunes track, since
-    a same-artist search hit alone is often another song. The
-    display title is Deezer's when it is Latin, else the Latin name, and the
-    native title is kept as `original`. The run prints how each such track
-    matched for review. Anime sets `itunesStore: "JP"`: the US store lacks most
-    1980s themes.
+    title, the Latin name, or a length within 1.5 s of the iTunes track, since a
+    same-artist search hit alone is often another song. The display title is
+    Deezer's when it is Latin, else the Latin name, and the native title is kept
+    as `original`. The run prints how each such track matched for review. Anime
+    sets `itunesStore: "JP"`: the US store lacks most 1980s themes.
   - Run `node scripts/curate.ts [CATEGORY...]` from `apps/web`, review the
     printed lists, and commit the JSON; `--list "ARTIST"` prints one artist's
     ranked songs with their years.
@@ -1023,12 +1022,12 @@ title.
   `/track/{id}`, `/track/isrc:{isrc}` and `/search`) and from Apple's chart feed
   (`rss.marketingtools.apple.com/…/most-played/50/songs.json`) for the country
   charts. A curated iTunes track plays its stored preview. Every other clip
-  plays from Deezer: a Deezer feed track resolves by id, an
-  Apple chart track by an artist-and-title search accepted only when the
-  normalized artist matches, and a "From my listening" track by ISRC first, then
-  the same search. A track Deezer does not preview is skipped, and a category
-  whose tracks all fail shows its unavailable page. Every call goes through one
-  module with an 8-second timeout, and a failed feed fails only that category.
+  plays from Deezer: a Deezer feed track resolves by id, an Apple chart track by
+  an artist-and-title search accepted only when the normalized artist matches,
+  and a "From my listening" track by ISRC first, then the same search. A track
+  Deezer does not preview is skipped, and a category whose tracks all fail shows
+  its unavailable page. Every call goes through one module with an 8-second
+  timeout, and a failed feed fails only that category.
 - **Caching.** A fetched track list stays in KV under `play:cat:{slug}` for six
   hours, so a catalog round costs at most one service call — its own preview
   lookup. Deezer preview URLs are signed and expire, so they are resolved when a
