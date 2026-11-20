@@ -1,5 +1,17 @@
 import type { Env } from "../types";
+import curatedList from "./curated.json";
 import { deezerPlaylistTracks, deezerTrackYear, QuotaError } from "./sources";
+
+interface CuratedTrack {
+  id: number;
+  title: string;
+  artist: string;
+  artistId: number | null;
+  cover: string | null;
+  year: number;
+}
+
+const curated = curatedList as Record<string, Record<string, CuratedTrack[]>>;
 
 export interface CategorySource {
   id: number;
@@ -16,37 +28,90 @@ export interface CategorySource {
 const refreshIntervalSeconds = 86400;
 const retryDelaySeconds = 3600;
 const sourcesPerRun = 2;
+// A curated source costs no request but writes a few hundred rows; the
+// minutely cron refills the whole bundle within a few runs.
+const curatedPerRun = 4;
 // Deezer answers 50 requests per 5 seconds; a cron run stays under that and
 // stops early on a quota body.
 const yearsPerRun = 40;
 
+interface SourceTrack {
+  id: number;
+  title: string;
+  artist: string;
+  artistId: number | null;
+  cover: string | null;
+  link: string | null;
+  year: number | null;
+}
+
+// A curated source's ref is `<category>/<decade>`, a key into the bundled
+// list that scripts/curate.ts writes.
+function curatedTracks(ref: string): SourceTrack[] {
+  const [category, decade] = ref.split("/");
+  return (curated[category]?.[decade] ?? []).map((track) => ({
+    id: track.id,
+    title: track.title,
+    artist: track.artist,
+    artistId: track.artistId,
+    cover: track.cover,
+    link: `https://www.deezer.com/track/${track.id}`,
+    year: track.year,
+  }));
+}
+
+async function playlistTracks(ref: string): Promise<SourceTrack[]> {
+  return (await deezerPlaylistTracks(ref)).map((track) => ({
+    id: track.id,
+    title: track.title ?? "",
+    artist: track.artist?.name ?? "",
+    artistId: track.artist?.id ?? null,
+    cover: track.album?.cover_medium ?? null,
+    link: track.link ?? null,
+    year: null,
+  }));
+}
+
+function sourceTracks(source: CategorySource) {
+  return source.kind === "curated"
+    ? Promise.resolve(curatedTracks(source.ref))
+    : playlistTracks(source.ref);
+}
+
 // A refetch rewrites the source's membership and the service fields of each
-// track, but never touches year, the admin overrides or a ban: those survive.
+// track, but never touches the admin overrides or a ban. A curated year is
+// the original release year and replaces a looked-up one; a playlist carries
+// no year, so the stored one survives.
 export async function refreshSource(
   env: Env,
   source: CategorySource,
   now: number,
 ) {
-  const tracks = await deezerPlaylistTracks(source.ref);
+  const tracks = await sourceTracks(source);
   const statements: D1PreparedStatement[] = tracks.map((track) =>
     env.DB.prepare(
       `INSERT INTO catalog_tracks
-         (deezer_id, title, artist, artist_id, cover, link, updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+         (deezer_id, title, artist, artist_id, cover, link, year, year_at,
+          updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
        ON CONFLICT (deezer_id) DO UPDATE SET
          title = excluded.title,
          artist = excluded.artist,
          artist_id = excluded.artist_id,
          cover = excluded.cover,
          link = excluded.link,
+         year = COALESCE(excluded.year, catalog_tracks.year),
+         year_at = COALESCE(excluded.year_at, catalog_tracks.year_at),
          updated_at = excluded.updated_at`,
     ).bind(
       track.id,
-      track.title ?? "",
-      track.artist?.name ?? "",
-      track.artist?.id ?? null,
-      track.album?.cover_medium ?? null,
-      track.link ?? null,
+      track.title,
+      track.artist,
+      track.artistId,
+      track.cover,
+      track.link,
+      track.year,
+      track.year === null ? null : now,
       now,
     ),
   );
@@ -92,17 +157,26 @@ async function markRetry(db: D1Database, sourceId: number, retryAt: number) {
 }
 
 // Each cron run refreshes the sources due for a day-old refill and then
-// spends the rest of its Deezer budget on missing release years.
+// spends the rest of its Deezer budget on missing release years. Curated
+// sources have their own budget, since they cost no Deezer request.
 export async function refreshCatalog(
   env: Env,
   now = Math.floor(Date.now() / 1000),
 ) {
   const due = await env.DB.prepare(
-    `SELECT * FROM category_sources
-     WHERE refreshed_at IS NULL OR refreshed_at <= ?1
-     ORDER BY refreshed_at LIMIT ?2`,
+    `SELECT * FROM (
+       SELECT * FROM category_sources
+       WHERE kind = 'curated' AND (refreshed_at IS NULL OR refreshed_at <= ?1)
+       ORDER BY refreshed_at LIMIT ?3
+     )
+     UNION ALL
+     SELECT * FROM (
+       SELECT * FROM category_sources
+       WHERE kind <> 'curated' AND (refreshed_at IS NULL OR refreshed_at <= ?1)
+       ORDER BY refreshed_at LIMIT ?2
+     )`,
   )
-    .bind(now - refreshIntervalSeconds, sourcesPerRun)
+    .bind(now - refreshIntervalSeconds, sourcesPerRun, curatedPerRun)
     .all<CategorySource>();
   for (const source of due.results) {
     try {

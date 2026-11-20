@@ -12,6 +12,7 @@
       "vitest/globals"
     ],
     "noEmit": true,
+    "resolveJsonModule": true,
     "skipLibCheck": true
   },
   "include": ["src", "test", "bench", "vitest.config.ts"]

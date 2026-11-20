@@ -911,16 +911,58 @@ title.
   keeps Top 50 Japan, Top 50 Peru, Top 50 Global and "From my listening", which
   reads the signed-in player's `track_totals`.
 - **Catalog.** A playlist-backed category keeps its track pool in D1 instead of
-  fetching a feed per game. `category_sources` lists one or more Deezer
-  playlists per category, `catalog_tracks` holds each track by Deezer id with
-  its title, artist, cover, link and release year plus the admin's answer-title
-  and answer-year overrides and a ban timestamp, and `catalog_members` joins
-  tracks to the sources they came from. The pool a game draws from is the union
-  of the category's sources deduplicated by Deezer id and by normalized answer
-  title per artist, banned tracks removed. The daily cron refetches each
-  source's playlist and upserts tracks, so an override or a ban survives a
-  refresh; it then fills missing years from `/track/{id}` at most 50 tracks per
-  run, marking tracks without a release date so they are not looked up again.
+  fetching a feed per game. `category_sources` lists one or more sources per
+  category, `catalog_tracks` holds each track by Deezer id with its title,
+  artist, cover, link and release year plus the admin's answer-title and
+  answer-year overrides and a ban timestamp, and `catalog_members` joins tracks
+  to the sources they came from. The pool a game draws from is the union of the
+  category's sources deduplicated by Deezer id and by normalized answer title
+  per artist, banned tracks removed. A source refills once a day and upserts its
+  tracks, so an override or a ban survives a refill.
+  - A `deezer_playlist` source refetches its playlist, at most two per cron run.
+    The run then fills missing years from `/track/{id}`, at most 40 tracks,
+    marking tracks without a release date so they are not looked up again.
+    Deezer's date is the release the track sits on, often a remaster.
+  - A `curated` source has the ref `<category>/<decade>` and reads that list
+    from `src/play/curated.json`, which is bundled into the Worker, so a refill
+    costs no request and every due one refills in the same run. Its year is the
+    song's original release year and replaces a looked-up one.
+  - Migration `0013` replaces the seeded playlists of Pop, Rock, Metal, K-pop,
+    Anime and Rock en Español with one curated source per decade. SQLite cannot
+    alter a CHECK, so it rebuilds `category_sources`; dropping the old table
+    cascades away every membership, and the playlists the admin added come back
+    due and refill on the next runs.
+- **Curated lists.** `scripts/curate.ts` writes `src/play/curated.json` from
+  `scripts/curated-seeds.json`. A category's seed names its decades, seed
+  artists, a per-artist cap per decade, a stream floor, and hand fixes: `drop`
+  removes an `Artist|Title`, `years` sets one, and an artist's `only` names its
+  songs (anime singers' top songs are not all themes). Popularity is the Spotify
+  stream total kworb.net publishes for the top 3000 artists, with Deezer's
+  artist top as the fallback.
+  - Artist seeds alone miss many hits people know: against Spotify's All Out
+    decade playlists the artist-only Pop list shared a quarter to a half of its
+    songs. A seed's `songs` therefore lists `Artist|Title` from editorial
+    playlists (Spotify's All Out, Rock Classics, Anime Hits by decade,
+    Millennium K-Pop), keyed by the decade the playlist covers or `any`. A
+    listed song is exempt from the per-artist cap, and its decade key bounds the
+    year a lookup may return. Playlists of new releases (Anime Now, K-Pop ON!)
+    are left out because they change weekly.
+  - The year is the most common release year of the title in the artist's iTunes
+    catalog, compilations counted only when nothing else dates it. The title
+    matches exactly first, then with every bracketed part removed, because kworb
+    and iTunes bracket different parts of a name. The track is the Deezer search
+    match with a preview, and the artist's own Deezer top list is the fallback,
+    because search leaves some originals out (Oasis, Adele). Of the Deezer
+    artists with the seed's name, the one with most fans is taken. An artist
+    seed may pin its Deezer, iTunes or kworb id, or set `kworb: false` when
+    kworb's accent-folded name match finds another act. Deezer romanizes
+    Japanese titles (紅蓮華 is "Gurenge"), so a title in another script takes
+    the first same-artist search hit. Anime sets `itunesStore: "JP"`: the US
+    store romanizes those titles too and lacks most 1980s themes. Two cuts of
+    one song (same artist, same folded title) keep the first.
+  - Run `node scripts/curate.ts [CATEGORY...]` from `apps/web`, review the
+    printed lists, and commit the JSON; `--list "ARTIST"` prints one artist's
+    ranked songs with their years.
 - **Eras.** A track's decade comes from its year, the answer-year override
   first. A category with at least 20 playable tracks in a decade offers that
   decade as a chip under its hub tile; the tile itself starts a game on the
