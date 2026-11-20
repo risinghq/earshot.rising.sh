@@ -954,6 +954,10 @@ stops when the next round loads or the game ends.
   - Migration `0014` rekeys `catalog_tracks` and `catalog_members` on
     `track_key`, drops the `deezer_id` columns of `round_outcomes` and
     `track_reports`, and marks every curated source due so the new lists load.
+  - Migration `0016` adds Hip-hop, Latin and J-pop as curated categories. It
+    extends Pop to the 1960s, Rock to the 1960s and 2010s, Metal to the 1970s
+    and 2020s, K-pop to the 1990s, Anime to the 1980s and Rock en Español to the
+    2010s. J-pop dates its songs from the JP store, like Anime.
 - **Curated lists.** `scripts/curate.ts` writes `src/play/curated.json` from
   `scripts/curated-seeds.json`. A category's seed names its decades, seed
   artists, a per-artist cap per decade, a stream floor, and hand fixes: `drop`

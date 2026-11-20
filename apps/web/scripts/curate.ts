@@ -692,6 +692,9 @@ async function curateCategory(slug: string, seed: CategorySeed) {
     const artist: ArtistSeed = typeof raw === "string" ? { name: raw } : raw;
     const songs = await artistSongs(artist);
     const dates = await itunesYears(artist, storeQuery(seed));
+    // kworb titles follow Spotify, which romanizes Japanese names as the US
+    // store does, so a JP-store seed dates those titles from the US catalog.
+    let latinDates: Map<string, string[]> | null = null;
     const deezerId = artist.deezer ?? null;
     for (const song of songs) {
       const key = fold(`${song.artist}|${song.title}`);
@@ -708,6 +711,11 @@ async function curateCategory(slug: string, seed: CategorySeed) {
       if (year === null) {
         year = yearOf(dates, song.title);
         yearFrom = "itunes artist";
+      }
+      if (year === null && seed.itunesStore !== undefined) {
+        latinDates ??= await itunesYears(artist, "");
+        year = yearOf(latinDates, song.title);
+        yearFrom = "itunes us artist";
       }
       if (year === null) {
         year = await itunesSongYear(song, storeQuery(seed));
