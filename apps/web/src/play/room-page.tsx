@@ -218,7 +218,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
               >
                 Rematch
               </button>
-              <a class="pill" href="/play">
+              <a class="pill" href="/">
                 Back to categories
               </a>
             </div>

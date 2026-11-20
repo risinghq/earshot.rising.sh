@@ -150,7 +150,7 @@ describe("session and origin", () => {
 
   it("reaches sign out from the account menu on any page", async () => {
     await seedUser();
-    for (const path of ["/", "/play", "/settings"]) {
+    for (const path of ["/", "/play/board", "/settings"]) {
       const body = await (await get(path)).text();
       expect(body).toContain('details class="account"');
       expect(body).toContain('action="/settings/sign-out"');

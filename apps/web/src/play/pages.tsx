@@ -13,39 +13,51 @@ import type { Game, RoundResult } from "./game";
 import type { BoardEntry, BoardPeriod, CategoryBoardEntry } from "./results";
 import { categoryBoardDays } from "./results";
 import { roundSeconds, roundsPerGame } from "./game";
+import { defaultMode, modes, type Choice, type Mode } from "./quiz";
 import type { SignedInUser } from "../auth";
 import type { ArtistHit, Preview } from "./sources";
+
+export const modeNames: Record<Mode, string> = {
+  easy: "Easy",
+  normal: "Normal",
+  hard: "Hard",
+};
+
+const modeHints: Record<Mode, string> = {
+  easy: "Titles with artists",
+  normal: "Titles only",
+  hard: "Type the title",
+};
+
+function modeButtons(primary: boolean) {
+  return (
+    <div class="modes">
+      {modes.map((mode) => (
+        <button
+          class={`pill small${primary && mode === defaultMode ? " primary" : ""}`}
+          type="submit"
+          name="mode"
+          value={mode}
+          title={modeHints[mode]}
+        >
+          {modeNames[mode]}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function playForms(category: Category) {
   return (
     <>
       <form method="post" action="/play">
         <input type="hidden" name="category" value={category.slug} />
-        <div class="modes">
-          <button
-            class="pill small primary"
-            type="submit"
-            name="mode"
-            value="choices"
-          >
-            Choices
-          </button>
-          <button class="pill small" type="submit" name="mode" value="typed">
-            Type it
-          </button>
-        </div>
+        {modeButtons(true)}
       </form>
       <form method="post" action="/play/room">
         <input type="hidden" name="category" value={category.slug} />
         <small class="hint">With friends</small>
-        <div class="modes">
-          <button class="pill small" type="submit" name="mode" value="choices">
-            Choices
-          </button>
-          <button class="pill small" type="submit" name="mode" value="typed">
-            Type it
-          </button>
-        </div>
+        {modeButtons(false)}
       </form>
       {category.feed !== "mine" && (
         <form method="post" action="/play/match">
@@ -97,10 +109,12 @@ const whoActions: Record<PlayWho, string> = {
 const setupScript = `
 const setup = document.getElementById("play-setup");
 const actions = { solo: "/play", room: "/play/room", stranger: "/play/match" };
+const hints = ${JSON.stringify(modeHints)};
 setup.addEventListener("change", () => {
   const who = setup.querySelector('input[name="who"]:checked').value;
   const mode = setup.querySelector('input[name="mode"]:checked').value;
   document.getElementById("mode-field").disabled = who === "stranger";
+  document.getElementById("mode-hint").textContent = hints[mode];
   document.querySelectorAll("form.tile").forEach((tile) => {
     if (!tile.hasAttribute("data-solo")) tile.action = actions[who];
     tile.querySelector('input[name="mode"]').value = mode;
@@ -162,7 +176,7 @@ function tile(
   category: Category,
   facts: TileFacts,
   who: PlayWho,
-  mode: "choices" | "typed",
+  mode: Mode,
   user: SignedInUser | null,
 ) {
   if (category.feed === "mine" && user === null)
@@ -215,7 +229,7 @@ function tile(
 
 // The For you tile is a solo game on every "who" choice, so the setup script
 // leaves its action alone.
-function forYouTile(mode: "choices" | "typed", cold: boolean) {
+function forYouTile(mode: Mode, cold: boolean) {
   return (
     <form class="tile" method="post" action="/play" data-solo>
       <input type="hidden" name="category" value={forYouSlug} />
@@ -238,74 +252,9 @@ export interface HubOptions {
   facts: Record<string, TileFacts>;
   user: SignedInUser | null;
   who?: PlayWho;
-  mode?: "choices" | "typed";
+  mode?: Mode;
   forYouColdStart?: boolean;
   variant?: HubVariant;
-  // The home page is the hub plus this week's leaders and the rest of the
-  // site; /play is the hub alone.
-  home?: { leaders: BoardEntry[] };
-}
-
-const homeLeaders = 5;
-
-function homeSections(user: SignedInUser | null, leaders: BoardEntry[]) {
-  return (
-    <>
-      <Section
-        title="This week's leaders"
-        aside={<a href="/play/board">Full board</a>}
-      >
-        {leaders.length === 0 ? (
-          <p class="muted">
-            No scored games this week yet. Finish a game signed in and you open
-            the board.
-          </p>
-        ) : (
-          <RankedList
-            items={leaders.slice(0, homeLeaders).map((entry) => ({
-              title: entry.name,
-              href: `/u/${encodeURIComponent(entry.name)}`,
-              plays: entry.points,
-            }))}
-          />
-        )}
-      </Section>
-      <div class="more">
-        <section>
-          <h2>Groups</h2>
-          <p class="muted">
-            Friends make a group, and its playlist blends what each member plays
-            into one list that opens on YouTube.
-          </p>
-          <a href="/groups">Open your groups</a>
-        </section>
-        <section>
-          <h2>Your listening</h2>
-          {user === null ? (
-            <>
-              <p class="muted">
-                Connect Spotify or YouTube Music and your top tracks, artists
-                and plays per day get a public page at <code>/u/name</code>. You
-                can hide it in settings.
-              </p>
-              <a href="/auth/github">Sign in with GitHub</a>
-            </>
-          ) : (
-            <>
-              <p class="muted">
-                Your top tracks, artists and plays per day, from the sources you
-                connected.
-              </p>
-              <span class="links">
-                <a href={`/u/${encodeURIComponent(user.name)}`}>Your profile</a>
-                <a href="/settings">Settings</a>
-              </span>
-            </>
-          )}
-        </section>
-      </div>
-    </>
-  );
 }
 
 export function hubPage({
@@ -313,32 +262,27 @@ export function hubPage({
   facts,
   user,
   who = "solo",
-  mode = "choices",
+  mode = defaultMode,
   forYouColdStart = true,
   variant = "crate",
-  home,
 }: HubOptions) {
   const whoChecked = (value: PlayWho) =>
     who === value ? { checked: true } : {};
-  const modeChecked = (value: string) =>
-    mode === value ? { checked: true } : {};
   return Page({
-    title: home ? "Home" : "Guess the song",
+    title: "Guess the song",
     user,
-    nav: home ? undefined : "play",
+    nav: "play",
     bodyClass: `hub-${variant}`,
     children: (
       <>
         <div class="page-head">
-          <h1>
-            {home ? "How well do you know your music?" : "Guess the song"}
-          </h1>
+          <h1>Guess the song</h1>
           <p class="meta">
             Ten clips, {roundSeconds} seconds each. Pick a category and name the
             song; a faster right answer scores more.
           </p>
         </div>
-        <form class="play-setup" id="play-setup" method="get" action="/play">
+        <form class="play-setup" id="play-setup" method="get" action="/">
           <fieldset>
             <legend>Play</legend>
             <div class="segmented">
@@ -372,27 +316,23 @@ export function hubPage({
             </div>
           </fieldset>
           <fieldset id="mode-field" disabled={who === "stranger"}>
-            <legend>Answers</legend>
+            <legend>Difficulty</legend>
             <div class="segmented">
-              <label>
-                <input
-                  type="radio"
-                  name="mode"
-                  value="choices"
-                  {...modeChecked("choices")}
-                />
-                Choices
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="mode"
-                  value="typed"
-                  {...modeChecked("typed")}
-                />
-                Type it
-              </label>
+              {modes.map((value) => (
+                <label title={modeHints[value]}>
+                  <input
+                    type="radio"
+                    name="mode"
+                    value={value}
+                    {...(mode === value ? { checked: true } : {})}
+                  />
+                  {modeNames[value]}
+                </label>
+              ))}
             </div>
+            <p class="hint" id="mode-hint">
+              {modeHints[mode]}
+            </p>
           </fieldset>
           <noscript>
             <button class="pill" type="submit">
@@ -431,7 +371,6 @@ export function hubPage({
             One artist's top tracks, or two artists blended into one game.
           </p>
         </section>
-        {home && homeSections(user, home.leaders)}
         <p class="meta">
           Charts come from Deezer and Apple Music. Previews play from Deezer, or
           from Apple Music when Deezer has none, and each reveal links to the
@@ -494,7 +433,7 @@ export function gameBar({
   total,
   score,
   streak,
-  quit = "/play",
+  quit = "/",
   current = true,
 }: {
   done: number;
@@ -541,7 +480,7 @@ export function gameBar({
 // The quit confirmation, shared by every game screen: one small dialog with
 // one primary and one quiet action. The quit control is a plain link, so a
 // no-JS page still leaves; the script opens the dialog instead.
-export function quitDialog(back: string = "/play") {
+export function quitDialog(back: string = "/") {
   return (
     <dialog class="quit-dialog" id="quit-dialog" aria-labelledby="quit-title">
       <h2 id="quit-title">Leave the game?</h2>
@@ -595,10 +534,20 @@ export function coverTile(src: string | null, size = 56) {
   );
 }
 
+// room.js and screen.js build the same label for their choices.
+function choiceLabel({ title, artist }: Choice) {
+  return (
+    <span class="choice-label">
+      <span class="choice-title">{title}</span>
+      {artist && <span class="choice-artist">{artist}</span>}
+    </span>
+  );
+}
+
 export function questionPage(
   game: Game,
   preview: Preview,
-  choices: string[],
+  choices: Choice[],
   now: number,
   user: SignedInUser | null,
 ) {
@@ -639,7 +588,7 @@ export function questionPage(
             leftId="count-left"
             volumeId="clip-volume"
           />
-          {game.mode === "choices" ? (
+          {game.mode !== "hard" ? (
             <form
               id="answer-form"
               class="choices"
@@ -647,17 +596,17 @@ export function questionPage(
               action={action}
               data-solo
             >
-              {choices.map((title, index) => (
+              {choices.map((choice, index) => (
                 <button
                   class="choice"
                   type="submit"
                   name="choice"
-                  value={title}
+                  value={choice.title}
                 >
                   <span class="choice-key" aria-hidden="true">
                     {index + 1}
                   </span>
-                  <span class="choice-label">{title}</span>
+                  {choiceLabel(choice)}
                 </button>
               ))}
             </form>
@@ -744,19 +693,23 @@ function revealPage(
         >
           {result.choices.length > 0 ? (
             <div class="choices reveal-choices">
-              {result.choices.map((title, index) => (
-                <button class={choiceState(title)} type="button" disabled>
-                  {title === result.title ? (
+              {result.choices.map((choice, index) => (
+                <button
+                  class={choiceState(choice.title)}
+                  type="button"
+                  disabled
+                >
+                  {choice.title === result.title ? (
                     checkIcon
-                  ) : !result.correct && title === result.answer ? (
+                  ) : !result.correct && choice.title === result.answer ? (
                     crossIcon
                   ) : (
                     <span class="choice-key" aria-hidden="true">
                       {index + 1}
                     </span>
                   )}
-                  <span class="choice-label">{title}</span>
-                  {title === result.title && result.correct && (
+                  {choiceLabel(choice)}
+                  {choice.title === result.title && result.correct && (
                     <span class="burst" aria-hidden="true">
                       <i />
                       <i />
@@ -854,7 +807,7 @@ export function artistsPage(
       <>
         <div class="page-head">
           <p class="meta">
-            <a href="/play">Guess the song</a>
+            <a href="/">Guess the song</a>
           </p>
           <h1>Find an artist</h1>
           <p class="meta">
@@ -1041,7 +994,7 @@ export function finalPage(
             ]}
           />
           <p>
-            <PillLink href="/play" variant="primary" large>
+            <PillLink href="/" variant="primary" large>
               Play again
             </PillLink>
           </p>
@@ -1089,7 +1042,7 @@ export function finalPage(
 export function gamePage(
   game: Game,
   view:
-    | { kind: "question"; preview: Preview; choices: string[] }
+    | { kind: "question"; preview: Preview; choices: Choice[] }
     | { kind: "reveal" }
     | { kind: "done" }
     | { kind: "busy" }
@@ -1122,7 +1075,7 @@ export function gamePage(
         <EmptyState
           title="The preview could not be loaded"
           body="The music service did not answer. Try again in a moment."
-          action={{ href: "/play", label: "Back to categories" }}
+          action={{ href: "/", label: "Back to categories" }}
           heading="h1"
         />
       ),
@@ -1213,7 +1166,7 @@ export function boardPage(
           <EmptyState
             title="No scored games yet"
             body="Signed-in players land here when they finish a game. Play one to open the board."
-            action={{ href: "/play", label: "Play a game" }}
+            action={{ href: "/", label: "Play a game" }}
           />
         ) : (
           <Section title="Top 50" aside={boardNames[period]}>
@@ -1310,7 +1263,7 @@ export function matchPage(
             <div class="modes" id="match-actions" hidden>
               <form method="post" action="/play">
                 <input type="hidden" name="category" value={category.slug} />
-                <input type="hidden" name="mode" value="choices" />
+                <input type="hidden" name="mode" value={defaultMode} />
                 <button class="pill" type="submit">
                   Play solo
                 </button>
@@ -1336,7 +1289,7 @@ export function feedErrorPage(name: string, user: SignedInUser | null) {
       <EmptyState
         title={`${name} is not available right now`}
         body="The music feed did not answer. Pick another category or try again in a moment."
-        action={{ href: "/play", label: "Back to categories" }}
+        action={{ href: "/", label: "Back to categories" }}
         heading="h1"
       />
     ),

@@ -123,13 +123,21 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("/play", () => {
+describe("the play hub", () => {
   it("carries the site nav", async () => {
-    const response = await get("/play");
+    const response = await get("/");
     const body = await response.text();
     expect(body).toContain('class="site-nav"');
-    for (const href of ["/play", "/play/board", "/groups", "/auth/github"])
+    for (const href of ["/", "/play/board", "/groups", "/auth/github"])
       expect(body).toContain(`href="${href}"`);
+  });
+
+  it("moves old /play links to the home page with their choices", async () => {
+    const response = await get("/play?who=room&mode=hard");
+    expect(response.status).toBe(301);
+    expect(response.headers.get("location")).toBe("/?who=room&mode=hard");
+    const hub = await (await get("/?mode=hard")).text();
+    expect(hub).toMatch(/value="hard"[^>]*checked/);
   });
 
   it("starts a game from the home page in one tap, with covers and decades", async () => {
@@ -152,13 +160,10 @@ describe("/play", () => {
       'name="era" value="1990"',
     );
     expect(body.match(/src="https:\/\/cdn\.test\/\d+\.jpg"/g)).toHaveLength(4);
-    const leaders = body.indexOf("This week&#39;s leaders");
-    expect(body.indexOf('class="tiles"')).toBeGreaterThan(0);
-    expect(body.indexOf('class="tiles"')).toBeLessThan(leaders);
   });
 
   it("lists the seeded categories", async () => {
-    const response = await get("/play");
+    const response = await get("/");
     expect(response.status).toBe(200);
     const body = await response.text();
     for (const name of [
@@ -193,7 +198,7 @@ describe("/play", () => {
         },
       ],
     ]);
-    const id = await startGame("pop", "typed");
+    const id = await startGame("pop", "hard");
     const response = await get(`/play/${id}`);
     expect(response.status).toBe(200);
     const game = await getGame(testEnv() as never, id);
@@ -214,13 +219,41 @@ describe("/play", () => {
         (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
       ],
     ]);
-    const id = await startGame("pop", "choices");
+    const id = await startGame("pop", "normal");
     const first = await (await get(`/play/${id}`)).text();
     const second = await (await get(`/play/${id}`)).text();
     const pick = (body: string) =>
       [...body.matchAll(/name="choice" value="([^"]*)"/g)].map((m) => m[1]);
     expect(pick(first)).toHaveLength(4);
     expect(pick(first)).toEqual(pick(second));
+    expect(first).not.toContain('class="choice-artist"');
+  });
+
+  it("names the artist beside each title on easy", async () => {
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4, 5, 6].map((i) => ({
+        id: i,
+        title: `Track ${i}`,
+        artist: `Band ${i}`,
+      })),
+    );
+    stubFetch([
+      [
+        /api\.deezer\.com\/track\/\d+/,
+        (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
+      ],
+    ]);
+    const id = await startGame("pop", "easy");
+    const body = await (await get(`/play/${id}`)).text();
+    const labels = [
+      ...body.matchAll(
+        /class="choice-title">Track (\d)<\/span><span class="choice-artist">Band (\d)</g,
+      ),
+    ];
+    expect(labels).toHaveLength(4);
+    for (const [, title, band] of labels) expect(band).toBe(title);
   });
 
   it("keeps the right answer out of the round response", async () => {
@@ -241,7 +274,7 @@ describe("/play", () => {
         },
       ],
     ]);
-    const id = await startGame("pop", "typed");
+    const id = await startGame("pop", "hard");
     const body = await (await get(`/play/${id}`)).text();
     const served = (await getGame(testEnv() as never, id))!;
     const answer = served.candidates[served.current!.index];
@@ -261,7 +294,7 @@ describe("/play", () => {
         (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
       ],
     ]);
-    const id = await startGame("pop", "choices");
+    const id = await startGame("pop", "normal");
     const question = await (await get(`/play/${id}`)).text();
     expect(question).toContain('id="game"');
     expect(question).toContain('data-phase="question"');
@@ -294,7 +327,7 @@ describe("/play", () => {
         (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
       ],
     ]);
-    const id = await startGame("pop", "choices");
+    const id = await startGame("pop", "normal");
     await get(`/play/${id}`);
     const inline = (path: string, fields: Record<string, string> = {}) =>
       app.fetch(
@@ -345,7 +378,7 @@ describe("/play", () => {
         (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
       ],
     ]);
-    const id = await startGame("pop", "choices");
+    const id = await startGame("pop", "normal");
     const question = await (await get(`/play/${id}`)).text();
     expect(question).toContain(`aria-label="Round 1 of ${roundsPerGame}"`);
     expect(question).toContain('<span class="game-score-n">0</span>');
@@ -388,7 +421,7 @@ describe("/play", () => {
         },
       ],
     ]);
-    const id = await startGame("pop", "choices");
+    const id = await startGame("pop", "normal");
     await get(`/play/${id}`);
     const game = (await getGame(testEnv() as never, id))!;
     const answerTitle = game.candidates[game.current!.index].title;
@@ -421,7 +454,7 @@ describe("/play", () => {
           deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "Café del Mar"),
       ],
     ]);
-    const id = await startGame("pop", "typed");
+    const id = await startGame("pop", "hard");
     await get(`/play/${id}`);
     await answer(id, { answer: "cafe del mar (live)" });
     let game = (await getGame(testEnv() as never, id))!;
@@ -449,7 +482,7 @@ describe("/play", () => {
         (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
       ],
     ]);
-    const id = await startGame("pop", "choices");
+    const id = await startGame("pop", "normal");
     // Four candidates is enough to reach done by exhaustion: all but the
     // last round go through the game module; the last one goes through the
     // routes so the finish still crosses answer → next → done over HTTP.
@@ -492,7 +525,7 @@ describe("/play", () => {
         },
       ],
     ]);
-    const id = await startGame("pop", "choices");
+    const id = await startGame("pop", "normal");
     await get(`/play/${id}`);
     const game = (await getGame(testEnv() as never, id))!;
     game.phase = "done";
@@ -539,7 +572,7 @@ describe("/play", () => {
         return new Response("not found", { status: 404 });
       }),
     );
-    const id = await startGame("top-50-japan", "typed");
+    const id = await startGame("top-50-japan", "hard");
     const response = await get(`/play/${id}`);
     expect(response.status).toBe(200);
     const body = await response.text();
@@ -559,7 +592,7 @@ describe("/play", () => {
         return new Response("upstream down", { status: 502 });
       }),
     );
-    const id = await startGame("top-50-japan", "typed");
+    const id = await startGame("top-50-japan", "hard");
     const response = await get(`/play/${id}`);
     expect(response.status).toBe(502);
     const body = await response.text();
@@ -585,7 +618,7 @@ describe("the round clock", () => {
 
   it("starts the clock when the client reports the clip playing", async () => {
     await chart();
-    const id = await startGame("pop", "choices");
+    const id = await startGame("pop", "normal");
     await get(`/play/${id}`);
     const before = Date.now();
     const response = await playing(id);
@@ -610,7 +643,7 @@ describe("the round clock", () => {
 
   it("caps the wait at five seconds after the round was served", async () => {
     await chart();
-    const id = await startGame("pop", "choices");
+    const id = await startGame("pop", "normal");
     await get(`/play/${id}`);
     const game = (await getGame(testEnv() as never, id))!;
     game.current!.servedAt = Date.now() - 8_000;
@@ -622,7 +655,7 @@ describe("the round clock", () => {
 
   it("refuses a report before the round is served and after it ends", async () => {
     await chart();
-    const id = await startGame("pop", "choices");
+    const id = await startGame("pop", "normal");
     const early = await playing(id);
     expect(early.status).toBe(409);
     await get(`/play/${id}`);
@@ -635,7 +668,7 @@ describe("the round clock", () => {
 
   it("does not reset the clock on a reload", async () => {
     await chart();
-    const id = await startGame("pop", "choices");
+    const id = await startGame("pop", "normal");
     await get(`/play/${id}`);
     await playing(id);
     const first = (await getGame(testEnv() as never, id))!;
@@ -676,7 +709,7 @@ describe("the round clock", () => {
         return new Response("not found", { status: 404 });
       }),
     );
-    const id = await startGame("pop", "choices");
+    const id = await startGame("pop", "normal");
     await get(`/play/${id}`);
     const game = (await getGame(testEnv() as never, id))!;
     const title = game.candidates[game.current!.index].title;
@@ -729,7 +762,7 @@ describe("preview resolution", () => {
     buildGame(
       testEnv() as never,
       { slug: "mine", name: "Mine", feed: "mine", ref: null },
-      "typed",
+      "hard",
       candidates,
     );
 

@@ -1,10 +1,12 @@
 import { DurableObject } from "cloudflare:workers";
 import { base64url } from "../auth";
 import type { Env } from "../types";
-import type { Mode } from "./quiz";
+import type { Choice, Mode, PoolEntry } from "./quiz";
 import {
   candidatePreview,
   matchTyped,
+  parseMode,
+  poolOf,
   roundSeconds,
   roundsPerGame,
   sampleChoices,
@@ -88,7 +90,7 @@ interface Round {
   endsAt: number;
   loaded: string[];
   screenLoaded: boolean;
-  choices: string[];
+  choices: Choice[];
   link: string | null;
   cover: string | null;
   answers: Record<string, RoundAnswer>;
@@ -119,7 +121,7 @@ interface Stored {
   categoryName: string;
   mode: Mode;
   candidates: Candidate[];
-  pool: string[];
+  pool: PoolEntry[];
   creatorToken: string;
   players: Player[];
   gameId: string;
@@ -205,6 +207,7 @@ export class Room extends DurableObject<Env> {
         creatorToken?: string;
         players?: SeatedPlayer[];
       };
+      const mode = parseMode(body.mode);
       if (
         typeof body.code !== "string" ||
         (body.kind !== undefined &&
@@ -212,7 +215,7 @@ export class Room extends DurableObject<Env> {
           body.kind !== "match") ||
         typeof body.categorySlug !== "string" ||
         typeof body.categoryName !== "string" ||
-        (body.mode !== "choices" && body.mode !== "typed") ||
+        mode === null ||
         !Array.isArray(body.candidates) ||
         typeof body.creatorToken !== "string" ||
         (body.players !== undefined && !seatedOk(body.players))
@@ -224,9 +227,9 @@ export class Room extends DurableObject<Env> {
         kind: body.kind ?? "room",
         categorySlug: body.categorySlug,
         categoryName: body.categoryName,
-        mode: body.mode,
+        mode,
         candidates: body.candidates,
-        pool: [...new Set(body.candidates.map((track) => track.title))],
+        pool: poolOf(body.candidates),
         creatorToken: body.creatorToken,
         players: (body.players ?? []).map((seated) => ({
           id: base64url(crypto.getRandomValues(new Uint8Array(8))),
@@ -608,7 +611,7 @@ export class Room extends DurableObject<Env> {
     const timedOut = elapsed >= roundSeconds * 1000;
     let given: string | null;
     let correct: boolean;
-    if (s.mode === "choices") {
+    if (s.mode !== "hard") {
       given = value;
       correct = !timedOut && value === candidate.title;
     } else {
@@ -723,8 +726,7 @@ export class Room extends DurableObject<Env> {
         endsAt: startedAt + roundSeconds * 1000,
         loaded: [],
         screenLoaded: false,
-        choices:
-          s.mode === "choices" ? sampleChoices(s.pool, candidate.title) : [],
+        choices: sampleChoices(s.mode, s.pool, candidate),
         link: preview.link ?? candidate.link,
         cover: preview.cover ?? candidate.cover,
         answers: {},

@@ -52,7 +52,7 @@ async function stubChart(titles: string[], previewOf = (_id: number) => true) {
   );
 }
 
-async function createRoom(mode = "choices") {
+async function createRoom(mode = "normal") {
   const response = await app.fetch(
     new Request(`${origin}/play/room`, {
       method: "POST",
@@ -242,7 +242,7 @@ describe("rooms", () => {
       expect(row).toMatchObject({
         category: "pop",
         kind: "room",
-        mode: "choices",
+        mode: "normal",
       });
     ann.close();
     bob.close();
@@ -441,7 +441,7 @@ describe("rooms", () => {
         code,
         categorySlug: "",
         categoryName: "Pop",
-        mode: "choices",
+        mode: "normal",
         candidates: Array.from({ length: 10 }, (_, i) => ({
           deezerId: 100 + i,
           title: `Song ${i}`,
@@ -856,7 +856,7 @@ describe("rooms", () => {
           kind: "match",
           categorySlug: "pop",
           categoryName: "Pop",
-          mode: "choices",
+          mode: "normal",
           candidates: Array.from({ length: 10 }, (_, i) => ({
             title: `Song ${i}`,
             artist: "Artist",

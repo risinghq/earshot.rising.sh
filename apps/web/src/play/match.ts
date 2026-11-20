@@ -170,7 +170,7 @@ export class Matchmaker extends DurableObject<Env> {
           kind: "match",
           categorySlug: category!.slug,
           categoryName: category!.name,
-          mode: "choices",
+          mode: "normal",
           candidates,
           creatorToken: "",
           players,

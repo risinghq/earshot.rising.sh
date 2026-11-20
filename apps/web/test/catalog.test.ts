@@ -182,7 +182,7 @@ describe("round outcomes", () => {
       "fetch",
       vi.fn(async () => Response.json(deezerTrack(1))),
     );
-    const started = await post("/play", { category: "pop", mode: "choices" });
+    const started = await post("/play", { category: "pop", mode: "normal" });
     expect(started.status).toBe(303);
     const cookie = started.headers.get("set-cookie") ?? "";
     expect(cookie).toContain("__Host-play-id=");
@@ -211,7 +211,7 @@ describe("round outcomes", () => {
       track_key: expect.stringMatching(/^dz:[1-4]$/),
       category: "pop",
       kind: "solo",
-      mode: "choices",
+      mode: "normal",
     });
     expect(row!.player_key).toMatch(/^a:/);
   });
@@ -231,7 +231,7 @@ describe("round outcomes", () => {
     );
     const started = await post("/play", {
       category: "rock",
-      mode: "choices",
+      mode: "normal",
       era: "2000",
     });
     expect(started.status).toBe(303);
@@ -254,7 +254,7 @@ describe("round outcomes", () => {
       `INSERT INTO round_outcomes
          (player_key, user_id, track_key, category, mode, kind, correct,
           elapsed_ms, answered_at)
-       VALUES ('a:abc', NULL, 'dz:1', 'pop', 'choices', 'solo', 1, 5000, 0)`,
+       VALUES ('a:abc', NULL, 'dz:1', 'pop', 'normal', 'solo', 1, 5000, 0)`,
     ).run();
     await env.DB.prepare(
       "INSERT INTO users (id, github_id, name, created_at) VALUES (7, 7, 'u7', 0)",

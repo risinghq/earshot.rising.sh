@@ -71,7 +71,7 @@ export function Page({
           Earshot
         </a>
         <nav class="site-nav" aria-label="Site">
-          <a href="/play" {...current("play")}>
+          <a href="/" {...current("play")}>
             {navIcons.play}
             Play
           </a>

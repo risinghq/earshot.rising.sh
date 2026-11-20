@@ -132,7 +132,7 @@ describe("artist slugs", () => {
     expect(await getCategory(testEnv() as never, "artist-abc")).toBeNull();
     const response = await post("/play", {
       category: "artist-abc",
-      mode: "typed",
+      mode: "hard",
     });
     expect(response.status).toBe(404);
     const start = await get("/play/artist/abc");
@@ -246,7 +246,7 @@ describe("deezer_artist feed", () => {
     expect(start.status).toBe(404);
     const response = await post("/play", {
       category: "artist-999",
-      mode: "typed",
+      mode: "hard",
     });
     expect(response.status).toBe(404);
   });
@@ -278,13 +278,13 @@ describe("deezer_artist feed", () => {
     ]);
     const unknown = await post("/play", {
       category: "artist-27-999",
-      mode: "typed",
+      mode: "hard",
     });
     expect(unknown.status).toBe(502);
     expect(await unknown.text()).toContain("is not available right now");
     const empty = await post("/play", {
       category: "artist-27-888",
-      mode: "typed",
+      mode: "hard",
     });
     expect(empty.status).toBe(502);
     expect(await empty.text()).toContain("is not available right now");
@@ -308,7 +308,7 @@ describe("deezer_artist feed", () => {
     ]);
     const response = await post("/play", {
       category: "artist-5",
-      mode: "typed",
+      mode: "hard",
     });
     expect(response.status).toBe(502);
     expect(await response.text()).toContain(
@@ -331,7 +331,7 @@ describe("artist categories in rooms and matches", () => {
     ]);
     const response = await post("/play/room", {
       category: "artist-27",
-      mode: "choices",
+      mode: "normal",
     });
     expect(response.status).toBe(303);
     expect(response.headers.get("location")).toMatch(
@@ -416,7 +416,7 @@ describe("category board", () => {
     const entries = await readCategoryBoard(testEnv() as never, "artist-27");
     expect(entries).toEqual([{ name: "ann", score: 4300 }]);
     // Tiles show the name and eras only; scores live one click away on the board.
-    const body = await (await get("/play")).text();
+    const body = await (await get("/")).text();
     expect(body).not.toContain("/u/ann");
     expect(body).not.toContain("6,100");
   });

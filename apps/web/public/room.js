@@ -9,6 +9,27 @@ const show = (el, on) => {
 };
 const listenLabel = (link) =>
   `Listen on ${link.includes("apple.com") ? "Apple Music" : "Deezer"}`;
+const modeLabels = {
+  easy: "titles with artists",
+  normal: "titles only",
+  hard: "type the title",
+};
+// The same label the server renders in pages.tsx choiceLabel.
+const choiceLabel = (choice) => {
+  const label = document.createElement("span");
+  label.className = "choice-label";
+  const title = document.createElement("span");
+  title.className = "choice-title";
+  title.textContent = choice.title;
+  label.append(title);
+  if (choice.artist) {
+    const artist = document.createElement("span");
+    artist.className = "choice-artist";
+    artist.textContent = choice.artist;
+    label.append(artist);
+  }
+  return label;
+};
 
 const key = `quiz-room-${code}`;
 const params = new URLSearchParams(location.search);
@@ -184,9 +205,13 @@ function error(text) {
 function render(s) {
   error("");
   offset = s.now - Date.now();
-  $("room-meta").textContent = `Room ${s.code} · ${s.category} · ${
-    s.mode === "choices" ? "four choices" : "type the title"
-  }`;
+  $("room-meta").textContent =
+    `Room ${s.code} · ${s.category} · ${modeLabels[s.mode]}`;
+  // The clip plays through its round's reveal; the next load, the lobby and
+  // the final standings silence it.
+  if (s.phase !== "playing" && s.phase !== "reveal" && !clip.paused) {
+    clip.pause();
+  }
   renderPlayers(s);
   const joined = !!s.you.name;
   show($("join-card"), !joined);
@@ -311,8 +336,8 @@ function renderRound(s) {
   // Choices stay hidden until the server's round start, the same moment
   // the clip begins; anything earlier would be a blind guess.
   const openAnswers = () => {
-    if (!answered && s.mode === "choices") show($("choices"), true);
-    if (!answered && s.mode === "typed") show($("typed-form"), true);
+    if (!answered && s.mode !== "hard") show($("choices"), true);
+    if (!answered && s.mode === "hard") show($("typed-form"), true);
   };
   show($("choices"), false);
   show($("typed-form"), false);
@@ -330,12 +355,12 @@ function renderRound(s) {
     if (delay > 0) playTimer = setTimeout(begin, delay);
     else begin();
   }
-  if (s.mode === "choices" && s.choices) {
+  if (s.mode !== "hard" && s.choices) {
     const box = $("choices");
     if (box.dataset.round !== String(s.round)) {
       box.dataset.round = String(s.round);
       box.replaceChildren(
-        ...s.choices.map((title, index) => {
+        ...s.choices.map((choice, index) => {
           const button = document.createElement("button");
           button.className = "choice";
           button.type = "button";
@@ -343,12 +368,9 @@ function renderRound(s) {
           key.className = "choice-key";
           key.setAttribute("aria-hidden", "true");
           key.textContent = String(index + 1);
-          const label = document.createElement("span");
-          label.className = "choice-label";
-          label.textContent = title;
-          button.append(key, label);
+          button.append(key, choiceLabel(choice));
           button.onclick = () => {
-            send({ type: "answer", answer: title });
+            send({ type: "answer", answer: choice.title });
             answered = true;
             show(box, false);
             show($("answer-status"), true);

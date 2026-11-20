@@ -4,6 +4,7 @@ import { notFoundPage } from "../app";
 import { sessionUser } from "../auth";
 import type { Env } from "../types";
 import type { Candidate } from "./sources";
+import { defaultMode, parseMode } from "./quiz";
 import {
   catalog,
   enoughTracks,
@@ -66,8 +67,7 @@ async function gameInput(
 > {
   const body = await context.req.parseBody();
   const slug = typeof body.category === "string" ? body.category : "";
-  const mode: Mode | null =
-    body.mode === "choices" || body.mode === "typed" ? body.mode : null;
+  const mode = parseMode(body.mode);
   const era = /^\d{3,4}$/.test(String(body.era)) ? Number(body.era) : null;
   if (slug === "" || mode === null)
     return context.text("Pick a category and a mode.", 400);
@@ -308,7 +308,7 @@ playApp.post("/report", async (context) => {
   const track = typeof body.track === "string" ? body.track : "";
   const title = typeof body.title === "string" ? body.title.trim() : "";
   const artist = typeof body.artist === "string" ? body.artist.trim() : "";
-  const back = typeof body.back === "string" ? body.back : "/play";
+  const back = typeof body.back === "string" ? body.back : "/";
   if (!reportReasons.has(reason) || track === "" || title === "")
     return context.text("Bad report.", 400);
   const user = await sessionUser(context);
@@ -344,21 +344,19 @@ playApp.post("/report", async (context) => {
     )
     .run();
   return context.redirect(
-    back.startsWith("/") && !back.startsWith("//") ? back : "/play",
+    back.startsWith("/") && !back.startsWith("//") ? back : "/",
     303,
   );
 });
 
-// The play hub: GET / and GET /play render it, and the home page adds this
-// week's leaders.
-export async function renderHub(context: PlayContext, home: boolean) {
+// The play hub is the home page, at GET /.
+export async function renderHub(context: PlayContext) {
   const user = await sessionUser(context);
   const categories = await listCategories(context.env.DB);
   const playerKey = playerKeyOf(user?.id ?? null, anonOf(context));
-  const [facts, cold, leaders] = await Promise.all([
+  const [facts, cold] = await Promise.all([
     tileFacts(context.env, categories),
     forYouCold(context.env.DB, playerKey, user?.id ?? null),
-    home ? readBoard(context.env, "week") : Promise.resolve([]),
   ]);
   const who = context.req.query("who");
   const mode = context.req.query("mode");
@@ -369,15 +367,18 @@ export async function renderHub(context: PlayContext, home: boolean) {
       facts,
       user,
       who: who === "room" || who === "stranger" ? who : "solo",
-      mode: mode === "typed" ? "typed" : "choices",
+      mode: parseMode(mode) ?? defaultMode,
       forYouColdStart: cold,
       variant: hubVariants.find((name) => name === variant),
-      home: home ? { leaders } : undefined,
     }),
   );
 }
 
-playApp.get("/", (context) => renderHub(context, false));
+// The hub moved to /; old links keep their who and mode choices.
+playApp.get("/", (context) => {
+  const query = new URL(context.req.url).search;
+  return context.redirect(`/${query}`, 301);
+});
 
 playApp.post("/", async (context) => {
   const input = await gameInput(context, true);

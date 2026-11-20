@@ -2009,7 +2009,20 @@ button:disabled {
   width: 20px;
 }
 .choice-label {
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.choice-artist {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+  opacity: 0.72;
+}
+.screen-choices .choice-artist {
+  display: block;
+  font-size: 0.6em;
 }
 .burst {
   inset: 0;

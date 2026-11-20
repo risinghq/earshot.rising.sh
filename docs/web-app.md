@@ -853,8 +853,8 @@ list by name, and the member can leave any group.
 | `/u/NAME`          | HTML profile. `?period=week` (default), `month`, `all`.     |
 | `/u/NAME.json`     | The same figures as JSON.                                   |
 | `/u/NAME.svg`      | The card. `?period=`, `?n=1..10`, `?theme=light` or `dark`. |
-| `/`                | The hub as home page, with the week's leaders below it.     |
-| `/play`            | The hub: mode choice and one tile per category.             |
+| `/`                | The hub: difficulty choice and one tile per category.       |
+| `/play`            | Redirects to `/` with its query; a POST starts a game.      |
 | `/play/artists`    | Artist search. `?q=` the query, `?with=`&`n=` a blend pick. |
 | `/play/artist/IDS` | Start page for `artist-ID` or `artist-IDA-IDB`.             |
 | `/play/room/CODE`  | A guess-the-song room for up to 8 players.                  |
@@ -901,9 +901,22 @@ list by name, and the member can leave any group.
 
 ## Guess the song
 
-`/play` is a solo quiz: ten rounds, each a 15-second preview clip. The player
-picks a category and answers by choosing one of four titles or by typing the
-title.
+The hub at `/` starts a solo quiz: ten rounds, each a 15-second preview clip.
+The player picks a category and a difficulty, the `Mode` in `src/play/quiz.ts`:
+
+- **Easy**, the default, offers four titles, each with its artist.
+- **Normal** offers the four titles alone. Its round never carries the artists,
+  so the page cannot leak the hint.
+- **Hard** asks for the title typed.
+
+Scoring is the same in every mode, and the boards rank them together. A random
+match plays Normal. `GET /play` redirects to `/` with its query, so old links
+keep their preset; `POST /play` still starts a game. Migration `0015` renames
+the stored modes: `choices` became `normal` and `typed` became `hard`.
+
+The clip keeps playing through the reveal, so a player hears the song while
+reading its name. Continue stops it in solo; in a room and on the screen it
+stops when the next round loads or the game ends.
 
 - **Categories.** The `categories` table lists a slug, a display name, a display
   order, a hidden flag and a feed. Migration `0012` reseeds Pop, Rock, Metal,
@@ -990,8 +1003,8 @@ title.
   anyway; a chart category shows covers only when `play:cat:SLUG` is already in
   KV, so rendering the hub never fetches from Deezer or Apple. The code is
   `src/play/hub.ts`.
-- **For you.** The first tile on `/play` starts a solo game whose pool is scored
-  per player from D1 alone, in `src/play/foryou.ts`. An affinity per (category,
+- **For you.** The first tile on `/` starts a solo game whose pool is scored per
+  player from D1 alone, in `src/play/foryou.ts`. An affinity per (category,
   decade) comes from the player's `round_outcomes` — rounds played, correct rate
   and answer speed — and, for a signed-in player, from the artists of their
   "From my listening" top tracks, counted where those artists sit in
@@ -1013,9 +1026,9 @@ title.
   with `/artist/{id}` for the display name, so solo games, rooms and random
   matches take them unchanged. The feed is the artist's `/artist/{id}/top`
   tracks, two artists interleaved one for one. The player finds artists through
-  the search box on `/play`, which answers `/search/artist?q=` hits sorted by
-  fan count, and starts a game on `/play/artist/IDS`. A malformed slug is a 404;
-  an unknown id or an artist with fewer than four distinct titles shows the
+  the search box on `/`, which answers `/search/artist?q=` hits sorted by fan
+  count, and starts a game on `/play/artist/IDS`. A malformed slug is a 404; an
+  unknown id or an artist with fewer than four distinct titles shows the
   category-unavailable page. No D1 row is written per artist.
 - **Sources.** Feeds come from the Deezer public API (`/chart/{genre}/tracks`,
   `/playlist/{id}/tracks`, `/artist/{id}/top`, `/artist/{id}`, `/search/artist`,

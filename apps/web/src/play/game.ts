@@ -6,12 +6,13 @@ import {
   candidatePreview,
   roundSeconds,
   roundsPerGame,
+  poolOf,
   sampleChoices,
   scoreFor,
   shuffled,
   matchTyped,
 } from "./quiz";
-import type { Mode } from "./quiz";
+import type { Choice, Mode, PoolEntry } from "./quiz";
 import { QuotaError, type Candidate, type Preview } from "./sources";
 
 export { matchTyped, roundSeconds, roundsPerGame, scoreFor } from "./quiz";
@@ -34,7 +35,7 @@ export interface RoundResult {
   timedOut: boolean;
   score: number;
   elapsedMs: number;
-  choices: string[];
+  choices: Choice[];
 }
 
 export interface Game {
@@ -45,7 +46,7 @@ export interface Game {
   categorySlug: string;
   categoryName: string;
   candidates: Candidate[];
-  pool: string[];
+  pool: PoolEntry[];
   next: number;
   served: number;
   phase: Phase;
@@ -59,7 +60,7 @@ export interface Game {
     servedAt: number;
     startedAt: number | null;
     reveal: { link: string | null; cover: string | null };
-    choices: string[];
+    choices: Choice[];
   } | null;
   // The next round's clip, resolved while the reveal is shown, so Next does
   // not wait on a lookup. The URL is held only until the round is served.
@@ -68,7 +69,7 @@ export interface Game {
     url: string;
     link: string | null;
     cover: string | null;
-    choices: string[];
+    choices: Choice[];
   } | null;
   results: RoundResult[];
   total: number;
@@ -107,7 +108,7 @@ export async function buildGame(
     categorySlug: category.slug,
     categoryName: category.name,
     candidates: shuffled(candidates),
-    pool: [...new Set(candidates.map((track) => track.title))],
+    pool: poolOf(candidates),
     next: 0,
     served: 0,
     phase: "question",
@@ -200,10 +201,7 @@ export async function serveRound(
         link: preview.link ?? candidate.link,
         cover: preview.cover ?? candidate.cover,
       },
-      choices:
-        game.mode === "choices"
-          ? sampleChoices(game.pool, candidate.title)
-          : [],
+      choices: sampleChoices(game.mode, game.pool, candidate),
     };
     game.served += 1;
     await putGame(env, game);
@@ -265,10 +263,7 @@ export async function prepareNext(
       url: preview.url,
       link: preview.link ?? candidate.link,
       cover: preview.cover ?? candidate.cover,
-      choices:
-        game.mode === "choices"
-          ? sampleChoices(game.pool, candidate.title)
-          : [],
+      choices: sampleChoices(game.mode, game.pool, candidate),
     };
     break;
   }
@@ -333,7 +328,7 @@ export async function answerRound(
   const timedOut = elapsed >= roundSeconds * 1000;
   let given: string | null;
   let correct: boolean;
-  if (game.mode === "choices") {
+  if (game.mode !== "hard") {
     given = answer.choice ?? null;
     correct = !timedOut && given === candidate.title;
   } else {

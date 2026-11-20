@@ -44,7 +44,7 @@ async function outcome(
     `INSERT INTO round_outcomes
        (player_key, user_id, track_key, category, era, mode, kind,
         correct, elapsed_ms, answered_at)
-     VALUES (?1, NULL, ?2, ?3, ?4, 'choices', 'solo', ?5, 8000, ?6)`,
+     VALUES (?1, NULL, ?2, ?3, ?4, 'normal', 'solo', ?5, 8000, ?6)`,
   )
     .bind(
       playerKey,
@@ -68,7 +68,7 @@ function postForYou(cookie?: string) {
       },
       body: new URLSearchParams({
         category: "for-you",
-        mode: "choices",
+        mode: "normal",
       }).toString(),
     }),
     testEnv() as never,
@@ -261,10 +261,10 @@ describe("the For you mix", () => {
   });
 });
 
-describe("/play's For you tile", () => {
+describe("the hub's For you tile", () => {
   it("tells a new player the mix learns their taste", async () => {
     const response = await app.fetch(
-      new Request(`${origin}/play`),
+      new Request(`${origin}/`),
       testEnv() as never,
     );
     const body = await response.text();
@@ -345,7 +345,7 @@ describe("/play's For you tile", () => {
       id: "forYouFinished00000000",
       userId: 1,
       playerKey: "u:1",
-      mode: "choices",
+      mode: "normal",
       categorySlug: "for-you",
       categoryName: "For you",
       candidates: [],

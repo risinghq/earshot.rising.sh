@@ -284,7 +284,7 @@ app.all("/1/*", (context) =>
   context.json({ code: 404, error: "Not found." }, 404),
 );
 
-app.get("/", (context) => renderHub(context, true));
+app.get("/", (context) => renderHub(context));
 
 app.get("/auth/github", (context) => beginGithub(context));
 

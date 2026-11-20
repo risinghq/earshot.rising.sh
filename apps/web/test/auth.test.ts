@@ -80,9 +80,9 @@ describe("home page", () => {
     );
     expect(response.status).toBe(200);
     const body = await response.text();
-    for (const href of ["/play", "/play/board", "/groups", "/auth/github"])
+    for (const href of ["/", "/play/board", "/groups", "/auth/github"])
       expect(body).toContain(`href="${href}"`);
-    expect(body).toContain("get a public page at");
+    expect(body).toContain('class="tiles"');
   });
 
   it("serves the home page to a signed-in visitor with profile links", async () => {
@@ -97,7 +97,7 @@ describe("home page", () => {
     const body = await response.text();
     expect(body).toContain('href="/u/octo"');
     expect(body).toContain('href="/settings"');
-    expect(body).toContain('href="/play"');
+    expect(body).toContain('href="/"');
     expect(body).toContain('href="/groups"');
     expect(body).toContain('href="/friends"');
   });

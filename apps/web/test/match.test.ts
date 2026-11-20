@@ -249,7 +249,7 @@ describe("matchmaker", () => {
     expect(matchedAnn.code).toBe(matchedBob.code);
     const room = await stored(matchedAnn.code);
     expect(room.kind).toBe("match");
-    expect(room.mode).toBe("choices");
+    expect(room.mode).toBe("normal");
     expect(
       (room.players as { name: string }[]).map((p) => p.name).sort(),
     ).toEqual(["Ann", "Bob"]);
@@ -320,7 +320,7 @@ describe("matchmaker", () => {
         kind: "match",
         categorySlug: "pop",
         categoryName: "Pop",
-        mode: "choices",
+        mode: "normal",
         candidates: Array.from({ length: 4 }, (_, i) => ({
           deezerId: 100 + i,
           title: `Song ${i}`,
@@ -409,7 +409,7 @@ describe("matchmaker", () => {
           kind: "match",
           categorySlug: "pop",
           categoryName: "Pop",
-          mode: "choices",
+          mode: "normal",
           candidates: [],
           creatorToken: "",
           players,

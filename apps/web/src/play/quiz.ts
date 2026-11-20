@@ -12,7 +12,33 @@ export const roundSeconds = 15;
 export const roundsPerGame = 10;
 export const maxChoices = 4;
 
-export type Mode = "choices" | "typed";
+// Easy shows four titles with their artists, Normal four titles alone, and
+// Hard asks for the title typed.
+export const modes = ["easy", "normal", "hard"] as const;
+export type Mode = (typeof modes)[number];
+export const defaultMode: Mode = "easy";
+
+export function parseMode(value: unknown): Mode | null {
+  return modes.find((mode) => mode === value) ?? null;
+}
+
+export interface Choice {
+  title: string;
+  artist?: string;
+}
+
+export interface PoolEntry {
+  title: string;
+  artist: string;
+}
+
+// One entry per title, so two tracks of one name never share a round.
+export function poolOf(tracks: PoolEntry[]): PoolEntry[] {
+  const seen = new Map<string, PoolEntry>();
+  for (const { title, artist } of tracks)
+    if (!seen.has(title)) seen.set(title, { title, artist });
+  return [...seen.values()];
+}
 
 export function shuffled<T>(items: T[]): T[] {
   const order = crypto.getRandomValues(new Uint32Array(items.length));
@@ -105,10 +131,23 @@ export function matchTyped(
 
 // The distractor set is sampled once per round: re-sampling would let a
 // reload narrow the answer to the title present in both lists.
-export function sampleChoices(pool: string[], answer: string) {
-  const answerNorm = answerKey(answer);
+// Normal sends no artist, so the page cannot leak the hint it hides.
+export function sampleChoices(
+  mode: Mode,
+  pool: PoolEntry[],
+  answer: PoolEntry,
+): Choice[] {
+  if (mode === "hard") return [];
+  const answerNorm = answerKey(answer.title);
   const others = pool.filter(
-    (title) => title !== answer && answerKey(title) !== answerNorm,
+    (entry) =>
+      entry.title !== answer.title && answerKey(entry.title) !== answerNorm,
   );
-  return shuffled([answer, ...shuffled(others).slice(0, maxChoices - 1)]);
+  const picked = shuffled([
+    answer,
+    ...shuffled(others).slice(0, maxChoices - 1),
+  ]);
+  return picked.map(({ title, artist }) =>
+    mode === "easy" ? { title, artist } : { title },
+  );
 }

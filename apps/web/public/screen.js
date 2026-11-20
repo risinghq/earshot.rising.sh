@@ -9,6 +9,27 @@ const listenLabel = (link) =>
 const cards = ["lobby", "game", "reveal", "final"].map((name) =>
   $(`screen-${name}`),
 );
+const modeLabels = {
+  easy: "titles with artists",
+  normal: "titles only",
+  hard: "type the title",
+};
+// The same label the server renders in pages.tsx choiceLabel.
+const choiceLabel = (choice) => {
+  const label = document.createElement("span");
+  label.className = "choice-label";
+  const title = document.createElement("span");
+  title.className = "choice-title";
+  title.textContent = choice.title;
+  label.append(title);
+  if (choice.artist) {
+    const artist = document.createElement("span");
+    artist.className = "choice-artist";
+    artist.textContent = choice.artist;
+    label.append(artist);
+  }
+  return label;
+};
 
 let ws;
 let offset = 0; // server time minus local time
@@ -138,9 +159,9 @@ function stopClip() {
 function render(s) {
   error("");
   offset = s.now - Date.now();
-  // The clip belongs to the playing phase only; every other phase silences
-  // it, so a finished round cannot bleed into the reveal or the next load.
-  if (s.phase !== "playing") {
+  // The clip plays through its round's reveal, so the room hears the rest of
+  // the song; the lobby, the next load and the final standings silence it.
+  if (s.phase !== "playing" && s.phase !== "reveal") {
     stopClip();
     $("screen-clip").stopSound();
   }
@@ -155,9 +176,7 @@ function render(s) {
 }
 
 function renderLobby(s) {
-  $("screen-category").textContent = `${s.category} · ${
-    s.mode === "choices" ? "four choices" : "type the title"
-  }`;
+  $("screen-category").textContent = `${s.category} · ${modeLabels[s.mode]}`;
   $("screen-lobby-hint").textContent =
     s.kind === "match"
       ? "The game starts as soon as everyone is connected."
@@ -203,14 +222,14 @@ function renderRound(s) {
     else begin();
   }
   const box = $("screen-choices");
-  show(box, playing && s.mode === "choices");
-  if (s.mode === "choices" && s.choices) {
+  show(box, playing && s.mode !== "hard");
+  if (s.mode !== "hard" && s.choices) {
     if (box.dataset.round !== String(s.round)) {
       box.dataset.round = String(s.round);
       box.replaceChildren(
-        ...s.choices.map((title) => {
+        ...s.choices.map((choice) => {
           const li = document.createElement("li");
-          li.textContent = title;
+          li.append(choiceLabel(choice));
           return li;
         }),
       );

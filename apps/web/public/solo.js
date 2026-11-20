@@ -266,10 +266,10 @@ function showVerdict(next) {
   enterReveal(round);
 }
 
+// The clip plays on through the reveal, so the player hears the rest of the
+// song they just named; Continue stops it in swap.
 function enterReveal(round) {
   clearInterval(tickTimer);
-  audio?.pause();
-  document.body.classList.remove("clip-live");
   celebrate(round);
   prepare(round);
   // The sheet's Continue is the round's one next step; landing focus there
