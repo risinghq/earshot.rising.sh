@@ -269,7 +269,7 @@ describe("the hub's For you tile", () => {
     );
     const body = await response.text();
     expect(body).toContain("For you");
-    expect(body).toContain("Play a few games and this learns your taste");
+    expect(body).toContain("Learns your taste as you play.");
     expect(body).toContain('name="category" value="for-you"');
   });
 

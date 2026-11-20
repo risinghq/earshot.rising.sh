@@ -137,7 +137,7 @@ describe("the play hub", () => {
     expect(response.status).toBe(301);
     expect(response.headers.get("location")).toBe("/?who=room&mode=hard");
     const hub = await (await get("/?mode=hard")).text();
-    expect(hub).toMatch(/value="hard"[^>]*checked/);
+    expect(hub).toMatch(/name="mode" value="hard"/);
   });
 
   it("starts a game from the home page in one tap, with covers and decades", async () => {
@@ -172,9 +172,9 @@ describe("the play hub", () => {
       "Metal",
       "K-pop",
       "Anime",
-      "Top 50 Japan",
-      "Top 50 Peru",
-      "Top 50 Global",
+      'value="top-50-japan"',
+      'value="top-50-peru"',
+      'value="top-50-global"',
       "From my listening",
     ])
       expect(body).toContain(name);

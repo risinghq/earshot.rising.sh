@@ -100,6 +100,21 @@ clip.volume = savedVolume === null ? 0.6 : Number(savedVolume) / 100;
       localStorage.setItem(volumeKey, String(v));
     };
   }
+  // Mute works everywhere, iOS included, and holds across reloads.
+  const muteKey = "earshot-muted";
+  const mute = $("clip-volume-mute");
+  if (mute) {
+    const apply = (muted) => {
+      clip.muted = muted;
+      mute.setAttribute("aria-pressed", String(muted));
+    };
+    apply(localStorage.getItem(muteKey) === "1");
+    mute.onclick = () => {
+      const muted = mute.getAttribute("aria-pressed") !== "true";
+      localStorage.setItem(muteKey, muted ? "1" : "0");
+      apply(muted);
+    };
+  }
 }
 // The icon follows the media element's real state through its events.
 // `hidden` is set as an attribute because the icons are SVG, where the
@@ -385,7 +400,10 @@ function renderRound(s) {
     const tick = () => {
       const left = Math.max(0, s.endsAt - offset - Date.now());
       $("count-left").textContent = Math.ceil(left / 1000);
-      $("count-bar").style.transform = `scaleX(${left / 15000})`;
+      $("count-bar").style.setProperty("--left", String(left / 15000));
+      // Mirrors scoreFor in src/play/quiz.ts.
+      $("count-worth").textContent =
+        left > 0 ? Math.round(100 + (900 * left) / 15000) : 0;
       if (left <= 0) clearInterval(tickTimer);
     };
     tick();

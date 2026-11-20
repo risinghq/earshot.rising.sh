@@ -49,7 +49,7 @@ export function screenPage(code: string, joinUrl: string) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link
           rel="preload"
-          href="/inter-latin.woff2"
+          href="/bricolage-latin.woff2"
           as="font"
           type="font/woff2"
           crossorigin="anonymous"

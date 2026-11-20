@@ -268,7 +268,7 @@ export function renderCard(
       width="${CARD_WIDTH}"
       height="${height}"
       viewBox="0 0 ${CARD_WIDTH} ${height}"
-      font-family="Inter, system-ui, sans-serif"
+      font-family="Bricolage Grotesque, system-ui, sans-serif"
       role="img"
     >
       <title>${snapshot.user.name}'s listening report</title>

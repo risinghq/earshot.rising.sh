@@ -82,7 +82,7 @@ describe("home page", () => {
     const body = await response.text();
     for (const href of ["/", "/play/board", "/groups", "/auth/github"])
       expect(body).toContain(`href="${href}"`);
-    expect(body).toContain('class="tiles"');
+    expect(body).toContain('class="genres"');
   });
 
   it("serves the home page to a signed-in visitor with profile links", async () => {

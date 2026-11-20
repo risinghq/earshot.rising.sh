@@ -1,17 +1,17 @@
+import type { Child } from "hono/jsx";
 import { PillButton, PillLink } from "../ui/pill";
 import { RankedList } from "../ui/ranked";
 import { Section } from "../ui/section";
 import { Segmented } from "../ui/segmented";
 import { ClipPlayer } from "../ui/player";
 import { Page } from "../ui/shell";
-import { Stats } from "../ui/stat";
 import { EmptyState } from "../ui/empty";
 import type { Category } from "./catalog";
 import { forYouSlug } from "./foryou";
 import { tileCovers, type TileFacts } from "./hub";
 import type { Game, RoundResult } from "./game";
 import type { BoardEntry, BoardPeriod, CategoryBoardEntry } from "./results";
-import { categoryBoardDays } from "./results";
+import { categoryBoardDays, categoryBoardSize } from "./results";
 import { roundSeconds, roundsPerGame } from "./game";
 import { defaultMode, modes, type Choice, type Mode } from "./quiz";
 import type { SignedInUser } from "../auth";
@@ -24,9 +24,9 @@ export const modeNames: Record<Mode, string> = {
 };
 
 const modeHints: Record<Mode, string> = {
-  easy: "Titles with artists",
-  normal: "Titles only",
-  hard: "Type the title",
+  easy: "Song + artist",
+  normal: "Title only",
+  hard: "Type it",
 };
 
 function modeButtons(primary: boolean) {
@@ -94,27 +94,20 @@ export function CategoryBoard({ entries }: { entries: CategoryBoardEntry[] }) {
   );
 }
 
-export type PlayWho = "solo" | "room" | "stranger";
-
-// Three looks for the same hub markup, compared through ?variant=. The first
-// is the default.
-export const hubVariants = ["crate", "sleeve", "tracklist"] as const;
-export type HubVariant = (typeof hubVariants)[number];
+export type PlayWho = "solo" | "room";
 
 const whoActions: Record<PlayWho, string> = {
   solo: "/play",
   room: "/play/room",
-  stranger: "/play/match",
 };
+// The hub offers the two shown modes; ?mode=hard still reaches the tiles.
+const hubModes = ["easy", "normal"] as const satisfies readonly Mode[];
 const setupScript = `
 const setup = document.getElementById("play-setup");
-const actions = { solo: "/play", room: "/play/room", stranger: "/play/match" };
-const hints = ${JSON.stringify(modeHints)};
+const actions = { solo: "/play", room: "/play/room" };
 setup.addEventListener("change", () => {
   const who = setup.querySelector('input[name="who"]:checked').value;
   const mode = setup.querySelector('input[name="mode"]:checked').value;
-  document.getElementById("mode-field").disabled = who === "stranger";
-  document.getElementById("mode-hint").textContent = hints[mode];
   document.querySelectorAll("form.tile").forEach((tile) => {
     if (!tile.hasAttribute("data-solo")) tile.action = actions[who];
     tile.querySelector('input[name="mode"]').value = mode;
@@ -133,21 +126,20 @@ const soundMark = (
   </svg>
 );
 
+const playIcon = (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" />
+  </svg>
+);
+
 // Four covers make a mosaic; fewer show the first one whole, and none shows
 // the mark on a tint.
-function tileArt(covers: string[]) {
+function genreArt(covers: string[]) {
   if (covers.length === 0)
-    return (
-      <span class="tile-art is-blank" aria-hidden="true">
-        {soundMark}
-      </span>
-    );
+    return <span class="genre-art is-blank">{soundMark}</span>;
   const shown = covers.length >= tileCovers ? covers : covers.slice(0, 1);
   return (
-    <span
-      class={shown.length === 1 ? "tile-art is-single" : "tile-art"}
-      aria-hidden="true"
-    >
+    <span class={shown.length === 1 ? "genre-art is-single" : "genre-art"}>
       {shown.map((src) => (
         <img
           src={src}
@@ -162,32 +154,8 @@ function tileArt(covers: string[]) {
   );
 }
 
-function tileText(name: string, note?: string) {
-  return (
-    <span class="tile-text">
-      <span class="tile-name">{name}</span>
-      {note && <span class="tile-note">{note}</span>}
-    </span>
-  );
-}
-
-// The tile starts a game on the whole pool; a decade chip narrows it.
-function tile(
-  category: Category,
-  facts: TileFacts,
-  who: PlayWho,
-  mode: Mode,
-  user: SignedInUser | null,
-) {
-  if (category.feed === "mine" && user === null)
-    return (
-      <div class="tile" key={category.slug}>
-        <a class="tile-main" href="/auth/github">
-          {tileArt([])}
-          {tileText(category.name, "Sign in to play your own plays")}
-        </a>
-      </div>
-    );
+// Every form.tile follows the setup choices through setupScript.
+function tileForm(category: Category, who: PlayWho, mode: Mode, body: Child) {
   return (
     <form
       class="tile"
@@ -197,19 +165,51 @@ function tile(
     >
       <input type="hidden" name="category" value={category.slug} />
       <input type="hidden" name="mode" value={mode} />
-      <button class="tile-main" type="submit">
-        {tileArt(facts.covers)}
-        {tileText(
-          category.name,
-          category.feed === "mine" ? "Songs from your plays" : undefined,
-        )}
+      {body}
+    </form>
+  );
+}
+
+// A genre row starts a game on the whole pool from its art or All; a decade
+// chip narrows it. The art repeats All for a larger target, so it stays out of
+// the tab order and the accessibility tree.
+function genreRow(
+  category: Category,
+  facts: TileFacts,
+  who: PlayWho,
+  mode: Mode,
+) {
+  const decades = facts.eras.length;
+  return tileForm(
+    category,
+    who,
+    mode,
+    <>
+      <button
+        class="genre-art-button"
+        type="submit"
+        tabindex={-1}
+        aria-hidden="true"
+      >
+        {genreArt(facts.covers)}
       </button>
-      {facts.eras.length > 0 && (
-        <span
-          class="tile-eras"
+      <div class="genre-body">
+        <p class="genre-title">
+          <b>{category.name}</b>
+          {decades > 1 && <span>{decades} decades</span>}
+        </p>
+        <div
+          class="genre-chips"
           role="group"
           aria-label={`${category.name} by decade`}
         >
+          <button
+            class="chip is-all"
+            type="submit"
+            aria-label={`${category.name}, every decade`}
+          >
+            All
+          </button>
           {facts.eras.map((era) => (
             <button
               class="chip"
@@ -221,31 +221,75 @@ function tile(
               {eraLabel(era)}
             </button>
           ))}
-        </span>
-      )}
-    </form>
+        </div>
+      </div>
+    </>,
   );
 }
 
-// The For you tile is a solo game on every "who" choice, so the setup script
+const chartLabel = (category: Category) =>
+  category.name.replace(/^Top 50 /, "");
+
+function chartChip(
+  category: Category,
+  who: PlayWho,
+  mode: Mode,
+  user: SignedInUser | null,
+) {
+  if (category.feed === "mine" && user === null)
+    return (
+      <a class="chip is-quiet" href="/auth/github" key={category.slug}>
+        {category.name}
+      </a>
+    );
+  return tileForm(
+    category,
+    who,
+    mode,
+    <button
+      class={category.feed === "mine" ? "chip is-quiet" : "chip"}
+      type="submit"
+    >
+      {chartLabel(category)}
+    </button>,
+  );
+}
+
+// The For you card is a solo game on every "who" choice, so the setup script
 // leaves its action alone.
-function forYouTile(mode: Mode, cold: boolean) {
+function forYouCard(mode: Mode, cold: boolean) {
   return (
-    <form class="tile" method="post" action="/play" data-solo>
+    <form class="tile for-you" method="post" action="/play" data-solo>
       <input type="hidden" name="category" value={forYouSlug} />
       <input type="hidden" name="mode" value={mode} />
-      <button class="tile-main" type="submit">
-        {tileArt([])}
-        {tileText(
-          "For you",
-          cold
-            ? "Play a few games and this learns your taste"
-            : "Tracks you know, plus new ones",
-        )}
+      <button type="submit">
+        <span class="for-you-text">
+          <span class="label">For you</span>
+          <span class="for-you-name">Your mix</span>
+          <span class="for-you-note">
+            {cold
+              ? "Learns your taste as you play."
+              : "Tracks you know, plus new ones."}
+          </span>
+        </span>
+        <span class="for-you-play">
+          {playIcon}
+          <span>Play mix</span>
+        </span>
       </button>
     </form>
   );
 }
+
+// Charts and the player's own plays sit apart from the genres: they have no
+// decades and change every week.
+const isChart = (category: Category) =>
+  category.feed === "mine" || category.slug.startsWith("top-50-");
+// Global leads the charts and the player's own plays close them; the
+// country charts keep the catalog's order between.
+const chartRank = (category: Category) =>
+  category.slug === "top-50-global" ? 0 : category.feed === "mine" ? 2 : 1;
+const byChartOrder = (a: Category, b: Category) => chartRank(a) - chartRank(b);
 
 export interface HubOptions {
   categories: Category[];
@@ -254,7 +298,6 @@ export interface HubOptions {
   who?: PlayWho;
   mode?: Mode;
   forYouColdStart?: boolean;
-  variant?: HubVariant;
 }
 
 export function hubPage({
@@ -264,117 +307,138 @@ export function hubPage({
   who = "solo",
   mode = defaultMode,
   forYouColdStart = true,
-  variant = "crate",
 }: HubOptions) {
   const whoChecked = (value: PlayWho) =>
     who === value ? { checked: true } : {};
+  const genres = categories.filter((category) => !isChart(category));
+  const charts = categories.filter(isChart).sort(byChartOrder);
   return Page({
     title: "Guess the song",
     user,
     nav: "play",
-    bodyClass: `hub-${variant}`,
+    bodyClass: "hub",
     children: (
       <>
-        <div class="page-head">
-          <h1>Guess the song</h1>
-          <p class="meta">
-            Ten clips, {roundSeconds} seconds each. Pick a category and name the
-            song; a faster right answer scores more.
-          </p>
-        </div>
-        <form class="play-setup" id="play-setup" method="get" action="/">
-          <fieldset>
-            <legend>Play</legend>
-            <div class="segmented">
-              <label>
-                <input
-                  type="radio"
-                  name="who"
-                  value="solo"
-                  {...whoChecked("solo")}
-                />
-                Solo
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="who"
-                  value="room"
-                  {...whoChecked("room")}
-                />
-                Friends
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="who"
-                  value="stranger"
-                  {...whoChecked("stranger")}
-                />
-                Stranger
-              </label>
-            </div>
-          </fieldset>
-          <fieldset id="mode-field" disabled={who === "stranger"}>
-            <legend>Difficulty</legend>
-            <div class="segmented">
-              {modes.map((value) => (
-                <label title={modeHints[value]}>
-                  <input
-                    type="radio"
-                    name="mode"
-                    value={value}
-                    {...(mode === value ? { checked: true } : {})}
-                  />
-                  {modeNames[value]}
-                </label>
-              ))}
-            </div>
-            <p class="hint" id="mode-hint">
-              {modeHints[mode]}
+        <div class="hub-hero">
+          <div class="hub-intro">
+            <h1 class="display">Guess the song.</h1>
+            <p class="lede">
+              Ten clips, {roundSeconds} seconds each. The faster you’re right,
+              the more you score.
             </p>
-          </fieldset>
-          <noscript>
-            <button class="pill" type="submit">
-              Apply
-            </button>
-          </noscript>
-        </form>
-        <script dangerouslySetInnerHTML={{ __html: setupScript }} />
-        <div class="tiles">
-          {forYouTile(mode, forYouColdStart)}
-          {categories.map((category) =>
-            tile(
-              category,
-              facts[category.slug] ?? { eras: [], covers: [] },
-              who,
-              mode,
-              user,
-            ),
-          )}
+            <form class="play-setup" id="play-setup" method="get" action="/">
+              <fieldset class="setup-row">
+                <legend class="label">Play</legend>
+                <div class="segmented">
+                  <label>
+                    <input
+                      type="radio"
+                      name="who"
+                      value="solo"
+                      {...whoChecked("solo")}
+                    />
+                    Solo
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      name="who"
+                      value="room"
+                      {...whoChecked("room")}
+                    />
+                    Room
+                  </label>
+                </div>
+              </fieldset>
+              <fieldset class="setup-row">
+                <legend class="label">Show</legend>
+                <div class="segmented">
+                  {hubModes.map((value) => (
+                    <label>
+                      <input
+                        type="radio"
+                        name="mode"
+                        value={value}
+                        {...(mode === value ? { checked: true } : {})}
+                      />
+                      {modeHints[value]}
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <noscript>
+                <button class="pill" type="submit">
+                  Apply
+                </button>
+              </noscript>
+            </form>
+            <script dangerouslySetInnerHTML={{ __html: setupScript }} />
+          </div>
+          {forYouCard(mode, forYouColdStart)}
         </div>
-        <section class="artist-search" aria-labelledby="artist-title">
-          <h2 id="artist-title">Play an artist</h2>
-          <form method="get" action="/play/artists" class="inline-form">
-            <input
-              id="artist-q"
-              name="q"
-              type="search"
-              autocomplete="off"
-              placeholder="Artist name"
-              aria-labelledby="artist-title"
-              required
-            />
-            <PillButton type="submit">Search</PillButton>
-          </form>
-          <p class="hint">
-            One artist's top tracks, or two artists blended into one game.
-          </p>
-        </section>
-        <p class="meta">
-          Charts come from Deezer and Apple Music. Previews play from Deezer, or
-          from Apple Music when Deezer has none, and each reveal links to the
-          track.
+        <div class="hub-lists">
+          <section class="hub-section" aria-labelledby="genres-title">
+            <div class="hub-section-head">
+              <h2 id="genres-title">Genres</h2>
+              <p>
+                <span class="is-narrow">Tap a decade</span>
+                <span class="is-wide">Pick a decade, or All</span>
+              </p>
+            </div>
+            <div class="genres">
+              {genres.map((category) =>
+                genreRow(
+                  category,
+                  facts[category.slug] ?? { eras: [], covers: [] },
+                  who,
+                  mode,
+                ),
+              )}
+              <p class="genre-more">
+                <span class="genre-art" aria-hidden="true" />
+                More genres coming
+              </p>
+            </div>
+          </section>
+          <section class="hub-section" aria-labelledby="ways-title">
+            <div class="hub-section-head">
+              <h2 id="ways-title">More ways to play</h2>
+            </div>
+            <div class="ways">
+              {charts.length > 0 && (
+                <div class="way">
+                  <h3>Top 50 charts</h3>
+                  <div class="chips">
+                    {charts.map((category) =>
+                      chartChip(category, who, mode, user),
+                    )}
+                  </div>
+                </div>
+              )}
+              <div class="way">
+                <h3 id="artist-title">Play an artist</h3>
+                <form method="get" action="/play/artists" class="inline-form">
+                  <input
+                    id="artist-q"
+                    name="q"
+                    type="search"
+                    autocomplete="off"
+                    placeholder="Artist name"
+                    aria-labelledby="artist-title"
+                    required
+                  />
+                  <button class="pill ink" type="submit">
+                    Search
+                  </button>
+                </form>
+                <p class="hint">One artist, or blend two into one game.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+        <p class="meta hub-note">
+          Clips and charts from Deezer, with Apple Music as fallback. Every
+          reveal links to the track.
         </p>
       </>
     ),
@@ -386,9 +450,9 @@ export const quitIcon = (
     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
   </svg>
 );
-const flameIcon = (
+const trophyIcon = (
   <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z" />
+    <path d="M7 4h10v3h3v2a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 15.9V18h3v2H8v-2h3v-2.1A5 5 0 0 1 8.3 13H8a4 4 0 0 1-4-4V7h3zm0 5V9H6a2 2 0 0 0 1 1.7zm10 0v1.7A2 2 0 0 0 18 9z" />
   </svg>
 );
 export const checkIcon = (
@@ -427,9 +491,11 @@ function bestStreak(results: Game["results"]) {
 
 // The game's own top bar, shown in place of the site header while a game
 // runs: a way out, the segmented progress through the rounds, then the
-// streak and the score. Client scripts update it by id as rounds land.
+// streak and the score. Client scripts update it by id as rounds land. A
+// finished round's segment turns right or wrong when marks says which.
 export function gameBar({
   done,
+  marks = [],
   total,
   score,
   streak,
@@ -437,6 +503,7 @@ export function gameBar({
   current = true,
 }: {
   done: number;
+  marks?: boolean[];
   total: number;
   score: number;
   streak: number;
@@ -460,14 +527,13 @@ export function gameBar({
         {Array.from({ length: total }, (_, i) => (
           <li
             key={i}
-            class={`seg${i < done ? " is-done" : ""}${current && i === done ? " is-current" : ""}`}
+            class={`seg${i < done ? " is-done" : ""}${i < marks.length ? (marks[i] ? " is-right" : " is-wrong") : ""}${current && i === done ? " is-current" : ""}`}
           />
         ))}
       </ol>
       <div class="game-side">
         <span class="game-streak" hidden={streak < 2}>
-          {flameIcon}
-          <span class="game-streak-n">{streak}</span>
+          Streak ×<span class="game-streak-n">{streak}</span>
         </span>
         <span class="game-score">
           <span class="game-score-n">{score.toLocaleString("en-US")}</span>
@@ -502,7 +568,7 @@ function reportForm(result: RoundResult, categorySlug: string, back: string) {
     <details class="report sheet-report">
       <summary aria-label="Report this clip">
         <span class="report-flag">{flagIcon}</span>
-        <span class="report-label">Report this clip</span>
+        <span class="report-label">Report</span>
       </summary>
       <form class="report-form" method="post" action="/play/report" data-solo>
         <input type="hidden" name="track" value={result.trackKey} />
@@ -531,6 +597,50 @@ export function coverTile(src: string | null, size = 56) {
     <span class="cover-tile" style={`width:${size}px;height:${size}px`}>
       {src && <img src={src} alt="" width={size} height={size} />}
     </span>
+  );
+}
+
+const outIcon = (
+  <svg viewBox="0 0 24 24" class="out-icon" aria-hidden="true">
+    <path d="M8 16L16 8M9 8h7v7" />
+  </svg>
+);
+
+// The answered song, shown on the clip's own stage while the clip plays on.
+// solo.js moves this block into the question's player, so the audio and its
+// pause button survive the reveal.
+function nowPlaying(result: RoundResult, categorySlug: string, back: string) {
+  return (
+    <div class="now">
+      <p class="now-label">
+        <span class="now-eq" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
+        Now playing
+      </p>
+      <span class="cover-tile now-cover">
+        {result.cover && (
+          <img src={result.cover} alt="" width={320} height={320} />
+        )}
+      </span>
+      <div class="now-song">
+        <b class="now-title">{result.title}</b>
+        <span class="now-by">{byline(result)}</span>
+      </div>
+      <div class="now-links">
+        {result.link && (
+          <a class="now-link" href={result.link}>
+            <span class="now-link-long">Listen on</span>
+            {linkService(result.link)}
+            {outIcon}
+          </a>
+        )}
+        {reportForm(result, categorySlug, back)}
+      </div>
+    </div>
   );
 }
 
@@ -565,6 +675,7 @@ export function questionPage(
       <div id="game">
         {gameBar({
           done: game.results.length,
+          marks: game.results.map((result) => result.correct),
           total: roundsPerGame,
           score: game.total,
           streak: streakOf(game.results),
@@ -577,17 +688,21 @@ export function questionPage(
           data-remaining={String(remaining)}
           aria-live="polite"
         >
-          <div class="page-head">
-            <h1>Which song is this?</h1>
-          </div>
+          <p class="label round-count">
+            Round {game.results.length + 1} of {roundsPerGame}
+          </p>
           <ClipPlayer
             src={preview.url}
+            label={game.categoryName}
             audioId="clip"
             toggleId="clip-toggle"
             barId="count-bar"
             leftId="count-left"
+            worthId="count-worth"
             volumeId="clip-volume"
+            timerWaits
           />
+          <h1 class="round-title">Which song is this?</h1>
           {game.mode !== "hard" ? (
             <form
               id="answer-form"
@@ -635,6 +750,11 @@ export function questionPage(
               </div>
             </form>
           )}
+          {game.mode !== "hard" && (
+            <p class="round-keys" aria-hidden="true">
+              <kbd>1–4</kbd> answer <kbd>Space</kbd> pause
+            </p>
+          )}
         </div>
         {quitDialog()}
         <noscript>
@@ -661,12 +781,14 @@ function revealPage(
   user: SignedInUser | null,
 ) {
   const heading = result.correct
-    ? "Correct"
+    ? "Nailed it!"
     : result.timedOut
       ? "Time ran out"
       : "Not quite";
   const last = game.results.length >= roundsPerGame;
   const streak = streakOf(game.results);
+  const lostStreak = result.correct ? 0 : streakOf(game.results.slice(0, -1));
+  const seconds = (result.elapsedMs / 1000).toFixed(1);
   const choiceState = (title: string) =>
     `choice ${title === result.title ? "is-right" : !result.correct && title === result.answer ? "is-wrong" : ""}`;
   return Page({
@@ -677,6 +799,7 @@ function revealPage(
       <div id="game">
         {gameBar({
           done: game.results.length,
+          marks: game.results.map((result) => result.correct),
           total: roundsPerGame,
           score: game.total,
           streak,
@@ -691,6 +814,9 @@ function revealPage(
           data-score={String(result.score)}
           aria-live="polite"
         >
+          <div class="player is-reveal">
+            {nowPlaying(result, game.categorySlug, `/play/${game.id}`)}
+          </div>
           {result.choices.length > 0 ? (
             <div class="choices reveal-choices">
               {result.choices.map((choice, index) => (
@@ -709,6 +835,11 @@ function revealPage(
                     </span>
                   )}
                   {choiceLabel(choice)}
+                  {choice.title === result.answer && (
+                    <span class="choice-you">
+                      You<span class="is-wide">r pick</span>
+                    </span>
+                  )}
                   {choice.title === result.title && result.correct && (
                     <span class="burst" aria-hidden="true">
                       <i />
@@ -743,29 +874,30 @@ function revealPage(
             id="sheet"
           >
             <div class="sheet-in">
-              <div class="sheet-verdict">
-                {result.correct ? checkIcon : crossIcon}
-                <b>{heading}</b>
-                <span
-                  class={`sheet-points${result.score > 0 ? "" : " is-none"}`}
-                  data-points={result.score}
-                >
-                  +{result.score}
-                </span>
-              </div>
-              <div class="sheet-song">
-                {coverTile(result.cover)}
-                <div class="track">
-                  <b>{result.title}</b>
-                  <small class="muted">{byline(result)}</small>
-                  {result.link && (
-                    <a href={result.link}>
-                      Listen on {linkService(result.link)}
-                    </a>
+              <b class="sheet-heading">{heading}</b>
+              <span
+                class={`sheet-points${result.score > 0 ? "" : " is-none"}`}
+                data-points={result.score}
+              >
+                +{result.score}
+              </span>
+              {result.correct ? (
+                <p class="sheet-sub">
+                  {streak >= 2 && (
+                    <span class="sheet-streak">Streak ×{streak}</span>
                   )}
-                </div>
-                {reportForm(result, game.categorySlug, `/play/${game.id}`)}
-              </div>
+                  <span>
+                    <span class="is-wide">Answered </span>in {seconds} s
+                    {streak >= 2 && (
+                      <span class="is-wide"> · {streak} in a row</span>
+                    )}
+                  </span>
+                </p>
+              ) : (
+                lostStreak >= 2 && (
+                  <p class="sheet-sub">Streak reset · you had {lostStreak}</p>
+                )
+              )}
               <form
                 class="sheet-next"
                 method="post"
@@ -774,10 +906,14 @@ function revealPage(
               >
                 <PillButton
                   variant="primary"
+                  large
                   type="submit"
                   id="continue-button"
                 >
                   Continue
+                  <kbd class="sheet-kbd" aria-hidden="true">
+                    Enter
+                  </kbd>
                 </PillButton>
               </form>
             </div>
@@ -788,10 +924,6 @@ function revealPage(
       </div>
     ),
   });
-}
-
-function resultLine(result: RoundResult) {
-  return result.correct ? `+${result.score}` : result.timedOut ? "time" : "0";
 }
 
 export function artistsPage(
@@ -959,84 +1091,210 @@ export function finalPage(
   const fastest = game.results
     .filter((result) => result.correct)
     .reduce((best, result) => Math.min(best, result.elapsedMs), Infinity);
+  const hasBoard = game.categorySlug !== forYouSlug;
+  const placed = hasBoard ? placeOnBoard(board, user, game.total) : null;
+  // The board keeps each player's best, so only a signed-in player's own
+  // entry says whether this game beat it.
+  const ownBest = board.find((entry) => entry.name === user?.name)?.score ?? 0;
+  const newBest = hasBoard && user !== null && game.total > ownBest;
+  const emptyBoard = hasBoard && user === null && board.length === 0;
+  const stats = [
+    { label: "Correct", value: `${correct}/${game.results.length}` },
+    { label: "Best streak", value: String(bestStreak(game.results)) },
+    {
+      label: "Fastest",
+      value: fastest === Infinity ? "—" : `${(fastest / 1000).toFixed(1)} s`,
+    },
+  ];
   return Page({
     title: `Game over · ${game.categoryName}`,
     user,
     chrome: "game",
     children: (
       <div id="game">
-        {gameBar({
-          done: game.results.length,
-          total: roundsPerGame,
-          score: game.total,
-          streak: 0,
-          current: false,
-        })}
-        <div id="round" data-phase="done" aria-live="polite">
-          <div class="page-head">
-            <h1>Game over</h1>
-          </div>
-          <Stats
-            items={[
-              { label: "Score", value: game.total.toLocaleString("en-US") },
-              {
-                label: "Correct",
-                value: `${correct} of ${game.results.length}`,
-              },
-              { label: "Best streak", value: bestStreak(game.results) },
-              {
-                label: "Fastest answer",
-                value:
-                  fastest === Infinity
-                    ? "—"
-                    : `${(fastest / 1000).toFixed(1)} s`,
-              },
-            ]}
-          />
-          <p>
-            <PillLink href="/" variant="primary" large>
-              Play again
-            </PillLink>
-          </p>
-          <div class="duo">
-            <Section title="Rounds">
-              <ul class="rows">
+        <div class="results-head">
+          <a class="results-quit" href="/" aria-label="Back to genres">
+            {quitIcon}
+          </a>
+          <b>{game.categoryName}</b>
+        </div>
+        <div
+          id="round"
+          class={hasBoard ? "results" : "results no-board"}
+          data-phase="done"
+          aria-live="polite"
+        >
+          <div class="results-main">
+            <section class="score-card" aria-labelledby="score-label">
+              <div class="score-top">
+                <h1 class="score-label" id="score-label">
+                  Game over
+                </h1>
+                {newBest && <span class="score-best">New best</span>}
+              </div>
+              <p class="score-n">{game.total.toLocaleString("en-US")}</p>
+              {placed?.rank && (
+                <p class="score-rank">
+                  #{placed.rank} on {game.categoryName}
+                </p>
+              )}
+              <ol
+                class="score-pips"
+                aria-label={`${correct} of ${game.results.length} right`}
+              >
                 {game.results.map((result) => (
-                  <li>
-                    <div class="track">
-                      <b>{result.title}</b>
-                      <small>
-                        {byline(result)}
-                        {result.answer && !result.correct
-                          ? ` · your answer: ${result.answer}`
-                          : ""}
-                      </small>
-                    </div>
-                    <span class="count">{resultLine(result)}</span>
+                  <li class={result.correct ? "is-right" : ""} />
+                ))}
+              </ol>
+            </section>
+            <dl class="results-stats">
+              {stats.map((stat) => (
+                <div>
+                  <dt>{stat.label}</dt>
+                  <dd>{stat.value}</dd>
+                </div>
+              ))}
+            </dl>
+            <div class="results-actions">
+              <form method="post" action="/play">
+                <input
+                  type="hidden"
+                  name="category"
+                  value={game.categorySlug}
+                />
+                <input type="hidden" name="mode" value={game.mode} />
+                <PillButton type="submit" variant="primary" large>
+                  Play again
+                </PillButton>
+              </form>
+              <PillLink href="/" large>
+                Genres
+              </PillLink>
+            </div>
+          </div>
+          {emptyBoard && (
+            <section class="results-card results-board board-empty">
+              <h2>
+                Top scores <small>Last {categoryBoardDays} days</small>
+              </h2>
+              <div class="board-empty-in">
+                <span class="board-trophy" aria-hidden="true">
+                  {trophyIcon}
+                </span>
+                <b>No scores yet</b>
+                <p>
+                  Nobody has finished {game.categoryName} in the last{" "}
+                  {categoryBoardDays} days. Sign in and your{" "}
+                  {game.total.toLocaleString("en-US")} takes #1.
+                </p>
+                <ol class="board-ghosts" aria-hidden="true">
+                  <li />
+                  <li />
+                  <li />
+                </ol>
+                <a class="board-claim" href="/auth/github">
+                  Sign in to claim it
+                </a>
+              </div>
+            </section>
+          )}
+          {placed && !emptyBoard && (
+            <section class="results-card results-board">
+              <h2>
+                Top scores <small>Last {categoryBoardDays} days</small>
+              </h2>
+              <ol class="board-rows">
+                {placed.rows.map((row) => (
+                  <li class={row.you ? "is-you" : ""}>
+                    <span class="board-rank">{row.rank}</span>
+                    <span class="board-name">
+                      {row.you ? (
+                        "You"
+                      ) : (
+                        <a href={`/u/${encodeURIComponent(row.name)}`}>
+                          {row.name}
+                        </a>
+                      )}
+                    </span>
+                    <span class="board-score">
+                      {row.score.toLocaleString("en-US")}
+                    </span>
                   </li>
                 ))}
-              </ul>
-            </Section>
-            {game.categorySlug !== forYouSlug && (
-              <Section
-                title="Top scores"
-                aside={`${game.categoryName} · last ${categoryBoardDays} days`}
-              >
-                <CategoryBoard entries={board} />
-              </Section>
-            )}
-          </div>
-          {user === null && (
-            <p class="meta">
-              <a href="/auth/github">Sign in</a> to keep your points on the{" "}
-              <a href="/play/board">board</a>.
-            </p>
+              </ol>
+              {user === null && (
+                <p class="board-foot">
+                  <a href="/auth/github">Sign in</a> to keep this score on the
+                  board.
+                </p>
+              )}
+            </section>
           )}
+          <section class="results-card results-rounds">
+            <h2>Rounds</h2>
+            <ol class="round-rows">
+              {game.results.map((result, index) => (
+                <li>
+                  <span class="round-i" aria-hidden="true">
+                    {index + 1}
+                  </span>
+                  {coverTile(result.cover, 44)}
+                  <span class="round-song">
+                    <b>{result.title}</b>
+                    <small>
+                      {byline(result)}
+                      {result.timedOut
+                        ? " · no answer"
+                        : !result.correct && result.answer
+                          ? ` · you said ${result.answer}`
+                          : ""}
+                    </small>
+                  </span>
+                  <span
+                    class={`round-points ${result.correct ? "is-right" : "is-wrong"}`}
+                  >
+                    {result.correct ? `+${result.score}` : crossIcon}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </section>
         </div>
         <script src="/solo.js" defer />
       </div>
     ),
   });
+}
+
+const boardRowsShown = 5;
+
+// Where this game's score lands among the other players on the category
+// board. The board keeps each player's best, so the signed-in player's own
+// entry is left out and this game stands in for it. A score below a full
+// board has no rank; the board then shows without the player's row.
+function placeOnBoard(
+  board: CategoryBoardEntry[],
+  user: SignedInUser | null,
+  total: number,
+) {
+  const others = board.filter((entry) => entry.name !== user?.name);
+  const above = others.filter((entry) => entry.score > total).length;
+  const rank = total > 0 && above < categoryBoardSize ? above + 1 : null;
+  const rows = others.map((entry, index) => ({
+    ...entry,
+    rank: index + 1,
+    you: false,
+  }));
+  if (rank === null) return { rank, rows: rows.slice(0, boardRowsShown) };
+  const you = { name: "You", score: total, rank, you: true };
+  const before = rows.slice(0, above).slice(0, boardRowsShown - 1);
+  const after = rows
+    .slice(above)
+    .map((row) => ({ ...row, rank: row.rank + 1 }));
+  return {
+    rank,
+    rows: [...before, you, ...after].slice(0, boardRowsShown),
+  };
 }
 
 export function gamePage(

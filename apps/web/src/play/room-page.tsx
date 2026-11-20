@@ -104,6 +104,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
                 toggleId="clip-toggle"
                 barId="count-bar"
                 leftId="count-left"
+                worthId="count-worth"
                 volumeId="clip-volume"
               />
             </div>
@@ -163,7 +164,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
               <details class="report sheet-report" id="reveal-report" hidden>
                 <summary aria-label="Report this clip">
                   <span class="report-flag">{flagIcon}</span>
-                  <span class="report-label">Report this clip</span>
+                  <span class="report-label">Report</span>
                 </summary>
                 <form class="report-form" method="post" action="/play/report">
                   <input type="hidden" name="track" id="report-track" />

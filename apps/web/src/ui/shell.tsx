@@ -118,7 +118,7 @@ export function Page({
         {head}
         <link
           rel="preload"
-          href="/inter-latin.woff2"
+          href="/bricolage-latin.woff2"
           as="font"
           type="font/woff2"
           crossorigin="anonymous"

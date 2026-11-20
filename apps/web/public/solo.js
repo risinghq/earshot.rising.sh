@@ -63,7 +63,37 @@ function syncIcon() {
   document.body.classList.toggle("clip-live", playing);
 }
 
+// Between asking for sound and hearing it the player says it is loading. The
+// delay keeps a preloaded clip, which starts at once, from flashing it.
+let loadingTimer;
+function setLoading(on) {
+  clearTimeout(loadingTimer);
+  const player = audio?.closest(".player");
+  if (!player) return;
+  if (on)
+    loadingTimer = setTimeout(() => player.classList.add("is-loading"), 300);
+  else player.classList.remove("is-loading");
+}
+
+// Mute works everywhere, iOS included, and holds across rounds and reloads.
+const muteKey = "earshot-muted";
+function wireMute() {
+  const button = $("clip-volume-mute");
+  if (!button) return;
+  const apply = (muted) => {
+    if (audio) audio.muted = muted;
+    button.setAttribute("aria-pressed", String(muted));
+  };
+  apply(localStorage.getItem(muteKey) === "1");
+  button.onclick = () => {
+    const muted = button.getAttribute("aria-pressed") !== "true";
+    localStorage.setItem(muteKey, muted ? "1" : "0");
+    apply(muted);
+  };
+}
+
 function wireVolume() {
+  wireMute();
   const input = $("clip-volume");
   if (!input) return;
   if (audio) audio.volume = clipVolume;
@@ -80,17 +110,20 @@ function wireVolume() {
   };
 }
 
-// The bar runs down as one compositor transition; the timer only updates
-// the seconds and ends the round. Reduced motion has no transitions, so the
-// timer steps the bar there instead.
+// The ring runs down as one transition of --left; the timer only updates the
+// numbers and ends the round. Reduced motion has no transitions, so the timer
+// steps the ring there instead.
 function runBar(bar, remaining) {
   bar.style.transition = "none";
-  bar.style.transform = `scaleX(${remaining / roundMs})`;
+  bar.style.setProperty("--left", String(remaining / roundMs));
   if (reducedMotion) return;
   bar.getBoundingClientRect();
-  bar.style.transition = `transform ${remaining}ms linear`;
-  bar.style.transform = "scaleX(0)";
+  bar.style.transition = `--left ${remaining}ms linear`;
+  bar.style.setProperty("--left", "0");
 }
+
+// Mirrors scoreFor in src/play/quiz.ts: 1000 at the start, 100 at the end.
+const worthAt = (ms) => (ms > 0 ? Math.round(100 + (900 * ms) / roundMs) : 0);
 
 // The server's clock starts when this clip reports "playing": the bar stays
 // full until the report comes back, then runs down the server's remaining
@@ -98,6 +131,7 @@ function runBar(bar, remaining) {
 function wireClock(round, form) {
   const bar = $("count-bar");
   const left = $("count-left");
+  const worth = $("count-worth");
   let reported = false;
   let ticking = false;
   const startTick = (remaining) => {
@@ -109,7 +143,8 @@ function wireClock(round, form) {
     tickTimer = setInterval(() => {
       const ms = Math.max(0, deadline - performance.now());
       left.textContent = String(Math.ceil(ms / 1000));
-      if (reducedMotion) bar.style.transform = `scaleX(${ms / roundMs})`;
+      if (worth) worth.textContent = String(worthAt(ms));
+      if (reducedMotion) bar.style.setProperty("--left", String(ms / roundMs));
       if (ms <= 0) {
         clearInterval(tickTimer);
         if (form) answer(form, null);
@@ -149,12 +184,21 @@ function wirePlayer(round) {
   ["play", "playing", "pause", "ended"].forEach((event) =>
     audio.addEventListener(event, syncIcon),
   );
-  toggle.onclick = () => {
-    if (audio.paused) {
-      audio.play().catch(() => toggle.classList.add("needs-click"));
-    } else audio.pause();
+  ["play", "waiting"].forEach((event) =>
+    audio.addEventListener(event, () => setLoading(true)),
+  );
+  ["playing", "pause", "ended", "error"].forEach((event) =>
+    audio.addEventListener(event, () => setLoading(false)),
+  );
+  const blocked = () => {
+    setLoading(false);
+    toggle.classList.add("needs-click");
   };
-  audio.play().catch(() => toggle.classList.add("needs-click"));
+  toggle.onclick = () => {
+    if (audio.paused) audio.play().catch(blocked);
+    else audio.pause();
+  };
+  audio.play().catch(blocked);
   wireClock(round, form);
 }
 
@@ -233,8 +277,8 @@ function fadeCovers(root) {
 }
 
 // The verdict lands in the question's own elements: the choices keep their
-// boxes and take the verdict's classes and icons, the player stays where it
-// was, and the sheet slides up over them.
+// boxes and take the verdict's classes and icons, the player turns into the
+// now-playing card with its audio still running, and the sheet slides up.
 function showVerdict(next) {
   const round = $("round");
   const nextRound = next.querySelector("#round");
@@ -258,7 +302,14 @@ function showVerdict(next) {
     form.className = verdict.className;
     form.removeAttribute("id");
   } else form.replaceWith(verdict);
-  round.querySelector(".player")?.classList.add("is-over");
+  const player = round.querySelector(".player");
+  const now = nextRound.querySelector(".now");
+  if (player && now) {
+    player.append(now);
+    player.classList.add("is-reveal");
+    fadeCovers(now);
+    wireForms(now);
+  }
   const sheet = nextRound.querySelector("#sheet");
   round.append(sheet);
   fadeCovers(sheet);
@@ -292,11 +343,12 @@ async function answer(form, submitter) {
   if (busy) return;
   busy = true;
   clearInterval(tickTimer);
-  // The bar stops where the answer caught it.
+  // The ring stops where the answer caught it.
   const bar = $("count-bar");
   if (bar) {
-    bar.style.transform = getComputedStyle(bar).transform;
+    const caught = getComputedStyle(bar).getPropertyValue("--left");
     bar.style.transition = "none";
+    bar.style.setProperty("--left", caught);
   }
   submitter?.classList.add("is-picked");
   form.classList.add("is-locked");
@@ -414,8 +466,9 @@ function wire(root) {
   }
 }
 
-// Keyboard: 1-4 answers while a question is open, Enter or Space advances
-// from the sheet. Number keys do nothing once the sheet is up.
+// Keyboard: 1-4 answers while a question is open and Space plays or pauses
+// the clip; Enter or Space advances from the sheet. Number keys do nothing
+// once the sheet is up.
 document.addEventListener("keydown", (event) => {
   if (event.repeat || document.querySelector("dialog[open]")) return;
   const round = $("round");
@@ -426,6 +479,11 @@ document.addEventListener("keydown", (event) => {
     document
       .querySelectorAll("#answer-form .choice")
       [Number(event.key) - 1]?.click();
+  } else if (phase === "question" && event.key === " ") {
+    if (event.target.closest?.("button, a, summary, input, select, textarea"))
+      return;
+    event.preventDefault();
+    $("clip-toggle")?.click();
   } else if (
     phase === "reveal" &&
     (event.key === "Enter" || event.key === " ")

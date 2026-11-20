@@ -712,7 +712,8 @@ describe("chart warming", () => {
     expect(requested).toHaveLength(2);
     expect(requested[1]).toContain("/pe/");
 
-    const home = await (await get("/")).text();
-    expect(home).toContain("https://art.example/jp-1.jpg");
+    expect(await env.CACHE.get("play:cat:top-50-japan")).toContain(
+      "https://art.example/jp-1.jpg",
+    );
   });
 });

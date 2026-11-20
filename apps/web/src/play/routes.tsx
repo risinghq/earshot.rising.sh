@@ -33,7 +33,6 @@ import {
   boardPage,
   categoryBoardPage,
   hubPage,
-  hubVariants,
   matchPage,
 } from "./pages";
 import { tileFacts } from "./hub";
@@ -109,7 +108,10 @@ async function gameInput(
     return context.html(feedErrorPage(category.name, user), 502);
   const anon = anonKey(context);
   return {
-    category,
+    category:
+      era === null
+        ? category
+        : { ...category, name: `${category.name} · ${era}s` },
     mode,
     tracks,
     userId: user?.id ?? null,
@@ -360,16 +362,14 @@ export async function renderHub(context: PlayContext) {
   ]);
   const who = context.req.query("who");
   const mode = context.req.query("mode");
-  const variant = context.req.query("variant");
   return context.html(
     hubPage({
       categories,
       facts,
       user,
-      who: who === "room" || who === "stranger" ? who : "solo",
+      who: who === "room" ? "room" : "solo",
       mode: parseMode(mode) ?? defaultMode,
       forYouColdStart: cold,
-      variant: hubVariants.find((name) => name === variant),
     }),
   );
 }

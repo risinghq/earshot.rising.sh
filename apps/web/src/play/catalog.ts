@@ -124,8 +124,8 @@ async function userCatalog(db: D1Database, userId: number) {
 }
 
 // The hub reads chart covers from the cache only, so the cron reloads one
-// expired chart per run: at most one upstream request a minute, and a chart
-// tile shows covers whether or not anyone played it lately.
+// expired chart per run: at most one upstream request a minute, and a
+// chart-fed genre shows covers whether or not anyone played it lately.
 export async function warmChartCache(env: Env) {
   if (!env.CACHE) return;
   const charts = await env.DB.prepare(

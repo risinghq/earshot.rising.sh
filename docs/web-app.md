@@ -93,10 +93,11 @@ Every visual value lives in `public/styles.css` as custom properties on `:root`:
 the neutral and accent colours in OKLCH, the type scale, the spacing scale,
 radii, shadows, easing and durations. Components read the tokens; the dark theme
 is a second set of the same names under `@media (prefers-color-scheme: dark)`,
-and `prefers-reduced-motion` turns every transition off. Inter is self-hosted as
-a variable woff2 in `public/` with its OFL licence. The only client script is
-the copy button on a freshly issued token and the export helper on the settings
-page; both are progressive enhancement over working markup.
+and `prefers-reduced-motion` turns every transition off. Bricolage Grotesque is
+self-hosted as a variable woff2 (weight and optical size) in `public/` with its
+OFL licence. The only client script is the copy button on a freshly issued token
+and the export helper on the settings page; both are progressive enhancement
+over working markup.
 
 ## 2. Data model
 
