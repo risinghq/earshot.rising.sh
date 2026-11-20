@@ -82,6 +82,16 @@
         "year": 1973
       },
       {
+        "itunesId": 1415197764,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/8d/df/6e/8ddf6ee3-ac37-ebc4-2c16-bbf0f366490a/mzaf_5244476634022146881.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/make-your-own-kind-of-music/1415197628?i=1415197764",
+        "title": "Make Your Own Kind Of Music",
+        "artist": "Cass Elliot",
+        "artistId": 185949,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/d0/f1/38/d0f138d4-d1c7-3bef-2230-d7ffdaff842d/00602567823995.rgb.jpg/250x250bb.jpg",
+        "year": 1971
+      },
+      {
         "id": 548260,
         "title": "Copacabana (At the Copa)",
         "artist": "Barry Manilow",
@@ -136,6 +146,16 @@
         "artistId": 61698,
         "cover": "https://cdn-images.dzcdn.net/images/cover/4fc5fb1a478fa2a1a9810a44e529fcbd/250x250-000000-80-0-0.jpg",
         "year": 1970
+      },
+      {
+        "itunesId": 1443117144,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/87/58/fe/8758feef-b349-08c1-7d0a-ad296d8d0385/mzaf_5570034544245718171.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/i-want-you-back/1443117137?i=1443117144",
+        "title": "I Want You Back",
+        "artist": "The Jackson 5",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music118/v4/9b/c3/9e/9bc39e99-b1b6-2a72-c062-87901e92b12d/00602547026156.rgb.jpg/250x250bb.jpg",
+        "year": 1971
       },
       {
         "id": 884041,
@@ -328,6 +348,16 @@
         "artistId": 3102,
         "cover": "https://cdn-images.dzcdn.net/images/cover/b9a111b687d82473b88c9c3dacfe13d1/250x250-000000-80-0-0.jpg",
         "year": 1972
+      },
+      {
+        "itunesId": 1442885978,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/0c/2f/f2/0c2ff2d4-1d15-ccb1-647b-66fe318da412/mzaf_18439816155433664308.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/abc/1442885957?i=1442885978",
+        "title": "ABC",
+        "artist": "The Jackson 5",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/cb/38/70/cb3870c2-1a9b-9310-e218-9d0f5a5e98f5/06UMGIM05267.rgb.jpg/250x250bb.jpg",
+        "year": 1970
       },
       {
         "id": 1581601,
@@ -1694,6 +1724,16 @@
         "year": 1990
       },
       {
+        "itunesId": 6778512181,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/b8/dc/a5/b8dca5d2-8359-a980-fd2b-ef5ab3f51743/mzaf_12463829570631962003.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/youre-the-one-that-i-want-remastered-2022-feat-john-travolta/6778511261?i=6778512181",
+        "title": "You're The One That I Want",
+        "artist": "Olivia Newton-John",
+        "artistId": 5632,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6d/98/6e/6d986ec3-688d-5222-aad3-0a05144fbc1d/00792755903254_Cover.jpg/250x250bb.jpg",
+        "year": 1992
+      },
+      {
         "id": 540175,
         "title": "...Baby One More Time",
         "artist": "Britney Spears",
@@ -2944,19 +2984,21 @@
         "year": 2005
       },
       {
+        "itunesId": 188261029,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/03/db/c9/03dbc935-12c2-4922-51ff-76170883753a/mzaf_13989672290091509449.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/whenever-wherever/188260845?i=188261029",
+        "title": "Whenever, Wherever",
+        "artist": "Shakira",
+        "artistId": 160,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/c5/4b/ff/c54bffa0-2333-1a55-e67e-a9c640e06f6f/mzi.hwxgzhsl.jpg/250x250bb.jpg",
+        "year": 2001
+      },
+      {
         "id": 484274992,
         "title": "La Tortura",
         "artist": "Shakira",
         "artistId": 160,
         "cover": "https://cdn-images.dzcdn.net/images/cover/5908097a9257e92f79a253665ecf664b/250x250-000000-80-0-0.jpg",
-        "year": 2005
-      },
-      {
-        "id": 2734420611,
-        "title": "Día de Enero",
-        "artist": "Shakira",
-        "artistId": 160,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/3c5b86beb1fa0de148444413aa0576c4/250x250-000000-80-0-0.jpg",
         "year": 2005
       },
       {
@@ -3510,6 +3552,16 @@
         "artistId": 45,
         "cover": "https://cdn-images.dzcdn.net/images/cover/c6385c391e17a1c16beccb7ef7da976f/250x250-000000-80-0-0.jpg",
         "year": 2000
+      },
+      {
+        "itunesId": 1545382976,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/a7/8d/c3/a78dc37f-7267-d54d-22be-83fb4b86ec4f/mzaf_16748259399308494343.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/make-you-feel-my-love/1545382283?i=1545382976",
+        "title": "Make You Feel My Love",
+        "artist": "Adele",
+        "artistId": 75798,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/93/3b/dd/933bddde-bd73-0fd2-70f5-f4cf683c34f7/191404093863.png/250x250bb.jpg",
+        "year": 2008
       },
       {
         "id": 512575552,
@@ -4594,6 +4646,16 @@
         "year": 2016
       },
       {
+        "itunesId": 1544491998,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/08/22/2e/08222e25-43f5-20e6-a442-b8127ac83368/mzaf_1689070223363740216.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/someone-like-you/1544491232?i=1544491998",
+        "title": "Someone Like You",
+        "artist": "Adele",
+        "artistId": 75798,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/eb/ca/25/ebca2596-cd1e-b295-91a3-771c868d0a79/191404113868.png/250x250bb.jpg",
+        "year": 2011
+      },
+      {
         "id": 1174602992,
         "title": "Rolling in the Deep",
         "artist": "Adele",
@@ -4615,14 +4677,6 @@
         "artist": "Adele",
         "artistId": 240790241,
         "cover": "https://cdn-images.dzcdn.net/images/cover/c139ebed4538cd616f0441a86fed7f5c/250x250-000000-80-0-0.jpg",
-        "year": 2015
-      },
-      {
-        "id": 1174605082,
-        "title": "When We Were Young",
-        "artist": "Adele",
-        "artistId": 75798,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/eaeadce7932a97533fe495881d2fcd7a/250x250-000000-80-0-0.jpg",
         "year": 2015
       },
       {
@@ -4994,20 +5048,22 @@
         "year": 2018
       },
       {
+        "itunesId": 1443105360,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c2/9c/c0/c29cc06d-aaf0-6b59-2f54-b1444d4b510c/mzaf_10052677462366170180.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/we-found-love-feat-calvin-harris/1443105016?i=1443105360",
+        "title": "We Found Love",
+        "artist": "Calvin Harris",
+        "artistId": 12178,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/ac/51/45/ac51452d-c03f-94fb-6f3b-4f18b7beee53/11UMGIM38934.rgb.jpg/250x250bb.jpg",
+        "year": 2011
+      },
+      {
         "id": 123883254,
         "title": "This Is What You Came For",
         "artist": "Calvin Harris",
         "artistId": 12178,
         "cover": "https://cdn-images.dzcdn.net/images/cover/b8af7ff13a47e2775307299843da9b36/250x250-000000-80-0-0.jpg",
         "year": 2016
-      },
-      {
-        "id": 88936747,
-        "title": "Summer",
-        "artist": "Calvin Harris",
-        "artistId": 12178,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/a72e5db10e9168cd6f5065fbe750cdbb/250x250-000000-80-0-0.jpg",
-        "year": 2014
       },
       {
         "id": 70266756,
@@ -5890,6 +5946,16 @@
         "year": 2010
       },
       {
+        "itunesId": 617154366,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/57/a5/85/57a585aa-f1bc-7619-881b-f8a04a5541d5/mzaf_6906185026678279401.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/get-lucky/617154241?i=617154366",
+        "title": "Get Lucky (Radio Edit)",
+        "artist": "Daft Punk",
+        "artistId": 27,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/e8/43/5f/e8435ffa-b6b9-b171-40ab-4ff3959ab661/886443919266.jpg/250x250bb.jpg",
+        "year": 2013
+      },
+      {
         "id": 142808100,
         "title": "Stay",
         "artist": "ZEDD",
@@ -5970,6 +6036,16 @@
         "year": 2014
       },
       {
+        "itunesId": 1754031516,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/33/0b/1e/330b1e56-9db5-a341-546e-f00dc2ec36e5/mzaf_4304570900509942884.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/ho-hey/1754031514?i=1754031516",
+        "title": "Ho Hey",
+        "artist": "The Lumineers",
+        "artistId": 793825,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/83/20/a9/8320a945-11ac-e7cd-29e7-d80782698f55/18515.jpg/250x250bb.jpg",
+        "year": 2012
+      },
+      {
         "id": 17880924,
         "title": "Drive By",
         "artist": "Train",
@@ -5983,6 +6059,16 @@
         "artist": "Taylor Swift",
         "artistId": 12246,
         "cover": "https://cdn-images.dzcdn.net/images/cover/e6f3afd8a5c3d8ea797f458694166e47/250x250-000000-80-0-0.jpg",
+        "year": 2017
+      },
+      {
+        "itunesId": 1207120448,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/64/7f/96/647f9601-aa94-3599-6c73-0143510b8b92/mzaf_13538528720942742126.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/something-just-like-this/1207120422?i=1207120448",
+        "title": "Something Just Like This",
+        "artist": "The Chainsmokers",
+        "artistId": 4104927,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/9d/56/6f/9d566f55-5253-bed6-5c31-df952dae649d/886446379289.jpg/250x250bb.jpg",
         "year": 2017
       },
       {
@@ -6264,6 +6350,14 @@
         "artistId": 429675,
         "cover": "https://cdn-images.dzcdn.net/images/cover/5b59dc18e109515420f8237719bd2186/250x250-000000-80-0-0.jpg",
         "year": 2010
+      },
+      {
+        "id": 88936747,
+        "title": "Summer",
+        "artist": "Calvin Harris",
+        "artistId": 12178,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/a72e5db10e9168cd6f5065fbe750cdbb/250x250-000000-80-0-0.jpg",
+        "year": 2014
       }
     ],
     "2020": [
@@ -6578,6 +6672,16 @@
         "artistId": 4050205,
         "cover": "https://cdn-images.dzcdn.net/images/cover/e4b16c1afe136140bba34368357e8f05/250x250-000000-80-0-0.jpg",
         "year": 2024
+      },
+      {
+        "itunesId": 1533345332,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/79/04/a0/7904a09a-df83-8a26-201d-0f6d2ff81bbd/mzaf_12164264187541584175.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/monster/1533345318?i=1533345332",
+        "title": "Monster (Shawn Mendes & Justin Bieber)",
+        "artist": "Shawn Mendes",
+        "artistId": 5962948,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/d5/f0/d2/d5f0d270-fc16-5691-d83e-917c067a6561/20UMGIM83351.rgb.jpg/250x250bb.jpg",
+        "year": 2020
       },
       {
         "id": 1097366382,
@@ -8920,6 +9024,16 @@
         "year": 1977
       },
       {
+        "itunesId": 1469554755,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/1e/ab/f1/1eabf1cf-c50b-677f-9053-b6bf2e0cb184/mzaf_363503424820462442.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/midnight-rider/1469554531?i=1469554755",
+        "title": "Midnight Rider",
+        "artist": "Allman Brothers Band",
+        "artistId": 1303390,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/02/e0/c1/02e0c149-98a9-61db-ca1f-e8defd9a6eb3/06UMGIM04397.rgb.jpg/250x250bb.jpg",
+        "year": 1970
+      },
+      {
         "id": 97640852,
         "title": "Feel like Makin' Love",
         "artist": "Bad Company",
@@ -9690,6 +9804,16 @@
         "year": 1989
       },
       {
+        "itunesId": 190178976,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d3/44/66/d3446603-805d-b30f-4717-0a89c70f4da4/mzaf_12386757448387371441.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/i-hate-myself-for-loving-you/190178956?i=190178976",
+        "title": "I Hate Myself for Loving You",
+        "artist": "Joan Jett & the Blackhearts",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/49/f7/8b/49f78bb0-c748-1c5c-e634-b1cad8fbe803/074644414622.jpg/250x250bb.jpg",
+        "year": 1988
+      },
+      {
         "id": 69962765,
         "title": "Rock the Casbah",
         "artist": "The Clash",
@@ -9712,6 +9836,16 @@
         "artistId": 931,
         "cover": "https://cdn-images.dzcdn.net/images/cover/f4df1d0cc2d586cefd98dde8da717acd/250x250-000000-80-0-0.jpg",
         "year": 1983
+      },
+      {
+        "itunesId": 1881685586,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/3a/3f/67/3a3f67cf-2d47-2ab2-66a2-368fad813e0e/mzaf_2591657320565347448.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/i-love-rock-n-roll/1881685281?i=1881685586",
+        "title": "I Love Rock 'N Roll",
+        "artist": "Joan Jett & the Blackhearts",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ab/11/50/ab115097-b05e-fee8-61e1-4607fb82af89/886447254332_Cover.jpg/250x250bb.jpg",
+        "year": 1981
       },
       {
         "id": 454843722,
@@ -9832,6 +9966,16 @@
         "artistId": 3038,
         "cover": "https://cdn-images.dzcdn.net/images/cover/272478a3b68823e019c8ca5ee1e8f56f/250x250-000000-80-0-0.jpg",
         "year": 1983
+      },
+      {
+        "itunesId": 1308514623,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/bc/1c/80/bc1c806d-9256-306e-aa2c-d9733c835afe/mzaf_4552754320268551306.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/walk-this-way-feat-aerosmith/1308514619?i=1308514623",
+        "title": "Walk This Way",
+        "artist": "Run–D.M.C.",
+        "artistId": 49116291,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6c/52/83/6c5283eb-146f-bde5-30aa-0e9892b6fc04/888880788566.jpg/250x250bb.jpg",
+        "year": 1986
       },
       {
         "id": 3590156,
@@ -10108,11 +10252,13 @@
         "year": 1991
       },
       {
-        "id": 505510312,
-        "title": "You Could Be Mine",
+        "itunesId": 1440896173,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/19/34/86/193486f5-08ed-62a1-3aed-24ef52345aab/mzaf_10055600496027634278.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/dont-cry/1440896026?i=1440896173",
+        "title": "Don't Cry",
         "artist": "Guns N' Roses",
         "artistId": 663,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/c32f893b8670d5a3d9b1e70078bbc8fa/250x250-000000-80-0-0.jpg",
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/6a/e2/1f/6ae21fa9-c897-3be1-2967-50eefae22b93/06UMGIM05041.rgb.jpg/250x250bb.jpg",
         "year": 1991
       },
       {
@@ -10476,20 +10622,22 @@
         "year": 1997
       },
       {
+        "itunesId": 699606036,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/22/25/5e/22255e4a-eee1-d2e9-75d6-4dfe13731caf/mzaf_3223947677898712742.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/girls-and-boys/699606030?i=699606036",
+        "title": "Girls and Boys",
+        "artist": "Blur",
+        "artistId": 743,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/03/e7/e4/03e7e46b-2cf3-25b4-a131-dadde8ddbd22/5099991496553.jpg/250x250bb.jpg",
+        "year": 1994
+      },
+      {
         "id": 44134631,
         "title": "Parklife",
         "artist": "Blur",
         "artistId": 743,
         "cover": "https://cdn-images.dzcdn.net/images/cover/98f245ad2e96e9a3d80f5a4ed085d3cf/250x250-000000-80-0-0.jpg",
         "year": 1994
-      },
-      {
-        "id": 3102133,
-        "title": "Coffee & TV",
-        "artist": "Blur",
-        "artistId": 743,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/1e6f6130ca0ccbdd0cde4dc2b05e6df9/250x250-000000-80-0-0.jpg",
-        "year": 1999
       },
       {
         "id": 952788,
@@ -10881,6 +11029,16 @@
         "artist": "Oasis",
         "artistId": 927,
         "cover": "https://cdn-images.dzcdn.net/images/cover/a0c7d98073d95a3e84406616e623df27/250x250-000000-80-0-0.jpg",
+        "year": 1994
+      },
+      {
+        "itunesId": 1890580963,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/96/ac/b6/96acb64d-ccef-21ff-c6f0-f82d2aebae50/mzaf_2299531817533401249.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/say-it-aint-so-2024-remaster/1890580956?i=1890580963",
+        "title": "Say It Ain't So",
+        "artist": "Weezer",
+        "artistId": 418,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/98/f8/ab/98f8ab48-2bb6-ef63-4061-404459b02202/16UMGIM52971.rgb.jpg/250x250bb.jpg",
         "year": 1994
       },
       {
@@ -13628,6 +13786,26 @@
         "year": 1997
       },
       {
+        "itunesId": 423045744,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/8e/11/d6/8e11d658-a045-6a72-ebb8-da95a2cc3d22/mzaf_9626341967385658074.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/blind/423045626?i=423045744",
+        "title": "Blind",
+        "artist": "Korn",
+        "artistId": 240940521,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/09/2b/e7/092be7d0-7697-220d-c000-97f366e723e4/mzi.anacpwuj.jpg/250x250bb.jpg",
+        "year": 1994
+      },
+      {
+        "itunesId": 1831584743,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c8/20/ff/c820ff8c-0564-8fb6-6e92-70f795a69aad/mzaf_16129259738892587094.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/freak-on-a-leash/1831584251?i=1831584743",
+        "title": "Freak On a Leash",
+        "artist": "Korn",
+        "artistId": 240940521,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/c7/03/a2/c703a2c4-97d1-106d-4e25-10322d7063ea/196873486703.jpg/250x250bb.jpg",
+        "year": 1998
+      },
+      {
         "id": 846026,
         "title": "Return to Serenity",
         "artist": "Testament",
@@ -15284,6 +15462,16 @@
         "year": 2009
       },
       {
+        "itunesId": 854927955,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/65/ab/e1/65abe13d-c311-e1a9-5460-6f6449005ab9/mzaf_9309321723130912702.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/into-the-new-world/854926859?i=854927955",
+        "title": "Into the New World",
+        "artist": "Girls' Generation",
+        "artistId": 1310497,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/96/9b/d8/969bd840-2623-9385-81a6-2ee655e0447a/asset.jpg/250x250bb.jpg",
+        "year": 2007
+      },
+      {
         "id": 80630286,
         "title": "Genie",
         "artist": "Girls' Generation",
@@ -15420,6 +15608,16 @@
         "year": 2003
       },
       {
+        "itunesId": 1062469154,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/21/60/5e/21605e48-3b1a-75aa-1a7a-2ba0aa4b3be5/mzaf_9208274207144162623.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/mirotic/1062468818?i=1062469154",
+        "title": "MIROTIC",
+        "artist": "TVXQ!",
+        "artistId": 63705822,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music5/v4/94/4e/10/944e107b-e37d-9fa3-bec1-d5c430f0c70a/170161.jpg/250x250bb.jpg",
+        "year": 2008
+      },
+      {
         "id": 2373616675,
         "title": "Replay",
         "artist": "Shine",
@@ -15482,6 +15680,16 @@
         "artistId": 398073,
         "cover": "https://cdn-images.dzcdn.net/images/cover/717e0166ec0bd8842b13da15a10713e0/250x250-000000-80-0-0.jpg",
         "year": 2002
+      },
+      {
+        "itunesId": 1062475773,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/fe/e1/1f/fee11f0b-577e-809d-da57-ad5ed1286593/mzaf_10294497680196176930.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/rising-sun/1062475770?i=1062475773",
+        "title": "Rising Sun",
+        "artist": "TVXQ!",
+        "artistId": 63705822,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music7/v4/4d/ea/e6/4deae60f-0602-3c6c-3b3a-aaf5da0a9f6a/8011132.jpg/250x250bb.jpg",
+        "year": 2005
       }
     ],
     "2010": [
@@ -15870,11 +16078,13 @@
         "year": 2016
       },
       {
-        "id": 728262542,
-        "title": "Ko Ko Bop",
+        "itunesId": 1260294769,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/40/7a/6f/407a6f86-ec8d-22d3-3e4c-5963feac8bd2/mzaf_2565979498986753884.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/the-eve/1260294767?i=1260294769",
+        "title": "The Eve",
         "artist": "EXO",
         "artistId": 88684,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/0a59bcedebb7d42296de3073a54b9803/250x250-000000-80-0-0.jpg",
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/e0/e6/45/e0e6457b-98c2-e86a-158f-63f234e62ed7/EXO_04_THE_WAR_DC_KOREAN_Ver.jpg/250x250bb.jpg",
         "year": 2017
       },
       {
@@ -15902,6 +16112,16 @@
         "year": 2016
       },
       {
+        "itunesId": 1445144527,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/00/53/c6/0053c6f7-6342-7a3d-37c5-60b896948bdb/mzaf_10727579274479911915.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/gangnam-style/1445144506?i=1445144527",
+        "title": "Gangnam Style",
+        "artist": "PSY",
+        "artistId": 398073,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/7c/52/87/7c5287bc-818f-55ed-e607-08b052963632/12UMGIM50914.rgb.jpg/250x250bb.jpg",
+        "year": 2012
+      },
+      {
         "id": 2124683037,
         "title": "Gentleman",
         "artist": "PSY",
@@ -15910,12 +16130,14 @@
         "year": 2013
       },
       {
-        "id": 79088205,
-        "title": "Hangover",
+        "itunesId": 1315522632,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/b2/83/c0/b283c0a1-cbc1-25b6-c0bd-640433da97e3/mzaf_8319634028180525501.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/daddy-feat-cl/1315522223?i=1315522632",
+        "title": "DADDY",
         "artist": "PSY",
         "artistId": 398073,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/3dc384c3f16347a803d95e7c559e39d2/250x250-000000-80-0-0.jpg",
-        "year": 2014
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/a8/8d/58/a88d588b-fa3a-b859-d331-7a8af2f152c0/PSY-Cover-1400.jpg/250x250bb.jpg",
+        "year": 2015
       },
       {
         "id": 841869142,
@@ -16375,7 +16597,8 @@
       },
       {
         "id": 1834294277,
-        "title": "Daydream (백일몽)",
+        "title": "Daydream",
+        "original": "Daydream (백일몽)",
         "artist": "j-hope",
         "artistId": 9031142,
         "cover": "https://cdn-images.dzcdn.net/images/cover/19c37cf701f7ede70d3ae791398cc97a/250x250-000000-80-0-0.jpg",
@@ -16960,20 +17183,22 @@
         "year": 2021
       },
       {
+        "itunesId": 6830550035,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/f7/ef/94/f7ef943a-1d02-8ea5-613a-88b26fa4a550/mzaf_18127139853261210505.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/still-valid/6830550018?i=6830550035",
+        "title": "Still Valid",
+        "artist": "MOMOLAND",
+        "artistId": 5845339,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e2/99/06/e2990602-fea1-b211-a258-d0431709edba/1200220433919.jpg/250x250bb.jpg",
+        "year": 2026
+      },
+      {
         "id": 1141182462,
         "title": "Ready Or Not",
         "artist": "MOMOLAND",
         "artistId": 5845339,
         "cover": "https://cdn-images.dzcdn.net/images/cover/f8bb6dfee1d66ba9b71f65f66868a311/250x250-000000-80-0-0.jpg",
         "year": 2020
-      },
-      {
-        "id": 1616534582,
-        "title": "Yummy Yummy Love",
-        "artist": "MOMOLAND",
-        "artistId": 5845339,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/8694162fa6ebeefa1ee6248c64ceb196/250x250-000000-80-0-0.jpg",
-        "year": 2022
       },
       {
         "id": 2088671947,
@@ -17240,6 +17465,16 @@
         "year": 2024
       },
       {
+        "itunesId": 1691699796,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/06/71/42/06714261-4569-2c21-08eb-24e14a1c43e9/mzaf_11114569860201605765.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/bouncy-k-hot-chilli-peppers/1691699403?i=1691699796",
+        "title": "BOUNCY",
+        "artist": "ATEEZ",
+        "artistId": 49280302,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/3d/b9/86/3db98693-a348-6e05-3e41-78626b4237bb/196871212342.jpg/250x250bb.jpg",
+        "year": 2023
+      },
+      {
         "id": 1488314292,
         "title": "Deja Vu",
         "artist": "ATEEZ",
@@ -17254,14 +17489,6 @@
         "artistId": 49280302,
         "cover": "https://cdn-images.dzcdn.net/images/cover/f408e0c0aae24124f3796876a0dafac8/250x250-000000-80-0-0.jpg",
         "year": 2023
-      },
-      {
-        "id": 2811862352,
-        "title": "WORK",
-        "artist": "ATEEZ",
-        "artistId": 49280302,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/eba976dd0399610b87130e5c1446812b/250x250-000000-80-0-0.jpg",
-        "year": 2024
       },
       {
         "id": 2292275515,
@@ -17344,19 +17571,21 @@
         "year": 2024
       },
       {
+        "itunesId": 1833385020,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/6d/a5/c8/6da5c8c7-221e-7730-cb56-f49f30d6e393/mzaf_8802735820329058204.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/superpower/1833385019?i=1833385020",
+        "title": "SUPERPOWER",
+        "artist": "KISS OF LIFE",
+        "artistId": 6389700,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/06/eb/1b/06eb1b6b-e720-efe3-a1a1-a172f8a73827/00198704675423_Cover.jpg/250x250bb.jpg",
+        "year": 2024
+      },
+      {
         "id": 3910166341,
         "title": "Who is she",
         "artist": "KISS OF LIFE",
         "artistId": 6389700,
         "cover": "https://cdn-images.dzcdn.net/images/cover/112aaeb3003da66b4e4d1ac89611ee1a/250x250-000000-80-0-0.jpg",
-        "year": 2026
-      },
-      {
-        "id": 4164951472,
-        "title": "SWEAT",
-        "artist": "KISS OF LIFE",
-        "artistId": 6389700,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/e9990c0b6f95bed4dcfb1b1449c19df3/250x250-000000-80-0-0.jpg",
         "year": 2026
       },
       {
@@ -17384,6 +17613,16 @@
         "year": 2023
       },
       {
+        "itunesId": 1565510602,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/9b/9d/ef/9b9def3d-c54c-427e-b134-c8c2a454156f/mzaf_1531642508895635545.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/hot-sauce/1565510601?i=1565510602",
+        "title": "Hot Sauce",
+        "artist": "NCT DREAM",
+        "artistId": 11999322,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/14/97/ec/1497ec04-8807-2477-7be4-2b98797f6875/NCTD_01_Hot_Sauce_DC-F_0429.jpg/250x250bb.jpg",
+        "year": 2021
+      },
+      {
         "id": 2055966127,
         "title": "Candy",
         "artist": "NCT DREAM",
@@ -17392,20 +17631,14 @@
         "year": 2022
       },
       {
-        "id": 1410411132,
-        "title": "Hello Future",
+        "itunesId": 1573200617,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/8d/c6/ef/8dc6ef46-ccc9-2529-5d16-90cd0a365e7b/mzaf_5995322715619576955.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/life-is-still-going-on/1573200613?i=1573200617",
+        "title": "Life Is Still Going On",
         "artist": "NCT DREAM",
         "artistId": 11999322,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/d1ee4dc6f08dafec8dcb169e2cedb3c9/250x250-000000-80-0-0.jpg",
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/df/96/8e/df968ee9-ab22-1f14-a2ee-4943204b2324/cover.jpg/250x250bb.jpg",
         "year": 2021
-      },
-      {
-        "id": 3027749391,
-        "title": "When I'm With You",
-        "artist": "NCT DREAM",
-        "artistId": 11999322,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/87b3129c18746ffe332e5e532980ff25/250x250-000000-80-0-0.jpg",
-        "year": 2024
       },
       {
         "id": 2827595042,
@@ -17685,7 +17918,8 @@
       },
       {
         "id": 2229412677,
-        "title": "残酷な天使のテーゼ",
+        "title": "The Cruel Angel's Thesis",
+        "original": "残酷な天使のテーゼ",
         "artist": "Yoko Takahashi",
         "artistId": 7951446,
         "cover": "https://cdn-images.dzcdn.net/images/cover/fc49aa787e01b715e081dca2a0187473/250x250-000000-80-0-0.jpg",
@@ -17693,7 +17927,8 @@
       },
       {
         "id": 2232381537,
-        "title": "魂のルフラン",
+        "title": "Soul's Refrain",
+        "original": "魂のルフラン",
         "artist": "Yoko Takahashi",
         "artistId": 7951446,
         "cover": "https://cdn-images.dzcdn.net/images/cover/78524ab9b9d14df576162c88a7658a76/250x250-000000-80-0-0.jpg",
@@ -17701,11 +17936,73 @@
       },
       {
         "id": 3033808841,
-        "title": "ウィーアー！",
+        "title": "We Are!",
+        "original": "ウィーアー！",
         "artist": "Hiroshi Kitadani",
         "artistId": 12014778,
         "cover": "https://cdn-images.dzcdn.net/images/cover/5d3a3dc91c621e8fcb5f3fffe73c3843/250x250-000000-80-0-0.jpg",
         "year": 1999
+      },
+      {
+        "itunesId": 1581731326,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/55/65/13/55651307-455b-1c5d-a9ce-61bdec19f10f/mzaf_13008205328026501747.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E9%81%8B%E5%91%BD%E3%81%AE%E3%83%AB%E3%83%BC%E3%83%AC%E3%83%83%E3%83%88%E5%BB%BB%E3%81%97%E3%81%A6/1581730894?i=1581731326",
+        "title": "運命のルーレット廻して",
+        "artist": "ZARD",
+        "artistId": 11339,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/4b/68/7b/4b687b97-c1c2-8cce-b3cb-e10c39d88c21/JBCJ-9076.jpg/250x250bb.jpg",
+        "year": 1998
+      },
+      {
+        "itunesId": 77295564,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview62/v4/bd/a5/7c/bda57cdb-2858-40e2-b5de-5e75e8dff829/mzaf_2522824221890611286.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/dan-dan-%E5%BF%83%E9%AD%85%E3%81%8B%E3%82%8C%E3%81%A6%E3%81%8F/77296607?i=77295564",
+        "title": "DAN DAN 心魅かれてく",
+        "artist": "FIELD OF VIEW",
+        "artistId": 17235,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/y2005/m07/d28/h04/mzi.eqtnretl.jpg/250x250bb.jpg",
+        "year": 1997
+      },
+      {
+        "itunesId": 1637024382,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/54/61/68/5461688e-0fd1-03c4-27ca-de60b47bfb2e/mzaf_9882290688995834972.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E4%B8%96%E7%95%8C%E3%81%8C%E7%B5%82%E3%82%8B%E3%81%BE%E3%81%A7%E3%81%AF-wands-%E7%AC%AC5%E6%9C%9F-ver/1637024380?i=1637024382",
+        "title": "世界が終るまでは…",
+        "artist": "WANDS",
+        "artistId": 9981964,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/cc/2f/5c/cc2f5c71-d976-d503-f107-ef0f71a14b84/wands-0121.jpg/250x250bb.jpg",
+        "year": 1996
+      },
+      {
+        "itunesId": 1490576520,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/9b/4e/78/9b4e78be-fa2b-4222-5a52-de41edc5eed6/mzaf_7324623174652831024.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%81%82%E3%81%AA%E3%81%9F%E3%81%A0%E3%81%91%E8%A6%8B%E3%81%A4%E3%82%81%E3%81%A6%E3%82%8B-2019-remastered/1490576515?i=1490576520",
+        "title": "あなただけ見つめてる",
+        "artist": "Maki Ohguro",
+        "artistId": 242035,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/06/23/a0/0623a061-d5db-e154-e92c-f0190082251f/BGCH-1016.jpg/250x250bb.jpg",
+        "year": 1994
+      },
+      {
+        "itunesId": 1693756747,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/44/f1/e5/44f1e53e-bcdd-b595-f1d5-bf5978049956/mzaf_14136369863153406825.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E5%90%9B%E3%81%8C%E5%A5%BD%E3%81%8D%E3%81%A0%E3%81%A8%E5%8F%AB%E3%81%B3%E3%81%9F%E3%81%84/1693756743?i=1693756747",
+        "title": "君が好きだと叫びたい",
+        "artist": "BAAD",
+        "artistId": 5483637,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/50/99/d8/5099d8ea-9056-9729-e635-c21ad56f2ae2/ZACL-1004.jpg/250x250bb.jpg",
+        "year": 1993
+      },
+      {
+        "itunesId": 1536279554,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/63/82/8d/63828df8-4d15-9cd2-a0b1-8975116f759a/mzaf_2666463738097615056.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%81%9D%E3%81%B0%E3%81%8B%E3%81%99/1536279553?i=1536279554",
+        "title": "Sobakasu",
+        "original": "そばかす",
+        "artist": "JUDY AND MARY",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/b5/d2/bf/b5d2bfd7-cd6b-667f-e71c-150d80ceeda0/jacket_ESDB03655B00Z_550.jpg/250x250bb.jpg",
+        "year": 1996
       },
       {
         "id": 2232506567,
@@ -17732,11 +18029,49 @@
         "year": 1998
       },
       {
+        "itunesId": 1581726961,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/27/e6/b2/27e6b2f8-9688-8e60-4c7f-84016694c04b/mzaf_12800168112291696519.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/dan-dan-%E5%BF%83%E9%AD%85%E3%81%8B%E3%82%8C%E3%81%A6%E3%81%8F/1581726945?i=1581726961",
+        "title": "DAN DAN 心魅かれてく",
+        "artist": "ZARD",
+        "artistId": 11339,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/65/9a/71/659a7113-b36b-95d1-19aa-966ff22a3441/JBCJ-9075.jpg/250x250bb.jpg",
+        "year": 1996
+      },
+      {
+        "id": 3957280371,
+        "title": "Odoru Ponpokorin",
+        "original": "おどるポンポコリン",
+        "artist": "B.B.QUEENS",
+        "artistId": 13696861,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8834a5bbbe631228ff8937ac51cb8ef8/250x250-000000-80-0-0.jpg",
+        "year": 1990
+      },
+      {
         "id": 1120340482,
         "title": "Take Me Home, Country Roads (Theme Song)",
         "artist": "YUJI NOMI",
         "artistId": 4908281,
         "cover": "https://cdn-images.dzcdn.net/images/cover/a7c72d73d336db09829a0f74972f7e4a/250x250-000000-80-0-0.jpg",
+        "year": 1997
+      },
+      {
+        "id": 1198093972,
+        "title": "Detective Conan Main Theme",
+        "original": "名探偵コナン メイン・テーマ",
+        "artist": "Katsuo Ohno",
+        "artistId": 4897300,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0a4ef1b52d8c5c4b42fa6d040e8c6b1c/250x250-000000-80-0-0.jpg",
+        "year": 1997
+      },
+      {
+        "itunesId": 1618913658,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/07/dc/cf/07dccf17-8844-2cad-eec3-d760342237db/mzaf_11511658062417426464.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E8%AC%8E/1618913657?i=1618913658",
+        "title": "謎",
+        "artist": "Miho Komatsu",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/24/2b/7e/242b7eaa-2223-52ca-9a7f-450bb98560a2/ZADS-1001.jpg/250x250bb.jpg",
         "year": 1997
       },
       {
@@ -17749,7 +18084,8 @@
       },
       {
         "id": 2116022227,
-        "title": "プラチナ",
+        "title": "Platinum",
+        "original": "プラチナ",
         "artist": "Maaya Sakamoto",
         "artistId": 4892953,
         "cover": "https://cdn-images.dzcdn.net/images/cover/26e4808decd06a422cca23fb8e3450c7/250x250-000000-80-0-0.jpg",
@@ -17757,7 +18093,8 @@
       },
       {
         "id": 4015997691,
-        "title": "走れ正直者",
+        "title": "Hashire Syoujikimono",
+        "original": "走れ正直者",
         "artist": "Hideki Saijo",
         "artistId": 15271359,
         "cover": "https://cdn-images.dzcdn.net/images/cover/65a564aa586b9dc8b8f2c0bcae95960d/250x250-000000-80-0-0.jpg",
@@ -17780,16 +18117,58 @@
         "year": 1998
       },
       {
-        "id": 2493802811,
+        "itunesId": 1581044578,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/1a/39/f1/1a39f1a7-c874-cb02-2659-53ff0e61b138/mzaf_13277724677611071837.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%83%9E%E3%82%A4-%E3%83%95%E3%83%AC%E3%83%B3%E3%83%89/1581044573?i=1581044578",
+        "title": "マイ フレンド",
+        "artist": "ZARD",
+        "artistId": 11339,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/2d/56/55/2d5655d4-d062-4567-a425-0cdf1039b0b3/JBDJ-1011.jpg/250x250bb.jpg",
+        "year": 1996
+      },
+      {
+        "itunesId": 74991411,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/e9/bc/be/e9bcbea6-590b-c7b4-546a-b58ec7b89cc0/mzaf_18406326797921806367.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%83%90%E3%83%AA%E3%83%90%E3%83%AA%E6%9C%80%E5%BC%B7no-1/74991702?i=74991411",
+        "title": "バリバリ最強No.1",
+        "artist": "FEEL SO BAD",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/39/37/8b/39378b35-3532-98d0-8d6a-be1961017916/dj.tyrbgwxj.jpg/250x250bb.jpg",
+        "year": 1997
+      },
+      {
+        "itunesId": 1443368438,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/99/2f/45/992f453b-376d-a589-717c-7ab2980d319c/mzaf_2015169493028262660.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%81%95%E3%81%81/1443368147?i=1443368438",
         "title": "さぁ",
-        "artist": "Surfaces",
-        "artistId": 863868,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/b2eee9b3bc6ad79ef160fd0e732054fa/250x250-000000-80-0-0.jpg",
+        "artist": "Surface",
+        "artistId": 17056,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music118/v4/67/44/a5/6744a5f8-40a4-909d-d8b9-7e488f2de299/00044002118424.rgb.jpg/250x250bb.jpg",
         "year": 1999
       },
       {
+        "id": 1007066392,
+        "title": "Yakusoku wa Iranai",
+        "original": "約束はいらない",
+        "artist": "Maaya Sakamoto",
+        "artistId": 4892953,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/063271a96bc262ea934389297d15e473/250x250-000000-80-0-0.jpg",
+        "year": 1996
+      },
+      {
+        "itunesId": 1504595591,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview123/v4/87/5e/15/875e15c3-b1c1-fb11-56ad-1001bb57b945/mzaf_13977717192068784034.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%81%84%E3%81%A8%E3%81%8A%E3%81%97%E3%81%84%E4%BA%BA%E3%81%AE%E3%81%9F%E3%82%81%E3%81%AB/1504595588?i=1504595591",
+        "title": "いとおしい人のために",
+        "artist": "佐藤朱美",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/d8/9d/a2/d89da284-fb14-a186-4440-53ce443c111d/LZCE-9014.jpg/250x250bb.jpg",
+        "year": 1995
+      },
+      {
         "id": 2541494521,
-        "title": "葛飾ラプソディー",
+        "title": "Katsushika Rhapsody",
+        "original": "葛飾ラプソディー",
         "artist": "Kôhei Dojima",
         "artistId": 375381,
         "cover": "https://cdn-images.dzcdn.net/images/cover/b5770eae9e00ff63212825d6014e8775/250x250-000000-80-0-0.jpg",
@@ -17797,11 +18176,23 @@
       },
       {
         "id": 975882692,
-        "title": "ウルトラ リラックス",
+        "title": "Ultra Relax",
+        "original": "ウルトラ リラックス",
         "artist": "Tomoe Shinohara",
         "artistId": 13697247,
         "cover": "https://cdn-images.dzcdn.net/images/cover/02f3c1b9bfeff1a1b769be7643edcca1/250x250-000000-80-0-0.jpg",
         "year": 1996
+      },
+      {
+        "itunesId": 1037731649,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/8a/ee/9e/8aee9ec5-625e-22aa-284f-3c7fa4a83e11/mzaf_14697935249150939199.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E8%BC%9D%E3%81%8D%E3%81%AF%E5%90%9B%E3%81%AE%E4%B8%AD%E3%81%AB/1037731646?i=1037731649",
+        "title": "Kagayaki wa Kimi no Naka ni",
+        "original": "輝きは君の中に",
+        "artist": "Yume Suzuki",
+        "artistId": 4336998,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/13/27/94/13279431-84bc-a7b9-3c0c-fb06dd6580dd/PCSP_01898_itunes.png/250x250bb.jpg",
+        "year": 1995
       },
       {
         "id": 1061395182,
@@ -17809,6 +18200,16 @@
         "artist": "Romantic Mode",
         "artistId": 9486,
         "cover": "https://cdn-images.dzcdn.net/images/cover/0d730c53d195668815ee6090bd62b1f2/250x250-000000-80-0-0.jpg",
+        "year": 1996
+      },
+      {
+        "itunesId": 1560086224,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview114/v4/bd/d6/2f/bdd62fa5-fecf-09e5-a223-cd7f915d1951/mzaf_2645829869684466345.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%83%9F%E3%82%A8%E3%83%8A%E3%82%A4%E3%83%81%E3%82%AB%E3%83%A9-invisible-one/1560086210?i=1560086224",
+        "title": "ミエナイチカラ 〜INVISIBLE ONE〜",
+        "artist": "B'z",
+        "artistId": 1550,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/67/79/d5/6779d532-cedc-cf9e-6966-35c999655a75/BMDR-2002.jpg/250x250bb.jpg",
         "year": 1996
       },
       {
@@ -17820,6 +18221,26 @@
         "year": 1996
       },
       {
+        "itunesId": 1536884614,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/c5/c2/db/c5c2db58-c81d-3ca7-0373-e2a0c8f3db6a/mzaf_17827565330071458100.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E6%81%8B%E3%81%97%E3%81%95%E3%81%A8-%E3%81%9B%E3%81%A4%E3%81%AA%E3%81%95%E3%81%A8-%E5%BF%83%E5%BC%B7%E3%81%95%E3%81%A8-with-tetsuya-komuro/1536884613?i=1536884614",
+        "title": "恋しさと せつなさと 心強さと",
+        "artist": "Ryoko Shinohara",
+        "artistId": 96443882,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/95/d1/3c/95d13cfa-e621-5f74-e370-2818a8d84b87/jacket_MHXX00498B00Z_550.jpg/250x250bb.jpg",
+        "year": 1994
+      },
+      {
+        "itunesId": 1690728532,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/fd/8e/4d/fd8e4dbf-ee59-2301-f720-99e2a5568890/mzaf_5279044352456536270.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/eternal-wind-%E3%81%BB%E3%81%BB%E3%81%88%E3%81%BF%E3%81%AF%E5%85%89%E3%82%8B%E9%A2%A8%E3%81%AE%E4%B8%AD/1690728528?i=1690728532",
+        "title": "ETERNAL WIND ～ほほえみは光る風の中～",
+        "artist": "Hiroko Moriguchi",
+        "artistId": 10862714,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/62/2b/5d/622b5d25-a768-df68-38c3-d797c8e6daea/197188330361.jpg/250x250bb.jpg",
+        "year": 1991
+      },
+      {
         "id": 2116016747,
         "title": "SEVENTH MOON",
         "artist": "FIRE BOMBER",
@@ -17828,12 +18249,43 @@
         "year": 1995
       },
       {
+        "itunesId": 75359477,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview124/v4/28/8e/6b/288e6b9d-236e-7ebe-a957-0deb427db11d/mzaf_17816312791537079261.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%82%AE%E3%83%AA%E3%82%AE%E3%83%AAchop-version51/75361124?i=75359477",
+        "title": "ギリギリchop",
+        "artist": "B'z",
+        "artistId": 1550,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/0e/18/be/0e18beb4-3ec6-288c-22e7-41c125c8a9dd/dj.yzukccpb.jpg/250x250bb.jpg",
+        "year": 1999
+      },
+      {
+        "itunesId": 1455449154,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d1/9d/fb/d19dfb74-7347-72ab-b0d6-5deb753dafdc/mzaf_13265580678202420329.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E8%B5%B0%E3%82%8C%E3%83%9E%E3%82%AD%E3%83%90%E3%82%AA%E3%83%BC/1455449150?i=1455449154",
+        "title": "走れマキバオー",
+        "artist": "F.MAP",
+        "artistId": 118595892,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/09/ee/6b/09ee6bbd-f996-14bd-61f3-d8bdedb75ec1/PCDA_00927.jpg/250x250bb.jpg",
+        "year": 1996
+      },
+      {
         "id": 976742012,
-        "title": "通学路",
+        "title": "Tuugaku Ro",
+        "original": "通学路",
         "artist": "Whiteberry",
         "artistId": 2556321,
         "cover": "https://cdn-images.dzcdn.net/images/cover/93906d2cc19788a9f371a2276734bfe6/250x250-000000-80-0-0.jpg",
         "year": 1999
+      },
+      {
+        "itunesId": 1657585837,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/1c/11/a0/1c11a0fd-81a2-d579-6293-5a339956e23a/mzaf_650377656818555843.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%82%AA%E3%83%A9%E3%81%AF%E3%81%AB%E3%82%93%E3%81%8D%E3%82%82%E3%81%AE/1657585453?i=1657585837",
+        "title": "オラはにんきもの",
+        "artist": "のはらしんのすけ",
+        "artistId": 339522381,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/b4/4b/db/b44bdb87-de45-34d0-1285-122c49735c19/4580555284194_cover.jpg/250x250bb.jpg",
+        "year": 1993
       }
     ],
     "2000": [
@@ -17863,7 +18315,8 @@
       },
       {
         "id": 1100592452,
-        "title": "遥か彼方",
+        "title": "Haruka Kanata",
+        "original": "遥か彼方",
         "artist": "ASIAN KUNG-FU GENERATION",
         "artistId": 831,
         "cover": "https://cdn-images.dzcdn.net/images/cover/d47be963feec05c26ec419a075aedfce/250x250-000000-80-0-0.jpg",
@@ -17871,18 +18324,20 @@
       },
       {
         "id": 1100590662,
-        "title": "リライト",
+        "title": "Rewrite",
+        "original": "リライト",
         "artist": "ASIAN KUNG-FU GENERATION",
         "artistId": 831,
         "cover": "https://cdn-images.dzcdn.net/images/cover/5b8d294ba72b50db78a4dea82db50438/250x250-000000-80-0-0.jpg",
         "year": 2004
       },
       {
-        "id": 1100605452,
-        "title": "或る街の群青",
+        "id": 1100591272,
+        "title": "A Town in Blue",
+        "original": "或る街の群青",
         "artist": "ASIAN KUNG-FU GENERATION",
         "artistId": 831,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/31f8bad33ba92d32106ea6180900f23a/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/255a46f171642014a6ab1c3f675ba2a9/250x250-000000-80-0-0.jpg",
         "year": 2006
       },
       {
@@ -17911,7 +18366,8 @@
       },
       {
         "id": 121134202,
-        "title": "ブルーバード",
+        "title": "Blue Bird",
+        "original": "ブルーバード",
         "artist": "Ikimonogakari",
         "artistId": 5960768,
         "cover": "https://cdn-images.dzcdn.net/images/cover/4e21e5785cc9099ee2b464dab6ed273c/250x250-000000-80-0-0.jpg",
@@ -17919,7 +18375,8 @@
       },
       {
         "id": 975958552,
-        "title": "ホタルノヒカリ",
+        "title": "Hotarunohikari",
+        "original": "ホタルノヒカリ",
         "artist": "Ikimonogakari",
         "artistId": 5960768,
         "cover": "https://cdn-images.dzcdn.net/images/cover/3fd14dbd85b390f0cf04d241f6dadce4/250x250-000000-80-0-0.jpg",
@@ -17943,7 +18400,8 @@
       },
       {
         "id": 545698902,
-        "title": "メリッサ",
+        "title": "Melissa",
+        "original": "メリッサ",
         "artist": "Porno Graffitti",
         "artistId": 10039830,
         "cover": "https://cdn-images.dzcdn.net/images/cover/5682e3fb1208093f297c86e39b1257cb/250x250-000000-80-0-0.jpg",
@@ -17966,8 +18424,19 @@
         "year": 2007
       },
       {
+        "itunesId": 1445043808,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/6e/d5/b6/6ed5b610-a412-9684-a1cd-b2599f1e0a01/mzaf_5868174197715420800.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/sanctuary-opening-bonus-track/1445043798?i=1445043808",
+        "title": "Sanctuary",
+        "artist": "Hikaru Utada",
+        "artistId": 211217,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music118/v4/30/02/46/30024686-c24e-c82f-2474-f450a79ad56e/00602527094144.rgb.jpg/250x250bb.jpg",
+        "year": 2009
+      },
+      {
         "id": 2516454071,
-        "title": "深い森",
+        "title": "Fukaimori",
+        "original": "深い森",
         "artist": "Do As Infinity",
         "artistId": 920,
         "cover": "https://cdn-images.dzcdn.net/images/cover/55b1e8c7bb9423d45820cddba58b136c/250x250-000000-80-0-0.jpg",
@@ -17982,6 +18451,15 @@
         "year": 2007
       },
       {
+        "id": 976763972,
+        "title": "Niji",
+        "original": "虹",
+        "artist": "Aqua Timez",
+        "artistId": 4230111,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/00f28715eae2856364dd26c4ec36cbb4/250x250-000000-80-0-0.jpg",
+        "year": 2006
+      },
+      {
         "id": 1124198222,
         "title": "Wind",
         "artist": "Akeboshi",
@@ -17991,18 +18469,20 @@
       },
       {
         "id": 569782042,
-        "title": "君の知らない物語",
+        "title": "Kimino Shiranai Monogatari",
+        "original": "君の知らない物語",
         "artist": "supercell",
         "artistId": 184460,
         "cover": "https://cdn-images.dzcdn.net/images/cover/1dc201816ddb71224f2de38698318488/250x250-000000-80-0-0.jpg",
         "year": 2009
       },
       {
-        "id": 976451222,
-        "title": "1/3の純情な感情",
+        "id": 976629452,
+        "title": "1/3 Pure Heart Emotion",
+        "original": "1/3の純情な感情",
         "artist": "SIAM SHADE",
         "artistId": 3862,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/25f2458842d2eef4953c91ba26ee87de/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6ae7f1930ed27c91de581db7d966a454/250x250-000000-80-0-0.jpg",
         "year": 2002
       },
       {
@@ -18022,8 +18502,48 @@
         "year": 2008
       },
       {
+        "itunesId": 1536364740,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/24/ca/a6/24caa66d-f519-4df2-dee9-9e183e98a01b/mzaf_17363304177456029514.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/go/1536364739?i=1536364740",
+        "title": "GO!!!",
+        "artist": "フロウ",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/3d/c2/a1/3dc2a115-122a-d1bd-8cbc-7cfbdc3dee66/jacket_KSCL00779B00Z_550.jpg/250x250bb.jpg",
+        "year": 2004
+      },
+      {
+        "itunesId": 1880591395,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/50/4e/d7/504ed7f5-664e-73d9-fa04-229f752a6233/mzaf_5200352635369671079.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/god-knows/1880591394?i=1880591395",
+        "title": "God knows...",
+        "artist": "涼宮ハルヒ (CV.平野 綾)",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ea/22/66/ea22667a-8f09-d36d-ec80-b8672f003071/4540774402687.png/250x250bb.jpg",
+        "year": 2006
+      },
+      {
+        "id": 975928662,
+        "title": "Kokoro Odoru original version",
+        "original": "ココロオドル -original version-",
+        "artist": "nobodyknows+",
+        "artistId": 2117,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0542a1ef7c91b13307b5d5f41265a308/250x250-000000-80-0-0.jpg",
+        "year": 2004
+      },
+      {
+        "itunesId": 334210023,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music/v4/33/c3/3f/33c33f8b-961b-cc35-b0f7-067e84002a8e/mzaf_6926015397815068239.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/cagayake-girls-originally-performed-by-%E6%A1%9C%E9%AB%98%E8%BB%BD%E9%9F%B3%E9%83%A8/334209986?i=334210023",
+        "title": "Cagayake ! Girls",
+        "artist": "桜高軽音部",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/e4/61/27/mzi.jvxbrgbg.jpg/250x250bb.jpg",
+        "year": 2009
+      },
+      {
         "id": 2484669871,
-        "title": "マジで感謝！",
+        "title": "Maji De Kansha!",
+        "original": "マジで感謝！",
         "artist": "T-Pistonz+KMC",
         "artistId": 229880035,
         "cover": "https://cdn-images.dzcdn.net/images/cover/58464c0ef183845ce47f238d7825d756/250x250-000000-80-0-0.jpg",
@@ -18031,7 +18551,8 @@
       },
       {
         "id": 3870374371,
-        "title": "ハレ晴レユカイ",
+        "title": "Hare Hare Yukai",
+        "original": "ハレ晴レユカイ",
         "artist": "Aya Hirano",
         "artistId": 2440161,
         "cover": "https://cdn-images.dzcdn.net/images/cover/1e497cb7af52031695dacbee7a7bb0c7/250x250-000000-80-0-0.jpg",
@@ -18046,20 +18567,124 @@
         "year": 2000
       },
       {
-        "id": 976052482,
-        "title": "曇天",
+        "itunesId": 209167662,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/f3/1e/1f/f31e1f42-1a3f-6d6d-ce27-cecb52ae127c/mzaf_1685888145071382763.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/get-over/209164447?i=209167662",
+        "title": "Get Over",
+        "artist": "Dream",
+        "artistId": 10827,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/00/bf/50/00bf5024-457b-e624-dd40-8737f576ec1b/mzi.lifedrdg.jpg/250x250bb.jpg",
+        "year": 2007
+      },
+      {
+        "id": 975999612,
+        "title": "A Cloudy Sky",
+        "original": "曇天",
         "artist": "Does",
         "artistId": 4197065,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/0b2e066a7cc0180f7d8afe4bc234186d/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c6b21f525018f4a14ad2a9faa81b92c1/250x250-000000-80-0-0.jpg",
         "year": 2008
       },
       {
-        "id": 1374526932,
+        "itunesId": 1849085807,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/17/74/f7/1774f740-7c18-c435-fd2b-1b3f6b22fe71/mzaf_2216198936120647613.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/change-the-world/1849085798?i=1849085807",
+        "title": "CHANGE THE WORLD",
+        "artist": "V6",
+        "artistId": 6949,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/9d/3a/6f/9d3a6f65-e1ad-606d-7eed-8ca0faecc73b/ANTCD-A0000018265.jpg/250x250bb.jpg",
+        "year": 2000
+      },
+      {
+        "itunesId": 1144913246,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/4f/5b/6b/4f5b6b36-10d0-9910-37d8-4e40f8f1b4b2/mzaf_7713160528449476052.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/dearest/1144913122?i=1144913246",
+        "title": "Dearest",
+        "artist": "Ayumi Hamasaki",
+        "artistId": 5250597,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music22/v4/e6/70/40/e670403e-80d9-a24b-8bb1-ea3e667a3634/ANTCD-18716.jpg/250x250bb.jpg",
+        "year": 2001
+      },
+      {
+        "itunesId": 1560120756,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview124/v4/4c/ff/34/4cff3400-a4bd-4b8d-7c62-d9328ba04189/mzaf_941036329983833731.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E8%A1%9D%E5%8B%95/1560120543?i=1560120756",
         "title": "衝動",
         "artist": "B'z",
-        "artistId": 133658032,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/fe10649ef0afe3d5c868999f1d1b1076/250x250-000000-80-0-0.jpg",
+        "artistId": 1550,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/2d/2a/42/2d2a4223-8373-7dad-9b28-7f8af31be00e/dj.elebckou.jpg/250x250bb.jpg",
         "year": 2006
+      },
+      {
+        "itunesId": 1570211710,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/59/13/be/5913be12-9b85-7616-8643-103911b7f096/mzaf_11639878732142056096.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/mysterious-eyes/1570211299?i=1570211710",
+        "title": "Mysterious Eyes",
+        "artist": "GARNET CROW",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/41/8e/f8/418ef8e3-f339-1304-3b98-b258686ffe4a/GZCA-1061.jpg/250x250bb.jpg",
+        "year": 2000
+      },
+      {
+        "itunesId": 73795313,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/e3/46/c5/e346c5d7-7cb9-6c6f-749d-e1e77bb23a6e/mzaf_8227710193589800618.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/secret-of-my-heart/73796049?i=73795313",
+        "title": "Secret of my heart",
+        "artist": "Mai Kuraki",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/45/5c/a9/455ca9d1-a61b-0b02-600a-01d5c040e943/GZCA-1039A.jpg/250x250bb.jpg",
+        "year": 2000
+      },
+      {
+        "id": 864542692,
+        "title": "DANZEN! Futari Wa PreCure",
+        "original": "DANZEN！ふたりはプリキュア",
+        "artist": "Mayumi Gojo",
+        "artistId": 67423912,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8fb970293fcf226158350ed778583252/250x250-000000-80-0-0.jpg",
+        "year": 2004
+      },
+      {
+        "id": 2116015297,
+        "title": "Sousei no Aquarion",
+        "original": "創聖のアクエリオン",
+        "artist": "AKINO",
+        "artistId": 5074,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/af099ecb14d971f8908e9d5de7530218/250x250-000000-80-0-0.jpg",
+        "year": 2007
+      },
+      {
+        "itunesId": 160603477,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/99/af/d9/99afd9d4-8145-5357-2725-3f2677990aae/mzaf_6053846184734290088.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E9%A2%A8%E3%81%AB%E3%81%AA%E3%82%8B/160603473?i=160603477",
+        "title": "Kaze Ni Naru",
+        "original": "風になる",
+        "artist": "Tsuji Ayano",
+        "artistId": 4871048,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/36/71/55/367155b0-2a0c-1070-71b5-09cca77328cc/mzi.akaolruh.jpg/250x250bb.jpg",
+        "year": 2002
+      },
+      {
+        "itunesId": 1535997798,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/b8/2a/fe/b82afe76-a40a-ebbc-f0b5-0cd7236d0001/mzaf_1179204581244176769.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%81%95%E3%82%89%E3%81%B0/1535997796?i=1535997798",
+        "title": "Saraba",
+        "original": "さらば",
+        "artist": "キンモクセイ",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/b0/74/75/b07475f7-9ef5-9408-36e3-31d32817a061/jacket_BVCR19601B00Z_550.jpg/250x250bb.jpg",
+        "year": 2002
+      },
+      {
+        "itunesId": 169256668,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c7/ef/7f/c7ef7ff6-ac70-ac78-7c93-286ddc4a90df/mzaf_17038574865615089892.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E5%BF%83%E7%B5%B5/169253196?i=169256668",
+        "title": "Kokoroe",
+        "original": "心絵",
+        "artist": "Road Of Major",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/a5/cd/14/mzi.fgquzeiq.jpg/250x250bb.jpg",
+        "year": 2004
       },
       {
         "id": 2508140541,
@@ -18071,11 +18696,23 @@
       },
       {
         "id": 976461352,
-        "title": "逆さまの蝶",
+        "title": "Sakasama No Chou",
+        "original": "逆さまの蝶",
         "artist": "SNoW",
         "artistId": 119697632,
         "cover": "https://cdn-images.dzcdn.net/images/cover/8ba65dd702587e35917d772fa4edca31/250x250-000000-80-0-0.jpg",
         "year": 2007
+      },
+      {
+        "itunesId": 1535177162,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/89/08/93/890893c7-b1f4-b181-9e5e-dce0c29ca346/mzaf_13887051456564041324.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E5%8B%87%E4%BE%A0%E9%9D%92%E6%98%A5%E8%AC%B3/1535177161?i=1535177162",
+        "title": "Yuukyou Seishunka",
+        "original": "勇侠青春謳",
+        "artist": "Ali Project",
+        "artistId": 1838,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/bd/f3/96/bdf39677-726f-55b0-c71b-10240e0c176c/VEATP-37865.jpg/250x250bb.jpg",
+        "year": 2006
       },
       {
         "id": 2232367307,
@@ -18086,6 +18723,16 @@
         "year": 2001
       },
       {
+        "itunesId": 1581084724,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/e0/8e/de/e08ede9d-5340-6ccc-51eb-44e23c76bedf/mzaf_5508141478110617512.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%82%B0%E3%83%AD%E3%83%AA%E3%82%A2%E3%82%B9-%E3%83%9E%E3%82%A4%E3%83%B3%E3%83%89/1581084720?i=1581084724",
+        "title": "グロリアス マインド",
+        "artist": "ZARD",
+        "artistId": 11339,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/e1/59/0d/e1590d79-ab33-e0cc-f4ac-86e0d04b43e5/JBCJ-4003.jpg/250x250bb.jpg",
+        "year": 2007
+      },
+      {
         "id": 1865972267,
         "title": "Ride on shooting star",
         "artist": "the pillows",
@@ -18094,8 +18741,28 @@
         "year": 2000
       },
       {
+        "id": 1100607402,
+        "title": "Invoke",
+        "original": "INVOKE -インヴォーク-",
+        "artist": "T.M.Revolution",
+        "artistId": 922,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/60974f2e82fe94ceb8a32b2024269524/250x250-000000-80-0-0.jpg",
+        "year": 2002
+      },
+      {
+        "itunesId": 1690729243,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/21/2b/b6/212bb688-907b-ce58-045d-d3366a5fd97b/mzaf_2857874239245893987.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%81%82%E3%82%93%E3%81%AA%E3%81%AB%E4%B8%80%E7%B7%92%E3%81%A0%E3%81%A3%E3%81%9F%E3%81%AE%E3%81%AB/1690729237?i=1690729243",
+        "title": "あんなに一緒だったのに",
+        "artist": "See-Saw",
+        "artistId": 1844,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/0c/84/0b/0c840bc3-26f2-ab2d-8b24-236e3b72e0fd/197188373832.jpg/250x250bb.jpg",
+        "year": 2002
+      },
+      {
         "id": 2969426761,
-        "title": "サヤエンドウ",
+        "title": "Sayaendo",
+        "original": "サヤエンドウ",
         "artist": "NEWS",
         "artistId": 280543761,
         "cover": "https://cdn-images.dzcdn.net/images/cover/4f2d7b3b5c27377b20063a5538ad8b12/250x250-000000-80-0-0.jpg",
@@ -18108,6 +18775,15 @@
         "artistId": 133611,
         "cover": "https://cdn-images.dzcdn.net/images/cover/72b9008744bbec5a549d71d59f61b555/250x250-000000-80-0-0.jpg",
         "year": 2007
+      },
+      {
+        "id": 2310507265,
+        "title": "Akatsuki no Kuruma",
+        "original": "暁の車",
+        "artist": "FictionJunction YUUKA",
+        "artistId": 5392,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f6e57e13b20ced5a229845b5d731c36e/250x250-000000-80-0-0.jpg",
+        "year": 2003
       },
       {
         "id": 976027292,
@@ -18126,6 +18802,27 @@
         "year": 2002
       },
       {
+        "itunesId": 319926685,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/7c/7f/c7/7c7fc765-2538-8b34-e2c4-f12979386150/mzaf_8236038685683632810.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E4%BA%BA%E3%81%A8%E3%81%97%E3%81%A6%E8%BB%B8%E3%81%8C%E3%81%B6%E3%82%8C%E3%81%A6%E3%81%84%E3%82%8B/319926676?i=319926685",
+        "title": "Hitotoshite Jiku ga Bureteiru",
+        "original": "人として軸がぶれている",
+        "artist": "大槻ケンヂと絶望少女達",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/3f/33/14/mzi.cykbwjmw.jpg/250x250bb.jpg",
+        "year": 2007
+      },
+      {
+        "itunesId": 1536378561,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/f2/11/bf/f211bf29-93ce-a645-0f6b-edea2863f10b/mzaf_15703671993945828716.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/shangri-la-y-sunahara-2009-remodel/1536378558?i=1536378561",
+        "title": "Shangri-La (Y.Sunahara 2009 Remodel)",
+        "artist": "Denki Groove",
+        "artistId": 450958,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/14/fc/fa/14fcfa0a-ae40-c504-1bd5-f090023ae8f7/jacket_KSCL01499B00Z_550.jpg/250x250bb.jpg",
+        "year": 2009
+      },
+      {
         "id": 1120339352,
         "title": "Ponyo on the Cliff by the Sea",
         "artist": "Joe Hisaishi",
@@ -18134,16 +18831,40 @@
         "year": 2009
       },
       {
+        "itunesId": 1451571404,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/3b/bf/8e/3bbf8ea6-401d-216d-335f-449ed8276dd0/mzaf_14992452841574162563.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E6%97%85%E3%81%AE%E9%80%94%E4%B8%AD/1451571402?i=1451571404",
+        "title": "Tabi No Tochu",
+        "original": "旅の途中",
+        "artist": "清浦夏実",
+        "artistId": 14788969,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/6b/e6/b4/6be6b4cb-a8ad-8578-ade4-f9aa60a7777d/VTCL-60180.jpg/250x250bb.jpg",
+        "year": 2008
+      },
+      {
         "id": 2116068637,
-        "title": "アンインストール",
+        "title": "Uninstall",
+        "original": "アンインストール",
         "artist": "Chiaki Ishikawa",
         "artistId": 4663499,
         "cover": "https://cdn-images.dzcdn.net/images/cover/93b7b366ade794f531884c011f481bed/250x250-000000-80-0-0.jpg",
         "year": 2007
       },
       {
+        "itunesId": 1322874788,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/3a/82/c4/3a82c4c5-b5f7-688b-a8cd-6ead33916623/mzaf_15187747951461478523.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E6%81%8B%E3%81%9B%E3%82%88%E5%A5%B3%E3%81%AE%E5%AD%90/1322874784?i=1322874788",
+        "title": "Koiseyoonnanoko",
+        "original": "恋せよ女の子",
+        "artist": "Yukari Tamura",
+        "artistId": 5424424,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music118/v4/f3/aa/45/f3aa45be-68e4-54ef-aff8-5ce6d86f1184/GBCM-1.jpg/250x250bb.jpg",
+        "year": 2006
+      },
+      {
         "id": 975986452,
-        "title": "空色デイズ",
+        "title": "Sorairo Days",
+        "original": "空色デイズ",
         "artist": "Shoko Nakagawa",
         "artistId": 5503316,
         "cover": "https://cdn-images.dzcdn.net/images/cover/0a387c70e9901b4b2ca956401c3435d1/250x250-000000-80-0-0.jpg",
@@ -18156,6 +18877,26 @@
         "artistId": 5058009,
         "cover": "https://cdn-images.dzcdn.net/images/cover/8ea40d1fb972793589dde7a8b9736d43/250x250-000000-80-0-0.jpg",
         "year": 2009
+      },
+      {
+        "itunesId": 1804671150,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ee/78/93/ee7893fd-e3f7-3f44-1c99-34581b47dbce/mzaf_9829902416127857593.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/joint/1804670886?i=1804671150",
+        "title": "JOINT",
+        "artist": "川田まみ",
+        "artistId": 15326671,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/f2/37/97/f237978e-4035-4627-a93a-f9c08673f064/5021732649188.jpg/250x250bb.jpg",
+        "year": 2007
+      },
+      {
+        "itunesId": 1536374889,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/14/08/c5/1408c582-e104-b4e2-bc21-92a231a3af86/mzaf_1131149356787833489.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/closer-royal-ver/1536374888?i=1536374889",
+        "title": "CLOSER (Royal Ver.)",
+        "artist": "Joe Inoue",
+        "artistId": 4907477,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/6a/75/6b/6a756bda-5fa9-ad2c-7616-6231d3303457/jacket_KSCL01374B00Z_550.jpg/250x250bb.jpg",
+        "year": 2008
       },
       {
         "id": 2230713897,
@@ -18174,6 +18915,35 @@
         "year": 2001
       },
       {
+        "id": 3323401051,
+        "title": "Go-Go Tamagotchi!",
+        "original": "GO-GO たまごっち!",
+        "artist": "Yuria Nara",
+        "artistId": 14315821,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/54557700273397957208132f1bcc50e7/250x250-000000-80-0-0.jpg",
+        "year": 2009
+      },
+      {
+        "id": 3305368361,
+        "title": "KinKi NO YARUKIMANMAN SONG",
+        "original": "KinKiのやる気まんまんソング",
+        "artist": "Kinki Kids",
+        "artistId": 11018584,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/97af4a1af3d05af01033a5dcb113ec9f/250x250-000000-80-0-0.jpg",
+        "year": 2000
+      },
+      {
+        "itunesId": 306570308,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fe/fe/06/fefe066f-a068-96e4-ca07-090ce8c637e2/mzaf_7170502351469896572.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%83%90%E3%83%A9%E3%83%A9%E3%82%A4%E3%82%AB/306570300?i=306570308",
+        "title": "Balalaika",
+        "original": "バラライカ",
+        "artist": "月島きらり starring 久住小春(モーニング娘。)",
+        "artistId": 382639451,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/cb/97/53/mzi.eavcjrqk.jpg/250x250bb.jpg",
+        "year": 2006
+      },
+      {
         "id": 3714441822,
         "title": "Gamble Rumble",
         "artist": "m.o.v.e",
@@ -18182,18 +18952,20 @@
         "year": 2001
       },
       {
-        "id": 4231654522,
-        "title": "嘘",
-        "artist": "Sido",
-        "artistId": 12039,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/318fe0882f23f7f15a26d4e14923da94/250x250-000000-80-0-0.jpg",
+        "id": 975991072,
+        "title": "Uso",
+        "original": "嘘",
+        "artist": "SID",
+        "artistId": 7936428,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/51a7ca1d0dc62835ade0639614aceb56/250x250-000000-80-0-0.jpg",
         "year": 2009
       }
     ],
     "2010": [
       {
         "id": 1093334492,
-        "title": "紅蓮華",
+        "title": "Gurenge",
+        "original": "紅蓮華",
         "artist": "LiSA",
         "artistId": 11446160,
         "cover": "https://cdn-images.dzcdn.net/images/cover/1f52bcd67ac5393123b3a272ceec5a5c/250x250-000000-80-0-0.jpg",
@@ -18248,8 +19020,9 @@
         "year": 2019
       },
       {
-        "id": 1355416772,
-        "title": "ピースサイン",
+        "id": 1355416752,
+        "title": "Peace Sign",
+        "original": "ピースサイン",
         "artist": "Kenshi Yonezu",
         "artistId": 5289039,
         "cover": "https://cdn-images.dzcdn.net/images/cover/43486e7f1e15648bfe233f5f94baf5f0/250x250-000000-80-0-0.jpg",
@@ -18264,16 +19037,46 @@
         "year": 2017
       },
       {
-        "id": 1017618872,
-        "title": "スパークル",
+        "itunesId": 1852929390,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/49/2d/08/492d08d6-5866-63e4-cd52-fdc77ac5d6b9/mzaf_14670771094430347853.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E5%89%8D%E5%89%8D%E5%89%8D%E4%B8%96/1852929105?i=1852929390",
+        "title": "前前前世",
         "artist": "RADWIMPS",
         "artistId": 211087,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/6f04845df218acfb77872dd568f4feb4/250x250-000000-80-0-0.jpg",
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ad/4b/b8/ad4bb84d-85f9-8902-6876-c7dd2f93c24a/25UM1IM78298.rgb.jpg/250x250bb.jpg",
         "year": 2016
       },
       {
+        "id": 545599502,
+        "title": "Sparkle",
+        "original": "スパークル",
+        "artist": "RADWIMPS",
+        "artistId": 211087,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8bd5efd9f73b7d0f8371c58a017a5aea/250x250-000000-80-0-0.jpg",
+        "year": 2016
+      },
+      {
+        "id": 545599532,
+        "title": "Nandemonaiya",
+        "original": "なんでもないや",
+        "artist": "RADWIMPS",
+        "artistId": 211087,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8bd5efd9f73b7d0f8371c58a017a5aea/250x250-000000-80-0-0.jpg",
+        "year": 2016
+      },
+      {
+        "id": 711344672,
+        "title": "Is There Still Anything That Love Can Do?",
+        "original": "愛にできることはまだあるかい",
+        "artist": "RADWIMPS",
+        "artistId": 211087,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/1e3e072d4629bc60be9d02bc3a2b916b/250x250-000000-80-0-0.jpg",
+        "year": 2019
+      },
+      {
         "id": 711676642,
-        "title": "インフェルノ",
+        "title": "Inferno",
+        "original": "インフェルノ",
         "artist": "Mrs. GREEN APPLE",
         "artistId": 8152202,
         "cover": "https://cdn-images.dzcdn.net/images/cover/2f97161210a72aab926bc8544aa49b4c/250x250-000000-80-0-0.jpg",
@@ -18288,28 +19091,51 @@
         "year": 2013
       },
       {
+        "itunesId": 1536444312,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fe/85/28/fe852895-1409-7136-39d4-36acfd936190/mzaf_3183632582786631339.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/hero-%E5%B8%8C%E6%9C%9B%E3%81%AE%E6%AD%8C/1536444308?i=1536444312",
+        "title": "Hero",
+        "original": "Hero ~希望の歌~",
+        "artist": "FLOW",
+        "artistId": 14476861,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/0e/a4/47/0ea4475c-956e-d4b2-ffa5-ba9368438e33/jacket_KSCL02219B00Z_550.jpg/250x250bb.jpg",
+        "year": 2013
+      },
+      {
         "id": 976040302,
-        "title": "シルエット",
+        "title": "Silhouette",
+        "original": "シルエット",
         "artist": "KANA-BOON",
         "artistId": 4726033,
         "cover": "https://cdn-images.dzcdn.net/images/cover/354c1fcd1648db95971b55a3fb110055/250x250-000000-80-0-0.jpg",
         "year": 2014
       },
       {
-        "id": 976096522,
-        "title": "ダイバー",
+        "id": 976096512,
+        "title": "Diver",
+        "original": "ダイバー",
         "artist": "KANA-BOON",
         "artistId": 4726033,
         "cover": "https://cdn-images.dzcdn.net/images/cover/248676bfac875a27160687bc7121ead8/250x250-000000-80-0-0.jpg",
         "year": 2015
       },
       {
-        "id": 1100516592,
-        "title": "イマジネーション",
+        "id": 1439536642,
+        "title": "Imagination",
+        "original": "イマジネーション",
         "artist": "SPYAIR",
         "artistId": 5794305,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/3bd1ef31554fbbe666ab8502d5191a6a/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/954b15d9ff6539413ae63134a1c50e66/250x250-000000-80-0-0.jpg",
         "year": 2014
+      },
+      {
+        "id": 1176876372,
+        "title": "Some Like It Hot!!",
+        "original": "サムライハート(Some Like It Hot!!)",
+        "artist": "SPYAIR",
+        "artistId": 5794305,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8e3e9a633de2ffa9573ad346a2f38e9e/250x250-000000-80-0-0.jpg",
+        "year": 2011
       },
       {
         "id": 543429922,
@@ -18329,11 +19155,23 @@
       },
       {
         "id": 975906392,
-        "title": "コネクト",
+        "title": "Connect",
+        "original": "コネクト",
         "artist": "ClariS",
         "artistId": 4485144,
         "cover": "https://cdn-images.dzcdn.net/images/cover/7550a05f6592345ab6f0f7228d4596d4/250x250-000000-80-0-0.jpg",
         "year": 2011
+      },
+      {
+        "itunesId": 1725802551,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/9f/5b/42/9f5b426a-412b-7521-0675-212b1a1bf2c4/mzaf_7871027098730379402.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%82%AB%E3%83%AF%E3%82%AD%E3%83%B2%E3%82%A2%E3%83%A1%E3%82%AF/1725802547?i=1725802551",
+        "title": "Kawakiwoameku",
+        "original": "カワキヲアメク",
+        "artist": "Minami",
+        "artistId": 84543982,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/ab/d6/b1/abd6b1ab-8ced-121a-21ea-5399bb37f536/5054197950636.jpg/250x250bb.jpg",
+        "year": 2019
       },
       {
         "id": 975968052,
@@ -18352,8 +19190,20 @@
         "year": 2013
       },
       {
+        "itunesId": 1538275670,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/e1/fb/f1/e1fbf133-dbaa-e9e2-906f-379fe9d8ae7a/mzaf_7470945555199788596.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E6%89%93%E4%B8%8A%E8%8A%B1%E7%81%AB/1538275115?i=1538275670",
+        "title": "Uchiagehanabi",
+        "original": "打上花火",
+        "artist": "DAOKO",
+        "artistId": 5344401,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/1b/7a/5e/1b7a5e77-b0c4-6e32-f3ee-c09c70f8378e/jacket_SRCL09571B00Z_550.jpg/250x250bb.jpg",
+        "year": 2017
+      },
+      {
         "id": 976093942,
-        "title": "光るなら",
+        "title": "Hikarunara",
+        "original": "光るなら",
         "artist": "Goose house",
         "artistId": 1413597,
         "cover": "https://cdn-images.dzcdn.net/images/cover/576fa9358e0332d196c1aa47f38105f8/250x250-000000-80-0-0.jpg",
@@ -18361,11 +19211,31 @@
       },
       {
         "id": 2895605401,
-        "title": "シュガーソングとビターステップ",
+        "title": "Sugar Song And Bitter Step",
+        "original": "シュガーソングとビターステップ",
         "artist": "UNISON SQUARE GARDEN",
         "artistId": 14002467,
         "cover": "https://cdn-images.dzcdn.net/images/cover/920a8bd780229097c760f23d1a75aca2/250x250-000000-80-0-0.jpg",
         "year": 2015
+      },
+      {
+        "id": 3628584642,
+        "title": "Kyouran Hey Kids!!",
+        "original": "狂乱 Hey Kids!!",
+        "artist": "THE ORAL CIGARETTES",
+        "artistId": 12556256,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0d0e1c66445cbf65a0c7f2d16a2d588f/250x250-000000-80-0-0.jpg",
+        "year": 2015
+      },
+      {
+        "itunesId": 1843786357,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/0a/ef/37/0aef37f1-33cf-9709-a915-c6eefbaca10e/mzaf_2439740660429779137.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/hacking-to-the-gate/1843786356?i=1843786357",
+        "title": "Hacking to the Gate",
+        "artist": "Kanako Itou",
+        "artistId": 52082932,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/96/8d/74/968d7464-dc3a-824e-64ac-bb0900dcf398/4562207978033_Cover.jpg/250x250bb.jpg",
+        "year": 2011
       },
       {
         "id": 3137186291,
@@ -18374,6 +19244,17 @@
         "artistId": 13699737,
         "cover": "https://cdn-images.dzcdn.net/images/cover/0e6d628fa4834b30c8845f5d0a53a7eb/250x250-000000-80-0-0.jpg",
         "year": 2010
+      },
+      {
+        "itunesId": 797287161,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/61/5a/4c/615a4c46-b00a-3e04-6937-d002bbd8a04e/mzaf_9843218544583128853.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%83%A0%E3%83%BC%E3%83%B3%E3%83%A9%E3%82%A4%E3%83%88%E4%BC%9D%E8%AA%AC/797287061?i=797287161",
+        "title": "Moonlight Densetsu",
+        "original": "ムーンライト伝説",
+        "artist": "DALI",
+        "artistId": 139920622,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/24/fc/c6/24fcc652-0ab4-716a-0dd1-213edc2148c6/KICA-3218.jpg/250x250bb.jpg",
+        "year": 2014
       },
       {
         "id": 976553632,
@@ -18408,6 +19289,16 @@
         "year": 2012
       },
       {
+        "itunesId": 1385308361,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/e1/58/84/e15884c1-3091-7b4b-20df-28b9701dbb2d/mzaf_7562043008239675293.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/nippon/1385307697?i=1385308361",
+        "title": "NIPPON",
+        "artist": "Shiina Ringo",
+        "artistId": 4928211,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/6e/07/b4/6e07b46a-8083-f50b-2297-7520db9bc702/00602567661511.rgb.jpg/250x250bb.jpg",
+        "year": 2014
+      },
+      {
         "id": 976022032,
         "title": "FLY HIGH!!",
         "artist": "Burnout Syndromes",
@@ -18417,7 +19308,8 @@
       },
       {
         "id": 975907272,
-        "title": "ヒカリアレ",
+        "title": "Hikariare",
+        "original": "ヒカリアレ",
         "artist": "Burnout Syndromes",
         "artistId": 9962448,
         "cover": "https://cdn-images.dzcdn.net/images/cover/02e343ab6df70f1158c603152446775d/250x250-000000-80-0-0.jpg",
@@ -18433,27 +19325,32 @@
       },
       {
         "id": 121134224,
-        "title": "熱情のスペクトラム",
+        "title": "Netsujo No Spectrum",
+        "original": "熱情のスペクトラム",
         "artist": "Ikimonogakari",
         "artistId": 5960768,
         "cover": "https://cdn-images.dzcdn.net/images/cover/4e21e5785cc9099ee2b464dab6ed273c/250x250-000000-80-0-0.jpg",
         "year": 2014
       },
       {
+        "itunesId": 1557836441,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/54/96/26/54962603-a7f8-dbdf-4ae9-899f166b3d3a/mzaf_9152650001802071710.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/secret-base-%E5%90%9B%E3%81%8C%E3%81%8F%E3%82%8C%E3%81%9F%E3%82%82%E3%81%AE-10-years-after-ver/1557836193?i=1557836441",
+        "title": "Secret Base~Kimigakuretamono",
+        "original": "secret base ～君がくれたもの～ (10 years after Ver.)",
+        "artist": "本間芽衣子（CV.茅野愛衣）",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/26/73/43/2673438e-cf37-a499-00a1-a14543fd2e7b/4534530129550.jpg/250x250bb.jpg",
+        "year": 2011
+      },
+      {
         "id": 2328649655,
-        "title": "限界突破×サバイバー",
+        "title": "Limit Break x Survivor",
+        "original": "限界突破×サバイバー",
         "artist": "Kiyoshi Hikawa",
         "artistId": 14662259,
         "cover": "https://cdn-images.dzcdn.net/images/cover/5aac64c08fa74e54f8fbae9bd8a5bff2/250x250-000000-80-0-0.jpg",
         "year": 2017
-      },
-      {
-        "id": 472698952,
-        "title": "Guren no Yumiya",
-        "artist": "Linked Horizon",
-        "artistId": 7174384,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/4d41019393b7b8e0eb1c69d7b4173ac1/250x250-000000-80-0-0.jpg",
-        "year": 2018
       },
       {
         "id": 545599342,
@@ -18473,11 +19370,51 @@
       },
       {
         "id": 2895605351,
-        "title": "オリオンをなぞる",
+        "title": "Orion-wo Nazoru",
+        "original": "オリオンをなぞる",
         "artist": "UNISON SQUARE GARDEN",
         "artistId": 14002467,
         "cover": "https://cdn-images.dzcdn.net/images/cover/920a8bd780229097c760f23d1a75aca2/250x250-000000-80-0-0.jpg",
         "year": 2011
+      },
+      {
+        "itunesId": 1204118482,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview82/v4/fd/d7/85/fdd785da-7295-e7c7-bf7b-3555a67b137a/mzaf_9068072998088132412.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/shadow-and-truth/1204118428?i=1204118482",
+        "title": "Shadow and Truth",
+        "artist": "ONE Ⅲ NOTES",
+        "artistId": 183343337,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/34/e2/07/34e207b9-b7f9-a119-6cb2-017f1df596eb/LACM-14574.jpg/250x250bb.jpg",
+        "year": 2017
+      },
+      {
+        "itunesId": 1045900615,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/a6/6f/fa/a66ffacb-3c46-1c5d-d89d-af570d0380ea/mzaf_9950401734984304014.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E9%A2%A8%E3%82%92%E5%91%BC%E3%81%B9/1045900613?i=1045900615",
+        "title": "風を呼べ",
+        "artist": "UNDER GRAPH",
+        "artistId": 1383659,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/21/bc/9c/21bc9c02-d5ef-f607-8039-35473e8a1dd5/mzm.ovolkgig.jpg/250x250bb.jpg",
+        "year": 2013
+      },
+      {
+        "id": 442410002,
+        "title": "Himawari No Yakusoku",
+        "original": "ひまわりの約束",
+        "artist": "Motohiro Hata",
+        "artistId": 4929505,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/024c4a5fa51ee97cd47502edf30ec713/250x250-000000-80-0-0.jpg",
+        "year": 2014
+      },
+      {
+        "itunesId": 1226258283,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/87/ee/26/87ee2624-9cba-a280-bbe1-2ea490efd717/mzaf_6691657700878426872.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E6%B8%A1%E6%9C%88%E6%A9%8B-%E5%90%9B-%E6%83%B3%E3%81%B5/1226258280?i=1226258283",
+        "title": "渡月橋 ～君 想ふ～",
+        "artist": "Mai Kuraki",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/78/e1/c7/78e1c798-4bdc-a4c2-1f83-def08b05506f/VNCM-6040a.jpg/250x250bb.jpg",
+        "year": 2017
       },
       {
         "id": 3296050451,
@@ -18497,15 +19434,27 @@
       },
       {
         "id": 975911872,
-        "title": "青い栞",
+        "title": "Aoi Shiori",
+        "original": "青い栞",
         "artist": "Galileo Galilei",
         "artistId": 4766237,
         "cover": "https://cdn-images.dzcdn.net/images/cover/21005f390568892a3f92fc7e20a7d239/250x250-000000-80-0-0.jpg",
         "year": 2011
       },
       {
+        "itunesId": 1439297637,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/99/06/8d/99068dcd-1d7a-aab8-3a4a-f39f0dd022b8/mzaf_18395588775287327494.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/black-rover/1439297631?i=1439297637",
+        "title": "Black Rover",
+        "artist": "VK Blanka",
+        "artistId": 262341151,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/00/5d/27/005d27d0-7b27-193b-51a2-35ca874d8f79/AVCD-96010.jpg/250x250bb.jpg",
+        "year": 2018
+      },
+      {
         "id": 975960392,
-        "title": "迷子犬と雨のビート",
+        "title": "A Lost Dog and Beats of the Rain",
+        "original": "迷子犬と雨のビート",
         "artist": "ASIAN KUNG-FU GENERATION",
         "artistId": 831,
         "cover": "https://cdn-images.dzcdn.net/images/cover/207e01d0bc1162157fbaf2a7d053d9e3/250x250-000000-80-0-0.jpg",
@@ -18529,11 +19478,34 @@
       },
       {
         "id": 976074582,
-        "title": "裏切りの夕焼け",
+        "title": "Uragirinoyuuyake",
+        "original": "裏切りの夕焼け",
         "artist": "Theatre Brook",
         "artistId": 50606892,
         "cover": "https://cdn-images.dzcdn.net/images/cover/19ea1c5baee08ded2d91b3f4fe76b127/250x250-000000-80-0-0.jpg",
         "year": 2010
+      },
+      {
+        "itunesId": 1167314535,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/02/8b/73/028b73fd-dc81-eaf5-dc59-164fd8a0e8fa/mzaf_16565454777712235612.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E6%9C%80%CF%88%E6%9C%80%E5%A5%BD%E8%AA%BF/1167314417?i=1167314535",
+        "title": "Saisaisaikouchou",
+        "original": "最Ψ最好調！",
+        "artist": "Dempagumi.Inc",
+        "artistId": 8407242,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music71/v4/08/00/c0/0800c07d-e334-6cc5-82b1-d041c04a6b5a/TFCC-89606WW.jpg/250x250bb.jpg",
+        "year": 2016
+      },
+      {
+        "itunesId": 553432426,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/8f/16/99/8f169997-2a2f-2598-e903-e549165bb8d7/mzaf_921364480030589369.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%83%8B%E3%83%83%E3%83%9D%E3%83%B3%E7%AC%91%E9%A1%94%E7%99%BE%E6%99%AF/553432331?i=553432426",
+        "title": "Nippon Egao Hyakkei",
+        "original": "ニッポン笑顔百景",
+        "artist": "Momokurotei Ichimon",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/00/37/16/00371629-4fea-c600-4453-00c107688252/KICM-3252.jpg/250x250bb.jpg",
+        "year": 2012
       },
       {
         "id": 2500945771,
@@ -18545,7 +19517,8 @@
       },
       {
         "id": 976099622,
-        "title": "名前のない怪物",
+        "title": "Namae No Nai Kaibutsu",
+        "original": "名前のない怪物",
         "artist": "EGOIST",
         "artistId": 325381,
         "cover": "https://cdn-images.dzcdn.net/images/cover/0da04cd497506a5923357d0da5d98309/250x250-000000-80-0-0.jpg",
@@ -18560,6 +19533,24 @@
         "year": 2012
       },
       {
+        "id": 2127576517,
+        "title": "Welcome to Japari Park",
+        "original": "ようこそジャパリパークへ",
+        "artist": "Doubutsu Biscuits x PPP",
+        "artistId": 198421047,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/1c2fdc0cea402cd9471024e50046d990/250x250-000000-80-0-0.jpg",
+        "year": 2017
+      },
+      {
+        "id": 976086872,
+        "title": "Love Dramatic",
+        "original": "ラブ・ドラマティック (Funky Flag Version)",
+        "artist": "Masayuki Suzuki",
+        "artistId": 4636764,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/2c417a67550a09d1d5dbf6f619574bd5/250x250-000000-80-0-0.jpg",
+        "year": 2019
+      },
+      {
         "id": 3297870611,
         "title": "Daydream cafe",
         "artist": "Petit Rabbit's",
@@ -18569,11 +19560,21 @@
       },
       {
         "id": 976029732,
-        "title": "ラピスラズリ",
+        "title": "Lapislazuli",
+        "original": "ラピスラズリ",
         "artist": "Eir Aoi",
         "artistId": 8002046,
         "cover": "https://cdn-images.dzcdn.net/images/cover/520b7d4384d738c19d2294648e70adf0/250x250-000000-80-0-0.jpg",
         "year": 2015
+      },
+      {
+        "id": 976046322,
+        "title": "Q&A Recital!",
+        "original": "Q&A リサイタル！",
+        "artist": "Haruka Tomatsu",
+        "artistId": 12145758,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/53c0262d2946225413b4e8b1100847e7/250x250-000000-80-0-0.jpg",
+        "year": 2012
       },
       {
         "id": 975959692,
@@ -18585,7 +19586,8 @@
       },
       {
         "id": 3946085141,
-        "title": "僕らは今のなかで",
+        "title": "Bokura wa Ima no Naka de",
+        "original": "僕らは今のなかで",
         "artist": "μ's",
         "artistId": 62737732,
         "cover": "https://cdn-images.dzcdn.net/images/cover/e2e1c134b14a1afeb4266839f48b7568/250x250-000000-80-0-0.jpg",
@@ -18593,7 +19595,8 @@
       },
       {
         "id": 2229720677,
-        "title": "マジLOVE1000%",
+        "title": "Maji LOVE 1000%",
+        "original": "マジLOVE1000%",
         "artist": "ST☆RISH",
         "artistId": 188308377,
         "cover": "https://cdn-images.dzcdn.net/images/cover/d2dbd8ee0b192449e93736f62a81895c/250x250-000000-80-0-0.jpg",
@@ -18609,7 +19612,8 @@
       },
       {
         "id": 976145572,
-        "title": "ここだけの話",
+        "title": "Kokodakeno Hanashi",
+        "original": "ここだけの話",
         "artist": "Chatmonchy",
         "artistId": 6294268,
         "cover": "https://cdn-images.dzcdn.net/images/cover/2426f314e5e343ec3334f46aa1eaae6b/250x250-000000-80-0-0.jpg",
@@ -18632,6 +19636,16 @@
         "year": 2015
       },
       {
+        "itunesId": 1251263403,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview114/v4/fc/ce/ad/fccead80-6610-063b-040e-54c249094cbc/mzaf_13600168811162810139.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E4%B8%96%E7%95%8C%E3%81%AF%E3%81%82%E3%81%AA%E3%81%9F%E3%81%AE%E8%89%B2%E3%81%AB%E3%81%AA%E3%82%8B/1251263400?i=1251263403",
+        "title": "世界はあなたの色になる",
+        "artist": "B'z",
+        "artistId": 1550,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/7b/55/9f/7b559ff0-5c40-e4ed-65f2-87c64a81061c/dj.icdzfuco.jpg/250x250bb.jpg",
+        "year": 2016
+      },
+      {
         "id": 472573672,
         "title": "I Love",
         "artist": "Azusa",
@@ -18640,8 +19654,19 @@
         "year": 2010
       },
       {
+        "itunesId": 1335526350,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/db/05/54/db0554af-b5de-57a0-0b83-343d11da7b3e/mzaf_10144845657882623299.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/pop-team-epic/1335526176?i=1335526350",
+        "title": "POP TEAM EPIC",
+        "artist": "Sumire Uesaka",
+        "artistId": 7242988,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/86/fb/57/86fb57b3-c25f-0bc4-7652-d5a7a6cbc904/KICM-91824_1400_72.jpg/250x250bb.jpg",
+        "year": 2018
+      },
+      {
         "id": 976122582,
-        "title": "今、話したい誰かがいる",
+        "title": "Ima Hanashitai Darekagairu",
+        "original": "今、話したい誰かがいる",
         "artist": "Nogizaka46",
         "artistId": 8002134,
         "cover": "https://cdn-images.dzcdn.net/images/cover/cbd6ce45b807830c2b243a2061d425f7/250x250-000000-80-0-0.jpg",
@@ -18662,6 +19687,15 @@
         "artistId": 14108227,
         "cover": "https://cdn-images.dzcdn.net/images/cover/5edb4a98c8d38f439afca830caa6c456/250x250-000000-80-0-0.jpg",
         "year": 2013
+      },
+      {
+        "id": 2121510947,
+        "title": "OUKARANMAN",
+        "original": "桜花爛漫",
+        "artist": "Keytalk",
+        "artistId": 1460437,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8c3d99c1d2dde4996306aca068cc9e23/250x250-000000-80-0-0.jpg",
+        "year": 2015
       },
       {
         "id": 2230714637,
@@ -18688,6 +19722,65 @@
         "year": 2018
       },
       {
+        "id": 3405334081,
+        "title": "Tanjiro Kamado's Song -OST version-",
+        "original": "竈門炭治郎のうた -OST ver.-",
+        "artist": "Go Shiina",
+        "artistId": 9965214,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/baf71d33903c95e5c930f9fb3d18504f/250x250-000000-80-0-0.jpg",
+        "year": 2019
+      },
+      {
+        "id": 2127575727,
+        "title": "Boku no friend",
+        "original": "ぼくのフレンド",
+        "artist": "Mewhan",
+        "artistId": 141423842,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/cc3bcdf8a8526e838670e576487f11b6/250x250-000000-80-0-0.jpg",
+        "year": 2017
+      },
+      {
+        "itunesId": 1804072981,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/cb/8c/f7/cb8cf78a-7c9f-d9c7-0da5-8a3f3cb22e07/mzaf_15883173652961785117.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E5%85%89%E3%81%AE%E3%82%B7%E3%82%B0%E3%83%8A%E3%83%AB-2014concert-tour-kis-my-journey/1804072676?i=1804072981",
+        "title": "Hikarino Signal",
+        "original": "光のシグナル",
+        "artist": "Kis-My-Ft2",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/d8/5e/bc/d85ebcae-255c-92de-3190-4b30fa0a6edd/ANTCD-A0000016497.jpg/250x250bb.jpg",
+        "year": 2014
+      },
+      {
+        "itunesId": 1847217826,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/f9/64/72/f96472f4-5715-d9cc-50fa-4c9220be5c69/mzaf_9630431361709626499.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/super-powers/1847217825?i=1847217826",
+        "title": "Super Powers",
+        "artist": "V6",
+        "artistId": 6949,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/99/29/85/992985e4-0428-2dd0-980c-902d495694fd/ANTCD-A0000018343.jpg/250x250bb.jpg",
+        "year": 2019
+      },
+      {
+        "itunesId": 1784239437,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/66/12/df/6612df3a-6828-934c-15f6-8cafbda88de3/mzaf_14335189204624708879.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/crow-song/1784239367?i=1784239437",
+        "title": "Crow Song",
+        "artist": "marina",
+        "artistId": 74357,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/59/9e/5d/599e5d3b-d0df-938b-8889-ea917b06a385/4571640570162_cover.png/250x250bb.jpg",
+        "year": 2010
+      },
+      {
+        "itunesId": 1847222364,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/98/57/0e/98570e30-01a8-e1c6-962c-fbb7c3d82e0d/mzaf_9256820823305690053.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/timeless/1847222363?i=1847222364",
+        "title": "Timeless",
+        "artist": "V6",
+        "artistId": 6949,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/0f/e5/c5/0fe5c5c9-a2b8-5607-538d-55af1e749e4d/ANTCD-A0000018334.jpg/250x250bb.jpg",
+        "year": 2015
+      },
+      {
         "id": 4381159811,
         "title": "BLOODY STREAM",
         "artist": "Coda",
@@ -18697,7 +19790,8 @@
       },
       {
         "id": 2618011022,
-        "title": "カワキヲアメク",
+        "title": "Kawakiwoameku",
+        "original": "カワキヲアメク",
         "artist": "美波",
         "artistId": 99539532,
         "cover": "https://cdn-images.dzcdn.net/images/cover/79c7fbdb0c06eeb8e14b08cd8bab1ede/250x250-000000-80-0-0.jpg",
@@ -18712,6 +19806,16 @@
         "year": 2018
       },
       {
+        "itunesId": 1535798233,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fc/e2/bf/fce2bf61-98a5-6818-13eb-d34539718192/mzaf_15847795743843901893.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E6%81%8B%E6%84%9B%E3%82%B5%E3%83%BC%E3%82%AD%E3%83%A5%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3/1535798229?i=1535798233",
+        "title": "恋愛サーキュレーション",
+        "artist": "物語シリーズ",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/55/3f/f1/553ff15f-c6f5-9a37-cec0-5b7f5b0137e6/jacket_ANXX00880B00Z_550.jpg/250x250bb.jpg",
+        "year": 2010
+      },
+      {
         "id": 4381165221,
         "title": "il vento d'oro",
         "artist": "Yugo Kanno",
@@ -18721,7 +19825,8 @@
       },
       {
         "id": 1048556742,
-        "title": "冬のはなし",
+        "title": "Fuyunohanashi",
+        "original": "冬のはなし",
         "artist": "Given",
         "artistId": 1160382,
         "cover": "https://cdn-images.dzcdn.net/images/cover/1e9d572c463932bbedfae5b6d41a5050/250x250-000000-80-0-0.jpg",
@@ -18737,7 +19842,8 @@
       },
       {
         "id": 904161152,
-        "title": "ポラリス",
+        "title": "Polaris",
+        "original": "ポラリス",
         "artist": "Blue Encount",
         "artistId": 5482289,
         "cover": "https://cdn-images.dzcdn.net/images/cover/127307f199250c4fd01c93542c4ed618/250x250-000000-80-0-0.jpg",
@@ -18752,11 +19858,12 @@
         "year": 2018
       },
       {
-        "id": 2464909545,
-        "title": "火炎",
+        "id": 976045612,
+        "title": "Fire",
+        "original": "火炎",
         "artist": "QUEEN BEE",
         "artistId": 187156157,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/f8dc5c5ca0a1a59aca868e33faa708b2/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/71dac801c1d3f89ccae792ccf22ccc86/250x250-000000-80-0-0.jpg",
         "year": 2019
       },
       {
@@ -18770,16 +19877,18 @@
     ],
     "2020": [
       {
-        "id": 4261602111,
-        "title": "炎",
+        "id": 1093338122,
+        "title": "homura",
+        "original": "炎",
         "artist": "LiSA",
-        "artistId": 145068682,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/26045e6bf635b52a95b54b10f65cdb5e/250x250-000000-80-0-0.jpg",
+        "artistId": 11446160,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/cac21ed7442ee24c4f434ca873b855b6/250x250-000000-80-0-0.jpg",
         "year": 2020
       },
       {
         "id": 1516539572,
-        "title": "明け星",
+        "title": "Akeboshi",
+        "original": "明け星",
         "artist": "LiSA",
         "artistId": 11446160,
         "cover": "https://cdn-images.dzcdn.net/images/cover/0a8e4471356a97b48a841c8606c35634/250x250-000000-80-0-0.jpg",
@@ -18787,7 +19896,8 @@
       },
       {
         "id": 1562451422,
-        "title": "残響散歌",
+        "title": "Zankyosanka",
+        "original": "残響散歌",
         "artist": "Aimer",
         "artistId": 8623006,
         "cover": "https://cdn-images.dzcdn.net/images/cover/fe2830a3220f92056d5ee6cf31de73d2/250x250-000000-80-0-0.jpg",
@@ -18795,7 +19905,8 @@
       },
       {
         "id": 1581982382,
-        "title": "朝が来る",
+        "title": "Asa ga kuru",
+        "original": "朝が来る",
         "artist": "Aimer",
         "artistId": 8623006,
         "cover": "https://cdn-images.dzcdn.net/images/cover/dd43afcbc9b801a67818fa0af6355e5e/250x250-000000-80-0-0.jpg",
@@ -18803,7 +19914,8 @@
       },
       {
         "id": 2210493097,
-        "title": "アイドル",
+        "title": "Idol",
+        "original": "アイドル",
         "artist": "YOASOBI",
         "artistId": 108153772,
         "cover": "https://cdn-images.dzcdn.net/images/cover/c028acc15f911c6ca3ff821abbb64aa3/250x250-000000-80-0-0.jpg",
@@ -18811,7 +19923,8 @@
       },
       {
         "id": 2449469235,
-        "title": "勇者",
+        "title": "Yuusha",
+        "original": "勇者",
         "artist": "YOASOBI",
         "artistId": 108153772,
         "cover": "https://cdn-images.dzcdn.net/images/cover/9a578950cc29c69692c464a3e70e1243/250x250-000000-80-0-0.jpg",
@@ -18819,7 +19932,8 @@
       },
       {
         "id": 1171495792,
-        "title": "怪物",
+        "title": "Monster",
+        "original": "怪物",
         "artist": "YOASOBI",
         "artistId": 108153772,
         "cover": "https://cdn-images.dzcdn.net/images/cover/0e7a3410cce9c1a1487bb594c27aa658/250x250-000000-80-0-0.jpg",
@@ -18827,7 +19941,8 @@
       },
       {
         "id": 1914353297,
-        "title": "祝福",
+        "title": "The Blessing",
+        "original": "祝福",
         "artist": "YOASOBI",
         "artistId": 108153772,
         "cover": "https://cdn-images.dzcdn.net/images/cover/4356ce973afa86807675dc4c40e8b80e/250x250-000000-80-0-0.jpg",
@@ -18851,7 +19966,8 @@
       },
       {
         "id": 2353060455,
-        "title": "地球儀",
+        "title": "Chikyugi",
+        "original": "地球儀",
         "artist": "Kenshi Yonezu",
         "artistId": 5289039,
         "cover": "https://cdn-images.dzcdn.net/images/cover/5c5e61260db9dbc8e833200691444fb1/250x250-000000-80-0-0.jpg",
@@ -18866,67 +19982,142 @@
         "year": 2023
       },
       {
-        "id": 3710089132,
-        "title": "一途",
+        "id": 1566225852,
+        "title": "Ichizu",
+        "original": "一途",
         "artist": "King Gnu",
         "artistId": 12944623,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/ae56d14944ae24c0d2e48c6c8a300023/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c7062ad92c5aa081b7c7c4ab853ca596/250x250-000000-80-0-0.jpg",
         "year": 2021
       },
       {
+        "id": 1591373282,
+        "title": "Sakayume",
+        "original": "逆夢",
+        "artist": "King Gnu",
+        "artistId": 12944623,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c7062ad92c5aa081b7c7c4ab853ca596/250x250-000000-80-0-0.jpg",
+        "year": 2021
+      },
+      {
+        "itunesId": 1533208085,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/17/47/ca/1747ca2b-1ab8-a43f-35d5-e0d01d9be305/mzaf_17560760129565806208.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E5%BB%BB%E5%BB%BB%E5%A5%87%E8%AD%9A/1533208084?i=1533208085",
+        "title": "廻廻奇譚",
+        "artist": "Eve",
+        "artistId": 837,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/0b/81/ae/0b81aee7-d566-06c1-bb6c-70a36ffe5e29/TFDS-00621WW.jpg/250x250bb.jpg",
+        "year": 2020
+      },
+      {
+        "itunesId": 1656364307,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/42/e6/a8/42e6a8c2-2247-d8f1-3d26-5d28639bbed0/mzaf_11569603815317713490.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%83%95%E3%82%A1%E3%82%A4%E3%83%88%E3%82%BD%E3%83%B3%E3%82%B0/1656364306?i=1656364307",
+        "title": "ファイトソング",
+        "artist": "Eve",
+        "artistId": 837,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/9d/60/3e/9d603ede-dbb0-5403-efeb-415f28dd5e39/TFDS-00847WW.jpg/250x250bb.jpg",
+        "year": 2022
+      },
+      {
+        "itunesId": 1542572218,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/a1/17/b4/a117b473-ffb1-6c7e-771f-b50804b4004f/mzaf_3218237334022403632.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E8%92%BC%E3%81%AE%E3%83%AF%E3%83%AB%E3%83%84/1542572215?i=1542572218",
+        "title": "蒼のワルツ",
+        "artist": "Eve",
+        "artistId": 837,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/38/11/a8/3811a893-27cf-62b5-b874-a52abd578753/TFCC-86743WW.jpg/250x250bb.jpg",
+        "year": 2020
+      },
+      {
         "id": 1831688187,
-        "title": "紅蓮の弓矢",
+        "title": "Guren no Yumiya",
+        "original": "紅蓮の弓矢",
         "artist": "Linked Horizon",
         "artistId": 7174384,
         "cover": "https://cdn-images.dzcdn.net/images/cover/ee6fc9ce4cbe0ba36c922b3b31bff9f0/250x250-000000-80-0-0.jpg",
+        "year": 2024
+      },
+      {
+        "id": 2122215167,
+        "title": "Shinzo wo Sasageyo !",
+        "original": "心臓を捧げよ！",
+        "artist": "Linked Horizon",
+        "artistId": 7174384,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/651b19c5f424adc4251933987b373832/250x250-000000-80-0-0.jpg",
         "year": 2024
       },
       {
         "id": 1831688197,
-        "title": "自由の翼",
+        "title": "Jiyuu No Tsubasa",
+        "original": "自由の翼",
         "artist": "Linked Horizon",
         "artistId": 7174384,
         "cover": "https://cdn-images.dzcdn.net/images/cover/ee6fc9ce4cbe0ba36c922b3b31bff9f0/250x250-000000-80-0-0.jpg",
         "year": 2024
       },
       {
-        "id": 3889976171,
-        "title": "逆光",
+        "id": 1774489177,
+        "title": "New Genesis",
+        "original": "新時代",
         "artist": "Ado",
         "artistId": 121146382,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/8efc74cb300ddaff8d24c8450ab80531/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/de212bf4162c4026f4ecde4b06aa9f24/250x250-000000-80-0-0.jpg",
         "year": 2022
       },
       {
-        "id": 1110641342,
-        "title": "唱",
+        "id": 1849821967,
+        "title": "I’m invincible",
+        "original": "私は最強",
         "artist": "Ado",
         "artistId": 121146382,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/c7fdf1d42f885c37caa588f0e61b793e/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4227788fb6557a65945db73e2bbd4bbe/250x250-000000-80-0-0.jpg",
+        "year": 2022
+      },
+      {
+        "id": 1849821977,
+        "title": "Backlight",
+        "original": "逆光",
+        "artist": "Ado",
+        "artistId": 121146382,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4227788fb6557a65945db73e2bbd4bbe/250x250-000000-80-0-0.jpg",
+        "year": 2022
+      },
+      {
+        "id": 2431779715,
+        "title": "Show",
+        "original": "唱",
+        "artist": "Ado",
+        "artistId": 121146382,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/68d71af468ef891f16453cdbde56f019/250x250-000000-80-0-0.jpg",
         "year": 2023
       },
       {
-        "id": 2474193531,
-        "title": "Kura Kura",
-        "artist": "Ado",
-        "artistId": 121146382,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/54b882ef3fc70b88ae7d13400c6eab45/250x250-000000-80-0-0.jpg",
-        "year": 2021
-      },
-      {
         "id": 1534961592,
-        "title": "グランドエスケープ",
+        "title": "Grand Escape",
+        "original": "グランドエスケープ",
         "artist": "RADWIMPS",
         "artistId": 211087,
         "cover": "https://cdn-images.dzcdn.net/images/cover/b761f3ef95d663feb6c0b0df58d8e71b/250x250-000000-80-0-0.jpg",
         "year": 2021
       },
       {
-        "id": 1781590897,
-        "title": "ミックスナッツ",
+        "itunesId": 1646939428,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/80/87/00/80870064-7c81-8ecb-fbf3-d7ce7d5d973c/mzaf_16030670600666092245.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%81%99%E3%81%9A%E3%82%81-feat-%E5%8D%81%E6%98%8E/1646939421?i=1646939428",
+        "title": "すずめ",
+        "artist": "RADWIMPS",
+        "artistId": 211087,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/9e/5b/f4/9e5bf443-7f1c-cc7a-6773-68e49248a387/22UM1IM07363.rgb.jpg/250x250bb.jpg",
+        "year": 2022
+      },
+      {
+        "id": 1701852587,
+        "title": "Mixed Nuts",
+        "original": "ミックスナッツ",
         "artist": "Official HIGE DANdism",
         "artistId": 7579730,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/5d3388228701b3011ee058ec26def671/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/b91aef7d2d29861d4ecee575c491a910/250x250-000000-80-0-0.jpg",
         "year": 2022
       },
       {
@@ -18947,7 +20138,8 @@
       },
       {
         "id": 2737587691,
-        "title": "ライラック",
+        "title": "Lilac",
+        "original": "ライラック",
         "artist": "Mrs. GREEN APPLE",
         "artistId": 8152202,
         "cover": "https://cdn-images.dzcdn.net/images/cover/2811916878eaeabe3cf9f9ca2349baab/250x250-000000-80-0-0.jpg",
@@ -18963,7 +20155,8 @@
       },
       {
         "id": 3024903811,
-        "title": "オトノケ",
+        "title": "Otonoke",
+        "original": "オトノケ",
         "artist": "Creepy Nuts",
         "artistId": 13046819,
         "cover": "https://cdn-images.dzcdn.net/images/cover/725e2fe052446f8928ada4036b4516d5/250x250-000000-80-0-0.jpg",
@@ -18979,7 +20172,8 @@
       },
       {
         "id": 2644406432,
-        "title": "オレンジ",
+        "title": "Orange",
+        "original": "オレンジ",
         "artist": "SPYAIR",
         "artistId": 5794305,
         "cover": "https://cdn-images.dzcdn.net/images/cover/9c06e31f12b23711026918c373bdda1b/250x250-000000-80-0-0.jpg",
@@ -18995,39 +20189,44 @@
       },
       {
         "id": 2332722735,
-        "title": "青のすみか",
+        "title": "Where Our Blue Is",
+        "original": "青のすみか",
         "artist": "Tatsuya Kitani",
         "artistId": 14476055,
         "cover": "https://cdn-images.dzcdn.net/images/cover/93376cdd987ddaa39d4546757080fa65/250x250-000000-80-0-0.jpg",
         "year": 2023
       },
       {
-        "id": 4332612102,
-        "title": "晴る",
+        "id": 2595471032,
+        "title": "Sunny",
+        "original": "晴る",
         "artist": "Yorushika",
         "artistId": 67898492,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/5730633e1fbf0d79ee24ceb3da8ef40f/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/1615820e6cc9908deafb22e6618f0b6a/250x250-000000-80-0-0.jpg",
         "year": 2024
       },
       {
-        "id": 2044744267,
-        "title": "青春コンプレックス",
+        "id": 1922480887,
+        "title": "seisyun complex",
+        "original": "青春コンプレックス",
         "artist": "Kessoku Band",
         "artistId": 183953437,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/470cbcfbe4091bc44ae7da80e21f50c5/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8cd479cd5f5f96b9e4ce8de6abe67c63/250x250-000000-80-0-0.jpg",
         "year": 2022
       },
       {
-        "id": 2044744307,
-        "title": "ギターと孤独と蒼い惑星",
+        "id": 1975190647,
+        "title": "Guitar, Loneliness and Blue Planet",
+        "original": "ギターと孤独と蒼い惑星",
         "artist": "Kessoku Band",
         "artistId": 183953437,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/470cbcfbe4091bc44ae7da80e21f50c5/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ac55efc4ef57091a9c78df30e06e6869/250x250-000000-80-0-0.jpg",
         "year": 2022
       },
       {
         "id": 2044744327,
-        "title": "あのバンド",
+        "title": "That band",
+        "original": "あのバンド",
         "artist": "Kessoku Band",
         "artistId": 183953437,
         "cover": "https://cdn-images.dzcdn.net/images/cover/470cbcfbe4091bc44ae7da80e21f50c5/250x250-000000-80-0-0.jpg",
@@ -19035,15 +20234,27 @@
       },
       {
         "id": 2128227357,
-        "title": "喜劇",
+        "title": "Comedy",
+        "original": "喜劇",
         "artist": "Gen Hoshino",
         "artistId": 4800610,
         "cover": "https://cdn-images.dzcdn.net/images/cover/884a923f768e2ad81a71a0b59773dfd4/250x250-000000-80-0-0.jpg",
         "year": 2022
       },
       {
+        "itunesId": 1563692667,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/65/7d/43/657d43ce-d5ce-3954-8d59-b116ba7cc3ba/mzaf_16590883804719819221.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/butter-fly-%E5%8E%9F%E6%9B%B2%E6%AD%8C%E6%89%8B-%E5%92%8C%E7%94%B0%E5%85%89%E5%8F%B8-%E3%82%AC%E3%82%A4%E3%83%89%E7%84%A1%E3%81%97%E3%82%AB%E3%83%A9%E3%82%AA%E3%82%B1/1563692666?i=1563692667",
+        "title": "Butter-Fly",
+        "artist": "Kouji Wada",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/f0/2d/6f/f02d6f4d-5253-d0bf-4f2c-6c9b6f4c7a09/4570063046346.jpg/250x250bb.jpg",
+        "year": 2020
+      },
+      {
         "id": 2205130627,
-        "title": "絆ノ奇跡",
+        "title": "Kizuna No Kiseki",
+        "original": "絆ノ奇跡",
         "artist": "MAN WITH A MISSION",
         "artistId": 5797990,
         "cover": "https://cdn-images.dzcdn.net/images/cover/3fd8b9c831f2c1a4217807d217cb7062/250x250-000000-80-0-0.jpg",
@@ -19066,11 +20277,14 @@
         "year": 2023
       },
       {
-        "id": 2284936657,
-        "title": "絆ノ奇跡",
+        "itunesId": 1678949889,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/66/c3/c8/66c3c8a9-846c-e4b5-9a5d-c1d961f14644/mzaf_7312965873766517511.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E7%B5%86%E3%83%8E%E5%A5%87%E8%B7%A1/1678949877?i=1678949889",
+        "title": "Kizuna No Kiseki",
+        "original": "絆ノ奇跡",
         "artist": "milet",
         "artistId": 5879939,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/3fd8b9c831f2c1a4217807d217cb7062/250x250-000000-80-0-0.jpg",
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/ea/50/a1/ea50a147-5c73-a762-0650-d2a285d6fabd/4547366615807.jpg/250x250bb.jpg",
         "year": 2023
       },
       {
@@ -19083,7 +20297,8 @@
       },
       {
         "id": 1067405902,
-        "title": "決戦スピリット",
+        "title": "Kessen spirit",
+        "original": "決戦スピリット",
         "artist": "Chico with HoneyWorks",
         "artistId": 9314268,
         "cover": "https://cdn-images.dzcdn.net/images/cover/ff3921a8a5f73050cedc97fe8dd9d6b9/250x250-000000-80-0-0.jpg",
@@ -19099,27 +20314,30 @@
       },
       {
         "id": 1792994187,
-        "title": "花の塔",
+        "title": "Tower of Flower",
+        "original": "花の塔",
         "artist": "Sayuri",
         "artistId": 4496484,
         "cover": "https://cdn-images.dzcdn.net/images/cover/1aafcdb4567a9de0ce7d3bf1b1f677e5/250x250-000000-80-0-0.jpg",
         "year": 2022
       },
       {
-        "id": 1774489177,
-        "title": "New Genesis",
-        "artist": "Ado",
-        "artistId": 121146382,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/de212bf4162c4026f4ecde4b06aa9f24/250x250-000000-80-0-0.jpg",
-        "year": 2022
-      },
-      {
         "id": 3402450951,
-        "title": "革命道中",
+        "title": "On The Way",
+        "original": "革命道中",
         "artist": "Aina The End",
         "artistId": 7922870,
         "cover": "https://cdn-images.dzcdn.net/images/cover/7cb3e0610479410d8a6bb5a5a33ddb48/250x250-000000-80-0-0.jpg",
         "year": 2025
+      },
+      {
+        "id": 4332612102,
+        "title": "Beyond the Clouds, Only Me Downwind",
+        "original": "雲を抜け風下へ私だけ",
+        "artist": "Yorushika",
+        "artistId": 67898492,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5730633e1fbf0d79ee24ceb3da8ef40f/250x250-000000-80-0-0.jpg",
+        "year": 2026
       },
       {
         "id": 1995625867,
@@ -19143,6 +20361,14 @@
         "artist": "Petite Meller",
         "artistId": 5299859,
         "cover": "https://cdn-images.dzcdn.net/images/cover/181ae820230d9e396edf4f1b9ca4c30e/250x250-000000-80-0-0.jpg",
+        "year": 2026
+      },
+      {
+        "id": 3710089132,
+        "title": "AIZO",
+        "artist": "King Gnu",
+        "artistId": 12944623,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ae56d14944ae24c0d2e48c6c8a300023/250x250-000000-80-0-0.jpg",
         "year": 2026
       },
       {
@@ -19170,8 +20396,19 @@
         "year": 2021
       },
       {
+        "itunesId": 1492026897,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/72/1f/81/721f8150-9e02-bc81-ae38-004baf64bd2a/mzaf_13307220116577833618.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/black-catcher/1492026896?i=1492026897",
+        "title": "Black Catcher",
+        "artist": "VK Blanka",
+        "artistId": 262341151,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/69/1b/6f/691b6ff6-a5d9-c11f-0f83-411b6e020eff/ANTCD-A0000000841.jpg/250x250bb.jpg",
+        "year": 2020
+      },
+      {
         "id": 2493747201,
-        "title": "花になって",
+        "title": "Be a flower",
+        "original": "花になって",
         "artist": "Ryokuoushoku Shakai",
         "artistId": 72120942,
         "cover": "https://cdn-images.dzcdn.net/images/cover/be50516f77636b5beca652ebb8ea305b/250x250-000000-80-0-0.jpg",
@@ -19187,7 +20424,8 @@
       },
       {
         "id": 3144729691,
-        "title": "愛♡スクリ～ム！",
+        "title": "AI SCREAM!",
+        "original": "愛♡スクリ～ム！",
         "artist": "Aiscream",
         "artistId": 327819421,
         "cover": "https://cdn-images.dzcdn.net/images/cover/c6338b2505097c444f07bbbfae0a0fb3/250x250-000000-80-0-0.jpg",
@@ -19203,7 +20441,8 @@
       },
       {
         "id": 3155594841,
-        "title": "百花繚乱",
+        "title": "In Bloom",
+        "original": "百花繚乱",
         "artist": "Lilas Ikuta",
         "artistId": 106606492,
         "cover": "https://cdn-images.dzcdn.net/images/cover/0c3bbe7822cf9e7abb0490a3d432f559/250x250-000000-80-0-0.jpg",
@@ -19219,7 +20458,8 @@
       },
       {
         "id": 4095815451,
-        "title": "猫じゃらし",
+        "title": "nekojarashi",
+        "original": "猫じゃらし",
         "artist": "7CO",
         "artistId": 14502407,
         "cover": "https://cdn-images.dzcdn.net/images/cover/999014725c44b304da09a89896beb378/250x250-000000-80-0-0.jpg",
@@ -19231,6 +20471,15 @@
         "artist": "OneRepublic",
         "artistId": 74398,
         "cover": "https://cdn-images.dzcdn.net/images/cover/6d46b0ad81246bb1c24d2a045fd28fc1/250x250-000000-80-0-0.jpg",
+        "year": 2025
+      },
+      {
+        "id": 3405324711,
+        "title": "Nezuko Kamado's Song -Full Version-",
+        "original": "竈門禰豆子のうた -full ver.-",
+        "artist": "Go Shiina",
+        "artistId": 9965214,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/9e732f15c4c687f911e0c10b09c48988/250x250-000000-80-0-0.jpg",
         "year": 2025
       },
       {
@@ -19250,20 +20499,32 @@
         "year": 2022
       },
       {
-        "id": 3017892051,
-        "title": "残機",
+        "id": 1959352047,
+        "title": "Time Left",
+        "original": "残機",
         "artist": "ZUTOMAYO",
         "artistId": 52778562,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/617ad8ccbc88137f2f23f33f585e4f99/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6b3a7d3dce7c530bdd01f2b292c6c8a3/250x250-000000-80-0-0.jpg",
         "year": 2022
       },
       {
         "id": 1212802752,
-        "title": "色香水",
+        "title": "Irokousui",
+        "original": "色香水",
         "artist": "Yoh Kamiyama",
         "artistId": 70459772,
         "cover": "https://cdn-images.dzcdn.net/images/cover/9589cbf076c1e313a5a8e4966c69684d/250x250-000000-80-0-0.jpg",
         "year": 2021
+      },
+      {
+        "itunesId": 1626771953,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/3b/4b/b3/3b4bb35d-76be-a1cd-27f0-7d62403a1410/mzaf_11495278544233436875.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/%E3%81%B2%E3%81%A8%E3%82%8A%E3%81%94%E3%81%A4/1626771948?i=1626771953",
+        "title": "ひとりごつ",
+        "artist": "ハチワレ(CV:田中 誠人)",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/f7/ab/59/f7ab59d9-760c-f1a5-ffe2-d285b93dcdba/PA00100543_0_150490_jacket.jpg/250x250bb.jpg",
+        "year": 2022
       },
       {
         "id": 2411439855,
@@ -19290,12 +20551,22 @@
         "year": 2023
       },
       {
-        "id": 2443552485,
-        "title": "ソングオブザデッド",
+        "id": 2345664365,
+        "title": "Song of the Dead",
+        "original": "ソングオブザデッド",
         "artist": "KANA-BOON",
         "artistId": 4726033,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/0d26dfde54eed7d48b4000fd66ce1cc5/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/bfa7dfa91b79914bfe3b7844d6d95742/250x250-000000-80-0-0.jpg",
         "year": 2023
+      },
+      {
+        "id": 1910684537,
+        "title": "color",
+        "original": "色彩",
+        "artist": "yama",
+        "artistId": 98064702,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/d3baffbf00337a6e89340f4abe6ad920/250x250-000000-80-0-0.jpg",
+        "year": 2022
       },
       {
         "id": 2067739017,
@@ -19322,19 +20593,21 @@
         "year": 2026
       },
       {
-        "id": 2936968281,
-        "title": "螺旋",
+        "id": 4142553031,
+        "title": "RASEN",
+        "original": "螺旋",
         "artist": "9Lana",
         "artistId": 155448802,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/8c9897ab9243695bb3061b17347066e1/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0e3433fea28e735e92a94f7ccf2d8d32/250x250-000000-80-0-0.jpg",
         "year": 2026
       },
       {
-        "id": 3129954401,
-        "title": "終宵",
+        "id": 4063525761,
+        "title": "Shusho",
+        "original": "終宵",
         "artist": "Macaroni Empitsu",
         "artistId": 132848352,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/36105ca3e77415559a983c2f05081150/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/7d9a99ec408fee9e72955b64c5667071/250x250-000000-80-0-0.jpg",
         "year": 2026
       },
       {
@@ -19354,11 +20627,12 @@
         "year": 2025
       },
       {
-        "id": 2339059455,
-        "title": "一進",
+        "id": 4115386601,
+        "title": "Isshin",
+        "original": "一進",
         "artist": "Haku.",
         "artistId": 68421762,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/17936489c64fc3467527353743da5bd3/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/7a5d4e19c28283b7ee29497d225ebfb8/250x250-000000-80-0-0.jpg",
         "year": 2026
       },
       {
@@ -19375,6 +20649,25 @@
         "artist": "Shinsei kamattechan",
         "artistId": 1027630,
         "cover": "https://cdn-images.dzcdn.net/images/cover/e323f6a49575c29be3b7dcbd1ef84f70/250x250-000000-80-0-0.jpg",
+        "year": 2022
+      },
+      {
+        "itunesId": 1470212200,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/f1/46/b8/f146b833-301e-3059-556c-bee0806e89d4/mzaf_1297811067293877105.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/veil/1470212199?i=1470212200",
+        "title": "veil",
+        "artist": "須田景凪",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/3d/fa/a7/3dfaa74e-0a75-3a50-c5d7-74fed90242ed/190295389215.jpg/250x250bb.jpg",
+        "year": 2020
+      },
+      {
+        "id": 1799810607,
+        "title": "Daten",
+        "original": "堕天",
+        "artist": "Creepy Nuts",
+        "artistId": 13046819,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4f93a253e187b809c8e883676a4d40fd/250x250-000000-80-0-0.jpg",
         "year": 2022
       },
       {
@@ -19402,6 +20695,24 @@
         "year": 2025
       },
       {
+        "id": 3017892051,
+        "title": "TAIDADA",
+        "artist": "ZUTOMAYO",
+        "artistId": 52778562,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/617ad8ccbc88137f2f23f33f585e4f99/250x250-000000-80-0-0.jpg",
+        "year": 2024
+      },
+      {
+        "itunesId": 1742554343,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/63/cc/cb/63cccb43-283a-3ec1-46cc-23943f70b4bf/mzaf_10447331168631135086.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/w-rk/1742554338?i=1742554343",
+        "title": "Ｗ●ＲＫ",
+        "artist": "ꉈꀧ꒒꒒ꁄꍈꍈꀧ꒦ꉈ ꉣꅔꎡꅔꁕꁄ",
+        "artistId": 262796731,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/68/be/82/68be82ce-6780-5304-a0a5-4f5d40fd13fc/4547366684209.jpg/250x250bb.jpg",
+        "year": 2023
+      },
+      {
         "id": 1186939392,
         "title": "VIVID VICE",
         "artist": "Who-ya Extended",
@@ -19411,7 +20722,8 @@
       },
       {
         "id": 1509504982,
-        "title": "シンデレラ",
+        "title": "Cinderella",
+        "original": "シンデレラ",
         "artist": "Cidergirl",
         "artistId": 13082439,
         "cover": "https://cdn-images.dzcdn.net/images/cover/3090ba7f90048299edc18db7b50424a6/250x250-000000-80-0-0.jpg",
@@ -20216,20 +21528,22 @@
         "year": 1993
       },
       {
+        "itunesId": 1793454075,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/9c/c4/6d/9cc46dd3-8021-b856-5cda-917b905a88f7/mzaf_13066389503353620285.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/el-matador/1793454058?i=1793454075",
+        "title": "El Matador",
+        "artist": "Los Fabulosos Cadillacs",
+        "artistId": 3491,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/0f/83/df/0f83dfa1-912a-5b31-c111-b01513de2138/196872850635.jpg/250x250bb.jpg",
+        "year": 1993
+      },
+      {
         "id": 6686676,
         "title": "Siguiendo la Luna",
         "artist": "Los Fabulosos Cadillacs",
         "artistId": 3491,
         "cover": "https://cdn-images.dzcdn.net/images/cover/61cb5bf25f082b30b7df5f75b6d77728/250x250-000000-80-0-0.jpg",
         "year": 1992
-      },
-      {
-        "id": 6686599,
-        "title": "Mal Bicho",
-        "artist": "Los Fabulosos Cadillacs",
-        "artistId": 3491,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/9a33752eb7b76755d8fc16dc0c283bbe/250x250-000000-80-0-0.jpg",
-        "year": 1995
       },
       {
         "id": 4006956,
@@ -21094,6 +22408,14 @@
         "artistId": 3491,
         "cover": "https://cdn-images.dzcdn.net/images/cover/61cb5bf25f082b30b7df5f75b6d77728/250x250-000000-80-0-0.jpg",
         "year": 1992
+      },
+      {
+        "id": 6686599,
+        "title": "Mal Bicho",
+        "artist": "Los Fabulosos Cadillacs",
+        "artistId": 3491,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/9a33752eb7b76755d8fc16dc0c283bbe/250x250-000000-80-0-0.jpg",
+        "year": 1990
       },
       {
         "id": 6487538,

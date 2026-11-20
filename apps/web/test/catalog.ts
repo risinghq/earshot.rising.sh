@@ -32,10 +32,12 @@ export async function seedCatalog(
       db
         .prepare(
           `INSERT OR REPLACE INTO catalog_tracks
-             (deezer_id, title, artist, cover, link, year, updated_at)
-           VALUES (?1, ?2, ?3, NULL, NULL, ?4, 0)`,
+             (track_key, deezer_id, title, artist, cover, link, year,
+              updated_at)
+           VALUES (?1, ?2, ?3, ?4, NULL, NULL, ?5, 0)`,
         )
         .bind(
+          `dz:${track.id}`,
           track.id,
           track.title,
           track.artist ?? "Artist",
@@ -43,10 +45,10 @@ export async function seedCatalog(
         ),
       db
         .prepare(
-          `INSERT INTO catalog_members (source_id, deezer_id, position)
+          `INSERT INTO catalog_members (source_id, track_key, position)
            VALUES (?1, ?2, ?3)`,
         )
-        .bind(source!.id, track.id, position),
+        .bind(source!.id, `dz:${track.id}`, position),
     );
   });
   for (let index = 0; index < statements.length; index += 100)

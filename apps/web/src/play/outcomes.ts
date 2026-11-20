@@ -49,10 +49,11 @@ export function trackKeyFor(track: {
   title: string;
   artist: string;
   deezerId?: number;
+  itunesId?: number;
 }) {
-  return track.deezerId !== undefined
-    ? `dz:${track.deezerId}`
-    : `at:${normalizeText(track.artist)}/${normalizeText(track.title)}`;
+  if (track.deezerId !== undefined) return `dz:${track.deezerId}`;
+  if (track.itunesId !== undefined) return `it:${track.itunesId}`;
+  return `at:${normalizeText(track.artist)}/${normalizeText(track.title)}`;
 }
 
 export interface Outcome {
@@ -76,14 +77,13 @@ export async function recordOutcomes(
     rows.map((row) =>
       env.DB.prepare(
         `INSERT INTO round_outcomes
-           (player_key, user_id, track_key, deezer_id, category, era, mode,
-            kind, correct, elapsed_ms, answered_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)`,
+           (player_key, user_id, track_key, category, era, mode, kind,
+            correct, elapsed_ms, answered_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)`,
       ).bind(
         row.playerKey,
         row.userId,
         trackKeyFor(row.track),
-        row.track.deezerId ?? null,
         row.category,
         trackDecade(row.track),
         row.mode,

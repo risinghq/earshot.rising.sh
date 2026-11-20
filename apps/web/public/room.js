@@ -7,6 +7,8 @@ const cards = ["join", "lobby", "game", "reveal", "final", "players"].map(
 const show = (el, on) => {
   el.hidden = !on;
 };
+const listenLabel = (link) =>
+  `Listen on ${link.includes("apple.com") ? "Apple Music" : "Deezer"}`;
 
 const key = `quiz-room-${code}`;
 const params = new URLSearchParams(location.search);
@@ -386,7 +388,9 @@ function renderReveal(s) {
   points.textContent = `+${mine?.score ?? 0}`;
   points.classList.toggle("is-none", !(mine?.score > 0));
   $("sheet-title").textContent = r.title;
-  $("sheet-artist").textContent = r.artist;
+  $("sheet-artist").textContent = r.original
+    ? `${r.original} · ${r.artist}`
+    : r.artist;
   const tile = sheet.querySelector(".cover-tile");
   tile.replaceChildren();
   if (r.cover) {
@@ -397,7 +401,10 @@ function renderReveal(s) {
   }
   const link = $("sheet-link");
   show(link, !!r.link);
-  if (r.link) link.href = r.link;
+  if (r.link) {
+    link.href = r.link;
+    link.textContent = listenLabel(r.link);
+  }
   $("sheet-next").textContent =
     r.number >= s.rounds ? "Results soon" : "Next round soon";
   lastStreak = mine?.streak ?? 0;

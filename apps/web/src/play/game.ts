@@ -25,6 +25,7 @@ export type Phase = "question" | "reveal" | "done";
 export interface RoundResult {
   trackKey: string;
   title: string;
+  original?: string;
   artist: string;
   cover: string | null;
   link: string | null;
@@ -337,12 +338,13 @@ export async function answerRound(
     correct = !timedOut && given === candidate.title;
   } else {
     given = answer.typed?.trim() ? answer.typed!.trim() : null;
-    correct = !timedOut && given !== null && matchTyped(given, candidate.title);
+    correct = !timedOut && given !== null && matchTyped(given, candidate);
   }
   const score = correct ? scoreFor(elapsed) : 0;
   const result: RoundResult = {
     trackKey: trackKeyFor(candidate),
     title: candidate.title,
+    ...(candidate.original ? { original: candidate.original } : {}),
     artist: candidate.artist,
     cover: game.current.reveal.cover,
     link: game.current.reveal.link,

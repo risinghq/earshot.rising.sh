@@ -121,7 +121,7 @@ describe("catalog pool", () => {
     );
     expect(poolEras(await catalogPool(env.DB, "pop"))).toContain(1990);
     await env.DB.prepare(
-      "DELETE FROM catalog_members WHERE deezer_id = 0",
+      "DELETE FROM catalog_members WHERE track_key = 'dz:0'",
     ).run();
     expect(poolEras(await catalogPool(env.DB, "pop"))).not.toContain(1990);
   });
@@ -196,7 +196,7 @@ describe("round outcomes", () => {
     );
     expect(answered.status).toBe(303);
     const row = await env.DB.prepare(
-      `SELECT player_key, user_id, track_key, deezer_id, category, kind,
+      `SELECT player_key, user_id, track_key, category, kind,
               mode, correct, elapsed_ms
        FROM round_outcomes`,
     ).first<{
@@ -277,11 +277,11 @@ describe("curated sources", () => {
       const [first] = curated.pop["1980"];
       await env.DB.prepare(
         `INSERT INTO catalog_tracks
-         (deezer_id, title, artist, year, year_at, answer_title, banned_at,
-          updated_at)
-       VALUES (?1, 'Old', 'Old', 2011, 5, 'Fixed Title', 7, 0)`,
+         (track_key, deezer_id, title, artist, year, year_at, answer_title,
+          banned_at, updated_at)
+       VALUES (?1, ?2, 'Old', 'Old', 2011, 5, 'Fixed Title', 7, 0)`,
       )
-        .bind(first.id)
+        .bind(`dz:${first.id}`, first.id)
         .run();
       const fetch = vi.fn(async () => Response.json({ data: [] }));
       vi.stubGlobal("fetch", fetch);
@@ -489,7 +489,7 @@ describe("admin", () => {
         },
         body: new URLSearchParams({
           category: "pop",
-          deezer_id: String(shared),
+          track_key: `dz:${shared}`,
           ban: "1",
         }).toString(),
       }),

@@ -2,9 +2,15 @@ import type { Env } from "../types";
 import curatedList from "./curated.json";
 import { deezerPlaylistTracks, deezerTrackYear, QuotaError } from "./sources";
 
+// scripts/curate.ts writes this shape: a Deezer `id`, or an iTunes track with
+// its unsigned `preview` URL and Apple Music `link`.
 interface CuratedTrack {
-  id: number;
+  id?: number;
+  itunesId?: number;
+  preview?: string;
+  link?: string;
   title: string;
+  original?: string;
   artist: string;
   artistId: number | null;
   cover: string | null;
@@ -36,12 +42,15 @@ const curatedPerRun = 4;
 const yearsPerRun = 40;
 
 interface SourceTrack {
-  id: number;
+  key: string;
+  deezerId: number | null;
   title: string;
+  original: string | null;
   artist: string;
   artistId: number | null;
   cover: string | null;
   link: string | null;
+  preview: string | null;
   year: number | null;
 }
 
@@ -50,24 +59,30 @@ interface SourceTrack {
 function curatedTracks(ref: string): SourceTrack[] {
   const [category, decade] = ref.split("/");
   return (curated[category]?.[decade] ?? []).map((track) => ({
-    id: track.id,
+    key: track.id === undefined ? `it:${track.itunesId}` : `dz:${track.id}`,
+    deezerId: track.id ?? null,
     title: track.title,
+    original: track.original ?? null,
     artist: track.artist,
     artistId: track.artistId,
     cover: track.cover,
-    link: `https://www.deezer.com/track/${track.id}`,
+    link: track.link ?? `https://www.deezer.com/track/${track.id}`,
+    preview: track.preview ?? null,
     year: track.year,
   }));
 }
 
 async function playlistTracks(ref: string): Promise<SourceTrack[]> {
   return (await deezerPlaylistTracks(ref)).map((track) => ({
-    id: track.id,
+    key: `dz:${track.id}`,
+    deezerId: track.id,
     title: track.title ?? "",
+    original: null,
     artist: track.artist?.name ?? "",
     artistId: track.artist?.id ?? null,
     cover: track.album?.cover_medium ?? null,
     link: track.link ?? null,
+    preview: null,
     year: null,
   }));
 }
@@ -91,25 +106,30 @@ export async function refreshSource(
   const statements: D1PreparedStatement[] = tracks.map((track) =>
     env.DB.prepare(
       `INSERT INTO catalog_tracks
-         (deezer_id, title, artist, artist_id, cover, link, year, year_at,
-          updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
-       ON CONFLICT (deezer_id) DO UPDATE SET
+         (track_key, deezer_id, title, original_title, artist, artist_id,
+          cover, link, preview, year, year_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+       ON CONFLICT (track_key) DO UPDATE SET
          title = excluded.title,
+         original_title = excluded.original_title,
          artist = excluded.artist,
          artist_id = excluded.artist_id,
          cover = excluded.cover,
          link = excluded.link,
+         preview = excluded.preview,
          year = COALESCE(excluded.year, catalog_tracks.year),
          year_at = COALESCE(excluded.year_at, catalog_tracks.year_at),
          updated_at = excluded.updated_at`,
     ).bind(
-      track.id,
+      track.key,
+      track.deezerId,
       track.title,
+      track.original,
       track.artist,
       track.artistId,
       track.cover,
       track.link,
+      track.preview,
       track.year,
       track.year === null ? null : now,
       now,
@@ -123,9 +143,9 @@ export async function refreshSource(
     ),
     ...tracks.map((track, position) =>
       env.DB.prepare(
-        `INSERT INTO catalog_members (source_id, deezer_id, position)
+        `INSERT INTO catalog_members (source_id, track_key, position)
          VALUES (?1, ?2, ?3)`,
-      ).bind(source.id, track.id, position),
+      ).bind(source.id, track.key, position),
     ),
     env.DB.prepare(
       "UPDATE category_sources SET refreshed_at = ?1, tracks_count = ?2 WHERE id = ?3",
@@ -194,26 +214,28 @@ export async function refreshCatalog(
 }
 
 // A track whose lookup already ran has year_at set; a null release_date
-// stays a null year without costing a request on every later run.
+// stays a null year without costing a request on every later run. Only a
+// playlist track lacks a year, and playlists are Deezer's.
 export async function fillMissingYears(env: Env, limit = yearsPerRun) {
   const missing = await env.DB.prepare(
-    `SELECT deezer_id FROM catalog_tracks
-     WHERE year IS NULL AND year_at IS NULL LIMIT ?1`,
+    `SELECT track_key, deezer_id FROM catalog_tracks
+     WHERE year IS NULL AND year_at IS NULL AND deezer_id IS NOT NULL
+     LIMIT ?1`,
   )
     .bind(limit)
-    .all<{ deezer_id: number }>();
-  const updated: number[] = [];
+    .all<{ track_key: string; deezer_id: number }>();
+  const updated: string[] = [];
   try {
     for (const row of missing.results) {
       try {
         const year = await deezerTrackYear(row.deezer_id);
         const wrote = await env.DB.prepare(
           `UPDATE catalog_tracks SET year = ?1, year_at = ?2
-           WHERE deezer_id = ?3 AND year IS NULL`,
+           WHERE track_key = ?3 AND year IS NULL`,
         )
-          .bind(year, Math.floor(Date.now() / 1000), row.deezer_id)
+          .bind(year, Math.floor(Date.now() / 1000), row.track_key)
           .run();
-        if ((wrote.meta.changes ?? 0) > 0) updated.push(row.deezer_id);
+        if ((wrote.meta.changes ?? 0) > 0) updated.push(row.track_key);
       } catch (error) {
         if (error instanceof QuotaError) throw error;
         // A failed lookup stays unmarked and is retried on the next run.
@@ -224,7 +246,7 @@ export async function fillMissingYears(env: Env, limit = yearsPerRun) {
       const rows = await env.DB.prepare(
         `SELECT DISTINCT cs.category FROM catalog_members cm
          JOIN category_sources cs ON cs.id = cm.source_id
-         WHERE cm.deezer_id IN (${updated.map(() => "?").join(",")})`,
+         WHERE cm.track_key IN (${updated.map(() => "?").join(",")})`,
       )
         .bind(...updated)
         .all<{ category: string }>();
@@ -239,13 +261,13 @@ export async function fillMissingYears(env: Env, limit = yearsPerRun) {
 
 // A catalog_tracks row is shared by every category whose sources list it,
 // so a track-level change (ban, override, year) invalidates each cache.
-export async function dropTrackCaches(env: Env, deezerId: number) {
+export async function dropTrackCaches(env: Env, trackKey: string) {
   const rows = await env.DB.prepare(
     `SELECT DISTINCT cs.category FROM catalog_members cm
      JOIN category_sources cs ON cs.id = cm.source_id
-     WHERE cm.deezer_id = ?1`,
+     WHERE cm.track_key = ?1`,
   )
-    .bind(deezerId)
+    .bind(trackKey)
     .all<{ category: string }>();
   for (const row of rows.results)
     await env.CACHE?.delete(`play:cat:${row.category}`).catch(() => undefined);

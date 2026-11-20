@@ -98,6 +98,7 @@ interface Reveal {
   number: number;
   track: string;
   title: string;
+  original: string | null;
   artist: string;
   cover: string | null;
   link: string | null;
@@ -612,7 +613,7 @@ export class Room extends DurableObject<Env> {
       correct = !timedOut && value === candidate.title;
     } else {
       given = value.trim();
-      correct = !timedOut && given !== "" && matchTyped(given, candidate.title);
+      correct = !timedOut && given !== "" && matchTyped(given, candidate);
     }
     const score = correct ? scoreFor(elapsed) : 0;
     s.round.answers[pid] = { answer: given, correct, score, ms: elapsed };
@@ -657,6 +658,7 @@ export class Room extends DurableObject<Env> {
       number: round.number,
       track: trackKeyFor(candidate),
       title: candidate.title,
+      original: candidate.original ?? null,
       artist: candidate.artist,
       cover: round.cover,
       link: round.link,

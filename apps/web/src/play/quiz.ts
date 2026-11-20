@@ -5,6 +5,7 @@ import {
   deezerSearchPreview,
   QuotaError,
   type Candidate,
+  type Preview,
 } from "./sources";
 
 export const roundSeconds = 15;
@@ -21,10 +22,18 @@ export function shuffled<T>(items: T[]): T[] {
     .map(({ item }) => item);
 }
 
-// Resolves the clip for one candidate: Deezer id first, then the ISRC
-// lookup, then an artist-checked search. QuotaError propagates so the
-// caller can hold the round instead of skipping the track.
-export async function candidatePreview(candidate: Candidate) {
+// Resolves the clip for one candidate: a stored preview, then the Deezer id,
+// then the ISRC lookup, then an artist-checked search. QuotaError propagates
+// so the caller can hold the round instead of skipping the track.
+export async function candidatePreview(
+  candidate: Candidate,
+): Promise<Preview | null> {
+  if (candidate.preview)
+    return {
+      url: candidate.preview,
+      link: candidate.link,
+      cover: candidate.cover,
+    };
   if (candidate.deezerId !== undefined)
     return deezerPreview(candidate.deezerId);
   if (candidate.isrc) {
@@ -72,13 +81,26 @@ export function answerKey(text: string) {
   return normalizeText(stripped);
 }
 
-export function matchTyped(input: string, title: string) {
-  const given = answerKey(input);
+function matchesTitle(given: string, title: string) {
   const wanted = answerKey(title);
-  if (given === "" || wanted === "") return false;
+  if (wanted === "") return false;
   if (given === wanted) return true;
-  const limit = wanted.length >= 10 ? 2 : 1;
+  // One edit in a title of two or three characters (most kanji and hangul
+  // titles) leaves too little of the answer, so short titles must be exact.
+  const limit = wanted.length >= 10 ? 2 : wanted.length >= 4 ? 1 : 0;
   return levenshtein(given, wanted) <= limit;
+}
+
+// A track with a romanized title also accepts its title in its own script.
+export function matchTyped(
+  input: string,
+  track: { title: string; original?: string },
+) {
+  const given = answerKey(input);
+  if (given === "") return false;
+  return [track.title, track.original].some(
+    (title) => title !== undefined && matchesTitle(given, title),
+  );
 }
 
 // The distractor set is sampled once per round: re-sampling would let a

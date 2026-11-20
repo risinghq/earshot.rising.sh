@@ -912,13 +912,19 @@ title.
   reads the signed-in player's `track_totals`.
 - **Catalog.** A playlist-backed category keeps its track pool in D1 instead of
   fetching a feed per game. `category_sources` lists one or more sources per
-  category, `catalog_tracks` holds each track by Deezer id with its title,
+  category, `catalog_tracks` holds each track by its track key with its title,
   artist, cover, link and release year plus the admin's answer-title and
   answer-year overrides and a ban timestamp, and `catalog_members` joins tracks
-  to the sources they came from. The pool a game draws from is the union of the
-  category's sources deduplicated by Deezer id and by normalized answer title
-  per artist, banned tracks removed. A source refills once a day and upserts its
-  tracks, so an override or a ban survives a refill.
+  to the sources they came from. The key is `dz:<id>` for a Deezer track and
+  `it:<id>` for a curated track only iTunes previews; `round_outcomes` and
+  `track_reports` use the same key. An iTunes track stores its `preview` URL,
+  since iTunes preview URLs are not signed. A track whose title is romanized
+  keeps the title in its own script as `original_title`: the reveal shows it
+  beside the artist, and a typed answer may use either title. The pool a game
+  draws from is the union of the category's sources deduplicated by track key
+  and by normalized answer title per artist, banned tracks removed. A source
+  refills once a day and upserts its tracks, so an override or a ban survives a
+  refill.
   - A `deezer_playlist` source refetches its playlist, at most two per cron run.
     The run then fills missing years from `/track/{id}`, at most 40 tracks,
     marking tracks without a release date so they are not looked up again.
@@ -932,6 +938,9 @@ title.
     alter a CHECK, so it rebuilds `category_sources`; dropping the old table
     cascades away every membership, and the playlists the admin added come back
     due and refill on the next runs.
+  - Migration `0014` rekeys `catalog_tracks` and `catalog_members` on
+    `track_key`, drops the `deezer_id` columns of `round_outcomes` and
+    `track_reports`, and marks every curated source due so the new lists load.
 - **Curated lists.** `scripts/curate.ts` writes `src/play/curated.json` from
   `scripts/curated-seeds.json`. A category's seed names its decades, seed
   artists, a per-artist cap per decade, a stream floor, and hand fixes: `drop`
@@ -955,11 +964,20 @@ title.
     because search leaves some originals out (Oasis, Adele). Of the Deezer
     artists with the seed's name, the one with most fans is taken. An artist
     seed may pin its Deezer, iTunes or kworb id, or set `kworb: false` when
-    kworb's accent-folded name match finds another act. Deezer romanizes
-    Japanese titles (紅蓮華 is "Gurenge"), so a title in another script takes
-    the first same-artist search hit. Anime sets `itunesStore: "JP"`: the US
-    store romanizes those titles too and lacks most 1980s themes. Two cuts of
-    one song (same artist, same folded title) keep the first.
+    kworb's accent-folded name match finds another act. A song Deezer cannot
+    preview falls back to the artist's iTunes track, stored with its preview
+    URL and Apple Music link. Two cuts of one song (same artist, same folded
+    title) keep the first.
+  - A title in Han, kana or hangul is anchored on the iTunes track first, and
+    the US store's name for it (`lookup?id=&country=US`) is its Latin name.
+    Deezer romanizes some titles (紅蓮華 is "Gurenge") and translates others, so
+    a Deezer track counts only when it is the same artist and has the native
+    title, the Latin name, or a length within 1.5 s of the iTunes track, since
+    a same-artist search hit alone is often another song. The
+    display title is Deezer's when it is Latin, else the Latin name, and the
+    native title is kept as `original`. The run prints how each such track
+    matched for review. Anime sets `itunesStore: "JP"`: the US store lacks most
+    1980s themes.
   - Run `node scripts/curate.ts [CATEGORY...]` from `apps/web`, review the
     printed lists, and commit the JSON; `--list "ARTIST"` prints one artist's
     ranked songs with their years.
@@ -1004,7 +1022,8 @@ title.
   `/playlist/{id}/tracks`, `/artist/{id}/top`, `/artist/{id}`, `/search/artist`,
   `/track/{id}`, `/track/isrc:{isrc}` and `/search`) and from Apple's chart feed
   (`rss.marketingtools.apple.com/…/most-played/50/songs.json`) for the country
-  charts. Every clip plays from Deezer: a Deezer feed track resolves by id, an
+  charts. A curated iTunes track plays its stored preview. Every other clip
+  plays from Deezer: a Deezer feed track resolves by id, an
   Apple chart track by an artist-and-title search accepted only when the
   normalized artist matches, and a "From my listening" track by ISRC first, then
   the same search. A track Deezer does not preview is skipped, and a category
@@ -1012,8 +1031,8 @@ title.
   module with an 8-second timeout, and a failed feed fails only that category.
 - **Caching.** A fetched track list stays in KV under `play:cat:{slug}` for six
   hours, so a catalog round costs at most one service call — its own preview
-  lookup. Preview URLs are signed and expire, so they are resolved when a round
-  is served and never stored.
+  lookup. Deezer preview URLs are signed and expire, so they are resolved when a
+  round is served and never stored.
 - **State and scoring.** A game lives in its own `SoloGame` Durable Object,
   addressed by `idFromName(id)`: the ordered candidates, the open round's served
   time and the results so far. Each write pushes an alarm one hour out, and the

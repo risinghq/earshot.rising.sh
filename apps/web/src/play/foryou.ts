@@ -1,5 +1,6 @@
 import type { Env } from "../types";
 import { distinctAnswers, interleave, type Category } from "./catalog";
+import { trackKeyFor } from "./outcomes";
 import { dedupePool, type PoolRow } from "./pool";
 import { answerKey, roundSeconds, roundsPerGame } from "./quiz";
 import type { Candidate } from "./sources";
@@ -36,9 +37,11 @@ const groupDecade = `COALESCE(
   MIN(cs.decade),
   CASE WHEN ct.year > 0 THEN ct.year / 10 * 10 END
 )`;
-const candidateCols = `ct.deezer_id,
+const candidateCols = `ct.track_key, ct.deezer_id,
        COALESCE(ct.answer_title, ct.title) AS title,
-       ct.artist, ct.cover, ct.link,
+       CASE WHEN ct.answer_title IS NULL THEN ct.original_title END
+         AS original_title,
+       ct.artist, ct.cover, ct.link, ct.preview,
        COALESCE(ct.answer_year, ct.year) AS year`;
 
 interface Cell {
@@ -86,7 +89,7 @@ function listeningCells(db: D1Database, userId: number) {
        ) top
        JOIN artists ON artists.id = top.artist_id
        JOIN catalog_tracks ct ON LOWER(ct.artist) = LOWER(artists.name)
-       JOIN catalog_members cm ON cm.deezer_id = ct.deezer_id
+       JOIN catalog_members cm ON cm.track_key = ct.track_key
        JOIN category_sources cs ON cs.id = cm.source_id
        JOIN categories ON categories.slug = cs.category
        WHERE categories.hidden = 0
@@ -162,13 +165,12 @@ function knownCandidates(
               cs.category AS category
        FROM category_sources cs
        JOIN catalog_members cm ON cm.source_id = cs.id
-       JOIN catalog_tracks ct ON ct.deezer_id = cm.deezer_id
+       JOIN catalog_tracks ct ON ct.track_key = cm.track_key
        JOIN categories ON categories.slug = cs.category AND categories.hidden = 0
        WHERE ct.banned_at IS NULL
-         AND ct.deezer_id NOT IN (
-           SELECT deezer_id FROM round_outcomes
-           WHERE player_key = ?1 AND deezer_id IS NOT NULL
-             AND answered_at > ?2
+         AND ct.track_key NOT IN (
+           SELECT track_key FROM round_outcomes
+           WHERE player_key = ?1 AND answered_at > ?2
          )
          AND (${clauses})
        ORDER BY cs.position, cs.id, cm.position
@@ -186,22 +188,20 @@ function newCandidates(db: D1Database, playerKey: string) {
     .prepare(
       `SELECT ${candidateCols}, ${groupDecade} AS decade,
               MIN(cs.category) AS category,
-              COUNT(DISTINCT ro.deezer_id) AS shared
+              COUNT(DISTINCT ro.track_key) AS shared
        FROM round_outcomes ro
-       JOIN catalog_members seed ON seed.deezer_id = ro.deezer_id
+       JOIN catalog_members seed ON seed.track_key = ro.track_key
        JOIN catalog_members cm ON cm.source_id = seed.source_id
-       JOIN catalog_tracks ct ON ct.deezer_id = cm.deezer_id
+       JOIN catalog_tracks ct ON ct.track_key = cm.track_key
        JOIN category_sources cs ON cs.id = cm.source_id
        JOIN categories ON categories.slug = cs.category AND categories.hidden = 0
        WHERE ro.player_key = ?1
          AND ro.correct = 1
-         AND ro.deezer_id IS NOT NULL
          AND ct.banned_at IS NULL
-         AND ct.deezer_id NOT IN (
-           SELECT deezer_id FROM round_outcomes
-           WHERE player_key = ?1 AND deezer_id IS NOT NULL
+         AND ct.track_key NOT IN (
+           SELECT track_key FROM round_outcomes WHERE player_key = ?1
          )
-       GROUP BY ct.deezer_id
+       GROUP BY ct.track_key
        ORDER BY shared DESC, MIN(cs.position), MIN(cs.id), MIN(cm.position)
        LIMIT 40`,
     )
@@ -243,15 +243,14 @@ async function fallbackPool(
               MIN(cs.category) AS category
        FROM category_sources cs
        JOIN catalog_members cm ON cm.source_id = cs.id
-       JOIN catalog_tracks ct ON ct.deezer_id = cm.deezer_id
+       JOIN catalog_tracks ct ON ct.track_key = cm.track_key
        WHERE cs.category IN (${marks})
          AND ct.banned_at IS NULL
-         AND ct.deezer_id NOT IN (
-           SELECT deezer_id FROM round_outcomes
-           WHERE player_key = ?1 AND deezer_id IS NOT NULL
-             AND answered_at > ?2
+         AND ct.track_key NOT IN (
+           SELECT track_key FROM round_outcomes
+           WHERE player_key = ?1 AND answered_at > ?2
          )
-       GROUP BY ct.deezer_id
+       GROUP BY ct.track_key
        ORDER BY MIN(cs.position), MIN(cs.id), MIN(cm.position)`,
     )
     .bind(playerKey, since, ...slugs)
@@ -281,30 +280,30 @@ function takeDistinct(pools: Candidate[][], count: number, seen: Set<string>) {
 // cached ids on a hit keeps bans and answer overrides current; when too few
 // tracks survive, the mix is rebuilt instead.
 async function revalidate(db: D1Database, cached: Candidate[]) {
-  const ids = cached
-    .map((track) => track.deezerId)
-    .filter((id): id is number => id !== undefined);
-  if (ids.length === 0) return null;
-  const marks = ids.map((_, index) => `?${index + 1}`).join(", ");
+  const keys = [...new Set(cached.map(trackKeyFor))].filter(
+    (key) => !key.startsWith("at:"),
+  );
+  if (keys.length === 0) return null;
+  const marks = keys.map((_, index) => `?${index + 1}`).join(", ");
   const rows = await db
     .prepare(
       `SELECT ${candidateCols}, ${rowDecade} AS decade,
               cs.category AS category
        FROM catalog_tracks ct
-       JOIN catalog_members cm ON cm.deezer_id = ct.deezer_id
+       JOIN catalog_members cm ON cm.track_key = ct.track_key
        JOIN category_sources cs ON cs.id = cm.source_id
        JOIN categories ON categories.slug = cs.category AND categories.hidden = 0
-       WHERE ct.banned_at IS NULL AND ct.deezer_id IN (${marks})`,
+       WHERE ct.banned_at IS NULL AND ct.track_key IN (${marks})`,
     )
-    .bind(...ids)
+    .bind(...keys)
     .all<PoolRow>();
   const live = new Map<string, PoolRow>();
   for (const row of rows.results)
-    live.set(`${row.deezer_id}:${row.category}`, row);
+    live.set(`${row.track_key}:${row.category}`, row);
   const seen = new Set<string>();
   const tracks: Candidate[] = [];
   for (const track of cached) {
-    const row = live.get(`${track.deezerId}:${track.category}`);
+    const row = live.get(`${trackKeyFor(track)}:${track.category}`);
     if (row === undefined) continue;
     const key = answerKey(row.title);
     if (key === "" || seen.has(key)) continue;
@@ -312,9 +311,11 @@ async function revalidate(db: D1Database, cached: Candidate[]) {
     tracks.push({
       ...track,
       title: row.title,
+      original: row.original_title ?? undefined,
       artist: row.artist,
       cover: row.cover,
       link: row.link,
+      preview: row.preview ?? undefined,
       year: row.year ?? undefined,
       decade: row.decade ?? undefined,
     });

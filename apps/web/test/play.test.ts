@@ -705,8 +705,15 @@ describe("typed matching", () => {
     ["Weird Fishes", "Weird Fishes / Arpeggi", false],
     ["Otonake", "Otonoke", true],
     ["Blue", "Green", false],
+    ["恋", "愛", false],
   ])("%s vs %s → %s", (given, title, expected) => {
-    expect(matchTyped(given, title)).toBe(expected);
+    expect(matchTyped(given, { title })).toBe(expected);
+  });
+
+  it("accepts the original-script title of a romanized one", () => {
+    const track = { title: "Pretender", original: "プリテンダー" };
+    expect(matchTyped("プリテンダー", track)).toBe(true);
+    expect(matchTyped("pretender", track)).toBe(true);
   });
 
   it("scores linearly and times out at 15 s", () => {

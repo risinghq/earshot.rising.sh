@@ -433,8 +433,9 @@ export function hubPage({
         </section>
         {home && homeSections(user, home.leaders)}
         <p class="meta">
-          Charts come from Deezer and Apple Music. Every preview plays from
-          Deezer, and each reveal links to the track.
+          Charts come from Deezer and Apple Music. Previews play from Deezer, or
+          from Apple Music when Deezer has none, and each reveal links to the
+          track.
         </p>
       </>
     ),
@@ -701,6 +702,10 @@ export function questionPage(
 const linkService = (link: string) =>
   link.includes("apple.com") ? "Apple Music" : "Deezer";
 
+// A romanized title keeps its own script beside the artist.
+const byline = (result: { original?: string; artist: string }) =>
+  result.original ? `${result.original} · ${result.artist}` : result.artist;
+
 function revealPage(
   game: Game,
   result: RoundResult,
@@ -799,7 +804,7 @@ function revealPage(
                 {coverTile(result.cover)}
                 <div class="track">
                   <b>{result.title}</b>
-                  <small class="muted">{result.artist}</small>
+                  <small class="muted">{byline(result)}</small>
                   {result.link && (
                     <a href={result.link}>
                       Listen on {linkService(result.link)}
@@ -1048,7 +1053,7 @@ export function finalPage(
                     <div class="track">
                       <b>{result.title}</b>
                       <small>
-                        {result.artist}
+                        {byline(result)}
                         {result.answer && !result.correct
                           ? ` · your answer: ${result.answer}`
                           : ""}

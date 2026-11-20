@@ -4,6 +4,8 @@ const $ = (id) => document.getElementById(id);
 const show = (el, on) => {
   el.hidden = !on;
 };
+const listenLabel = (link) =>
+  `Listen on ${link.includes("apple.com") ? "Apple Music" : "Deezer"}`;
 const cards = ["lobby", "game", "reveal", "final"].map((name) =>
   $(`screen-${name}`),
 );
@@ -234,13 +236,18 @@ function renderReveal(s) {
   const r = s.reveal;
   $("screen-reveal-title").textContent = `Round ${r.number}`;
   $("screen-reveal-track").textContent = r.title;
-  $("screen-reveal-artist").textContent = r.artist;
+  $("screen-reveal-artist").textContent = r.original
+    ? `${r.original} · ${r.artist}`
+    : r.artist;
   const cover = $("screen-reveal-cover");
   show(cover, !!r.cover);
   if (r.cover) cover.src = r.cover;
   const link = $("screen-reveal-link");
   show(link, !!r.link);
-  if (r.link) link.href = r.link;
+  if (r.link) {
+    link.href = r.link;
+    link.textContent = listenLabel(r.link);
+  }
   $("screen-reveal-scores").replaceChildren(
     ...r.results.map((result) => {
       const li = row(

@@ -426,8 +426,10 @@ function categoryPage(
 }
 
 interface TrackRow {
-  deezer_id: number;
+  track_key: string;
   title: string;
+  original_title: string | null;
+  preview: string | null;
   artist: string;
   year: number | null;
   answer_title: string | null;
@@ -503,11 +505,13 @@ function tracksPage(
           </div>
         ) : (
           tracks.map((track) => (
-            <details class="track-row" key={track.deezer_id}>
+            <details class="track-row" key={track.track_key}>
               <summary>
                 <span class="row-text">
                   <b>{track.answer_title ?? track.title}</b>
                   <small>
+                    {track.original_title !== null &&
+                      `${track.original_title} · `}
                     {track.artist}
                     {track.year !== null && ` · ${track.year}`}
                     {` · ${track.plays} plays`}
@@ -518,6 +522,7 @@ function tracksPage(
                   </small>
                 </span>
                 <span class="badges">
+                  {track.preview !== null && <span class="badge">iTunes</span>}
                   {track.banned_at !== null && (
                     <span class="badge danger">banned</span>
                   )}
@@ -531,22 +536,22 @@ function tracksPage(
                   <input type="hidden" name="category" value={category.slug} />
                   <input
                     type="hidden"
-                    name="deezer_id"
-                    value={track.deezer_id}
+                    name="track_key"
+                    value={track.track_key}
                   />
                   <span class="field">
-                    <label for={`at-${track.deezer_id}`}>Answer title</label>
+                    <label for={`at-${track.track_key}`}>Answer title</label>
                     <input
-                      id={`at-${track.deezer_id}`}
+                      id={`at-${track.track_key}`}
                       name="answer_title"
                       type="text"
                       value={track.answer_title ?? ""}
                     />
                   </span>
                   <span class="field">
-                    <label for={`ay-${track.deezer_id}`}>Answer year</label>
+                    <label for={`ay-${track.track_key}`}>Answer year</label>
                     <input
-                      id={`ay-${track.deezer_id}`}
+                      id={`ay-${track.track_key}`}
                       name="answer_year"
                       type="number"
                       value={track.answer_year ?? ""}
@@ -568,8 +573,8 @@ function tracksPage(
                   <input type="hidden" name="category" value={category.slug} />
                   <input
                     type="hidden"
-                    name="deezer_id"
-                    value={track.deezer_id}
+                    name="track_key"
+                    value={track.track_key}
                   />
                   <input
                     type="hidden"
@@ -578,9 +583,9 @@ function tracksPage(
                   />
                   {track.banned_at === null && (
                     <span class="field">
-                      <label for={`rs-${track.deezer_id}`}>Ban reason</label>
+                      <label for={`rs-${track.track_key}`}>Ban reason</label>
                       <input
-                        id={`rs-${track.deezer_id}`}
+                        id={`rs-${track.track_key}`}
                         name="reason"
                         type="text"
                         value={track.ban_reason ?? ""}
@@ -606,7 +611,6 @@ function tracksPage(
 interface ReportRow {
   id: number;
   track_key: string;
-  deezer_id: number | null;
   title: string;
   artist: string;
   category: string | null;
@@ -788,7 +792,7 @@ adminApp.get("/", async (context) => {
   const [categories, open] = await Promise.all([
     context.env.DB.prepare(
       `SELECT c.slug, c.name, c.feed, c.ref, c.position, c.hidden,
-              (SELECT COUNT(DISTINCT cm.deezer_id)
+              (SELECT COUNT(DISTINCT cm.track_key)
                FROM category_sources cs
                JOIN catalog_members cm ON cm.source_id = cs.id
                WHERE cs.category = c.slug) AS tracks
@@ -997,22 +1001,23 @@ adminApp.get("/categories/:slug/tracks", async (context) => {
      ) = ?${params.length}`;
   }
   const rows = await context.env.DB.prepare(
-    `SELECT ct.deezer_id, ct.title, ct.artist, ct.year,
-            ct.answer_title, ct.answer_year, ct.banned_at, ct.ban_reason,
+    `SELECT ct.track_key, ct.title, ct.original_title, ct.preview, ct.artist,
+            ct.year, ct.answer_title, ct.answer_year, ct.banned_at,
+            ct.ban_reason,
             (SELECT COUNT(*) FROM round_outcomes ro
-              WHERE ro.deezer_id = ct.deezer_id
+              WHERE ro.track_key = ct.track_key
                 AND ro.category = ?1) AS plays,
             (SELECT AVG(ro.correct) FROM round_outcomes ro
-              WHERE ro.deezer_id = ct.deezer_id
+              WHERE ro.track_key = ct.track_key
                 AND ro.category = ?1) AS correct_rate,
             (SELECT COUNT(*) FROM track_reports tr
-              WHERE tr.deezer_id = ct.deezer_id
+              WHERE tr.track_key = ct.track_key
                 AND tr.resolved_at IS NULL) AS open_reports
      FROM category_sources cs
      JOIN catalog_members cm ON cm.source_id = cs.id
-     JOIN catalog_tracks ct ON ct.deezer_id = cm.deezer_id
+     JOIN catalog_tracks ct ON ct.track_key = cm.track_key
      WHERE ${clauses.join(" AND ")}
-     GROUP BY ct.deezer_id
+     GROUP BY ct.track_key
      ${having}
      ORDER BY ct.title
      LIMIT 300`,
@@ -1028,45 +1033,45 @@ adminApp.get("/categories/:slug/tracks", async (context) => {
 adminApp.post("/tracks/save", async (context) => {
   const admin = context.get("admin");
   const slug = await field(context, "category");
-  const deezerId = Number(await field(context, "deezer_id"));
+  const trackKey = await field(context, "track_key");
   const answerTitle = await field(context, "answer_title");
   const answerYear = Number(await field(context, "answer_year"));
   await context.env.DB.prepare(
     `UPDATE catalog_tracks
-     SET answer_title = ?1, answer_year = ?2 WHERE deezer_id = ?3`,
+     SET answer_title = ?1, answer_year = ?2 WHERE track_key = ?3`,
   )
     .bind(
       answerTitle || null,
       Number.isInteger(answerYear) && answerYear > 0 ? answerYear : null,
-      deezerId,
+      trackKey,
     )
     .run();
-  await dropTrackCaches(context.env, deezerId);
-  await logAction(context.env.DB, admin, "track.save", String(deezerId), slug);
+  await dropTrackCaches(context.env, trackKey);
+  await logAction(context.env.DB, admin, "track.save", trackKey, slug);
   return context.redirect(`/admin/categories/${slug}/tracks`, 303);
 });
 
 adminApp.post("/tracks/ban", async (context) => {
   const admin = context.get("admin");
   const slug = await field(context, "category");
-  const deezerId = Number(await field(context, "deezer_id"));
+  const trackKey = await field(context, "track_key");
   const ban = (await field(context, "ban")) === "1";
   const reason = await field(context, "reason");
   await context.env.DB.prepare(
-    "UPDATE catalog_tracks SET banned_at = ?1, ban_reason = ?2 WHERE deezer_id = ?3",
+    "UPDATE catalog_tracks SET banned_at = ?1, ban_reason = ?2 WHERE track_key = ?3",
   )
     .bind(
       ban ? Math.floor(Date.now() / 1000) : null,
       ban ? reason || null : null,
-      deezerId,
+      trackKey,
     )
     .run();
-  await dropTrackCaches(context.env, deezerId);
+  await dropTrackCaches(context.env, trackKey);
   await logAction(
     context.env.DB,
     admin,
     ban ? "track.ban" : "track.unban",
-    String(deezerId),
+    trackKey,
     slug,
   );
   return context.redirect(`/admin/categories/${slug}/tracks`, 303);
@@ -1074,7 +1079,7 @@ adminApp.post("/tracks/ban", async (context) => {
 
 adminApp.get("/reports", async (context) => {
   const reports = await context.env.DB.prepare(
-    `SELECT id, track_key, deezer_id, title, artist, category, reason,
+    `SELECT id, track_key, title, artist, category, reason,
             detail, created_at
      FROM track_reports WHERE resolved_at IS NULL ORDER BY created_at DESC`,
   ).all<ReportRow>();

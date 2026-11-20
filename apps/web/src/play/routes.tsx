@@ -326,16 +326,14 @@ playApp.post("/report", async (context) => {
     return context.text("Too many reports. Try again later.", 429);
   const category = typeof body.category === "string" ? body.category : "";
   const detail = typeof body.detail === "string" ? body.detail.trim() : "";
-  const deezerId = track.startsWith("dz:") ? Number(track.slice(3)) : null;
   await context.env.DB.prepare(
     `INSERT INTO track_reports
-       (track_key, deezer_id, title, artist, category, reason, detail,
+       (track_key, title, artist, category, reason, detail,
         player_key, created_at)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)`,
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`,
   )
     .bind(
       track,
-      Number.isInteger(deezerId) ? deezerId : null,
       title,
       artist,
       category || null,

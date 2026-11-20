@@ -42,14 +42,13 @@ async function outcome(
 ) {
   await env.DB.prepare(
     `INSERT INTO round_outcomes
-       (player_key, user_id, track_key, deezer_id, category, era, mode, kind,
+       (player_key, user_id, track_key, category, era, mode, kind,
         correct, elapsed_ms, answered_at)
-     VALUES (?1, NULL, ?2, ?3, ?4, ?5, 'choices', 'solo', ?6, 8000, ?7)`,
+     VALUES (?1, NULL, ?2, ?3, ?4, 'choices', 'solo', ?5, 8000, ?6)`,
   )
     .bind(
       playerKey,
       `dz:${deezerId}`,
-      deezerId,
       category,
       era,
       correct ? 1 : 0,
@@ -309,7 +308,7 @@ describe("/play's For you tile", () => {
         },
         body: new URLSearchParams({
           category: "pop",
-          deezer_id: String(banned),
+          track_key: `dz:${banned}`,
           ban: "1",
         }).toString(),
       }),

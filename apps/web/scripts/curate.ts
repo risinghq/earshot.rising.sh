@@ -8,8 +8,10 @@
 // does not track falls back to the order of Deezer's /artist/{id}/top. The year
 // is the most common iTunes release year of the title, because Deezer dates a
 // track by the release it sits on and so returns remasters and compilations.
-// Responses are cached on disk, so a rerun after editing the seeds costs no
-// requests for the artists already seen.
+// A song Deezer has no preview for plays from its iTunes preview, and a title
+// in Japanese or Korean script shows the name the US store gives it. Responses
+// are cached on disk, so a rerun after editing the seeds costs no requests for
+// the artists already seen.
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -54,11 +56,18 @@ interface Song {
   rank: number;
 }
 
+// A track plays from Deezer by `id`, or from the stored iTunes `preview` when
+// Deezer has no verified cut. `original` is the title in its own script when
+// `title` is a romanized or English name.
 export interface CuratedTrack {
-  id: number;
+  id?: number;
+  itunesId?: number;
+  preview?: string;
+  link?: string;
   title: string;
+  original?: string;
   artist: string;
-  artistId: number;
+  artistId: number | null;
   cover: string | null;
   year: number;
 }
@@ -201,6 +210,7 @@ interface DeezerTrack {
   title_short?: string;
   preview?: string;
   rank?: number;
+  duration?: number;
   artist: { id: number; name: string };
   album: { cover_medium?: string };
 }
@@ -249,29 +259,32 @@ const sameArtist = (a: string, b: string) => {
   return x === y || x.startsWith(y) || y.startsWith(x);
 };
 
+const deezerSearch = async (query: string) =>
+  (
+    await fetchJson<{ data?: DeezerTrack[] }>(
+      `https://api.deezer.com/search?q=${encodeURIComponent(query)}&limit=25`,
+    )
+  ).data ?? [];
+
+const byArtist =
+  (song: Song, artistId: number | null) => (track: DeezerTrack) =>
+    Boolean(track.preview) &&
+    !isVersion(track.title) &&
+    (artistId === null
+      ? sameArtist(track.artist.name, song.artist)
+      : track.artist.id === artistId);
+
 // The plain query finds what the advanced artist:"" track:"" syntax misses.
 // Search leaves out some originals entirely (Oasis, Adele, Coldplay's Clocks),
-// so the artist's own top list is the fallback. Of the matching tracks with a preview, the most
-// played is the canonical cut.
-async function resolveDeezer(song: Song, artistId: number | null) {
-  const found = await fetchJson<{ data?: DeezerTrack[] }>(
-    `https://api.deezer.com/search?q=${encodeURIComponent(`${song.artist} ${song.title}`)}&limit=25`,
+// so the artist's own top list is the fallback. Of the matching tracks with a
+// preview, the most played is the canonical cut.
+async function deezerByTitle(song: Song, artistId: number | null) {
+  const match = bestMatch(
+    await deezerSearch(`${song.artist} ${song.title}`),
+    song,
+    artistId,
   );
-  const match = bestMatch(found.data ?? [], song, artistId);
   if (match !== null) return match;
-  // Deezer romanizes Japanese titles (紅蓮華 is "Gurenge"), yet a search in the
-  // original script still ranks that track first, so search order decides.
-  if (!/\p{Script=Latin}/u.test(song.title))
-    return (
-      (found.data ?? []).find(
-        (track) =>
-          track.preview &&
-          !isVersion(track.title) &&
-          (artistId === null
-            ? sameArtist(track.artist.name, song.artist)
-            : track.artist.id === artistId),
-      ) ?? null
-    );
   const topId = artistId ?? (await deezerArtistId({ name: song.artist }));
   if (topId === null) return null;
   const top = await fetchJson<{ data?: DeezerTrack[] }>(
@@ -283,23 +296,44 @@ async function resolveDeezer(song: Song, artistId: number | null) {
 function bestMatch(tracks: DeezerTrack[], song: Song, artistId: number | null) {
   const matches = tracks.filter(
     (track) =>
-      track.preview &&
-      !isVersion(track.title) &&
-      fold(baseTitle(track.title_short ?? track.title)) === fold(song.title) &&
-      (artistId === null
-        ? sameArtist(track.artist.name, song.artist)
-        : track.artist.id === artistId),
+      byArtist(song, artistId)(track) &&
+      fold(baseTitle(track.title_short ?? track.title)) === fold(song.title),
   );
   matches.sort((a, b) => (b.rank ?? 0) - (a.rank ?? 0));
   return matches[0] ?? null;
 }
 
+// Deezer gives seconds and iTunes milliseconds. One recording on both services
+// differs by under a second; another cut (TV size, a remaster) differs more.
+const durationSlackMs = 1500;
+
+function byDuration(
+  tracks: DeezerTrack[],
+  song: Song,
+  artistId: number | null,
+  millis: number,
+) {
+  const gap = (track: DeezerTrack) =>
+    Math.abs((track.duration ?? 0) * 1000 - millis);
+  const close = tracks
+    .filter(byArtist(song, artistId))
+    .filter((track) => gap(track) <= durationSlackMs);
+  close.sort((a, b) => gap(a) - gap(b));
+  return close[0] ?? null;
+}
+
 interface ItunesSong {
   wrapperType?: string;
+  kind?: string;
+  trackId?: number;
   artistName?: string;
   trackName?: string;
   collectionName?: string;
   releaseDate?: string;
+  previewUrl?: string;
+  trackTimeMillis?: number;
+  artworkUrl100?: string;
+  trackViewUrl?: string;
 }
 
 // A query suffix, empty for the default US store so its cached URLs still hit.
@@ -401,28 +435,145 @@ async function itunesYears(seed: ArtistSeed, store: string) {
 // A store can name the artist in another script (the JP store's 杏里 for Anri).
 // The search term carries the artist, so the first title match names the
 // artist as that store spells it.
+const itunesSearch = async (song: Song, store: string) =>
+  (
+    await fetchJson<{ results: ItunesSong[] }>(
+      `https://itunes.apple.com/search?term=${encodeURIComponent(`${song.artist} ${song.title}`)}&entity=song&limit=50${store}`,
+    )
+  ).results;
+
+const sameCore = (hit: ItunesSong, title: string) =>
+  Boolean(hit.trackName) &&
+  fold(coreTitle(hit.trackName!)) === fold(coreTitle(title));
+
+const storeArtist = (results: ItunesSong[], song: Song) =>
+  results.find((hit) => sameCore(hit, song.title))?.artistName ?? null;
+
 async function itunesSongYear(
   song: Song,
   store: string,
   decade: number | null = null,
 ) {
-  const found = await fetchJson<{ results: ItunesSong[] }>(
-    `https://itunes.apple.com/search?term=${encodeURIComponent(`${song.artist} ${song.title}`)}&entity=song&limit=50${store}`,
-  );
-  const year = yearOf(
-    datesByTitle(found.results, song.artist),
-    song.title,
-    decade,
-  );
+  const results = await itunesSearch(song, store);
+  const year = yearOf(datesByTitle(results, song.artist), song.title, decade);
   if (year !== null) return year;
-  const anchor = found.results.find(
-    (hit) =>
-      hit.trackName &&
-      fold(coreTitle(hit.trackName)) === fold(coreTitle(song.title)),
-  )?.artistName;
+  const anchor = storeArtist(results, song);
   return anchor
-    ? yearOf(datesByTitle(found.results, anchor), song.title, decade)
+    ? yearOf(datesByTitle(results, anchor), song.title, decade)
     : null;
+}
+
+// The song's own recording in the store: its title, by the artist as either
+// spelling names it, not a live or karaoke cut, and an original album ahead of
+// a compilation.
+async function itunesTrack(song: Song, store: string) {
+  const results = await itunesSearch(song, store);
+  const anchor = storeArtist(results, song);
+  const hits = results.filter(
+    (hit) =>
+      hit.kind === "song" &&
+      hit.previewUrl &&
+      hit.trackId &&
+      sameCore(hit, song.title) &&
+      !isVersion(`${hit.trackName} ${hit.collectionName ?? ""}`) &&
+      hit.artistName &&
+      (sameArtist(hit.artistName, song.artist) || hit.artistName === anchor),
+  );
+  return (
+    hits.find((hit) => !compilationWords.test(hit.collectionName ?? "")) ??
+    hits[0] ??
+    null
+  );
+}
+
+const nativeScript =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
+
+// The US store names a Japanese release in English or romaji (唱 is "Show"),
+// and its lookup takes the JP store's track id.
+async function latinName(hit: ItunesSong, store: string) {
+  let name = hit.trackName ?? "";
+  if (store !== "") {
+    const found = await fetchJson<{ results: ItunesSong[] }>(
+      `https://itunes.apple.com/lookup?id=${hit.trackId}&country=US`,
+    );
+    name = found.results[0]?.trackName ?? "";
+  }
+  const title = coreTitle(name);
+  return title !== "" && !nativeScript.test(title) ? title : null;
+}
+
+interface Resolved {
+  deezer: DeezerTrack | null;
+  itunes: ItunesSong | null;
+  title: string;
+  original: string | null;
+  how: string;
+}
+
+// A title in Latin script matches Deezer by name. A title in Japanese or
+// Korean script does not, since Deezer may file it under a romanized name, so
+// the iTunes recording anchors it: Deezer's track must carry the native name,
+// the US store's name, or the same length. Without a match the iTunes preview
+// plays.
+async function resolveSong(
+  song: Song,
+  artistId: number | null,
+  store: string,
+): Promise<Resolved | null> {
+  if (!nativeScript.test(song.title)) {
+    const deezer = await deezerByTitle(song, artistId);
+    if (deezer !== null)
+      return {
+        deezer,
+        itunes: null,
+        title: song.title,
+        original: null,
+        how: "title",
+      };
+    const itunes = await itunesTrack(song, store);
+    return itunes === null
+      ? null
+      : {
+          deezer: null,
+          itunes,
+          title: song.title,
+          original: null,
+          how: "itunes",
+        };
+  }
+  const itunes = await itunesTrack(song, store);
+  const latin = itunes === null ? null : await latinName(itunes, store);
+  const found = await deezerSearch(`${song.artist} ${song.title}`);
+  let deezer = bestMatch(found, song, artistId);
+  let how = "native title";
+  if (deezer === null && latin !== null) {
+    const named = { ...song, title: latin };
+    deezer = bestMatch(
+      [...found, ...(await deezerSearch(`${song.artist} ${latin}`))],
+      named,
+      artistId,
+    );
+    how = "us title";
+  }
+  if (deezer === null && itunes?.trackTimeMillis) {
+    deezer = byDuration(found, song, artistId, itunes.trackTimeMillis);
+    how = "length";
+  }
+  if (deezer === null && itunes === null) return null;
+  const deezerName =
+    deezer === null ? null : coreTitle(deezer.title_short ?? deezer.title);
+  const title =
+    deezerName !== null && !nativeScript.test(deezerName)
+      ? deezerName
+      : (latin ?? song.title);
+  return {
+    deezer,
+    itunes: deezer === null ? itunes : null,
+    title,
+    original: title === song.title ? null : song.title,
+    how: deezer === null ? "itunes" : how,
+  };
 }
 
 async function artistSongs(seed: ArtistSeed) {
@@ -448,8 +599,41 @@ interface Picked extends CuratedTrack {
   streams: number | null;
   rank: number;
   yearFrom: string;
+  how: string;
   // An editor picked it, so the per-artist cap does not apply.
   listed: boolean;
+}
+
+// The seed names the artist when Deezer has no cut, and Deezer's artist id
+// still groups the song with the artist's other tracks for the cap.
+async function trackFields(
+  resolved: Resolved,
+  artist: string,
+  artistId: number | null,
+): Promise<CuratedTrack & { how: string }> {
+  const { deezer, itunes, title, original, how } = resolved;
+  const named = { title, ...(original === null ? {} : { original }) };
+  if (deezer !== null)
+    return {
+      id: deezer.id,
+      ...named,
+      artist,
+      artistId: deezer.artist.id,
+      cover: deezer.album.cover_medium ?? null,
+      year: 0,
+      how,
+    };
+  return {
+    itunesId: itunes!.trackId!,
+    preview: itunes!.previewUrl!,
+    link: (itunes!.trackViewUrl ?? "").replace(/&uo=\d+$/, ""),
+    ...named,
+    artist,
+    artistId: artistId ?? (await deezerArtistId({ name: artist })),
+    cover: itunes!.artworkUrl100?.replace(/100x100bb/, "250x250bb") ?? null,
+    year: 0,
+    how,
+  };
 }
 
 async function listedSongs(
@@ -466,9 +650,9 @@ async function listedSongs(
       const song: Song = { artist, title: baseTitle(raw), streams: null, rank };
       const songKey = fold(`${artist}|${song.title}`);
       if (drop.has(songKey) || isVersion(raw)) continue;
-      const track = await resolveDeezer(song, null);
-      if (track === null) {
-        misses.push(`${entry}: no Deezer preview`);
+      const resolved = await resolveSong(song, null, storeQuery(seed));
+      if (resolved === null) {
+        misses.push(`${entry}: no preview`);
         continue;
       }
       const year =
@@ -481,11 +665,11 @@ async function listedSongs(
         continue;
       }
       picked.push({
-        id: track.id,
-        title: song.title,
-        artist: track.artist.name,
-        artistId: track.artist.id,
-        cover: track.album.cover_medium ?? null,
+        ...(await trackFields(
+          resolved,
+          resolved.deezer?.artist.name ?? artist,
+          null,
+        )),
         year,
         streams: null,
         rank,
@@ -514,9 +698,9 @@ async function curateCategory(slug: string, seed: CategorySeed) {
       if (drop.has(key)) continue;
       if (song.streams !== null && song.streams < (seed.minStreams ?? 0))
         continue;
-      const track = await resolveDeezer(song, deezerId);
-      if (track === null) {
-        misses.push(`${song.artist} | ${song.title}: no Deezer preview`);
+      const resolved = await resolveSong(song, deezerId, storeQuery(seed));
+      if (resolved === null) {
+        misses.push(`${song.artist} | ${song.title}: no preview`);
         continue;
       }
       let year = years.get(key) ?? null;
@@ -534,11 +718,7 @@ async function curateCategory(slug: string, seed: CategorySeed) {
         continue;
       }
       picked.push({
-        id: track.id,
-        title: song.title,
-        artist: artist.name,
-        artistId: track.artist.id,
-        cover: track.album.cover_medium ?? null,
+        ...(await trackFields(resolved, artist.name, deezerId)),
         year,
         streams: song.streams,
         rank: song.rank,
@@ -551,7 +731,7 @@ async function curateCategory(slug: string, seed: CategorySeed) {
   const byDecade = new Map<number, Picked[]>();
   for (const decade of seed.decades) byDecade.set(decade, []);
   const perArtist = new Map<string, number>();
-  const seenIds = new Set<number>();
+  const seenIds = new Set<string>();
   // Songs keep their artist's popularity order, so the cap keeps each
   // artist's biggest songs of that decade.
   const capOf = (name: string) => {
@@ -565,12 +745,14 @@ async function curateCategory(slug: string, seed: CategorySeed) {
   for (const track of picked) {
     const decade = Math.floor(track.year / 10) * 10;
     const list = byDecade.get(decade);
-    const song = `${track.artistId}|${fold(track.title)}`;
-    if (!list || seenIds.has(track.id) || seenSongs.has(song)) continue;
-    const used = perArtist.get(`${decade}|${track.artistId}`) ?? 0;
+    const who = track.artistId ?? fold(track.artist);
+    const id = track.id ? `dz:${track.id}` : `it:${track.itunesId}`;
+    const song = `${who}|${fold(track.title)}`;
+    if (!list || seenIds.has(id) || seenSongs.has(song)) continue;
+    const used = perArtist.get(`${decade}|${who}`) ?? 0;
     if (!track.listed && used >= capOf(track.artist)) continue;
-    perArtist.set(`${decade}|${track.artistId}`, used + 1);
-    seenIds.add(track.id);
+    perArtist.set(`${decade}|${who}`, used + 1);
+    seenIds.add(id);
     seenSongs.add(song);
     list.push(track);
   }
@@ -586,7 +768,7 @@ function printList(
     console.log(`\n## ${slug} ${decade}s: ${tracks.length}`);
     for (const track of tracks)
       console.log(
-        `${track.year}  ${track.artist} | ${track.title}  ${track.streams === null ? `deezer #${track.rank + 1}` : `${Math.round(track.streams / 1e6)}M`}  (${track.yearFrom})`,
+        `${track.year}  ${track.artist} | ${track.title}${track.original ? ` [${track.original}]` : ""}  ${track.streams === null ? `deezer #${track.rank + 1}` : `${Math.round(track.streams / 1e6)}M`}  (${track.yearFrom}; ${track.how})`,
       );
   }
   if (misses.length > 0)
@@ -621,14 +803,9 @@ async function main() {
     previous[slug] = Object.fromEntries(
       [...byDecade].map(([decade, tracks]) => [
         String(decade),
-        tracks.map(({ id, title, artist, artistId, cover, year }) => ({
-          id,
-          title,
-          artist,
-          artistId,
-          cover,
-          year,
-        })),
+        tracks.map(
+          ({ streams, rank, yearFrom, how, listed, ...track }) => track,
+        ),
       ]),
     );
   }

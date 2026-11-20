@@ -1,15 +1,21 @@
 import { normalizeText } from "../normalize";
 import { FeedError, fetchJson } from "./http";
 
-// A candidate carries the ids a round needs to resolve a fresh preview: the
-// preview URL itself is signed and expires, so it is never stored.
+// A candidate carries the ids a round needs to resolve a fresh preview: a
+// Deezer preview URL is signed and expires, so it is never stored. An iTunes
+// preview URL is not signed, so a curated iTunes track carries it as
+// `preview`. `original` is the title in its own script when `title` is a
+// romanized name; a typed answer may use either.
 export interface Candidate {
   title: string;
+  original?: string;
   artist: string;
   cover: string | null;
   link: string | null;
   isrc?: string;
   deezerId?: number;
+  itunesId?: number;
+  preview?: string;
   year?: number;
   decade?: number;
   // The catalog category the track was drawn from; set only by pools that mix
