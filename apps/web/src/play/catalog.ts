@@ -1,5 +1,5 @@
 import type { Env } from "../types";
-import { catalogPool } from "./pool";
+import { catalogPool, songsOnce } from "./pool";
 import { answerKey, roundsPerGame } from "./quiz";
 import { FeedError } from "./http";
 import {
@@ -179,6 +179,15 @@ export function enoughTracks(category: Category, tracks: Candidate[]) {
 }
 
 export async function catalog(
+  env: Env,
+  category: Category,
+  userId: number | null,
+): Promise<Candidate[]> {
+  const tracks = await feedTracks(env, category, userId);
+  return category.feed === "deezer_artist" ? songsOnce(tracks) : tracks;
+}
+
+async function feedTracks(
   env: Env,
   category: Category,
   userId: number | null,

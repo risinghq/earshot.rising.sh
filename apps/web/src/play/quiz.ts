@@ -106,13 +106,31 @@ function levenshtein(a: string, b: string) {
   return row[b.length];
 }
 
-// Bracketed clauses and a feat. credit are part of a title on a service but
-// not of the name a player remembers.
+const versionWords =
+  "remix|mix|ver|version|edit|live|instrumental|inst|acoustic|remaster|remastered|sped up|slowed";
+const versionBracket = new RegExp(
+  `[[(][^\\])]*\\b(?:${versionWords})\\b[^\\])]*[\\])]`,
+  "i",
+);
+const versionDash = new RegExp(
+  `\\s[-–—]\\s.*\\b(?:${versionWords})\\b.*$`,
+  "i",
+);
+
+// Bracketed clauses, a feat. credit and a dashed version clause
+// ("- Extended ver.") are part of a title on a service but not of the name a
+// player remembers.
 export function answerKey(text: string) {
   const stripped = text
+    .replace(versionDash, "")
     .replace(/[[(][^\])]*[\])]/g, " ")
     .replace(/\s(?:feat\.?|ft\.?|featuring)\s.*$/i, "");
   return normalizeText(stripped);
+}
+
+// A remix, live cut, instrumental or language version of a song.
+export function isVersion(title: string) {
+  return versionBracket.test(title) || versionDash.test(title);
 }
 
 function matchesTitle(given: string, title: string) {
