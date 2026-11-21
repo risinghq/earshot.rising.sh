@@ -22,6 +22,7 @@ import {
 } from "./results";
 import { QuotaError, type Candidate } from "./sources";
 import { playerKeyOf, recordOutcomes, trackKeyFor } from "./outcomes";
+import { getCategory } from "./catalog";
 
 export const maxPlayers = 8;
 export const nicknameMaxLength = 20;
@@ -41,6 +42,8 @@ const idleMs = 3600_000;
 // A match seat that never fills should not strand the player who did show
 // up: the game starts with whoever connected after this wait.
 const matchWaitMs = 90_000;
+// Up next holds one suggestion per player, so a full room fits.
+const maxSuggestions = maxPlayers;
 
 export function newRoomCode() {
   const bytes = crypto.getRandomValues(new Uint8Array(roomCodeLength));
@@ -131,6 +134,17 @@ interface Reveal {
 // A finished round as the final card lists it.
 type PastRound = Omit<Reveal, "until" | "track" | "choices">;
 
+// A category someone wants next. Each player holds one vote; suggesting
+// casts it.
+interface Suggestion {
+  id: string;
+  slug: string;
+  name: string;
+  mode: Mode;
+  by: string;
+  voters: string[];
+}
+
 interface Stored {
   code: string;
   kind: RoomKind;
@@ -153,6 +167,8 @@ interface Stored {
   // or an option. Missing from a room stored before they existed.
   history?: PastRound[];
   shown?: string[];
+  // Up next, between games.
+  suggestions?: Suggestion[];
   board: CategoryBoardEntry[];
   retryAt: number | null;
   lastActive: number;
@@ -305,6 +321,7 @@ export class Room extends DurableObject<Env> {
     if (request.method === "POST" && url.pathname === "/retarget") {
       const body = (await request.json()) as Partial<RoomTarget> & {
         token?: string;
+        start?: boolean;
       };
       const mode = parseMode(body.mode);
       if (
@@ -320,6 +337,9 @@ export class Room extends DurableObject<Env> {
         mode,
         candidates: body.candidates,
       });
+      // Picked from Up next, the game starts at once: everyone is seated
+      // and their sound already works.
+      if (status === 204 && body.start === true) await this.begin(Date.now());
       return new Response(null, { status });
     }
     return new Response("not found", { status: 404 });
@@ -331,6 +351,9 @@ export class Room extends DurableObject<Env> {
       name?: unknown;
       token?: unknown;
       answer?: unknown;
+      category?: unknown;
+      mode?: unknown;
+      id?: unknown;
     };
     try {
       message = JSON.parse(typeof raw === "string" ? raw : "");
@@ -357,6 +380,18 @@ export class Room extends DurableObject<Env> {
       typeof message.answer === "string"
     ) {
       await this.answer(pid, message.answer.slice(0, 200), Date.now());
+    } else if (
+      message.type === "suggest" &&
+      pid !== undefined &&
+      typeof message.category === "string"
+    ) {
+      await this.suggest(pid, message.category.slice(0, 80), message.mode);
+    } else if (
+      message.type === "vote" &&
+      pid !== undefined &&
+      typeof message.id === "string"
+    ) {
+      await this.vote(pid, message.id);
     }
   }
 
@@ -501,8 +536,25 @@ export class Room extends DurableObject<Env> {
         }));
       snapshot.board = s.board;
       snapshot.history = s.history ?? [];
+      snapshot.suggestions = this.upNext(pid);
     }
     return snapshot;
+  }
+
+  // Most votes first; a tie keeps the order they were suggested in.
+  private upNext(pid: string | undefined) {
+    const s = this.s!;
+    return (s.suggestions ?? [])
+      .map((x) => ({
+        id: x.id,
+        slug: x.slug,
+        name: x.name,
+        mode: x.mode,
+        by: s.players.find((p) => p.id === x.by)?.name ?? "",
+        votes: x.voters.length,
+        voted: pid !== undefined && x.voters.includes(pid),
+      }))
+      .sort((a, b) => b.votes - a.votes);
   }
 
   // What a device that holds no seat may see: enough to show the room it is
@@ -715,10 +767,48 @@ export class Room extends DurableObject<Env> {
     s.reveal = null;
     s.round = null;
     s.board = [];
+    s.suggestions = [];
     s.lastActive = Date.now();
     await this.save();
     this.broadcast();
     return 204;
+  }
+
+  // Anyone seated may suggest between games. Suggesting what is already up
+  // next votes for it; a player's new suggestion replaces their old one.
+  async suggest(pid: string, slug: string, value: unknown) {
+    const s = this.s;
+    const mode = parseMode(value);
+    if (s === undefined || s.kind !== "room" || s.phase !== "done") return;
+    if (mode === null || !s.players.some((p) => p.id === pid)) return;
+    const same = () =>
+      s.suggestions?.find((x) => x.slug === slug && x.mode === mode);
+    if (same() !== undefined) return this.vote(pid, same()!.id);
+    // A personal mix would sit everyone in one player's taste.
+    const category = await getCategory(this.env, slug).catch(() => null);
+    if (category === null || category.feed === "mine") return;
+    // Other messages may have run during the lookup.
+    if (s.phase !== "done") return;
+    if (same() !== undefined) return this.vote(pid, same()!.id);
+    const kept = (s.suggestions ?? []).filter((x) => x.by !== pid);
+    if (kept.length >= maxSuggestions) return;
+    const id = base64url(crypto.getRandomValues(new Uint8Array(6)));
+    kept.push({ id, slug, name: category.name, mode, by: pid, voters: [] });
+    s.suggestions = kept;
+    await this.vote(pid, id);
+  }
+
+  async vote(pid: string, id: string) {
+    const s = this.s;
+    if (s === undefined || s.phase !== "done") return;
+    const list = s.suggestions ?? [];
+    const target = list.find((x) => x.id === id);
+    if (target === undefined || !s.players.some((p) => p.id === pid)) return;
+    for (const x of list) x.voters = x.voters.filter((v) => v !== pid);
+    target.voters.push(pid);
+    s.lastActive = Date.now();
+    await this.save();
+    this.broadcast();
   }
 
   async start(pid: string, now: number) {
@@ -742,6 +832,7 @@ export class Room extends DurableObject<Env> {
     }
     s.history = [];
     s.shown = [];
+    s.suggestions = [];
     s.candidates = shuffled(s.candidates);
     s.gameId = base64url(crypto.getRandomValues(new Uint8Array(8)));
     // A seat that never held a live socket did not play: the result rows

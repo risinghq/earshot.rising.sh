@@ -480,6 +480,267 @@ function hostText(s, what) {
   return span;
 }
 
+const kindOf = (slug) => (slug.startsWith("artist-") ? "Artist" : "Genre");
+
+// Up next lists the suggestions, most votes first. Returns the top one when
+// it holds a vote, which the host's main button plays.
+function renderUpNext(s) {
+  const list = s.suggestions ?? [];
+  const voters = list.reduce((sum, x) => sum + x.votes, 0);
+  $("up-next-live").textContent = voters
+    ? `${voters} ${voters === 1 ? "vote" : "votes"}`
+    : "";
+  show($("up-next-empty"), list.length === 0);
+  $("up-next-list").replaceChildren(
+    ...list.map((x) => {
+      const li = el("li", "up-next-row");
+      const text = el("span", "up-next-text");
+      text.append(
+        el("b", "", x.name),
+        el(
+          "small",
+          "",
+          `${kindOf(x.slug)} · ${modeNames[x.mode]}${x.by ? ` · ${x.by}` : ""}`,
+        ),
+      );
+      const vote = el(
+        "button",
+        x.voted ? "up-next-vote is-voted" : "up-next-vote",
+        x.voted ? `Voted · ${x.votes}` : `+1 · ${x.votes}`,
+      );
+      vote.type = "button";
+      vote.setAttribute("aria-pressed", String(x.voted));
+      vote.setAttribute(
+        "aria-label",
+        `Vote for ${x.name}, ${x.votes} ${x.votes === 1 ? "vote" : "votes"}`,
+      );
+      vote.onclick = () => send({ type: "vote", id: x.id });
+      li.append(el("span", "up-next-tile", [...x.name][0] ?? "?"), text, vote);
+      if (s.you.creator) {
+        const play = el("button", "up-next-play", "Play this");
+        play.type = "button";
+        play.onclick = () => switchTo(x.slug, x.mode, true);
+        li.append(play);
+      }
+      return li;
+    }),
+  );
+  return list[0]?.votes > 0 ? list[0] : undefined;
+}
+
+// The host's pick goes through the same switch the hub posts; with start,
+// the next game begins without a stop in the lobby.
+function switchTo(slug, mode, start) {
+  const body = new FormData();
+  body.set("category", slug);
+  body.set("mode", mode);
+  body.set("k", localStorage.getItem(tokenKey) || "");
+  if (start) body.set("start", "1");
+  error("");
+  return fetch(`/play/room/${code}/switch`, { method: "POST", body })
+    .then((response) => {
+      if (!response.ok) throw new Error(String(response.status));
+    })
+    .catch(() =>
+      error("That pick did not load. Try it again or pick another."),
+    );
+}
+
+// The pick sheet. A player suggests; the host plays the pick after a game
+// or sets it in the lobby. Artist search runs as you type: 250 ms after the
+// last key, and a newer query aborts the older request.
+const picker = {
+  purpose: "suggest",
+  tab: "genre",
+  choice: null,
+  mode: "normal",
+  genres: null,
+  artists: [],
+  query: "",
+  timer: 0,
+  abort: null,
+};
+const pickTitles = {
+  suggest: "Suggest next game",
+  next: "Pick next game",
+  set: "Change category",
+};
+
+function openPicker(purpose, tab) {
+  picker.purpose = purpose;
+  picker.choice = null;
+  picker.mode = state?.mode ?? "normal";
+  $("pick-title").textContent = pickTitles[purpose];
+  setPickTab(tab);
+  $("pick-sheet").showModal();
+  if (tab === "artist") $("pick-q").focus();
+}
+
+function setPickTab(tab) {
+  picker.tab = tab;
+  picker.choice = null;
+  for (const button of document.querySelectorAll(".pick-tabs [data-tab]"))
+    button.setAttribute("aria-selected", String(button.dataset.tab === tab));
+  show($("pick-search"), tab === "artist");
+  if (tab === "genre" && picker.genres === null) loadGenres();
+  renderPickList();
+}
+
+function loadGenres() {
+  picker.genres = [];
+  $("pick-status").textContent = "Loading genres…";
+  fetch("/play/picks")
+    .then((response) => (response.ok ? response.json() : Promise.reject()))
+    .then((body) => {
+      picker.genres = body.genres ?? [];
+      $("pick-status").textContent = "";
+    })
+    .catch(() => {
+      picker.genres = null;
+      $("pick-status").textContent =
+        "Genres did not load. Close and try again.";
+    })
+    .finally(renderPickList);
+}
+
+function searchArtists() {
+  const query = $("pick-q").value.trim();
+  picker.query = query;
+  picker.abort?.abort();
+  clearTimeout(picker.timer);
+  if (query === "") {
+    picker.artists = [];
+    $("pick-status").textContent = "";
+    return renderPickList();
+  }
+  picker.timer = setTimeout(() => {
+    const abort = new AbortController();
+    picker.abort = abort;
+    $("pick-status").textContent = "Searching…";
+    fetch(`/play/picks?q=${encodeURIComponent(query)}`, {
+      signal: abort.signal,
+    })
+      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then((body) => {
+        picker.artists = body.artists ?? [];
+        $("pick-status").textContent = picker.artists.length
+          ? ""
+          : `No artist matches “${query}”.`;
+        renderPickList();
+      })
+      .catch(() => {
+        if (abort.signal.aborted) return;
+        picker.artists = [];
+        $("pick-status").textContent =
+          "Artist search is not answering. Try a genre, or search again.";
+        renderPickList();
+      });
+  }, 250);
+}
+
+function pickRow(item, top) {
+  const button = el("button", top ? "pick-hit is-top" : "pick-hit");
+  button.type = "button";
+  button.setAttribute(
+    "aria-pressed",
+    String(picker.choice?.slug === item.slug),
+  );
+  if (item.picture) {
+    const img = el("img", "pick-art");
+    img.src = item.picture;
+    img.alt = "";
+    img.loading = "lazy";
+    button.append(img);
+  } else {
+    button.append(el("span", "pick-art", [...item.name][0] ?? "?"));
+  }
+  const text = el("span", "pick-text");
+  if (top) text.append(el("small", "pick-kicker", "Top hit"));
+  text.append(el("b", "", item.name));
+  if (item.fans !== undefined)
+    text.append(el("small", "", `${number(item.fans)} fans`));
+  button.append(text);
+  button.onclick = () => {
+    picker.choice = { slug: item.slug, name: item.name };
+    renderPickList();
+  };
+  const li = el("li");
+  li.append(button);
+  return li;
+}
+
+function renderPickList() {
+  const items =
+    picker.tab === "genre"
+      ? (picker.genres ?? []).filter((g) => g.slug !== state?.categorySlug)
+      : picker.artists;
+  $("pick-list").replaceChildren(
+    ...items.map((item, i) =>
+      pickRow(item, picker.tab === "artist" && i === 0),
+    ),
+  );
+  for (const button of document.querySelectorAll(".pick-modes [data-mode]"))
+    button.setAttribute(
+      "aria-pressed",
+      String(button.dataset.mode === picker.mode),
+    );
+  const go = $("pick-go");
+  const choice = picker.choice;
+  go.disabled = choice === null;
+  go.textContent =
+    choice === null
+      ? picker.tab === "artist"
+        ? "Search and pick an artist"
+        : "Pick a genre"
+      : picker.purpose === "suggest"
+        ? `Suggest ${choice.name} · ${modeNames[picker.mode]}`
+        : picker.purpose === "next"
+          ? `Play ${choice.name} · ${modeNames[picker.mode]}`
+          : `Set ${choice.name} · ${modeNames[picker.mode]}`;
+}
+
+function wirePicker() {
+  const sheet = $("pick-sheet");
+  for (const button of document.querySelectorAll("[data-pick]"))
+    button.onclick = () =>
+      openPicker(state?.you.creator ? "next" : "suggest", button.dataset.pick);
+  $("change-category").onclick = () => openPicker("set", "genre");
+  for (const button of document.querySelectorAll(".pick-tabs [data-tab]"))
+    button.onclick = () => {
+      setPickTab(button.dataset.tab);
+      if (button.dataset.tab === "artist") $("pick-q").focus();
+    };
+  for (const button of document.querySelectorAll(".pick-modes [data-mode]"))
+    button.onclick = () => {
+      picker.mode = button.dataset.mode;
+      renderPickList();
+    };
+  $("pick-q").oninput = searchArtists;
+  // Enter takes the top hit, so a typed name and Enter is enough.
+  $("pick-q").onkeydown = (event) => {
+    if (event.key !== "Enter" || picker.artists.length === 0) return;
+    event.preventDefault();
+    const [first] = picker.artists;
+    picker.choice = { slug: first.slug, name: first.name };
+    renderPickList();
+    $("pick-go").focus();
+  };
+  $("pick-close").onclick = () => sheet.close();
+  // A tap on the backdrop lands on the dialog itself.
+  sheet.onclick = (event) => {
+    if (event.target === sheet) sheet.close();
+  };
+  $("pick-go").onclick = () => {
+    const choice = picker.choice;
+    if (choice === null) return;
+    if (picker.purpose === "suggest")
+      send({ type: "suggest", category: choice.slug, mode: picker.mode });
+    else switchTo(choice.slug, picker.mode, picker.purpose === "next");
+    sheet.close();
+  };
+  $("pick-hub").href = `/?room=${code}`;
+}
+
 function renderLobby(s) {
   shownRound = 0;
   $("lobby-mode").textContent = modeLabels[s.mode];
@@ -490,7 +751,6 @@ function renderLobby(s) {
   const creator = s.you.creator;
   show($("start-button"), creator);
   show($("change-category"), creator);
-  $("change-category").href = `/?room=${code}&mode=${s.mode}`;
   const wait = $("lobby-wait");
   if (s.kind === "match")
     waitRow(wait, "The game starts once everyone is connected.");
@@ -870,11 +1130,14 @@ function renderDone(s) {
     }),
   );
   const creator = s.you.creator;
+  const top = renderUpNext(s);
   show($("rematch-button"), creator);
-  show($("done-change"), creator);
-  $("done-change").href = `/?room=${code}&mode=${s.mode}`;
+  // With a voted pick, playing it is the main action and Rematch steps back.
+  $("rematch-button").classList.toggle("primary", !top);
+  show($("play-top"), creator && top !== undefined);
+  if (top) $("play-top").textContent = `Play ${top.name} · top vote`;
   show($("done-wait"), !creator);
-  waitRow($("done-wait"), hostText(s, "start a rematch"), host(s));
+  waitRow($("done-wait"), hostText(s, "pick the next game"), host(s));
 
   const creators = new Set(
     s.players.filter((p) => p.creator).map((p) => p.name),
@@ -1013,6 +1276,11 @@ $("nickname").oninput = () => {
 };
 $("start-button").onclick = () => send({ type: "start" });
 $("rematch-button").onclick = () => send({ type: "start" });
+$("play-top").onclick = () => {
+  const top = state?.suggestions?.[0];
+  if (top) switchTo(top.slug, top.mode, true);
+};
+wirePicker();
 $("sound-on").onclick = () => unlock();
 $("typed-form").onsubmit = (event) => {
   event.preventDefault();

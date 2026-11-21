@@ -168,6 +168,7 @@ playApp.post("/room/:code/switch", async (context) => {
         categoryName: input.category.name,
         mode: input.mode,
         candidates: input.tracks,
+        start: body.start === "1",
       }),
     }),
   );
@@ -293,6 +294,33 @@ playApp.get("/room/:code", async (context) => {
   if (!exists.ok) return context.html(notFoundPage(user), 404);
   if (user === null) anonKey(context);
   return context.html(roomPage(code, user));
+});
+
+// The room's Up next sheet reads its choices here: the genres without a
+// query, the top artists for one. A personal mix is left out, because a room
+// cannot play it.
+playApp.get("/picks", async (context) => {
+  const query = context.req.query("q")?.trim().slice(0, 80) ?? "";
+  if (query === "") {
+    const genres = (await listCategories(context.env.DB))
+      .filter((category) => category.feed !== "mine")
+      .map(({ slug, name }) => ({ slug, name }));
+    return context.json({ genres });
+  }
+  try {
+    const artists = (await deezerSearchArtists(query))
+      .slice(0, 6)
+      .map((hit) => ({
+        slug: `artist-${hit.id}`,
+        name: hit.name,
+        fans: hit.fans,
+        picture: hit.picture,
+      }));
+    return context.json({ artists });
+  } catch (error) {
+    console.error("artist search failed", error);
+    return context.json({ error: "search" }, 502);
+  }
 });
 
 // The pick for a blend travels in the query: `with` holds the first artist's

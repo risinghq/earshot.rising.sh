@@ -1,18 +1,19 @@
 import { providerHref, type SignedInUser } from "../auth";
 import { SaveScoreCard, SignInButtons } from "../ui/empty";
 import { Mosaic } from "../ui/person";
-import { PillButton, PillLink } from "../ui/pill";
+import { PillButton } from "../ui/pill";
 import { ClipPlayer } from "../ui/player";
 import { Page } from "../ui/shell";
 import {
   checkIcon,
   crossIcon,
   gameBar,
+  modeNames,
   nowPlaying,
   quitDialog,
   quitIcon,
 } from "./pages";
-import { roundsPerGame } from "./quiz";
+import { modes, roundsPerGame } from "./quiz";
 import { categoryBoardDays } from "./results";
 
 const copyIcon = (
@@ -43,6 +44,81 @@ const chevronIcon = (
     <path d="M9 6l6 6-6 6" />
   </svg>
 );
+
+const closeIcon = (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M6 6l12 12M18 6L6 18" />
+  </svg>
+);
+const searchIcon = (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <circle cx="10.5" cy="10.5" r="6.5" />
+    <path d="M15.5 15.5L21 21" />
+  </svg>
+);
+
+// The sheet picks the room's next category: a player suggests it, the host
+// plays it after a game or sets it in the lobby. room.js fills the list from
+// /play/picks and sets the title and the button for its purpose.
+function pickSheet(code: string) {
+  return (
+    <dialog class="pick-sheet" id="pick-sheet" aria-labelledby="pick-title">
+      <span class="pick-grab" aria-hidden="true" />
+      <div class="pick-head">
+        <h2 id="pick-title">Suggest next game</h2>
+        <button
+          class="pick-close"
+          id="pick-close"
+          type="button"
+          aria-label="Close"
+        >
+          {closeIcon}
+        </button>
+      </div>
+      <div class="pick-tabs" role="tablist" aria-label="Pick from">
+        <button type="button" role="tab" id="pick-tab-genre" data-tab="genre">
+          Genre
+        </button>
+        <button type="button" role="tab" id="pick-tab-artist" data-tab="artist">
+          Artist
+        </button>
+      </div>
+      <label class="pick-search" id="pick-search" hidden>
+        {searchIcon}
+        <span class="sr-only">Artist</span>
+        <input
+          type="search"
+          id="pick-q"
+          placeholder="Search an artist"
+          enterkeyhint="search"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck={false}
+        />
+      </label>
+      <p class="pick-status" id="pick-status" aria-live="polite" />
+      <ul class="pick-results" id="pick-list" />
+      <div class="pick-modes" role="group" aria-label="Mode">
+        {modes.map((mode) => (
+          <button type="button" data-mode={mode} aria-pressed="false">
+            {modeNames[mode]}
+          </button>
+        ))}
+      </div>
+      <button
+        class="btn is-primary is-lg is-block"
+        id="pick-go"
+        type="button"
+        disabled
+      >
+        Pick one above
+      </button>
+      <a class="pick-hub" id="pick-hub" href={`/?room=${code}`}>
+        Pick a decade on the hub
+      </a>
+    </dialog>
+  );
+}
 
 // The room page is one shell for every phase. public/room.js shows the panel
 // that matches the room's state and fills it. The round uses the solo
@@ -203,9 +279,9 @@ export function roomPage(code: string, user: SignedInUser | null) {
               {chevronIcon}
             </a>
             <div class="results-actions room-actions" id="lobby-actions">
-              <PillLink large href="/" id="change-category">
+              <PillButton large id="change-category" type="button">
                 Change category
-              </PillLink>
+              </PillButton>
               <PillButton
                 variant="primary"
                 large
@@ -297,11 +373,31 @@ export function roomPage(code: string, user: SignedInUser | null) {
               <ol class="score-pips" id="score-pips" />
             </section>
             <dl class="results-stats" id="done-stats" />
+            <section
+              class="up-next"
+              id="up-next"
+              aria-labelledby="up-next-title"
+            >
+              <div class="up-next-head">
+                <h2 id="up-next-title">Up next</h2>
+                <small class="up-next-live" id="up-next-live" />
+              </div>
+              <p class="up-next-empty" id="up-next-empty">
+                Suggest a genre or an artist. Everyone votes, and the host plays
+                the pick.
+              </p>
+              <ol class="up-next-list" id="up-next-list" />
+              <div class="up-next-add">
+                <button class="up-next-chip" type="button" data-pick="genre">
+                  + Genre
+                </button>
+                <button class="up-next-chip" type="button" data-pick="artist">
+                  + Artist
+                </button>
+              </div>
+            </section>
             <SaveScoreCard id="done-save" title="" next={back} hidden />
             <div class="results-actions room-actions">
-              <PillLink large href="/" id="done-change">
-                Change category
-              </PillLink>
               <PillButton
                 variant="primary"
                 large
@@ -309,6 +405,9 @@ export function roomPage(code: string, user: SignedInUser | null) {
                 type="button"
               >
                 Rematch <kbd class="room-kbd">Enter</kbd>
+              </PillButton>
+              <PillButton variant="primary" large id="play-top" type="button">
+                Play the top vote
               </PillButton>
               <p class="room-wait" id="done-wait" />
             </div>
@@ -384,6 +483,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
         <template id="check-template">{checkIcon}</template>
         <template id="cross-template">{crossIcon}</template>
         {quitDialog()}
+        {pickSheet(code)}
         <script src="/wave.js" defer />
         <script src="/room.js" defer />
       </div>

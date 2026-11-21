@@ -198,6 +198,31 @@ describe("the play hub", () => {
       expect(body).toContain(name);
   });
 
+  it("gives the room's pick sheet the genres and the top artists", async () => {
+    const genres = (await (await get("/play/picks")).json()) as {
+      genres: { slug: string; name: string }[];
+    };
+    const names = genres.genres.map((genre) => genre.name);
+    expect(names).toContain("K-pop");
+    expect(names).not.toContain("From my listening");
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          data: [
+            { id: 2, name: "Twin", nb_fan: 30 },
+            { id: 1, name: "TWICE", nb_fan: 1_365_284, picture_medium: "p" },
+          ],
+        }),
+      ),
+    );
+    const found = (await (await get("/play/picks?q=twice")).json()) as {
+      artists: { slug: string; name: string }[];
+    };
+    expect(found.artists[0]).toMatchObject({ slug: "artist-1", name: "TWICE" });
+  });
+
   it("builds a game whose rounds have previews, skipping tracks without one", async () => {
     await seedCatalog(
       env.DB,
