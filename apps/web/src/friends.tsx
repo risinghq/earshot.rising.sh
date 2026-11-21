@@ -142,7 +142,7 @@ function friendsPage(data: PageData, options: PageOptions, origin: string) {
     user,
     nav: "groups",
     children: (
-      <>
+      <div id="friends-body" class="contents">
         <header class="head">
           <div>
             <h1>Friends</h1>
@@ -174,7 +174,12 @@ function friendsPage(data: PageData, options: PageOptions, origin: string) {
                 className="btn is-primary is-lg is-block"
               />
             </div>
-            <form class="card is-pad" method="post" action="/friends/request">
+            <form
+              class="card is-pad"
+              method="post"
+              action="/friends/request"
+              data-inline="friends-body"
+            >
               <label class="card-title" for="name">
                 Or add by profile name
               </label>
@@ -208,6 +213,7 @@ function friendsPage(data: PageData, options: PageOptions, origin: string) {
                             <form
                               method="post"
                               action="/friends/requests/accept"
+                              data-inline="friends-body"
                             >
                               <input
                                 type="hidden"
@@ -219,6 +225,7 @@ function friendsPage(data: PageData, options: PageOptions, origin: string) {
                             <form
                               method="post"
                               action="/friends/requests/decline"
+                              data-inline="friends-body"
                             >
                               <input
                                 type="hidden"
@@ -239,7 +246,11 @@ function friendsPage(data: PageData, options: PageOptions, origin: string) {
                               <span class="sub">Sent · waiting for them</span>
                             </span>
                           </span>
-                          <form method="post" action="/friends/requests/cancel">
+                          <form
+                            method="post"
+                            action="/friends/requests/cancel"
+                            data-inline="friends-body"
+                          >
                             <input type="hidden" name="id" value={request.id} />
                             <button class="btn is-sm">Cancel</button>
                           </form>
@@ -265,7 +276,11 @@ function friendsPage(data: PageData, options: PageOptions, origin: string) {
                       {friends.map((friend) => (
                         <li class="prow" key={friend.id}>
                           <FriendWho friend={friend} />
-                          <form method="post" action="/friends/remove">
+                          <form
+                            method="post"
+                            action="/friends/remove"
+                            data-inline="friends-body"
+                          >
                             <input type="hidden" name="id" value={friend.id} />
                             <button class="btn is-quiet">Remove</button>
                           </form>
@@ -277,7 +292,12 @@ function friendsPage(data: PageData, options: PageOptions, origin: string) {
               </section>
             </div>
             <div class="friends-col">
-              <form class="card is-pad" method="post" action="/friends/request">
+              <form
+                class="card is-pad"
+                method="post"
+                action="/friends/request"
+                data-inline="friends-body"
+              >
                 <h2 class="card-title">Add by name</h2>
                 <div class="form-block">
                   <label class="form-label" for="name">
@@ -313,7 +333,7 @@ function friendsPage(data: PageData, options: PageOptions, origin: string) {
             </div>
           </div>
         )}
-      </>
+      </div>
     ),
   });
 }

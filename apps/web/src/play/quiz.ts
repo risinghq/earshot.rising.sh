@@ -75,6 +75,14 @@ export async function candidatePreview(
   return deezerSearchPreview(candidate.artist, candidate.title);
 }
 
+// The titles the next rounds are likely to ask, from the candidate after the
+// one being served. Skipped candidates shift this by a few at most.
+export function upcomingTitles(candidates: PoolEntry[], index: number) {
+  return candidates
+    .slice(index + 1, index + roundsPerGame)
+    .map((candidate) => candidate.title);
+}
+
 export function scoreFor(elapsedMs: number) {
   if (elapsedMs >= roundSeconds * 1000) return 0;
   return Math.round(1000 - (900 * elapsedMs) / (roundSeconds * 1000));
@@ -132,21 +140,33 @@ export function matchTyped(
 // The distractor set is sampled once per round: re-sampling would let a
 // reload narrow the answer to the title present in both lists.
 // Normal sends no artist, so the page cannot leak the hint it hides.
+// Titles to avoid (the ones the game already showed, and the answers of the
+// rounds still to come) are used only when the pool runs out of others, so a
+// wrong option does not come back round after round or give away a later
+// answer.
 export function sampleChoices(
   mode: Mode,
   pool: PoolEntry[],
   answer: PoolEntry,
+  avoid: Iterable<string> = [],
 ): Choice[] {
   if (mode === "hard") return [];
-  const answerNorm = answerKey(answer.title);
-  const others = pool.filter(
-    (entry) =>
-      entry.title !== answer.title && answerKey(entry.title) !== answerNorm,
-  );
-  const picked = shuffled([
-    answer,
-    ...shuffled(others).slice(0, maxChoices - 1),
-  ]);
+  const seen = new Set([...avoid].map(answerKey));
+  const keys = new Set([answerKey(answer.title)]);
+  const distractors: PoolEntry[] = [];
+  const others = shuffled(pool);
+  const fresh = others.filter((entry) => !seen.has(answerKey(entry.title)));
+  const stale = others.filter((entry) => seen.has(answerKey(entry.title)));
+  for (const entry of [...fresh, ...stale]) {
+    if (distractors.length === maxChoices - 1) break;
+    // Two titles that differ only by a bracketed clause or a feat. credit
+    // read as the same option.
+    const key = answerKey(entry.title);
+    if (keys.has(key)) continue;
+    keys.add(key);
+    distractors.push(entry);
+  }
+  const picked = shuffled([answer, ...distractors]);
   return picked.map(({ title, artist }) =>
     mode === "easy" ? { title, artist } : { title },
   );

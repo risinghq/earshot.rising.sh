@@ -1,15 +1,3 @@
-const copyScript = `
-const copy = document.getElementById("copy-token");
-if (copy && navigator.clipboard) {
-  copy.hidden = false;
-  copy.addEventListener("click", async () => {
-    const token = document.getElementById("issued-token");
-    await navigator.clipboard.writeText(token.value);
-    copy.lastChild.textContent = "Copied";
-  });
-}
-`;
-
 const copyIcon = (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <rect x="8" y="8" width="12" height="12" rx="2" />
@@ -17,8 +5,8 @@ const copyIcon = (
   </svg>
 );
 
-// The Copy button appears only where the clipboard API exists, so a page
-// without JavaScript leaves the field to select by hand.
+// The Copy button appears only where the clipboard API exists (public/site.js
+// shows it), so a page without JavaScript leaves the field to select by hand.
 export function TokenField({ token, label }: { token: string; label: string }) {
   return (
     <input
@@ -40,13 +28,10 @@ export function CopyButton({
   className?: string;
 }) {
   return (
-    <>
-      <button class={className} id="copy-token" type="button" hidden>
-        {copyIcon}
-        <span>{label}</span>
-      </button>
-      <script type="module" dangerouslySetInnerHTML={{ __html: copyScript }} />
-    </>
+    <button class={className} type="button" data-copy="issued-token" hidden>
+      {copyIcon}
+      <span>{label}</span>
+    </button>
   );
 }
 

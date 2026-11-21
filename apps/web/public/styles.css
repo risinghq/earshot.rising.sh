@@ -388,6 +388,10 @@ img {
 [hidden] {
   display: none !important;
 }
+/* A region that site.js swaps in place without adding a layout box. */
+.contents {
+  display: contents;
+}
 .sr-only {
   clip-path: inset(50%);
   height: 1px;
@@ -993,8 +997,7 @@ input:is(
     [type="email"],
     [type="tel"]
   ):read-only:not(:focus-visible),
-input:not([type]):read-only:not(:focus-visible),
-textarea:read-only:not(:focus-visible) {
+:where(input:not([type]), textarea):read-only:not(:focus-visible) {
   background: var(--fill);
   border-color: var(--edge);
 }
@@ -1873,22 +1876,24 @@ button:disabled {
     transform: translateY(8px);
   }
 }
+/* On a phone the stage carries the round and the question (.player-head),
+   so the page heading stays for screen readers only. */
 .round-count {
-  min-height: 28px;
-  padding: 4px 4px 0;
+  display: none;
 }
 .round-title {
-  font-size: 20px;
-  font-weight: var(--weight-heavy);
-  letter-spacing: -0.02em;
-  margin-top: auto;
-  padding: 20px 4px 4px;
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 .choices {
   display: grid;
   gap: 10px;
   padding-bottom: 24px;
-  padding-top: 8px;
+  padding-top: 16px;
 }
 .round-keys {
   display: none;
@@ -1896,7 +1901,7 @@ button:disabled {
 #round[data-phase="reveal"] {
   padding-bottom: 240px;
 }
-#round[data-phase="reveal"] :is(.round-count, .round-title, .round-keys) {
+#round[data-phase="reveal"] .round-keys {
   display: none;
 }
 
@@ -1906,32 +1911,65 @@ button:disabled {
   inherits: true;
   initial-value: 1;
 }
+/* On a phone the question's stage has the now-playing card's shape and
+   height: the ring where the cover lands, the round and the question where
+   the title lands, the clock where the links land. The answers below then
+   stay put when the verdict arrives. */
 .player {
-  align-items: center;
+  align-items: start;
   background: var(--stage);
   border-radius: 28px;
   color: var(--stage-ink);
-  display: flex;
-  flex-direction: column;
+  column-gap: 14px;
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
   margin-top: 12px;
-  padding: 16px 16px 18px;
+  min-height: 184px;
+  padding: 14px;
   position: relative;
+}
+.player-head {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  min-width: 0;
+}
+.player-round {
+  align-items: center;
+  color: var(--stage-ink-2);
+  display: flex;
+  font-size: 12px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: 0.08em;
+  min-height: 36px;
+  padding-right: 44px;
+  text-transform: uppercase;
+}
+.player-ask {
+  font-size: 24px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin-top: 4px;
 }
 .player audio {
   display: none;
 }
 .player-top {
   align-items: center;
-  align-self: stretch;
   display: flex;
+  grid-column: 2;
+  grid-row: 1;
   justify-content: space-between;
-  min-height: 40px;
+  justify-self: end;
+  min-height: 36px;
+  z-index: 1;
 }
 .player-tag {
   align-items: center;
   background: var(--stage-2);
   border-radius: var(--radius-pill);
-  display: inline-flex;
+  display: none;
   font-size: 13px;
   font-weight: var(--weight-strong);
   height: 30px;
@@ -1948,10 +1986,10 @@ button:disabled {
   border-radius: 50%;
   box-shadow: none;
   color: var(--stage-ink);
-  height: 40px;
-  min-height: 40px;
+  height: 36px;
+  min-height: 36px;
   padding: 0;
-  width: 40px;
+  width: 36px;
 }
 .player-mute:hover {
   background: color-mix(in oklch, var(--stage-2) 80%, var(--stage-ink));
@@ -1989,30 +2027,32 @@ button:disabled {
   );
   border-radius: 50%;
   display: flex;
-  height: 168px;
+  grid-column: 1;
+  grid-row: 1 / -1;
+  height: 120px;
   justify-content: center;
-  margin-top: 4px;
   position: relative;
   transition: --left 220ms linear;
-  width: 168px;
+  width: 120px;
 }
 .player-ring::before {
   background: var(--stage);
   border-radius: 50%;
   content: "";
-  inset: 9px;
+  inset: 7px;
   position: absolute;
 }
 .player-toggle {
   --ledge: var(--accent-press);
   background: var(--accent);
   border-radius: 50%;
-  box-shadow: 0 5px 0 var(--accent-press);
+  box-shadow: 0 4px 0 var(--accent-press);
   color: var(--on-accent);
-  height: 112px;
+  height: 84px;
+  min-height: 0;
   padding: 0;
   position: relative;
-  width: 112px;
+  width: 84px;
   z-index: 1;
 }
 .player-toggle:hover {
@@ -2024,8 +2064,8 @@ button:disabled {
 }
 .player-toggle svg {
   fill: currentColor;
-  height: 40px;
-  width: 40px;
+  height: 32px;
+  width: 32px;
 }
 .player-loading {
   display: none;
@@ -2033,7 +2073,7 @@ button:disabled {
 .player-wave {
   align-items: center;
   align-self: stretch;
-  display: flex;
+  display: none;
   height: 40px;
   justify-content: space-between;
   margin-top: 14px;
@@ -2067,16 +2107,19 @@ button:disabled {
 }
 .player-foot {
   align-items: baseline;
-  align-self: stretch;
+  align-self: end;
+  color: var(--stage-ink-2);
   display: flex;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: var(--weight-strong);
-  justify-content: space-between;
-  margin-top: 10px;
+  gap: 14px;
+  grid-column: 2;
+  grid-row: 3;
+  margin-top: 8px;
 }
 .player-foot b {
   color: var(--stage-ink);
-  font-size: 22px;
+  font-size: 20px;
   font-weight: var(--weight-heavy);
 }
 .player-worth {
@@ -2107,9 +2150,10 @@ button:disabled {
 }
 .player.is-loading .player-loading {
   display: block;
-  font-size: 17px;
+  font-size: 14px;
   font-weight: var(--weight-heavy);
   position: relative;
+  text-align: center;
   z-index: 1;
 }
 .player.is-loading .player-wave i {
@@ -2120,11 +2164,13 @@ button:disabled {
   transform: none;
 }
 .player.is-loading .player-wait {
+  align-self: end;
   color: var(--stage-ink-2);
   display: block;
   font-size: 14px;
-  margin-top: 12px;
-  text-align: center;
+  grid-column: 2;
+  grid-row: 3;
+  margin-top: 8px;
 }
 #round:has(.player.is-loading) .round-title {
   background: var(--surface-2);
@@ -2171,18 +2217,22 @@ button:disabled {
     0 0 0 10px rgba(59, 56, 240, 0.28);
 }
 .player:has(.needs-click) .player-hint {
+  align-self: end;
+  color: var(--stage-ink-2);
   display: grid;
   font-size: 14px;
   gap: 4px;
-  justify-items: center;
-  margin-top: 18px;
-  text-align: center;
+  grid-column: 2;
+  grid-row: 2 / 4;
+  margin-top: 8px;
 }
 .player:has(.needs-click) .player-hint b {
-  font-size: 22px;
+  color: var(--stage-ink);
+  font-size: 20px;
   font-weight: var(--weight-heavy);
 }
-.player:has(.needs-click) :is(.player-wave, .player-foot, .player-wait) {
+.player:has(.needs-click)
+  :is(.player-wave, .player-foot, .player-wait, .player-ask) {
   display: none;
 }
 #round:has(.needs-click) :is(.choices, .guess) {
@@ -2196,6 +2246,7 @@ button:disabled {
    a pause button in its corner, so the clip keeps playing. */
 .player.is-reveal {
   align-items: stretch;
+  display: flex;
   flex-direction: row;
   gap: 14px;
   padding: 14px;
@@ -2203,6 +2254,7 @@ button:disabled {
 .player.is-reveal
   > :is(
     .player-top,
+    .player-head,
     .player-wave,
     .player-foot,
     .player-hint,
@@ -2308,16 +2360,25 @@ body:not(.clip-live) .now-eq i {
   margin-top: 4px;
   min-width: 0;
 }
+/* Two title lines and one byline keep the card within the question stage's
+   height on a phone. */
 .now-title {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
   font-size: 24px;
   font-weight: var(--weight-heavy);
   letter-spacing: -0.02em;
   line-height: 1.05;
+  overflow: hidden;
   overflow-wrap: anywhere;
 }
 .now-by {
   color: var(--stage-ink-2);
   font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .now-links {
   align-items: center;
@@ -2473,12 +2534,6 @@ body:not(.clip-live) .now-eq i {
 .choice[disabled] {
   opacity: 1;
 }
-.reveal-choices {
-  padding-top: 20px;
-}
-.reveal-choices .choice {
-  min-height: 60px;
-}
 .reveal-choices .choice:not(.is-right, .is-wrong) {
   opacity: 0.45;
 }
@@ -2526,11 +2581,18 @@ body:not(.clip-live) .now-eq i {
   background: var(--wrong);
   padding: 8px;
 }
+/* The pick tag sits on the card's top border, so it takes no width from the
+   title: a title that wrapped would move every option below it. */
 .choice-you {
-  flex: none;
-  font-size: 13px;
+  background: var(--bg);
+  border-radius: 999px;
+  font-size: 12px;
   font-weight: var(--weight-heavy);
-  margin-left: auto;
+  line-height: 18px;
+  padding: 0 8px;
+  position: absolute;
+  right: 16px;
+  top: -10px;
 }
 .burst {
   inset: 0;
@@ -2714,104 +2776,1117 @@ body:not(.clip-live) .now-eq i {
   display: none;
 }
 
-/* The room's sheet stays fixed at the bottom at every width. */
-#room-sheet {
-  animation: sheet-in 260ms var(--ease);
-  background: var(--surface);
-  border-top: 2px solid var(--line);
-  bottom: 0;
-  left: 0;
-  padding: 16px 16px 24px;
-  position: fixed;
-  right: 0;
-  z-index: 40;
-}
-#room-sheet.is-good {
-  background: var(--right-tint);
-  border-top-color: var(--right);
-}
-#room-sheet.is-bad {
-  background: var(--wrong-tint);
-  border-top-color: var(--wrong);
-}
-#room-sheet .sheet-in {
-  display: grid;
-  gap: 12px;
-  margin: 0 auto;
-  max-width: 640px;
-}
-.sheet-verdict {
-  align-items: center;
-  display: flex;
-  font-size: var(--text-lg);
-  gap: 10px;
-}
-.sheet-verdict .choice-mark {
-  height: 24px;
-  padding: 5px;
-  width: 24px;
-}
-.sheet-verdict b {
-  font-weight: var(--weight-heavy);
-}
-#room-sheet .sheet-points {
-  font-weight: var(--weight-heavy);
-  margin-left: auto;
-}
-.sheet-song {
-  align-items: center;
-  display: flex;
-  gap: 12px;
-}
-.sheet-song .track {
-  display: grid;
-  min-width: 0;
-}
-.sheet-song .track b,
-.sheet-song .track small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-#room-sheet .sheet-report > summary {
-  color: var(--fg-muted);
-  font-size: var(--text-xs);
-}
-#room.sheet-open {
-  padding-bottom: 240px;
-}
-/* Outside the game the room is one centred column of cards, like the results
-   lists; during a round the heading gives its height back to the stage. */
-#room > :not(.game-bar, dialog) {
-  margin-inline: auto;
-  max-width: 640px;
-  width: 100%;
-}
-#room > .section:not(.game-section) {
-  background: var(--surface);
-  border: 2px solid var(--line);
-  border-radius: 20px;
-  padding: 20px;
-}
-#room > .section:not(.game-section) .section-head h2 {
-  font-size: 20px;
-}
-#room:has(#game-card:not([hidden])) .page-head h1 {
+/* The room. Its round is the solo round; the lobby and the final screen use
+   the results parts. The game bar shows only during a round and the plain
+   header everywhere else. */
+.room:not([data-phase="round"]) > .game-bar,
+.room[data-phase="round"] > .results-head {
   display: none;
 }
-#room .page-head .meta {
-  font-size: 13px;
+.room-error {
+  margin: 8px 0;
+}
+/* The room's clock runs whether or not this phone plays, so a blocked clip
+   leaves the answers at full strength. */
+.room #round:has(.needs-click) :is(.choices, .guess) {
+  opacity: 1;
+}
+.choices.is-locked .choice:not(.is-picked) {
+  opacity: 0.5;
+}
+/* Sizes from the Claude Design file "Earshot Room". */
+.room {
+  --slot-h: 120px;
+  --choice-h: 64px;
+  --chip-h: 36px;
+  --tag-h: 22px;
+  --code-ls: 0.12em;
+}
+.room-label {
+  color: var(--stage-ink-2);
+  font-size: 12px;
   font-weight: var(--weight-heavy);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.game-shell .game-section {
-  background: transparent;
-  border: 0;
-  box-shadow: none;
+.room-note {
+  color: var(--ink-2);
+  font-size: 14px;
 }
-.game-shell .game-section .section-body {
+.room-note.is-center {
+  text-align: center;
+}
+.room-kbd {
+  display: none;
+}
+.room-mode {
+  align-items: center;
+  background: var(--surface-2);
+  border-radius: var(--radius-pill);
+  color: var(--ink-2);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: var(--weight-heavy);
+  height: 28px;
+  padding: 0 10px;
+  position: absolute;
+  right: 16px;
+  top: 60px;
+  z-index: 2;
+}
+.room-mode.is-hard {
+  background: var(--ink);
+  color: var(--bg);
+}
+.room-mode:empty {
+  display: none;
+}
+/* On a phone the round's count leaves the stage for a row above it, which
+   it shares with the mode pill. */
+.room #round > .round-count {
+  align-items: center;
+  display: flex;
+  font-size: 13px;
+  height: 28px;
+  margin: 4px 0 10px;
+}
+.room .player-round {
+  display: none;
+}
+
+/* The invite: the room's dark card, on the join and the lobby. */
+.room-invite {
+  background: var(--stage);
+  border-radius: 28px;
+  color: var(--stage-ink);
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+.room-invite .mosaic {
+  --r: 14px;
+  --s: 64px;
+}
+.room-invite-top {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+}
+.room-invite-head {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.room-invite-title {
+  font-size: 24px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.room-invite-sub {
+  color: var(--stage-ink-2);
+  font-size: 15px;
+}
+.room-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.room-pill {
+  align-items: center;
+  background: var(--stage-2);
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: var(--weight-strong);
+  min-height: 26px;
+  padding: 0 10px;
+}
+.room-code-row {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+.room-code {
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-heavy);
+  letter-spacing: var(--code-ls);
+  line-height: 1;
+}
+.room-share {
+  display: flex;
+  gap: 8px;
+}
+.room-share input.room-link {
+  appearance: none;
+  background: var(--stage-2);
+  border: 0;
+  border-radius: 14px;
+  color: var(--stage-ink);
+  flex: 1;
+  font: 14px/48px var(--font-mono);
+  height: 48px;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: auto;
+}
+input.room-link:focus-visible {
+  box-shadow: var(--focus);
+  outline: 0;
+}
+:is(.room-copy, .room-share-native) {
+  align-items: center;
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  flex: none;
+  font: inherit;
+  font-weight: var(--weight-heavy);
+  gap: 6px;
+  height: 48px;
+  padding: 0 16px;
+}
+.room-copy {
+  background: var(--stage-ink);
+  box-shadow: 0 3px 0 var(--stage-ink-2);
+  color: var(--stage);
+}
+.room-copy svg {
+  display: none;
+}
+.room-share-native {
+  background: var(--accent);
+  box-shadow: 0 3px 0 var(--accent-press);
+  color: var(--on-accent);
+}
+:is(.room-copy, .room-share-native, .room-tv, .room-sound-icon) svg {
+  fill: none;
+  flex: none;
+  height: 18px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+  width: 18px;
+}
+.room-sound-icon .is-solid {
+  fill: currentColor;
+  stroke: none;
+}
+
+/* The join: the invite, who is in, then one field. */
+.room-join {
+  display: grid;
+  gap: 14px;
+  margin: 0 auto;
+  max-width: 480px;
+  padding: 8px 0 32px;
+  width: 100%;
+}
+.room-invite.is-join {
+  align-items: center;
+  gap: 14px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 16px;
+}
+.room-invite.is-join .room-invite-head {
+  gap: 2px;
+}
+.room-who {
+  align-items: center;
+  color: var(--ink-2);
+  display: flex;
+  font-size: 14px;
+  gap: 10px;
+  padding: 0 4px;
+}
+.room-who[hidden] {
+  display: none;
+}
+.room-who .mono-stack > .mono {
+  border-color: var(--bg);
+}
+.room-join-card {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 24px;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+.room-join-title {
+  font-size: 28px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.room-field {
+  position: relative;
+}
+.room-field .field {
+  font-size: 18px;
+  height: 52px;
+  padding-right: 64px;
+}
+.room-field-count {
+  color: var(--ink-3);
+  font-size: 13px;
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.room-or {
+  align-items: center;
+  color: var(--ink-3);
+  display: flex;
+  font-size: 13px;
+  font-weight: var(--weight-strong);
+  gap: 12px;
+}
+.room-or::before,
+.room-or::after {
+  background: var(--line);
+  content: "";
+  flex: 1;
+  height: 1.5px;
+}
+
+/* The lobby. */
+.room-lobby {
+  display: grid;
+  gap: 16px;
+  padding: 8px 0 120px;
+}
+.room-lobby-main,
+.room-lobby-side {
+  display: grid;
+  gap: 16px;
+}
+.room-sound {
+  align-items: center;
+  background: var(--accent-tint);
+  border-radius: 20px;
+  color: var(--ink);
+  display: grid;
+  font-size: 14px;
+  gap: 12px;
+  grid-template-columns: auto 1fr;
+  padding: 14px;
+}
+.room-sound-icon {
+  align-items: center;
+  background: var(--accent);
+  border-radius: 50%;
+  color: var(--on-accent);
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+.room-sound-on {
+  background: var(--accent);
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 3px 0 var(--accent-press);
+  color: var(--on-accent);
+  cursor: pointer;
+  font: inherit;
+  font-weight: var(--weight-heavy);
+  grid-column: 1 / -1;
+  height: 44px;
+  padding: 0 14px;
+}
+.room-players-head {
+  align-items: baseline;
+  display: flex;
+  font-size: 22px;
+  font-weight: var(--weight-heavy);
+  justify-content: space-between;
+  letter-spacing: -0.02em;
+  padding: 0 4px 10px;
+}
+.room-players-head small {
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: var(--weight-heavy);
+}
+
+/* A list card keeps its rows inset, so the last row never meets the edge. */
+:is(.room-people, .room .board-rows, .room .round-rows) {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 20px;
+  list-style: none;
+  margin: 0;
+  overflow: visible;
+  padding: 6px 6px 8px;
+}
+.room :is(.board-rows, .round-rows) li + li {
+  border-top: 0;
+}
+.room :is(.board-rows, .round-rows) li {
+  border-radius: 14px;
+  padding: 8px 10px;
+}
+.room-people li {
+  align-items: center;
+  border-radius: 14px;
+  display: flex;
+  gap: 12px;
+  min-height: 60px;
+  padding: 0 10px;
+}
+.room-people li.is-you {
+  background: var(--accent-tint);
+}
+.room-people li[data-away] > :not(.room-tags) {
+  opacity: 0.55;
+}
+.room-person {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.room-person b {
+  align-items: center;
+  display: flex;
+  font-size: 17px;
+  font-weight: var(--weight-strong);
+  gap: 6px;
+  min-width: 0;
+}
+.room-person small {
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.room-tags {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+.room-tag {
+  align-items: center;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  flex: none;
+  font-size: 12px;
+  font-weight: var(--weight-heavy);
+  gap: 5px;
+  height: var(--tag-h);
+  padding: 0 8px;
+}
+.room-tag.is-you {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.room-tag.is-host {
+  background: var(--surface-2);
+  color: var(--ink-2);
+}
+.room-tag.is-away {
+  border: 1.5px dashed var(--press);
+  color: var(--ink-3);
+}
+.room-tag.is-away::before {
+  background: currentColor;
+  border-radius: 50%;
+  content: "";
+  height: 5px;
+  width: 5px;
+}
+.room-people li.room-seats {
+  border-top: 1.5px solid var(--surface-2);
+  border-radius: 0;
+  color: var(--ink-2);
+  font-size: 14px;
+  margin-top: 6px;
+  min-height: 52px;
+}
+.room-seat-list {
+  display: flex;
+}
+.room-seat {
+  border: 1.5px dashed var(--press);
+  border-radius: 50%;
+  font-size: 0;
+  height: 26px;
+  margin-right: -6px;
+  width: 26px;
+}
+.room-tv {
+  align-items: center;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  color: var(--ink);
+  display: flex;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 14px;
+  text-decoration: none;
+}
+.room-tv > span {
+  flex: 1;
+}
+.room-tv strong {
+  font-size: 15px;
+  font-weight: var(--weight-heavy);
+}
+.room-tv small {
+  color: var(--ink-2);
+  display: none;
+  font-size: 15px;
+}
+.room-tv-wrap {
+  display: grid;
+  gap: 8px;
+}
+.room-tv-note {
+  font-size: 13px;
+  padding: 0 6px;
+}
+.room-tv > svg:last-child {
+  color: var(--ink-3);
+}
+.room-actions {
+  align-items: center;
+}
+.room .results-actions > a {
+  flex: 1;
+  padding-inline: 12px;
+}
+.room .results-actions .pill {
+  white-space: nowrap;
+}
+.room .choice-you .is-wide {
+  display: inline;
+}
+.mono-stack:empty {
+  display: none;
+}
+.room-wait {
+  align-items: center;
+  color: var(--ink-2);
+  display: flex;
+  font-size: 15px;
+  gap: 10px;
+  min-height: 56px;
+}
+.room-wait[hidden] {
+  display: none;
+}
+.room-wait strong {
+  color: var(--ink);
+}
+.room-wait-text {
+  flex: 1;
+}
+.room-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+.room-dots i {
+  animation: room-dot 1.2s var(--ease) infinite;
+  background: var(--ink-3);
+  border-radius: 50%;
+  height: 6px;
+  width: 6px;
+}
+.room-dots i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.room-dots i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes room-dot {
+  50% {
+    opacity: 0.3;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .room-dots i {
+    animation: none;
+  }
+}
+
+/* The round: every choice keeps one height, so a long title or a pick never
+   moves the list. */
+.room .choice {
+  height: var(--choice-h);
+  min-height: 0;
+}
+.room .choice-label {
+  flex: 1;
+}
+.room :is(.choice-title, .choice-artist) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.room .choice.is-picked {
+  background: var(--surface);
+  border-color: var(--ink);
+  box-shadow: 0 4px 0 var(--ink);
+  transform: none;
+}
+.room .choices.is-locked .choice:not(.is-picked) {
+  opacity: 0.5;
+}
+.room :is(.choice-lock, .choice-you) {
+  flex: none;
+  font-size: 13px;
+  font-weight: var(--weight-heavy);
+  min-width: 68px;
+  text-align: right;
+}
+.room .choice-you {
+  background: none;
+  line-height: inherit;
   padding: 0;
+  position: static;
+}
+.room-slot {
+  display: grid;
+  gap: 10px;
+  min-height: var(--slot-h);
+  padding: 14px 0 24px;
+}
+.room-slot-head {
+  color: var(--ink-2);
+  display: flex;
+  font-size: 12px;
+  font-weight: var(--weight-heavy);
+  justify-content: space-between;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.room-slot-head b {
+  color: var(--ink);
+}
+.room-slot.is-covered {
+  visibility: hidden;
+}
+.room-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.room-chip {
+  align-items: center;
+  border: 1.5px dashed var(--press);
+  border-radius: var(--radius-pill);
+  color: var(--ink-3);
+  display: inline-flex;
+  font-weight: var(--weight-strong);
+  gap: 8px;
+  height: var(--chip-h);
+  padding: 0 12px 0 4px;
+  transition:
+    background-color var(--duration-base) var(--ease),
+    color var(--duration-base) var(--ease);
+}
+.room-chip .mono {
+  opacity: 0.4;
+}
+.room-chip[data-answered] {
+  background: var(--ink);
+  border: 1.5px solid var(--ink);
+  color: var(--bg);
+}
+.room-chip[data-answered] .mono {
+  opacity: 1;
+}
+
+/* The verdict sheet: what you scored, where you stand, and every player's
+   points this round. */
+.room #sheet .sheet-in {
+  row-gap: 4px;
+}
+.room #sheet .sheet-points {
+  align-self: center;
+  grid-row: 1;
+}
+.room .sheet-sub {
+  gap: 12px;
+  grid-column: 1 / -1;
+  margin-top: 0;
+}
+.room .sheet-sub strong {
+  color: var(--ink);
+}
+.room-until {
+  background: var(--surface-2);
+  border-radius: 2px;
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+}
+.room-until i {
+  background: var(--ink-3);
+  display: block;
+  height: 100%;
+  transform-origin: left;
+  transition: transform 250ms linear;
+}
+.room-points {
+  display: grid;
+  gap: 6px;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+.room-point {
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  display: grid;
+  gap: 2px;
+  min-height: 52px;
+  padding: 6px 8px;
+}
+.room-point.is-you {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+}
+.room-point-who {
+  align-items: center;
+  display: flex;
+  font-size: 12px;
+  font-weight: var(--weight-strong);
+  gap: 5px;
+  min-width: 0;
+}
+.room-point-who > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.room-point b {
+  color: var(--ink-3);
+  font-size: 15px;
+  font-weight: var(--weight-heavy);
+}
+.room-point.is-right b {
+  color: var(--right);
+}
+
+/* The final screen: standings are people, rounds are songs. */
+.room-done {
+  display: grid;
+  gap: 24px;
+  padding-bottom: 120px;
+}
+.room-done .board-rows li.is-you {
+  background: var(--accent-tint);
+}
+.room-standings .board-rank {
+  color: var(--accent-text);
+}
+.room-standings .room-person b {
+  font-size: 16px;
+}
+.room-done .round-rows li {
+  align-items: start;
+  display: grid;
+  column-gap: 12px;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  row-gap: 4px;
+}
+.room-done .round-rows .cover-tile {
+  grid-row: 1 / 3;
+}
+.room-done .round-points {
+  align-self: center;
+  grid-column: 3;
+  grid-row: 1 / 3;
+}
+.round-said {
+  color: var(--wrong);
+}
+.round-who {
+  align-items: center;
+  color: var(--ink-2);
+  display: flex;
+  font-size: 12px;
+  font-weight: var(--weight-strong);
+  gap: 6px;
+  grid-column: 2;
+  min-width: 0;
+}
+.round-who .mono-stack > .mono {
+  --s: 16px;
+  font-size: 0;
+}
+.round-points.is-wrong .choice-mark {
+  background: var(--wrong-tint);
+  fill: var(--wrong);
+}
+.room-done .board-name a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* The closed and full panels. */
+.room-closed {
+  display: grid;
+  min-height: 70vh;
+  place-items: center;
+}
+.room-closed-card {
+  background: var(--stage);
+  border-radius: 28px;
+  color: var(--stage-ink);
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  max-width: 480px;
+  padding: 20px;
+  text-align: center;
+  width: 100%;
+}
+.room-closed-code {
+  display: flex;
+  gap: 6px;
+}
+.room-closed-code span {
+  background: var(--stage-2);
+  border-radius: 8px;
+  color: var(--stage-ink-2);
+  display: grid;
+  font-size: 20px;
+  font-weight: var(--weight-heavy);
+  height: 44px;
+  place-items: center;
+  width: 36px;
+}
+.room-closed-seats > .mono {
+  --s: 32px;
+  border-color: var(--stage);
+}
+.room-closed-title {
+  font-size: 30px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.room-closed-text {
+  color: var(--stage-ink-2);
+}
+.room-closed-card form {
+  width: 100%;
+}
+.room-closed-back {
+  background: var(--stage-2);
+  border-color: var(--stage-2);
+  box-shadow: none;
+  color: var(--stage-ink);
+}
+.room-closed-back:hover {
+  background: var(--stage-2);
+  color: var(--stage-ink);
+}
+
+@media (min-width: 900px) {
+  .room {
+    --slot-h: 160px;
+    --choice-h: 80px;
+  }
+  .room-kbd {
+    background: var(--accent-press);
+    border-radius: 6px;
+    display: inline-block;
+    font: inherit;
+    font-size: 12px;
+    margin-left: 6px;
+    padding: 2px 8px;
+  }
+  .room-kbd {
+    color: inherit;
+  }
+  .btn:not(.is-primary) .room-kbd,
+  .pill:not(.primary) .room-kbd {
+    background: var(--surface-2);
+  }
+  .room-mode {
+    position: static;
+  }
+  .room-invite {
+    gap: 22px;
+    padding: 28px;
+  }
+  .room-invite .mosaic {
+    --r: 18px;
+    --s: 120px;
+  }
+  .room-invite-top {
+    gap: 20px;
+  }
+  .room-invite-title {
+    font-size: 44px;
+    letter-spacing: -0.04em;
+  }
+  .room-code-row {
+    align-items: start;
+    border-top: 1.5px solid var(--stage-2);
+    display: grid;
+    gap: 8px;
+    padding-top: 26px;
+  }
+  .room-code {
+    font-size: 72px;
+  }
+  .room-copy {
+    background: var(--accent);
+    box-shadow: 0 3px 0 var(--accent-press);
+    color: var(--on-accent);
+  }
+  .room-copy svg {
+    display: block;
+  }
+  .room-share-native {
+    display: none;
+  }
+  .room-sound {
+    grid-template-columns: auto 1fr auto;
+    padding: 16px;
+  }
+  .room-sound-icon {
+    height: 40px;
+    width: 40px;
+  }
+  .room-sound-on {
+    grid-column: auto;
+  }
+
+  .room-join {
+    align-content: start;
+    column-gap: 48px;
+    grid-template-areas:
+      "invite form"
+      "who form"
+      ". form";
+    grid-template-columns: minmax(0, 520px) minmax(0, 440px);
+    grid-template-rows: auto auto 1fr;
+    justify-content: center;
+    max-width: none;
+    padding-top: 24px;
+    row-gap: 16px;
+  }
+  .room-join > .room-invite {
+    grid-area: invite;
+  }
+  .room-join > .room-who {
+    grid-area: who;
+  }
+  .room-join > .room-join-card {
+    align-self: start;
+    grid-area: form;
+  }
+  .room-invite.is-join {
+    gap: 22px;
+    grid-template-columns: 1fr;
+    padding: 28px;
+  }
+  .room-invite.is-join .mosaic {
+    --s: 120px;
+  }
+  .room-invite.is-join .room-invite-title {
+    font-size: 44px;
+  }
+  .room-join-card {
+    padding: 28px;
+  }
+
+  .room-lobby {
+    align-items: start;
+    gap: 48px;
+    grid-template-columns: 520px minmax(0, 1fr);
+    margin-inline: auto;
+    max-width: 1120px;
+    padding: 24px 0 48px;
+    width: 100%;
+  }
+  .room-players {
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 24px;
+    padding: 18px 8px 8px;
+  }
+  .room-players-head {
+    padding: 0 14px 6px;
+  }
+  .room-players .room-people {
+    border: 0;
+    padding: 0;
+  }
+  .room-people li {
+    min-height: 68px;
+    padding: 0 14px;
+  }
+  .room-people li.room-seats {
+    min-height: 0;
+    padding: 12px 14px 6px;
+  }
+  .room-seat-list {
+    display: grid;
+    flex: 1;
+    gap: 8px;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+  }
+  .room-seat {
+    border-radius: 12px;
+    color: var(--ink-3);
+    display: grid;
+    font-size: 13px;
+    font-weight: var(--weight-heavy);
+    height: 50px;
+    margin: 0;
+    place-items: center;
+    width: auto;
+  }
+  .room-seat-count {
+    display: none;
+  }
+  .room-tv small {
+    display: inline;
+  }
+  .room-tv-note {
+    display: none;
+  }
+  .room-lobby .room-actions,
+  .room-done .room-actions {
+    display: grid;
+    grid-template-columns: auto 1fr;
+  }
+
+  .room-slot {
+    padding-top: 20px;
+  }
+  .room #sheet {
+    animation: none;
+    border: 2px solid var(--line);
+    border-radius: 24px;
+    box-shadow: none;
+    margin: 16px auto 0;
+    max-width: 640px;
+    padding: 18px 20px;
+    position: static;
+    width: 100%;
+  }
+  .room #sheet.is-good {
+    border-color: var(--right);
+  }
+  .room #sheet.is-bad {
+    border-color: var(--wrong);
+  }
+  .room #sheet .sheet-in {
+    grid-template-columns: 1fr auto;
+  }
+  .room-slot.is-covered {
+    display: none;
+  }
+  .room #round:has(#sheet:not([hidden])) .room-slot {
+    display: none;
+  }
+  .room-slot,
+  #round .room-slot {
+    margin-inline: auto;
+    max-width: 640px;
+    width: 100%;
+  }
+
+  .room #done-panel.room-done {
+    align-items: start;
+    column-gap: 40px;
+    grid-template-areas:
+      "main rounds"
+      "stand rounds"
+      "board rounds"
+      ". rounds";
+    grid-template-columns: 480px minmax(0, 1fr);
+    grid-template-rows: auto auto auto 1fr;
+    margin-inline: auto;
+    max-width: 1120px;
+    padding: 24px 0 48px;
+    row-gap: 20px;
+    width: 100%;
+  }
+  .room-done .results-main {
+    grid-area: main;
+  }
+  .room-done .room-standings {
+    grid-area: stand;
+  }
+  .room-done .results-rounds {
+    grid-area: rounds;
+  }
+  .room-done .room-board {
+    grid-area: board;
+  }
+  .room-done .results-card .board-rows,
+  .room-done .results-card .round-rows {
+    border: 0;
+    padding: 0 8px 8px;
+  }
+  .room-standings .room-person {
+    align-items: center;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .room-standings .room-person small {
+    font-size: 14px;
+  }
+  .room-done .round-rows li {
+    align-items: center;
+    grid-template-columns: 24px 52px minmax(0, 1fr) minmax(0, 220px) 48px;
+    min-height: 76px;
+  }
+  .room-done .round-i {
+    display: block;
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .room-done .round-rows .cover-tile {
+    grid-column: 2;
+    grid-row: 1;
+    height: 52px;
+    width: 52px;
+  }
+  .room-done .round-song {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .room-done .round-who {
+    grid-column: 4;
+    grid-row: 1;
+  }
+  .room-done .round-points {
+    grid-column: 5;
+    grid-row: 1;
+    text-align: right;
+  }
+  .room-closed-card {
+    padding: 32px;
+  }
+  .room-closed-code span {
+    font-size: 26px;
+    height: 56px;
+    width: 46px;
+  }
+  .room-closed-title {
+    font-size: 40px;
+  }
 }
 
 @media (min-width: 900px) {
@@ -2863,14 +3938,16 @@ body:not(.clip-live) .now-eq i {
     row-gap: 14px;
     width: 100%;
   }
-  #round[data-phase="question"] {
-    grid-template-rows: 1fr auto auto auto auto 1fr;
-  }
-  #round[data-phase="reveal"] {
-    grid-template-rows: 1fr auto auto 1fr;
+  /* Both phases share one grid: the verdict sheet takes the keys' row, which
+     is held at the sheet's height, so the answers stay where they were. */
+  #round:is([data-phase="question"], [data-phase="reveal"]) {
+    grid-template-rows: 1fr auto auto auto minmax(124px, auto) 1fr;
   }
   #round:is([data-phase="question"], [data-phase="reveal"]) > * {
     grid-column: 2;
+  }
+  #round[data-phase="reveal"] > :is(.round-count, .round-title) {
+    color: var(--ink-3);
   }
   #round:is([data-phase="question"], [data-phase="reveal"]) > .player {
     grid-column: 1;
@@ -2880,23 +3957,36 @@ body:not(.clip-live) .now-eq i {
     padding: 24px 28px 28px;
     border-radius: 32px;
   }
-  #round[data-phase="question"] > .round-count {
+  .round-count {
+    display: block;
+  }
+  .round-title {
+    clip-path: none;
+    height: auto;
+    overflow: visible;
+    position: static;
+    white-space: normal;
+    width: auto;
+  }
+  #round > .round-count {
     font-size: 13px;
     grid-row: 2;
     padding: 0;
   }
-  #round[data-phase="question"] > .round-title {
+  #round > .round-title {
     font-size: 48px;
+    font-weight: var(--weight-heavy);
     grid-row: 3;
     letter-spacing: -0.035em;
     line-height: 1;
     margin: 0;
     padding: 0 0 10px;
   }
-  #round[data-phase="question"] > :is(.choices, .guess) {
+  #round > :is(.choices, .guess, .reveal-typed) {
     grid-row: 4;
   }
   #round[data-phase="question"] > .round-keys {
+    align-self: start;
     color: var(--ink-3);
     display: block;
     font-size: 14px;
@@ -2911,11 +4001,9 @@ body:not(.clip-live) .now-eq i {
     font-weight: var(--weight-strong);
     padding: 2px 7px;
   }
-  #round[data-phase="reveal"] > :is(.choices, .reveal-typed) {
-    grid-row: 2;
-  }
   #round[data-phase="reveal"] > #sheet {
-    grid-row: 3;
+    align-self: start;
+    grid-row: 5;
   }
   .choices {
     gap: 12px;
@@ -2958,9 +4046,6 @@ body:not(.clip-live) .now-eq i {
   .reveal-choices {
     padding: 0;
   }
-  .reveal-choices .choice {
-    min-height: 76px;
-  }
   .reveal-typed {
     padding: 0;
   }
@@ -2976,6 +4061,22 @@ body:not(.clip-live) .now-eq i {
       color: var(--bg);
     }
   }
+  /* The tall stage: tag and sound on top, the ring, the waveform, the
+     clock. The page beside it carries the round and the question. */
+  .player {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .player-head {
+    display: none;
+  }
+  .player-top {
+    align-self: stretch;
+    justify-self: auto;
+    min-height: 40px;
+  }
   .player-volume {
     display: block;
   }
@@ -2986,9 +4087,37 @@ body:not(.clip-live) .now-eq i {
     width: 32px;
   }
   .player-tag {
+    display: inline-flex;
     font-size: 14px;
     height: 32px;
     padding: 0 14px;
+  }
+  .player-wave {
+    display: flex;
+  }
+  .player-loading,
+  .player.is-loading .player-loading {
+    font-size: 17px;
+  }
+  .player.is-loading .player-wait {
+    align-self: auto;
+    margin-top: 12px;
+    text-align: center;
+  }
+  .player:has(.needs-click) .player-hint {
+    align-self: auto;
+    justify-items: center;
+    margin-top: 18px;
+    text-align: center;
+  }
+  .player:has(.needs-click) .player-hint b {
+    font-size: 22px;
+  }
+  .now-title {
+    display: block;
+  }
+  .now-by {
+    white-space: normal;
   }
   .player-ring {
     height: 264px;
@@ -3026,7 +4155,9 @@ body:not(.clip-live) .now-eq i {
     display: block;
   }
   .player-foot {
+    align-self: stretch;
     font-size: 17px;
+    justify-content: space-between;
     margin-top: 18px;
   }
   .player-foot b {
@@ -3041,10 +4172,12 @@ body:not(.clip-live) .now-eq i {
   .player.is-loading .player-wave {
     margin-bottom: 0;
   }
+  /* The skeleton is the heading's own box, so the answers below do not move
+     when the clip loads. */
   #round:has(.player.is-loading) .round-title {
-    height: 44px;
+    height: auto;
     margin: 0;
-    width: 360px;
+    width: fit-content;
   }
   .player.is-reveal {
     padding: 24px 28px 28px;
@@ -3347,8 +4480,10 @@ body:not(.clip-live) .now-eq i {
 .round-rows {
   border-radius: 20px;
 }
+/* Clipped so a tinted first or last row follows the rounded corners. */
 .board-rows {
   border-radius: 20px 20px 0 0;
+  overflow: hidden;
 }
 .board-rows:last-child {
   border-radius: 20px;
@@ -3506,7 +4641,7 @@ body:not(.clip-live) .now-eq i {
     padding-right: 0;
     text-align: left;
   }
-  #round.results {
+  :is(#round, #done-panel).results {
     align-items: start;
     gap: 24px;
     grid-template-columns: 400px minmax(0, 1fr) 340px;
@@ -3573,6 +4708,10 @@ body:not(.clip-live) .now-eq i {
     margin-inline: 8px;
     padding-inline: 12px;
   }
+  /* The inset row keeps the same inset from the card's bottom edge. */
+  .board-rows li.is-you:last-child {
+    margin-bottom: 8px;
+  }
   .round-i {
     display: block;
   }
@@ -3586,250 +4725,697 @@ body:not(.clip-live) .now-eq i {
   }
 }
 
-/* The screen view is a TV layout: it fills the viewport, sizes everything
-   from vw so it reads from across a room, and carries no site chrome. All
-   rules are scoped to body.screen-view so no site or phone page changes. */
+/* The screen view is a TV layout, drawn at 1920×1080. --u is one design
+   pixel, so the whole layout scales to fit any screen. It carries no site
+   chrome, and every rule is scoped to it. */
 .screen-view {
-  background: var(--bg);
-  color: var(--fg);
+  --u: min(calc(100vw / 1920), calc(100dvh / 1080));
+  background: var(--stage);
+  color: var(--stage-ink);
+  margin: 0;
   min-height: 100dvh;
-}
-.screen-view #screen {
-  display: grid;
-  min-height: 100dvh;
-  padding: clamp(16px, 3vw, 56px) clamp(20px, 4vw, 72px);
-}
-.screen-panel {
-  align-content: center;
-  display: grid;
-  gap: clamp(14px, 2.4vw, 40px);
-}
-.screen-kicker {
-  color: var(--fg-muted);
-  font-size: clamp(0.85rem, 1.4vw, 1.25rem);
-  letter-spacing: 0.08em;
-  margin: 0;
-  text-transform: uppercase;
-}
-.screen-join {
-  align-items: center;
-  display: grid;
-  gap: clamp(20px, 4vw, 64px);
-  grid-template-columns: 1fr auto;
-}
-.screen-join-text {
-  display: grid;
-  gap: clamp(8px, 1.4vw, 20px);
-}
-.screen-code {
-  color: var(--accent-text);
-  font-family: var(--font-mono);
-  font-size: clamp(3.5rem, 10vw, 9rem);
-  font-weight: var(--weight-strong);
-  letter-spacing: 0.1em;
-  line-height: 1;
-  margin: 0;
-}
-.screen-qr {
-  background: oklch(0.99 0 0);
-  border-radius: var(--radius-md);
-  color: oklch(0% 0 0);
-  display: block;
-  height: auto;
-  padding: clamp(8px, 1vw, 16px);
-  width: clamp(180px, 30vmin, 400px);
-}
-.screen-qr path {
-  fill: currentColor;
-}
-.screen-link {
-  font-family: var(--font-mono);
-  font-size: clamp(1.1rem, 2.4vw, 2.1rem);
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-.screen-note {
-  color: var(--fg-muted);
-  font-size: clamp(0.95rem, 1.6vw, 1.4rem);
-  margin: 0;
-}
-.screen-head {
-  align-items: baseline;
-  display: flex;
-  gap: var(--space-4);
-  justify-content: space-between;
-}
-.screen-title {
-  font-size: clamp(1.8rem, 4vw, 3.6rem);
-  font-weight: var(--weight-strong);
-  line-height: 1.1;
-  margin: 0;
-}
-.screen-count {
-  font-family: var(--font-mono);
-  font-size: clamp(1.8rem, 4vw, 3.6rem);
-  font-variant-numeric: tabular-nums;
-  margin: 0;
-}
-.screen-bar {
-  background: var(--bar-track);
-  border-radius: var(--radius-pill);
-  height: clamp(4px, 0.8vmin, 10px);
   overflow: hidden;
 }
-.screen-bar span {
-  background: var(--bar-fill);
-  display: block;
-  height: 100%;
-  transform-origin: left;
-  transition: transform 220ms linear;
-}
-.screen-round {
-  align-items: start;
+.tv {
+  box-sizing: border-box;
   display: grid;
-  gap: clamp(20px, 4vw, 64px);
-  grid-template-columns: 1.6fr 1fr;
+  height: 100dvh;
+  margin-inline: auto;
+  max-width: calc(1920 * var(--u));
+  padding: calc(72 * var(--u));
 }
-.screen-choices {
-  display: grid;
-  gap: clamp(8px, 1.4vw, 20px);
-  grid-template-columns: 1fr 1fr;
-  list-style: none;
+.tv :where(p, h1, h2) {
   margin: 0;
-  padding: 0;
+  max-width: none;
 }
-.screen-choices li {
-  background: var(--surface);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-raised);
-  font-size: clamp(1.2rem, 2.3vw, 2.1rem);
-  font-weight: var(--weight-strong);
-  overflow-wrap: anywhere;
-  padding: clamp(12px, 2vw, 28px);
-}
-.screen-choices .choice-artist {
-  display: block;
-  font-size: 0.6em;
-}
-.screen-list {
+.tv-panel {
   display: grid;
-  list-style: none;
-  margin: 0;
-  padding: 0;
+  gap: calc(48 * var(--u));
+  grid-template-rows: auto 1fr auto;
+  min-height: 0;
 }
-.screen-list li {
+.tv-panel[hidden],
+.tv-message[hidden],
+.tv-sound[hidden] {
+  display: none;
+}
+.tv-message {
+  align-self: center;
+  font-size: calc(48 * var(--u));
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-align: center;
+}
+.tv-top {
   align-items: center;
   display: flex;
-  gap: clamp(10px, 1.6vw, 24px);
-  padding: clamp(8px, 1.2vw, 16px) 0;
+  gap: calc(32 * var(--u));
+  justify-content: space-between;
 }
-.screen-list li + li {
-  border-top: 1px solid var(--edge);
+.tv-brand {
+  align-items: center;
+  display: flex;
+  font-size: calc(40 * var(--u));
+  font-weight: 800;
+  gap: calc(16 * var(--u));
+  letter-spacing: -0.03em;
 }
-.screen-list .rank {
-  color: var(--fg-muted);
+.tv-brand .sound-mark {
+  fill: #7e7bff;
+  height: calc(48 * var(--u));
+  width: calc(48 * var(--u));
+}
+.tv-room {
+  align-items: center;
+  color: var(--stage-ink-2);
+  display: flex;
+  font-size: calc(30 * var(--u));
+  font-weight: 700;
+  gap: calc(20 * var(--u));
+}
+.tv-room .mosaic {
+  --r: calc(14 * var(--u));
+  --s: calc(72 * var(--u));
+}
+.tv-room b {
+  color: var(--stage-ink);
+  display: block;
+  font-weight: 800;
+}
+.tv-room span {
+  display: block;
+  font-size: calc(24 * var(--u));
+}
+.tv-lobby-main {
+  align-items: center;
+  display: grid;
+  gap: calc(96 * var(--u));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.tv-ask {
+  color: var(--stage-ink-2);
+  font-size: calc(32 * var(--u));
+  font-weight: 700;
+}
+.tv-code {
+  display: flex;
+  gap: calc(14 * var(--u));
+  margin-top: calc(24 * var(--u));
+}
+.tv-code span {
+  align-items: center;
+  background: var(--stage-2);
+  border-radius: calc(24 * var(--u));
+  display: flex;
+  font-size: calc(104 * var(--u));
+  font-weight: 800;
+  height: calc(150 * var(--u));
+  justify-content: center;
+  letter-spacing: -0.02em;
+  width: calc(120 * var(--u));
+}
+.tv-join {
+  align-items: center;
+  display: flex;
+  gap: calc(40 * var(--u));
+  margin-top: calc(48 * var(--u));
+}
+/* The SVG's viewBox carries the code's quiet zone, so the card needs no
+   padding of its own. */
+.tv-qr {
+  background: #fff;
+  border-radius: calc(24 * var(--u));
+  flex: none;
+  height: calc(300 * var(--u));
+  width: calc(300 * var(--u));
+}
+.tv-qr path {
+  fill: #17161a;
+}
+.tv-join span {
+  color: var(--stage-ink-2);
+  display: block;
+  font-size: calc(28 * var(--u));
+}
+.tv-link {
+  display: block;
   font-family: var(--font-mono);
-  font-size: clamp(0.9rem, 1.5vw, 1.3rem);
-  min-width: 1.6em;
+  font-size: calc(40 * var(--u));
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-top: calc(8 * var(--u));
 }
-.screen-list .track {
+.tv-players h2 {
+  align-items: baseline;
+  display: flex;
+  font-size: calc(48 * var(--u));
+  font-weight: 800;
+  justify-content: space-between;
+  letter-spacing: -0.03em;
+}
+.tv-players small {
+  color: var(--stage-ink-2);
+  font-size: calc(32 * var(--u));
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.tv-seats {
+  display: grid;
+  gap: calc(20 * var(--u));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  list-style: none;
+  margin: calc(28 * var(--u)) 0 0;
+  padding: 0;
+}
+.tv-seats li {
+  align-items: center;
+  background: var(--stage-2);
+  border-radius: calc(28 * var(--u));
+  box-sizing: border-box;
+  display: flex;
+  gap: calc(22 * var(--u));
+  height: calc(120 * var(--u));
+  padding: 0 calc(26 * var(--u));
+}
+.tv-seats li.is-away {
+  opacity: 0.5;
+}
+.tv-seats .mono {
+  --s: calc(76 * var(--u));
+}
+.tv-seats b,
+.tv-results b,
+.tv-answers b,
+.tv-standings b,
+.tv-winner-who b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tv-seats b {
+  flex: 1;
+  font-size: calc(38 * var(--u));
+  font-weight: 800;
+}
+.tv-seats .is-open b {
+  color: #77736c;
+  font-size: calc(32 * var(--u));
+  font-weight: 700;
+}
+.tv-seat-empty {
+  border: calc(3 * var(--u)) dashed #46434d;
+  border-radius: 50%;
+  box-sizing: border-box;
+  flex: none;
+  height: calc(76 * var(--u));
+  width: calc(76 * var(--u));
+}
+.tv-tag {
+  align-items: center;
+  background: var(--stage);
+  border-radius: 999px;
+  color: var(--stage-ink-2);
+  display: flex;
+  flex: none;
+  font-size: calc(22 * var(--u));
+  font-weight: 800;
+  height: calc(40 * var(--u));
+  padding: 0 calc(16 * var(--u));
+}
+.tv-wait {
+  align-items: center;
+  align-self: end;
+  color: var(--stage-ink-2);
+  display: flex;
+  font-size: calc(30 * var(--u));
+  gap: calc(18 * var(--u));
+  min-height: calc(72 * var(--u));
+}
+.tv-wait strong {
+  color: var(--stage-ink);
+}
+.tv-wait .mono {
+  --s: calc(56 * var(--u));
+}
+/* One button for sound: in the lobby it asks for the click that lets the
+   browser play the clips later; in a round it shows when a play was
+   blocked. It sits where the lobby's footer ends. */
+.tv-sound {
+  align-items: center;
+  background: var(--accent);
+  border: 0;
+  border-radius: calc(20 * var(--u));
+  bottom: calc(72 * var(--u));
+  box-shadow: 0 calc(6 * var(--u)) 0 var(--accent-press);
+  color: var(--on-accent);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: calc(28 * var(--u));
+  font-weight: 800;
+  gap: calc(14 * var(--u));
+  height: calc(72 * var(--u));
+  padding: 0 calc(28 * var(--u));
+  position: fixed;
+  right: calc((100vw - 1920 * var(--u)) / 2 + 72 * var(--u));
+}
+.tv-sound svg {
+  fill: none;
+  height: calc(30 * var(--u));
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+  width: calc(30 * var(--u));
+}
+.tv-sound .is-solid {
+  fill: currentColor;
+}
+.tv-kicker {
+  color: var(--stage-ink-2);
+  font-size: calc(30 * var(--u));
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tv-segs {
+  display: flex;
+  flex: 1;
+  gap: calc(10 * var(--u));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tv-segs li {
+  background: var(--stage-2);
+  border-radius: calc(7 * var(--u));
+  flex: 1;
+  height: calc(14 * var(--u));
+}
+.tv-segs li.is-done {
+  background: var(--stage-ink-2);
+}
+.tv-segs li.is-now {
+  background: var(--accent);
+}
+.tv-code-pill {
+  align-items: center;
+  background: var(--stage-2);
+  border-radius: 999px;
+  display: flex;
+  font-size: calc(30 * var(--u));
+  font-weight: 800;
+  height: calc(64 * var(--u));
+  letter-spacing: 0.1em;
+  padding: 0 calc(24 * var(--u));
+}
+.tv-next {
+  color: var(--stage-ink-2);
+  font-size: calc(30 * var(--u));
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.tv-round {
+  --ring: calc(620 * var(--u));
+  gap: calc(40 * var(--u));
+}
+.tv-round-main {
+  align-items: center;
+  display: grid;
+  gap: calc(96 * var(--u));
+  grid-template-columns: var(--ring) minmax(0, 1fr);
+  min-height: 0;
+}
+.tv-ring {
+  align-items: center;
+  background: conic-gradient(
+    var(--accent) 0 calc(var(--left) * 100%),
+    var(--stage-2) 0
+  );
+  border-radius: 50%;
+  display: flex;
+  height: var(--ring);
+  justify-content: center;
+  width: var(--ring);
+}
+.tv-ring p {
+  align-items: center;
+  background: var(--stage);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  height: calc(var(--ring) - 48 * var(--u));
+  justify-content: center;
+  width: calc(var(--ring) - 48 * var(--u));
+}
+.tv-ring b {
+  font-size: calc(var(--ring) * 0.32);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+}
+.tv-ring span {
+  color: var(--stage-ink-2);
+  font-size: calc(36 * var(--u));
+  font-weight: 700;
+  margin-top: calc(8 * var(--u));
+}
+.tv-ask-big {
+  font-size: calc(96 * var(--u));
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+.tv-sub {
+  color: var(--stage-ink-2);
+  font-size: calc(34 * var(--u));
+  margin-top: calc(20 * var(--u));
+}
+.tv-wave {
+  align-items: center;
+  display: flex;
+  gap: calc(6 * var(--u));
+  height: calc(120 * var(--u));
+  margin-top: calc(48 * var(--u));
+}
+.tv-wave i {
+  background: var(--genre, oklch(0.72 0.15 350));
+  border-radius: calc(5 * var(--u));
+  flex: 1;
+  height: 100%;
+  opacity: 0.35;
+  transform: scaleY(calc(var(--s) * 0.5));
+}
+.tv.is-live .tv-wave i {
+  animation: wave var(--d) ease-in-out var(--delay) infinite alternate;
+  opacity: 1;
+  transform: scaleY(var(--s));
+}
+.tv-answers {
+  display: grid;
+  gap: calc(20 * var(--u));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tv-answers li {
+  align-items: center;
+  border: calc(3 * var(--u)) dashed var(--stage-2);
+  border-radius: calc(28 * var(--u));
+  box-sizing: border-box;
+  color: var(--stage-ink-2);
+  display: flex;
+  gap: calc(20 * var(--u));
+  height: calc(112 * var(--u));
+  min-width: 0;
+  padding: 0 calc(24 * var(--u));
+}
+.tv-answers li.is-done {
+  background: var(--stage-ink);
+  border-color: var(--stage-ink);
+  border-style: solid;
+  color: var(--stage);
+}
+.tv-answers .mono {
+  --s: calc(64 * var(--u));
+  opacity: 0.35;
+}
+.tv-answers .is-done .mono {
+  opacity: 1;
+}
+.tv-answers li > span {
+  min-width: 0;
+}
+.tv-answers b {
+  display: block;
+  font-size: calc(34 * var(--u));
+  font-weight: 800;
+  line-height: 1.05;
+}
+.tv-answers small {
+  display: block;
+  font-size: calc(24 * var(--u));
+  font-weight: 700;
+  opacity: 0.75;
+}
+/* Five to eight players take two rows of cards; the ring gives up the
+   height. */
+.tv-round.is-many {
+  --ring: calc(480 * var(--u));
+}
+.tv-round.is-many .tv-answers li {
+  height: calc(88 * var(--u));
+}
+.tv-reveal {
+  grid-template-rows: auto 1fr;
+}
+.tv-reveal-main {
+  align-items: center;
+  display: grid;
+  gap: calc(88 * var(--u));
+  grid-template-columns: calc(600 * var(--u)) minmax(0, 1fr);
+  min-height: 0;
+}
+.tv-cover {
+  background: oklch(0.64 0.13 var(--hue, 25));
+  border-radius: calc(40 * var(--u));
+  box-shadow: 0 calc(40 * var(--u)) calc(80 * var(--u)) calc(-24 * var(--u))
+    rgb(0 0 0 / 0.7);
+  height: calc(600 * var(--u));
+  overflow: hidden;
+  width: calc(600 * var(--u));
+}
+.tv-cover img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+.tv-now {
+  align-items: center;
+  color: var(--stage-ink-2);
+  display: flex;
+  font-size: calc(28 * var(--u));
+  font-weight: 800;
+  gap: calc(14 * var(--u));
+  letter-spacing: 0.06em;
+  margin-top: calc(28 * var(--u));
+  text-transform: uppercase;
+}
+.tv-eq {
+  align-items: flex-end;
+  display: flex;
+  gap: calc(4 * var(--u));
+  height: calc(28 * var(--u));
+}
+.tv-eq i {
+  background: var(--accent);
+  height: calc(16 * var(--u));
+  width: calc(6 * var(--u));
+}
+.tv-eq i:nth-child(2) {
+  height: calc(28 * var(--u));
+}
+.tv-eq i:nth-child(3) {
+  height: calc(10 * var(--u));
+}
+.tv-eq i:nth-child(4) {
+  height: calc(22 * var(--u));
+}
+.tv-song {
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  font-size: calc(104 * var(--u));
+  font-weight: 800;
+  -webkit-line-clamp: 2;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+  overflow: hidden;
+}
+.tv-artist {
+  color: var(--stage-ink-2);
+  font-size: calc(44 * var(--u));
+  margin-top: calc(16 * var(--u));
+}
+.tv-results {
+  display: flex;
+  flex-direction: column;
+  gap: calc(14 * var(--u));
+  list-style: none;
+  margin: calc(56 * var(--u)) 0 0;
+  padding: 0;
+}
+.tv-results li {
+  align-items: center;
+  background: var(--stage-2);
+  border-radius: calc(24 * var(--u));
+  display: flex;
+  gap: calc(22 * var(--u));
+  height: calc(96 * var(--u));
+  padding: 0 calc(28 * var(--u));
+}
+.tv-results .mono {
+  --s: calc(60 * var(--u));
+}
+.tv-results b {
+  flex: 1;
+  font-size: calc(38 * var(--u));
+  font-weight: 800;
+}
+.tv-pts {
+  color: var(--stage-ink-2);
+  font-size: calc(44 * var(--u));
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  text-align: right;
+  width: calc(180 * var(--u));
+}
+.tv-results .is-right .tv-pts {
+  color: var(--right);
+}
+.tv-total {
+  color: var(--stage-ink-2);
+  font-size: calc(30 * var(--u));
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: right;
+  width: calc(150 * var(--u));
+}
+.tv-reveal.is-many .tv-song {
+  font-size: calc(80 * var(--u));
+}
+.tv-reveal.is-many .tv-results {
+  gap: calc(8 * var(--u));
+  margin-top: calc(32 * var(--u));
+}
+.tv-reveal.is-many .tv-results li {
+  height: calc(60 * var(--u));
+}
+.tv-reveal.is-many .tv-results .mono {
+  --s: calc(44 * var(--u));
+}
+.tv-reveal.is-many :is(.tv-results b, .tv-pts) {
+  font-size: calc(32 * var(--u));
+}
+.tv-final-main {
+  align-items: center;
+  display: grid;
+  gap: calc(72 * var(--u));
+  grid-template-columns: calc(720 * var(--u)) minmax(0, 1fr);
+  min-height: 0;
+}
+.tv-winner {
+  background: var(--accent);
+  border-radius: calc(48 * var(--u));
+  box-shadow: 0 calc(10 * var(--u)) 0 var(--accent-press);
+  color: var(--on-accent);
+  padding: calc(56 * var(--u));
+}
+.tv-winner-label {
+  font-size: calc(30 * var(--u));
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.tv-winner-who {
+  align-items: center;
+  display: flex;
+  gap: calc(32 * var(--u));
+  margin-top: calc(28 * var(--u));
+}
+.tv-winner-who .mono {
+  --s: calc(160 * var(--u));
+  border: calc(6 * var(--u)) solid var(--on-accent);
+  box-sizing: border-box;
+}
+.tv-winner-who b {
+  font-size: calc(80 * var(--u));
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.tv-winner-score {
+  font-size: calc(180 * var(--u));
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+  margin-top: calc(36 * var(--u));
+}
+.tv-winner-correct {
+  font-size: calc(36 * var(--u));
+  font-weight: 700;
+  margin-top: calc(16 * var(--u));
+}
+.tv-standings {
+  display: flex;
+  flex-direction: column;
+  gap: calc(18 * var(--u));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tv-standings li {
+  align-items: center;
+  background: var(--stage-2);
+  border-radius: calc(32 * var(--u));
+  display: flex;
+  gap: calc(28 * var(--u));
+  height: calc(132 * var(--u));
+  padding: 0 calc(36 * var(--u));
+}
+.tv-rank {
+  color: var(--stage-ink-2);
+  flex: none;
+  font-size: calc(48 * var(--u));
+  font-weight: 800;
+  width: calc(48 * var(--u));
+}
+.tv-standings .mono {
+  --s: calc(84 * var(--u));
+}
+.tv-who {
   flex: 1;
   min-width: 0;
 }
-.screen-list .track b {
+.tv-standings b {
   display: block;
-  font-size: clamp(1.15rem, 2vw, 1.8rem);
-  font-weight: var(--weight-strong);
+  font-size: calc(48 * var(--u));
+  font-weight: 800;
+  line-height: 1;
 }
-.screen-list .track small {
-  color: var(--fg-muted);
+.tv-standings small {
+  color: var(--stage-ink-2);
   display: block;
-  font-size: clamp(0.85rem, 1.4vw, 1.2rem);
+  font-size: calc(28 * var(--u));
+  margin-top: calc(6 * var(--u));
 }
-.screen-list .count {
-  font-family: var(--font-mono);
-  font-size: clamp(1.05rem, 1.9vw, 1.7rem);
+.tv-score {
+  font-size: calc(64 * var(--u));
   font-variant-numeric: tabular-nums;
-  font-weight: var(--weight-strong);
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
-.screen-reveal {
-  align-items: center;
-  display: grid;
-  gap: clamp(20px, 4vw, 64px);
-  grid-template-columns: auto 1fr;
+.tv-final.is-many .tv-standings {
+  gap: calc(12 * var(--u));
 }
-.screen-reveal img {
-  border-radius: var(--radius-md);
-  height: auto;
-  width: clamp(160px, 30vmin, 340px);
+.tv-final.is-many .tv-standings li {
+  height: calc(84 * var(--u));
 }
-.screen-reveal-info {
-  display: grid;
-  gap: clamp(8px, 1.4vw, 20px);
+.tv-final.is-many .tv-standings .mono {
+  --s: calc(60 * var(--u));
 }
-.screen-artist {
-  color: var(--fg-muted);
-  font-size: clamp(1.2rem, 2.6vw, 2.3rem);
-  margin: 0;
+.tv-final.is-many :is(.tv-rank, .tv-standings b) {
+  font-size: calc(36 * var(--u));
 }
-.screen-deezer {
-  font-size: clamp(1rem, 1.8vw, 1.5rem);
+.tv-final.is-many .tv-score {
+  font-size: calc(48 * var(--u));
 }
-.screen-final {
-  align-items: start;
-  display: grid;
-  gap: clamp(24px, 4vw, 64px);
-  grid-template-columns: 1fr 1fr;
-}
-.screen-board {
-  display: grid;
-  gap: clamp(10px, 1.6vw, 24px);
-}
-/* The screen's player control: the same affordance as the phone player, at
-   TV size. Shown only while a round has a clip to play. */
-.screen-sound {
-  align-items: center;
-  background: var(--accent-9);
-  border: 0;
-  border-radius: var(--radius-pill);
-  bottom: clamp(16px, 3vw, 40px);
-  color: var(--on-accent);
-  cursor: pointer;
-  display: inline-flex;
-  font: inherit;
-  font-size: clamp(1.1rem, 2vw, 1.6rem);
-  font-weight: var(--weight-strong);
-  gap: var(--space-3);
-  padding: clamp(12px, 1.6vw, 20px) clamp(20px, 2.4vw, 32px);
-  position: fixed;
-  right: clamp(16px, 3vw, 40px);
-}
-.screen-sound:hover {
-  background: var(--accent-hover);
-}
-.screen-sound svg {
-  fill: currentColor;
-  height: clamp(18px, 2vw, 26px);
-  width: clamp(18px, 2vw, 26px);
-}
-@media (width <= 900px) {
-  .screen-join,
-  .screen-round,
-  .screen-final {
-    grid-template-columns: 1fr;
-  }
-  .screen-qr {
-    justify-self: center;
-  }
-}
-.screen-volume {
-  accent-color: var(--accent-9);
-  bottom: clamp(16px, 3vw, 40px);
-  left: clamp(16px, 3vw, 40px);
-  position: fixed;
-  width: clamp(120px, 14vw, 220px);
-}
-
 .dense {
   --depth: 0;
   --control-height: 34px;

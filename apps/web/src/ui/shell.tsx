@@ -47,6 +47,15 @@ const navIcons: Record<NavSection, Child> = {
   ),
 };
 
+export const soundMark = (
+  <svg class="sound-mark" viewBox="0 0 18 18" aria-hidden="true">
+    <rect x="1" y="7" width="2.4" height="5" rx="1.2" />
+    <rect x="5.2" y="3.5" width="2.4" height="11" rx="1.2" />
+    <rect x="9.4" y="5.5" width="2.4" height="7" rx="1.2" />
+    <rect x="13.6" y="4" width="2.4" height="10" rx="1.2" />
+  </svg>
+);
+
 export function Page({
   title,
   head,
@@ -63,12 +72,7 @@ export function Page({
     <header class="site-header">
       <div class="wrap">
         <a class="site-name" href="/">
-          <svg class="sound-mark" viewBox="0 0 18 18" aria-hidden="true">
-            <rect x="1" y="7" width="2.4" height="5" rx="1.2" />
-            <rect x="5.2" y="3.5" width="2.4" height="11" rx="1.2" />
-            <rect x="9.4" y="5.5" width="2.4" height="7" rx="1.2" />
-            <rect x="13.6" y="4" width="2.4" height="10" rx="1.2" />
-          </svg>
+          {soundMark}
           Earshot
         </a>
         <nav class="site-nav" aria-label="Site">

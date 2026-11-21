@@ -1,6 +1,6 @@
 // The waveform's bars: fixed heights and timings, so every round draws the
 // same shape and the server renders it once. The phone shows the first 34.
-const waveBars = Array.from({ length: 46 }, (_, i) => {
+export const waveBars = Array.from({ length: 46 }, (_, i) => {
   const scale = 0.3 + 0.7 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.45));
   const duration = 0.45 + ((i * 37) % 45) / 100;
   return `--s:${scale.toFixed(2)};--d:${duration.toFixed(2)}s;--delay:${(-i * 0.13).toFixed(2)}s`;
@@ -22,9 +22,14 @@ export function ClipPlayer({
   worthId,
   volumeId,
   timerWaits = false,
+  round,
 }: {
   src?: string;
   label?: string;
+  // "Round 3 of 10": on a phone the stage carries the round and the
+  // question beside the ring, in the slots the now-playing card fills on the
+  // reveal, so the answers below do not move.
+  round?: string;
   audioId: string;
   toggleId: string;
   barId: string;
@@ -89,6 +94,12 @@ export function ClipPlayer({
           Loading clip
         </span>
       </div>
+      {round && (
+        <div class="player-head">
+          <p class="player-round">{round}</p>
+          <p class="player-ask">Which song is this?</p>
+        </div>
+      )}
       <div class="player-wave" aria-hidden="true">
         {waveBars.map((style) => (
           <i style={style} />

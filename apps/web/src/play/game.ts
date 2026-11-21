@@ -11,6 +11,7 @@ import {
   scoreFor,
   shuffled,
   matchTyped,
+  upcomingTitles,
 } from "./quiz";
 import type { Choice, Mode, PoolEntry } from "./quiz";
 import { QuotaError, type Candidate, type Preview } from "./sources";
@@ -120,6 +121,18 @@ export async function buildGame(
   return game;
 }
 
+// Every title this game has put on screen, as an answer or as an option, and
+// the answers still to come after candidate `index`.
+function avoidTitles(game: Game, index: number) {
+  return [
+    ...game.results.flatMap((result) => [
+      result.title,
+      ...result.choices.map((choice) => choice.title),
+    ]),
+    ...upcomingTitles(game.candidates, index),
+  ];
+}
+
 export interface Served {
   game: Game;
   preview: Preview | null;
@@ -201,7 +214,12 @@ export async function serveRound(
         link: preview.link ?? candidate.link,
         cover: preview.cover ?? candidate.cover,
       },
-      choices: sampleChoices(game.mode, game.pool, candidate),
+      choices: sampleChoices(
+        game.mode,
+        game.pool,
+        candidate,
+        avoidTitles(game, index),
+      ),
     };
     game.served += 1;
     await putGame(env, game);
@@ -263,7 +281,12 @@ export async function prepareNext(
       url: preview.url,
       link: preview.link ?? candidate.link,
       cover: preview.cover ?? candidate.cover,
-      choices: sampleChoices(game.mode, game.pool, candidate),
+      choices: sampleChoices(
+        game.mode,
+        game.pool,
+        candidate,
+        avoidTitles(game, index),
+      ),
     };
     break;
   }
