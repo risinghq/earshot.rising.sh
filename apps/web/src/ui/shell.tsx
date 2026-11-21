@@ -125,6 +125,9 @@ export function Page({
           type="font/woff2"
           crossorigin="anonymous"
         />
+        <link rel="icon" href="/favicon.ico" sizes="48x48" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />{" "}
         <link rel="stylesheet" href="/styles.css" />
         <script src="/site.js" defer />
         <title>{`${title} · Earshot`}</title>

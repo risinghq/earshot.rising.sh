@@ -54,6 +54,8 @@ export function screenPage(code: string, joinUrl: string) {
           type="font/woff2"
           crossorigin="anonymous"
         />
+        <link rel="icon" href="/favicon.ico" sizes="48x48" />
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="stylesheet" href="/styles.css" />
         <title>{`Room ${code} on screen · Earshot`}</title>
       </head>
