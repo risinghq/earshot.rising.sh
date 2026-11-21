@@ -111,7 +111,8 @@ Every rising.sh product signs in with Google through one Google Cloud project,
 has its own OAuth client in it, so revoking one product's secret leaves the
 others signed in. Do not create a new project.
 
-In the [Google Auth Platform](https://console.cloud.google.com/auth/clients?project=teams-rising-sh)
+In the
+[Google Auth Platform](https://console.cloud.google.com/auth/clients?project=teams-rising-sh)
 choose **Create client**, type **Web application**, name it after the product,
 and add these **Authorized redirect URIs**:
 
@@ -128,9 +129,9 @@ repository secret `GOOGLE_CLIENT_SECRET`, from the repository root:
 gh secret set GOOGLE_CLIENT_SECRET
 ```
 
-The `web` workflow uploads it with each deploy (`wrangler deploy
---secrets-file`), so no local Wrangler login is needed. For `wrangler dev`, put
-`GOOGLE_CLIENT_SECRET` in `apps/web/.dev.vars`.
+The `web` workflow uploads it with each deploy
+(`wrangler deploy --secrets-file`), so no local Wrangler login is needed. For
+`wrangler dev`, put `GOOGLE_CLIENT_SECRET` in `apps/web/.dev.vars`.
 
 The project's branding is verified: the consent screen reads "continue to
 Rising". Google checks it against the home page `https://rising.sh`, whose

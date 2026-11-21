@@ -789,8 +789,8 @@ A token with no scope reads public profile data, which is `id` and `login`
 ([scopes](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps)).
 GitHub recommends GitHub Apps over OAuth Apps for integrations. This service
 only asks who the visitor is and keeps no token, so the permissions model of a
-GitHub App buys nothing. Google covers the players and group members who have
-no GitHub account. It asks for `openid email profile`, the scopes that need no
+GitHub App buys nothing. Google covers the players and group members who have no
+GitHub account. It asks for `openid email profile`, the scopes that need no
 Google review. There is no password to run.
 
 - `/sign-in?next=PATH` offers both providers; the header's Sign in links there.
@@ -892,16 +892,15 @@ list by name, and the member can leave any group.
   key and groups with one temporary b-tree.
 - **JSON.**
   `{"schema": 1, "user": …, "period": …, "from": …, "to": …, "plays": …, "unique_tracks": …, "unique_artists": …, "top_tracks": […], "top_artists": […], "daily": […], "updated_at": …}`.
-  It sends `Access-Control-Allow-Origin: *`, because it is public data. Each
-  top track and top artist carries `image`: a Deezer album cover or artist
-  picture URL, or `null` when none is known yet.
-- **Images.** No source sends usable artwork for every play, so the cron
-  looks each track and artist up on Deezer by name (`src/images.ts`): a track
-  takes the album cover of the first hit by the same artist, an artist the
-  picture of the hit with the same name. Each tick looks up six of each,
-  newest first, and a miss is tried again after 30 days. The profile and the
-  group playlist show the image over the colour tile, which stays when there
-  is none.
+  It sends `Access-Control-Allow-Origin: *`, because it is public data. Each top
+  track and top artist carries `image`: a Deezer album cover or artist picture
+  URL, or `null` when none is known yet.
+- **Images.** No source sends usable artwork for every play, so the cron looks
+  each track and artist up on Deezer by name (`src/images.ts`): a track takes
+  the album cover of the first hit by the same artist, an artist the picture of
+  the hit with the same name. Each tick looks up six of each, newest first, and
+  a miss is tried again after 30 days. The profile and the group playlist show
+  the image over the colour tile, which stays when there is none.
 - **Snapshots.** The figures of one user and period are cached in KV under
   `snap:<user id>:<period>`, with a TTL of 15 minutes for `week` and `month` and
   6 hours for `all`. A request that finds no snapshot computes it from D1 and
