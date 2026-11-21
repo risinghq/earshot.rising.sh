@@ -875,6 +875,7 @@ export function questionPage(
             This game needs JavaScript: the clip and the timer run through it.
           </p>
         </noscript>
+        <script src="/wave.js" defer />
         <script src="/solo.js" defer />
       </div>
     ),
@@ -1037,6 +1038,7 @@ function revealPage(
           </div>
         </div>
         {quitDialog()}
+        <script src="/wave.js" defer />
         <script src="/solo.js" defer />
       </div>
     ),
@@ -1387,6 +1389,7 @@ export function finalPage(
             </ol>
           </section>
         </div>
+        <script src="/wave.js" defer />
         <script src="/solo.js" defer />
       </div>
     ),

@@ -50,6 +50,7 @@ let loadedFor = 0; // the round number this screen last reported ready
 // blocked. Once the page has had a click, Chrome and Firefox let every
 // later clip play.
 const audio = $("screen-clip");
+globalThis.clipWave?.(audio, document.querySelector(".tv-wave"));
 const soundButton = $("screen-sound");
 let wantsSound = false;
 let blocked = false;

@@ -218,6 +218,7 @@ function wirePlayer(round) {
   if (audio.getAttribute("src") !== round.dataset.src)
     audio.src = round.dataset.src;
   wireVolume();
+  globalThis.clipWave?.(audio, round.querySelector(".player-wave"));
   ["play", "playing", "pause", "ended"].forEach((event) =>
     audio.addEventListener(event, syncIcon),
   );
@@ -256,6 +257,7 @@ function prepare(round) {
       const clip = document.createElement("audio");
       clip.preload = "auto";
       clip.src = url;
+      globalThis.clipWave?.prefetch(url);
       prepared = { url, next, clip };
     })
     .catch(() => {});
