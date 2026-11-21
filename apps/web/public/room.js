@@ -958,6 +958,19 @@ function renderDone(s) {
     }),
   );
 
+  // A guest who did well is offered the account that keeps the game; the
+  // server moves this seat into it when the page comes back signed in.
+  const boardRank =
+    1 + (s.board ?? []).filter((entry) => entry.score > mineScore).length;
+  const won = many && !tied && winner.name === s.you.name;
+  const save = $("done-save");
+  save.querySelector("[data-save-title]").textContent = won
+    ? `You beat the room. Keep the win`
+    : boardRank <= 10
+      ? `That's #${boardRank} on ${s.category}`
+      : `Keep your ${number(mineScore)} points`;
+  show(save, !s.you.user && mineScore > 0);
+
   const board = (s.board ?? []).slice(0, 5);
   const note = $("done-board-note");
   note.textContent = `${s.category} · last ${note.dataset.days} days`;

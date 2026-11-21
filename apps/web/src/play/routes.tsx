@@ -36,7 +36,7 @@ import {
   matchPage,
 } from "./pages";
 import { tileFacts } from "./hub";
-import { readBoard, readCategoryBoard, recordGame } from "./results";
+import { claimGame, readBoard, readCategoryBoard, recordGame } from "./results";
 import { forYouCategory, forYouCold, forYouMix, forYouSlug } from "./foryou";
 import { deezerSearchArtists } from "./sources";
 import { byDecade } from "./pool";
@@ -472,6 +472,8 @@ async function renderGame(context: PlayContext, game: Game) {
       ),
     );
   const user = await sessionUser(context);
+  if (user !== null && claimGame(game, user.id, anonOf(context)))
+    await putGame(context.env, game);
   // A round that exhausts its candidates ends the game here; recordGame is a
   // no-op once the flag is set, so a final-page reload never reaches D1.
   if (game.phase === "done") await recordGame(context.env, game);

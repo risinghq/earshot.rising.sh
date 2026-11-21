@@ -589,6 +589,26 @@ export class Room extends DurableObject<Env> {
     // A signed-in player keeps one seat across devices and cleared storage.
     if (player === undefined && uid !== null)
       player = s.players.find((p) => p.userId === uid);
+    // A guest who signs in from this room comes back with the same seat
+    // token: the seat moves into the account, and a finished game writes the
+    // result it held back from the guest.
+    const claimed =
+      player !== undefined &&
+      player.userId === null &&
+      uid !== null &&
+      !s.players.some((p) => p.userId === uid);
+    if (claimed) {
+      player!.userId = uid;
+      if (s.phase === "done") {
+        await this.recordResults();
+        s.board =
+          s.categorySlug === ""
+            ? []
+            : await readCategoryBoard(this.env, s.categorySlug).catch(
+                () => s.board,
+              );
+      }
+    }
     if (player === undefined) {
       // A match admits only the players the matchmaker seated.
       if (s.kind === "match") {

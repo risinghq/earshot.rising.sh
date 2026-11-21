@@ -4630,6 +4630,36 @@ input.room-link:focus-visible {
 .board-claim {
   font-weight: var(--weight-heavy);
 }
+.save-card {
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-radius: 24px;
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 18px 16px 14px;
+  text-align: center;
+}
+.save-card[hidden] {
+  display: none;
+}
+.save-title {
+  font-size: 18px;
+  font-weight: var(--weight-heavy);
+  text-wrap: balance;
+}
+.save-card p {
+  color: var(--ink-2);
+  font-size: 14px;
+  margin: 0;
+  max-width: 34ch;
+  text-wrap: pretty;
+}
+.save-alt {
+  color: var(--ink-3);
+  font-size: 13px;
+  padding: 4px 8px;
+}
 
 @media (min-width: 900px) {
   .results-head b {
