@@ -3,9 +3,10 @@ import { csrf } from "hono/csrf";
 import { notFoundPage } from "../app";
 import { sessionUser } from "../auth";
 import type { Env } from "../types";
-import type { Candidate } from "./sources";
+import type { ArtistHit, Candidate } from "./sources";
 import { defaultMode, parseMode } from "./quiz";
 import {
+  artistProfile,
   catalog,
   enoughTracks,
   getCategory,
@@ -333,15 +334,26 @@ playApp.get("/artists", async (context) => {
   const picked = /^\d{1,10}$/.test(withParam)
     ? { id: Number(withParam), name: withName || `Artist ${withParam}` }
     : null;
-  if (query === "") return context.html(artistsPage(query, [], picked, user));
-  let results;
+  if (query === "")
+    return context.html(artistsPage(query, [], picked, [], user));
+  let results: ArtistHit[] | null = null;
   try {
     results = await deezerSearchArtists(query);
   } catch (error) {
     console.error("artist search failed", error);
-    return context.html(feedErrorPage("Artist search", user), 502);
   }
-  return context.html(artistsPage(query, results, picked, user));
+  // Genres are offered only when the search found nothing, so a good search
+  // costs no D1 read.
+  const genres =
+    results === null || results.length === 0
+      ? (await listCategories(context.env.DB))
+          .filter((category) => category.feed !== "mine")
+          .slice(0, 6)
+      : [];
+  return context.html(
+    artistsPage(query, results, picked, genres, user),
+    results === null ? 502 : 200,
+  );
 });
 
 playApp.get("/artist/:ids", async (context) => {
@@ -353,8 +365,30 @@ playApp.get("/artist/:ids", async (context) => {
   if (category === null) return context.html(notFoundPage(user), 404);
   if (category.slug !== `artist-${context.req.param("ids")}`)
     return context.redirect(`/play/artist/${category.slug.slice(7)}`, 301);
-  const entries = await readCategoryBoard(context.env, category.slug);
-  return context.html(artistPage(category, entries, user));
+  // The song strip loads the catalog the game will use, so Start reads it
+  // from the cache. A feed failure only hides the strip; the game route
+  // reports it.
+  const [profiles, songs, entries] = await Promise.all([
+    Promise.all(
+      category
+        .ref!.split(",")
+        .map((id) => artistProfile(context.env, Number(id))),
+    ),
+    catalog(context.env, category, null).then(
+      (tracks) => tracks.slice(0, 6),
+      () => [],
+    ),
+    readCategoryBoard(context.env, category.slug),
+  ]);
+  return context.html(
+    artistPage(
+      category,
+      profiles.filter((profile) => profile !== null),
+      songs,
+      entries,
+      user,
+    ),
+  );
 });
 
 const reportReasons = new Set([

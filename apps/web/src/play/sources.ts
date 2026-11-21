@@ -199,7 +199,12 @@ export async function deezerArtist(artistId: number) {
   if (body.error?.code === 800) return null;
   if (typeof body.name !== "string" || body.name === "")
     throw new FeedError("artist lookup failed", url);
-  return { id: artistId, name: body.name };
+  return {
+    id: artistId,
+    name: body.name,
+    picture: body.picture_medium || null,
+    fans: body.nb_fan ?? 0,
+  };
 }
 
 export interface ArtistHit {

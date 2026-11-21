@@ -128,6 +128,37 @@ describe("artist slugs", () => {
     expect(response.headers.get("location")).toBe("/play/artist/27-85");
   });
 
+  it("shows the artist, the songs in the game and one start form", async () => {
+    stubFetch([
+      [
+        /api\.deezer\.com\/artist\/27\/top/,
+        { data: Array.from({ length: 12 }, (_, i) => deezerTrack(i, `S${i}`)) },
+      ],
+      [/api\.deezer\.com\/artist\/27$/, deezerArtist(27, "Radiohead", 1234567)],
+    ]);
+    const body = await (await get("/play/artist/27")).text();
+    expect(body).toContain("https://img.example/27.jpg");
+    expect(body).toContain("1,234,567 fans");
+    expect(body.match(/class="artist-song-art"/g)).toHaveLength(6);
+    expect(body).toContain("<b>S0</b>");
+    expect(body.match(/<form/g)).toHaveLength(1);
+    for (const action of ["/play", "/play/room", "/play/match"])
+      expect(body).toContain(`formaction="${action}"`);
+    expect(body).toContain('href="/play/artists?with=27&amp;n=Radiohead"');
+  });
+
+  it("keeps the start form when the song feed fails", async () => {
+    stubFetch([
+      [/api\.deezer\.com\/artist\/27\/top/, { error: { code: 700 } }],
+      [/api\.deezer\.com\/artist\/27$/, deezerArtist(27, "Radiohead")],
+    ]);
+    const response = await get("/play/artist/27");
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    expect(body).not.toContain("In this game");
+    expect(body).toContain('formaction="/play/room"');
+  });
+
   it("returns null for a malformed artist slug, so the routes answer 404", async () => {
     expect(await getCategory(testEnv() as never, "artist-abc")).toBeNull();
     const response = await post("/play", {
@@ -180,6 +211,42 @@ describe("artist search", () => {
     const body = await response.text();
     expect(body).toContain("Blending with Radiohead");
     expect(body).toContain("/play/artist/27-85");
+    expect(body).toContain("Blend with Radiohead");
+    expect(body).toContain('href="/play/artist/85"');
+  });
+
+  it("shows the top hit as a card and folds hits past the first seven", async () => {
+    stubFetch([
+      [
+        /api\.deezer\.com\/search\/artist/,
+        {
+          data: Array.from({ length: 10 }, (_, i) =>
+            deezerArtist(100 + i, `Act ${i}`, 1000 - i),
+          ),
+        },
+      ],
+    ]);
+    const body = await (await get("/play/artists?q=act")).text();
+    expect(body).toContain("Open Act 0");
+    expect(body).toContain("with=100&amp;n=Act+0");
+    expect(body).toContain("Show all 10");
+    expect(body.match(/class="artist-hits"/g)).toHaveLength(2);
+  });
+
+  it("offers genres when the search fails or finds nothing", async () => {
+    stubFetch([[/api\.deezer\.com\/search\/artist/, { error: { code: 4 } }]]);
+    const down = await get("/play/artists?q=daft");
+    expect(down.status).toBe(502);
+    const downBody = await down.text();
+    expect(downBody).toContain("Search is down");
+    expect(downBody).toContain('name="category"');
+    expect(downBody).toContain('value="daft"');
+    stubFetch([[/api\.deezer\.com\/search\/artist/, { data: [] }]]);
+    const empty = await get("/play/artists?q=zzz");
+    expect(empty.status).toBe(200);
+    const emptyBody = await empty.text();
+    expect(emptyBody).toContain("No artist called “zzz”");
+    expect(emptyBody).toContain('name="category"');
   });
 });
 

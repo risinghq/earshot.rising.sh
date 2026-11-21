@@ -47,7 +47,7 @@ const quotaRetryMs = 2500;
 const idleMs = 3600_000;
 // A match seat that never fills should not strand the player who did show
 // up: the game starts with whoever connected after this wait.
-const matchWaitMs = 90_000;
+export const matchWaitMs = 90_000;
 // Up next holds one suggestion per player, so a full room fits.
 const maxSuggestions = maxPlayers;
 
