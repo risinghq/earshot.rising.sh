@@ -218,6 +218,7 @@ export function screenPage(code: string, joinUrl: string) {
           {soundOffIcon}
           Click once to turn on sound
         </button>
+        <script src="/wave.js" defer />
         <script src="/screen.js" defer />
       </body>
     </html>

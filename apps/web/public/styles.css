@@ -2106,6 +2106,12 @@ button:disabled {
     transform: scaleY(calc(var(--s) * 0.35));
   }
 }
+/* wave.js sets each bar's transform from the clip's own loudness; an
+   animation would override the inline value. */
+.player-wave.is-following i {
+  animation: none;
+  opacity: 1;
+}
 .player-hint,
 .player-wait {
   display: none;
@@ -5142,6 +5148,10 @@ input.room-link:focus-visible {
   animation: wave var(--d) ease-in-out var(--delay) infinite alternate;
   opacity: 1;
   transform: scaleY(var(--s));
+}
+.tv .tv-wave.is-following i {
+  animation: none;
+  opacity: 1;
 }
 .tv-answers {
   display: grid;

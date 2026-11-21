@@ -95,6 +95,7 @@ let state = null;
 // volume the page sets, so the slider stays hidden there.
 const clip = $("clip");
 const player = clip.closest(".player");
+globalThis.clipWave?.(clip, player.querySelector(".player-wave"));
 const toggle = $("clip-toggle");
 const volumeProbe = document.createElement("audio");
 volumeProbe.volume = 0.5;

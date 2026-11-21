@@ -384,6 +384,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
         <template id="check-template">{checkIcon}</template>
         <template id="cross-template">{crossIcon}</template>
         {quitDialog()}
+        <script src="/wave.js" defer />
         <script src="/room.js" defer />
       </div>
     ),
