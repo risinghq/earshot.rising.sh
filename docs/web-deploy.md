@@ -46,6 +46,10 @@ The migration creates the complete schema used by the current and later web
 milestones. Do not edit a deployed migration. Add a later migration when the
 schema changes.
 
+After this first setup, the `web` workflow applies new migrations on each push
+to master, after the tests and before `wrangler deploy`. A migration must only
+add, because it lands while the previous Worker still serves.
+
 ## Configure the deploy secret
 
 In the repository's GitHub settings, open **Secrets and variables → Actions**
