@@ -377,10 +377,9 @@ function render(s) {
   $("room-name").textContent = `${s.category} · Room ${s.code}`;
   const view =
     s.phase === "lobby" ? "lobby" : s.phase === "done" ? "done" : "round";
-  if (view !== "round") {
-    clearTimers();
-    fadeOut();
-  }
+  // The last song plays on under the final standings.
+  if (view !== "round") clearTimers();
+  if (view === "lobby") fadeOut();
   setPhase(view);
   renderBar(s);
   if (view === "lobby") renderLobby(s);

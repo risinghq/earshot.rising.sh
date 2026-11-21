@@ -71,6 +71,9 @@ async function gameInput(
   if (slug === "" || mode === null)
     return context.text("Pick a category and a mode.", 400);
   const user = await sessionUser(context);
+  // A room's switch keeps its host in the room's category picker.
+  const room = context.req.param("code");
+  const back = room ? `/?room=${room}&mode=${mode}` : "/";
   // For you is a solo-only game: its pool is one player's mix, so a room or a
   // match would sit everyone in the creator's taste.
   if (slug === forYouSlug) {
@@ -93,7 +96,7 @@ async function gameInput(
   const category = await getCategory(context.env, slug);
   if (category === null) return context.html(notFoundPage(user), 404);
   if (!context.env.CACHE)
-    return context.html(feedErrorPage(category.name, user), 503);
+    return context.html(feedErrorPage(category.name, user, back), 503);
   if (category.feed === "mine" && user === null)
     return context.redirect("/", 303);
   let tracks;
@@ -101,11 +104,11 @@ async function gameInput(
     tracks = await catalog(context.env, category, user?.id ?? null);
   } catch (error) {
     console.error("play catalog failed", error);
-    return context.html(feedErrorPage(category.name, user), 502);
+    return context.html(feedErrorPage(category.name, user, back), 502);
   }
   if (era !== null) tracks = byDecade(tracks, era);
   if (!enoughTracks(category, tracks))
-    return context.html(feedErrorPage(category.name, user), 502);
+    return context.html(feedErrorPage(category.name, user, back), 502);
   const anon = anonKey(context);
   return {
     category:
