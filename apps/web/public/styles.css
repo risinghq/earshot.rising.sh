@@ -2125,6 +2125,7 @@ button:disabled {
 .player-foot b {
   color: var(--stage-ink);
   font-size: 20px;
+  font-variant-numeric: tabular-nums;
   font-weight: var(--weight-heavy);
 }
 .player-worth {
@@ -5077,6 +5078,7 @@ input.room-link:focus-visible {
 .tv-ring span {
   color: var(--stage-ink-2);
   font-size: calc(36 * var(--u));
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
   margin-top: calc(8 * var(--u));
 }

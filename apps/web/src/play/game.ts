@@ -60,7 +60,7 @@ export interface Game {
     // back to servedAt, as a no-JS round always did.
     servedAt: number;
     startedAt: number | null;
-    reveal: { link: string | null; cover: string | null };
+    reveal: { link: string | null; cover: string | null; credit?: string };
     choices: Choice[];
   } | null;
   // The next round's clip, resolved while the reveal is shown, so Next does
@@ -70,6 +70,7 @@ export interface Game {
     url: string;
     link: string | null;
     cover: string | null;
+    credit?: string;
     choices: Choice[];
   } | null;
   results: RoundResult[];
@@ -174,7 +175,11 @@ export async function serveRound(
       index: pending.index,
       servedAt: now,
       startedAt: null,
-      reveal: { link: pending.link, cover: pending.cover },
+      reveal: {
+        link: pending.link,
+        cover: pending.cover,
+        credit: pending.credit,
+      },
       choices: pending.choices,
     };
     game.served += 1;
@@ -213,6 +218,7 @@ export async function serveRound(
       reveal: {
         link: preview.link ?? candidate.link,
         cover: preview.cover ?? candidate.cover,
+        credit: preview.credit,
       },
       choices: sampleChoices(
         game.mode,
@@ -281,6 +287,7 @@ export async function prepareNext(
       url: preview.url,
       link: preview.link ?? candidate.link,
       cover: preview.cover ?? candidate.cover,
+      credit: preview.credit,
       choices: sampleChoices(
         game.mode,
         game.pool,
@@ -325,7 +332,11 @@ export function previewNext(
         index: pending.index,
         servedAt: now,
         startedAt: null,
-        reveal: { link: pending.link, cover: pending.cover },
+        reveal: {
+          link: pending.link,
+          cover: pending.cover,
+          credit: pending.credit,
+        },
         choices: pending.choices,
       },
     },
@@ -363,7 +374,7 @@ export async function answerRound(
     trackKey: trackKeyFor(candidate),
     title: candidate.title,
     ...(candidate.original ? { original: candidate.original } : {}),
-    artist: candidate.artist,
+    artist: game.current.reveal.credit ?? candidate.artist,
     cover: game.current.reveal.cover,
     link: game.current.reveal.link,
     answer: given,

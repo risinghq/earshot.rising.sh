@@ -24,6 +24,9 @@ const modeNames = { easy: "Easy", normal: "Normal", hard: "Hard" };
 const roundMs = 15000;
 // Mirrors scoreFor in src/play/quiz.ts: 1000 at the start, 100 at the end.
 const worthAt = (ms) => (ms > 0 ? Math.round(100 + (900 * ms) / roundMs) : 0);
+// The worth falls 60 points a second; a slower redraw moves it in visible,
+// uneven jumps.
+const tickMs = 50;
 const byline = (song) =>
   song.original ? `${song.original} · ${song.artist}` : song.artist;
 const linkService = (link) =>
@@ -603,7 +606,7 @@ function openRound(s) {
   };
   tick();
   clearInterval(tickTimer);
-  tickTimer = setInterval(tick, 200);
+  tickTimer = setInterval(tick, tickMs);
 }
 
 function lock(button) {

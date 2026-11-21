@@ -53,7 +53,7 @@ const chevronIcon = (
 export function roomPage(code: string, user: SignedInUser | null) {
   const back = `/play/room/${code}`;
   return Page({
-    title: `Room ${code} · Earshot`,
+    title: `Room ${code}`,
     user,
     chrome: "game",
     children: (

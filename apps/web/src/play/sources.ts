@@ -27,6 +27,9 @@ export interface Preview {
   url: string;
   link: string | null;
   cover: string | null;
+  // Every artist the track credits ("Lady Gaga & Bruno Mars"), set only when
+  // there is more than one. Pools and the choices keep the lead artist alone.
+  credit?: string;
 }
 
 // Deezer answers quota overruns with HTTP 200 and
@@ -48,6 +51,39 @@ interface DeezerTrack {
   release_date?: string;
   artist?: { id?: number; name?: string };
   album?: { cover_medium?: string };
+  // Only /track/{id} lists contributors; list and search results do not.
+  contributors?: { name?: string; role?: string }[];
+}
+
+const creditShown = 3;
+
+// The main artists first, then the featured ones. Past three names the rest
+// count as "+N", so a cast credit stays on one line.
+export function creditLine(track: DeezerTrack): string | undefined {
+  const credited = [...(track.contributors ?? [])].sort(
+    (a, b) => Number(a.role !== "Main") - Number(b.role !== "Main"),
+  );
+  const names = [
+    ...new Set(
+      credited
+        .map((contributor) => contributor.name?.trim())
+        .filter((name): name is string => Boolean(name)),
+    ),
+  ];
+  if (names.length < 2) return undefined;
+  if (names.length > creditShown)
+    return `${names.slice(0, creditShown).join(", ")} +${names.length - creditShown}`;
+  return `${names.slice(0, -1).join(", ")} & ${names.at(-1)}`;
+}
+
+function trackPreview(track: DeezerTrack): Preview {
+  const credit = creditLine(track);
+  return {
+    url: track.preview!,
+    link: track.link ?? null,
+    cover: track.album?.cover_medium ?? null,
+    ...(credit ? { credit } : {}),
+  };
 }
 
 function deezerCandidate(track: DeezerTrack): Candidate | null {
@@ -226,11 +262,7 @@ export async function deezerPreview(deezerId: number): Promise<Preview | null> {
     `https://api.deezer.com/track/${deezerId}`,
   )) as DeezerTrack;
   return typeof track.preview === "string" && track.preview
-    ? {
-        url: track.preview,
-        link: track.link ?? null,
-        cover: track.album?.cover_medium ?? null,
-      }
+    ? trackPreview(track)
     : null;
 }
 
@@ -299,10 +331,6 @@ export async function deezerIsrcPreview(
   return typeof track.preview === "string" &&
     track.preview &&
     artistMatches(track.artist?.name, artist)
-    ? {
-        url: track.preview,
-        link: track.link ?? null,
-        cover: track.album?.cover_medium ?? null,
-      }
+    ? trackPreview(track)
     : null;
 }
