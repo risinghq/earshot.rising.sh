@@ -55,34 +55,50 @@ export function listCategories(db: D1Database) {
 // its error body, so the category does not exist. A failed lookup is less
 // sure, so it falls back to a bare name and the track feed decides, keeping
 // a flaky /artist answer on the category-unavailable page.
-async function artistName(env: Env, id: number): Promise<string | null> {
+// An entry cached before the profile carried fans holds only the name, and is
+// read again.
+export async function artistProfile(
+  env: Env,
+  id: number,
+): Promise<ArtistProfile | null> {
   const key = `play:artist:${id}`;
-  const cached = await env.CACHE?.get<{ name: string }>(key, "json").catch(
+  const cached = await env.CACHE?.get<ArtistProfile>(key, "json").catch(
     () => null,
   );
-  if (cached?.name) return cached.name;
+  if (cached?.name && typeof cached.fans === "number") return cached;
   try {
     const artist = await deezerArtist(id);
     if (artist === null) return null;
+    const profile = {
+      name: artist.name,
+      picture: artist.picture,
+      fans: artist.fans,
+    };
     if (env.CACHE)
-      await env.CACHE.put(key, JSON.stringify({ name: artist.name }), {
+      await env.CACHE.put(key, JSON.stringify(profile), {
         expirationTtl: artistNameTtlSeconds,
       }).catch(() => undefined);
-    return artist.name;
+    return profile;
   } catch {
-    return `Artist ${id}`;
+    return { name: `Artist ${id}`, picture: null, fans: 0 };
   }
+}
+
+export interface ArtistProfile {
+  name: string;
+  picture: string | null;
+  fans: number;
 }
 
 async function artistCategory(
   env: Env,
   ids: number[],
 ): Promise<Category | null> {
-  const names = await Promise.all(ids.map((id) => artistName(env, id)));
-  if (names.includes(null)) return null;
+  const profiles = await Promise.all(ids.map((id) => artistProfile(env, id)));
+  if (profiles.includes(null)) return null;
   return {
     slug: `artist-${ids.join("-")}`,
-    name: names.join(" × "),
+    name: profiles.map((profile) => profile!.name).join(" × "),
     feed: "deezer_artist",
     ref: ids.join(","),
   };

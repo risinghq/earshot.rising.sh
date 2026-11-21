@@ -1055,10 +1055,19 @@ stops when the next round loads or the game ends.
   a song, so the feed keeps one entry per answer title: the first release with
   no remix, live, instrumental or language-version clause, at the song's first
   rank (`songsOnce` in `src/play/pool.ts`). The player finds artists through the
-  search box on `/`, which answers `/search/artist?q=` hits sorted by fan count,
-  and starts a game on `/play/artist/IDS`. A malformed slug is a 404; an unknown
-  id or an artist with fewer than four distinct titles shows the
-  category-unavailable page. No D1 row is written per artist.
+  search box on `/`, which answers `/search/artist?q=` hits sorted by fan count:
+  the first as a card, the next six as rows, the rest folded. A search that
+  finds nothing, or fails, offers six genres instead; only then does the page
+  read D1. A malformed slug is a 404; an unknown id or an artist with fewer than
+  four distinct titles shows the category-unavailable page. No D1 row is written
+  per artist.
+- **Artist page.** `/play/artist/IDS` shows each artist's photo and fan count
+  (`artistProfile`, kept in KV for a day), the first six songs of the catalog
+  the game will play, and one start form. Its Who choice picks the endpoint:
+  each of Solo, With friends and Random has its own submit button with a
+  `formaction`, and CSS `:has()` shows the one that matches, so the form works
+  without a script. Loading the songs fills the catalog cache, so Start reads
+  KV. A failed feed hides the songs and keeps the form.
 - **Sources.** Feeds come from the Deezer public API (`/chart/{genre}/tracks`,
   `/playlist/{id}/tracks`, `/artist/{id}/top`, `/artist/{id}`, `/search/artist`,
   `/track/{id}`, `/track/isrc:{isrc}` and `/search`) and from Apple's chart feed
