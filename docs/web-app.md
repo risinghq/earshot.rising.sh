@@ -1054,10 +1054,10 @@ stops when the next round loads or the game ends.
   tracks, two artists interleaved one for one. That list holds every release of
   a song, so the feed keeps one entry per answer title: the first release with
   no remix, live, instrumental or language-version clause, at the song's first
-  rank (`songsOnce` in `src/play/pool.ts`). The player finds artists through
-  the search box on `/`, which answers `/search/artist?q=` hits sorted by fan
-  count, and starts a game on `/play/artist/IDS`. A malformed slug is a 404; an
-  unknown id or an artist with fewer than four distinct titles shows the
+  rank (`songsOnce` in `src/play/pool.ts`). The player finds artists through the
+  search box on `/`, which answers `/search/artist?q=` hits sorted by fan count,
+  and starts a game on `/play/artist/IDS`. A malformed slug is a 404; an unknown
+  id or an artist with fewer than four distinct titles shows the
   category-unavailable page. No D1 row is written per artist.
 - **Sources.** Feeds come from the Deezer public API (`/chart/{genre}/tracks`,
   `/playlist/{id}/tracks`, `/artist/{id}/top`, `/artist/{id}`, `/search/artist`,
@@ -1239,14 +1239,14 @@ for five minutes under `play:catboard:SLUG`.
 
 ### Game log
 
-The game log answers how people play without a request, cookie or script of
-its own. Migration `0021` adds it, and the server writes it at moments that
-already happen:
+The game log answers how people play without a request, cookie or script of its
+own. Migration `0021` adds it, and the server writes it at moments that already
+happen:
 
-- **`games`.** One row per game, guests included, written when the game
-  begins: kind, room code, category, mode, the seated players, and `origin`.
-  The origin is `start` for the lobby's Start, `rematch` for Start after a game,
-  `pick` for the host's Up next pick, `match` for a random match, and `solo`.
+- **`games`.** One row per game, guests included, written when the game begins:
+  kind, room code, category, mode, the seated players, and `origin`. The origin
+  is `start` for the lobby's Start, `rematch` for Start after a game, `pick` for
+  the host's Up next pick, `match` for a random match, and `solo`.
 - **`round_outcomes`.** Each answer also carries `game_id`, the round number,
   and the title and artist the round played. An artist feed's track has no
   catalog row, so the title cannot be read from anywhere else.
