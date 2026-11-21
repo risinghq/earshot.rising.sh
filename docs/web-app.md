@@ -1253,14 +1253,14 @@ already happen:
 
 These questions read straight from the two tables:
 
-| Question | Read |
-| --- | --- |
-| Gap between a room's games | `games` by `room`, ordered by `started_at` |
-| Games abandoned | `games` whose `game_id` has fewer than 10 rounds in `round_outcomes` |
-| Players who quit mid-game | distinct `player_key` per round of one `game_id` |
-| Does Up next replace detours | share of `origin = 'pick'` and the gap before it |
-| Hard or broken songs | correct rate per `track_key`, named by `title` |
-| A song played twice in a game | `game_id`, `title` with more than one `round` |
+| Question                      | Read                                                                 |
+| ----------------------------- | -------------------------------------------------------------------- |
+| Gap between a room's games    | `games` by `room`, ordered by `started_at`                           |
+| Games abandoned               | `games` whose `game_id` has fewer than 10 rounds in `round_outcomes` |
+| Players who quit mid-game     | distinct `player_key` per round of one `game_id`                     |
+| Does Up next replace detours  | share of `origin = 'pick'` and the gap before it                     |
+| Hard or broken songs          | correct rate per `track_key`, named by `title`                       |
+| A song played twice in a game | `game_id`, `title` with more than one `round`                        |
 
 ### Friends and groups
 
