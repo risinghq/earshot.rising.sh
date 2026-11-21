@@ -64,6 +64,10 @@ audio.addEventListener("playing", () => {
   syncSound();
 });
 audio.addEventListener("pause", () => root.classList.remove("is-live"));
+// A clip never cuts off at its end either.
+audio.addEventListener("timeupdate", () => {
+  if (audio.duration - audio.currentTime < 0.8) stopClip();
+});
 soundButton.onclick = () => {
   if (wantsSound) audio.play().catch(() => {});
   else syncSound();
@@ -158,9 +162,10 @@ function render(s) {
   offset = s.now - Date.now();
   phase = s.phase;
   root.dataset.phase = s.phase;
-  // The clip plays through its round's reveal, so the room hears the rest of
-  // the song; the lobby, the next load and the final standings silence it.
-  if (s.phase !== "playing" && s.phase !== "reveal") {
+  // The clip plays through its round's reveal and the final standings, so
+  // the room hears the rest of the song; the lobby and the next load
+  // silence it.
+  if (s.phase !== "playing" && s.phase !== "reveal" && s.phase !== "done") {
     stopClip();
     wantsSound = false;
     blocked = false;

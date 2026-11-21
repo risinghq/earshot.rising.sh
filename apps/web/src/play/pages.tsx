@@ -167,7 +167,8 @@ const whoActions: Record<PlayWho, string> = {
 // The hub offers the two shown modes; ?mode=hard still reaches the tiles.
 const hubModes = ["easy", "normal"] as const satisfies readonly Mode[];
 // A room tile carries the creator's token, which room.js keeps in
-// localStorage; the room refuses a switch without it.
+// localStorage; the room refuses a switch without it. The token is filled on
+// submit because this script runs before the tiles are parsed.
 const setupScript = `
 const setup = document.getElementById("play-setup");
 const actions = { solo: "/play", room: "/play/room" };
@@ -180,7 +181,9 @@ setup.addEventListener("change", () => {
     tile.querySelector('input[name="mode"]').value = mode;
   });
 });
-document.querySelectorAll("form.tile[data-room]").forEach((tile) => {
+document.addEventListener("submit", (event) => {
+  const tile = event.target;
+  if (!tile.matches("form.tile[data-room]")) return;
   tile.querySelector('input[name="k"]').value =
     localStorage.getItem("quiz-room-" + tile.dataset.room) ?? "";
 });
@@ -1805,7 +1808,11 @@ export function matchPage(
   });
 }
 
-export function feedErrorPage(name: string, user: SignedInUser | null) {
+export function feedErrorPage(
+  name: string,
+  user: SignedInUser | null,
+  back = "/",
+) {
   return Page({
     title: "Category unavailable",
     user,
@@ -1813,7 +1820,7 @@ export function feedErrorPage(name: string, user: SignedInUser | null) {
       <EmptyState
         title={`${name} is not available right now`}
         body="The music feed did not answer. Pick another category or try again in a moment."
-        action={{ href: "/", label: "Back to categories" }}
+        action={{ href: back, label: "Back to categories" }}
         heading="h1"
       />
     ),

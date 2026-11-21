@@ -25,13 +25,14 @@ const clipVolume = savedVolume === null ? 0.6 : Number(savedVolume) / 100;
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const roundMs = 15000;
 
-// A clip never cuts off: it fades out, then pauses. A detached element keeps
-// playing, so the old round's clip fades while the next one loads. iOS
-// ignores the volume, so there it stops at once.
-function fadeOut(media, ms = 600) {
+// A clip never cuts off: it fades out, then pauses; `discard` then removes
+// an element swap parked in the body. iOS ignores the volume, so there it
+// stops at once.
+function fadeOut(media, ms = 600, discard = false) {
   if (!media || media.paused) return;
   if (!canSetVolume || reducedMotion) {
     media.pause();
+    if (discard) media.remove();
     return;
   }
   const from = media.volume;
@@ -46,6 +47,7 @@ function fadeOut(media, ms = 600) {
     else {
       media.pause();
       media.volume = from;
+      if (discard) media.remove();
     }
   };
   requestAnimationFrame(step);
@@ -367,7 +369,18 @@ function swap(next) {
     location.reload();
     return;
   }
-  fadeOut(audio);
+  // Chrome pauses a media element the moment it leaves the document, so a
+  // playing clip moves out of the old page first: into the results, where
+  // the last song plays on, or to the body while it fades under the next
+  // round.
+  if (audio && !audio.paused) {
+    if (next.querySelector("#round")?.dataset.phase === "done")
+      next.append(audio);
+    else {
+      document.body.append(audio);
+      fadeOut(audio, 600, true);
+    }
+  }
   $("game").replaceWith(next);
   wire(next);
 }
@@ -493,7 +506,7 @@ function wire(root) {
   else if (round.dataset.phase === "reveal") {
     fadeCovers(round);
     enterReveal(round);
-  } else {
+  } else if (round.dataset.phase !== "done") {
     fadeOut(audio);
     document.body.classList.remove("clip-live");
   }

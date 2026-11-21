@@ -143,10 +143,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
                 <Mosaic seed="" />
                 <div class="room-invite-head">
                   <h1 class="room-invite-title" data-room="category" />
-                  <p class="room-pills">
-                    <span class="room-pill" id="lobby-mode" />
-                    <span class="room-pill">{roundsPerGame} rounds</span>
-                  </p>
+                  <p class="room-invite-sub" id="lobby-mode" />
                 </div>
               </div>
               <div class="room-code-row">
@@ -197,19 +194,14 @@ export function roomPage(code: string, user: SignedInUser | null) {
               </h2>
               <ul class="room-people" id="lobby-players" />
             </section>
-            <div class="room-tv-wrap">
-              <a class="room-tv" href={`/play/room/${code}/screen`}>
-                {tvIcon}
-                <span>
-                  <strong>Show the room on a TV</strong>
-                  <small> · playing in one place? The clips play there.</small>
-                </span>
-                {chevronIcon}
-              </a>
-              <p class="room-note room-tv-note">
-                Playing in one place? The clips play on the TV.
-              </p>
-            </div>
+            <a class="room-tv" href={`/play/room/${code}/screen`}>
+              {tvIcon}
+              <span>
+                <strong>Show the room on a TV</strong>
+                <small>Playing in one place? The clips play there.</small>
+              </span>
+              {chevronIcon}
+            </a>
             <div class="results-actions room-actions" id="lobby-actions">
               <PillLink large href="/" id="change-category">
                 Change category
