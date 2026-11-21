@@ -1,3 +1,5 @@
+<a href="https://rising.sh"><picture><source media="(prefers-color-scheme: dark)" srcset="https://rising.sh/brand/rising-sh-dark.svg"><img alt="rising.sh" src="https://rising.sh/brand/rising-sh-light.svg" height="28"></picture></a>
+
 # music-stats
 
 [![Crates.io](https://img.shields.io/crates/v/music-stats?label=crates.io&logo=rust&color=orange)](https://crates.io/crates/music-stats)
