@@ -1,7 +1,12 @@
 import { base64url } from "../auth";
 import type { Env } from "../types";
 import type { Category } from "./catalog";
-import { playerKeyOf, recordOutcomes, trackKeyFor } from "./outcomes";
+import {
+  playerKeyOf,
+  recordGameStart,
+  recordOutcomes,
+  trackKeyFor,
+} from "./outcomes";
 import {
   candidatePreview,
   roundSeconds,
@@ -118,7 +123,18 @@ export async function buildGame(
     results: [],
     total: 0,
   };
-  await putGame(env, game);
+  await Promise.all([
+    putGame(env, game),
+    recordGameStart(env, {
+      id: game.id,
+      kind: "solo",
+      room: null,
+      category: category.slug,
+      mode,
+      origin: "solo",
+      players: 1,
+    }).catch((error) => console.error("solo game log failed", error)),
+  ]);
   return game;
 }
 
@@ -401,6 +417,8 @@ export async function answerRound(
       kind: "solo",
       correct,
       elapsedMs: elapsed,
+      gameId: game.id,
+      round: game.served,
     },
   ]).catch((error) => console.error("solo outcome write failed", error));
   return { game, result, outcome };

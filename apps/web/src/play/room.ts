@@ -21,7 +21,13 @@ import {
   type ResultRow,
 } from "./results";
 import { QuotaError, type Candidate } from "./sources";
-import { playerKeyOf, recordOutcomes, trackKeyFor } from "./outcomes";
+import {
+  type GameOrigin,
+  playerKeyOf,
+  recordGameStart,
+  recordOutcomes,
+  trackKeyFor,
+} from "./outcomes";
 import { getCategory } from "./catalog";
 
 export const maxPlayers = 8;
@@ -339,7 +345,8 @@ export class Room extends DurableObject<Env> {
       });
       // Picked from Up next, the game starts at once: everyone is seated
       // and their sound already works.
-      if (status === 204 && body.start === true) await this.begin(Date.now());
+      if (status === 204 && body.start === true)
+        await this.begin(Date.now(), "pick");
       return new Response(null, { status });
     }
     return new Response("not found", { status: 404 });
@@ -821,9 +828,12 @@ export class Room extends DurableObject<Env> {
 
   // Starts a fresh game in the room; a random id keeps its result rows
   // distinct from any earlier game played under a reused code.
-  private async begin(now: number) {
+  private async begin(now: number, picked?: "pick") {
     const s = this.s!;
     if (s.phase !== "lobby" && s.phase !== "done") return;
+    const origin: GameOrigin =
+      picked ??
+      (s.kind === "match" ? "match" : s.phase === "done" ? "rematch" : "start");
     for (const p of s.players) {
       p.score = 0;
       p.streak = 0;
@@ -849,6 +859,20 @@ export class Room extends DurableObject<Env> {
     s.lastActive = now;
     await this.save();
     this.broadcast();
+    if (s.categorySlug !== "")
+      await recordGameStart(
+        this.env,
+        {
+          id: s.gameId,
+          kind: s.kind,
+          room: s.code,
+          category: s.categorySlug,
+          mode: s.mode,
+          origin,
+          players: s.playedBy,
+        },
+        Math.floor(now / 1000),
+      ).catch((error) => console.error("room game log failed", error));
     await this.serveNext();
   }
 
@@ -911,6 +935,8 @@ export class Room extends DurableObject<Env> {
               kind: s.kind,
               correct: round.answers[player.id].correct,
               elapsedMs: round.answers[player.id].ms,
+              gameId: s.gameId,
+              round: round.number,
             }));
     for (const player of s.players) {
       // A player who joined mid-game has no marks for the rounds before.

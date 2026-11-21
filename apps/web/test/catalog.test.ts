@@ -197,7 +197,7 @@ describe("round outcomes", () => {
     expect(answered.status).toBe(303);
     const row = await env.DB.prepare(
       `SELECT player_key, user_id, track_key, category, kind,
-              mode, correct, elapsed_ms
+              mode, correct, elapsed_ms, game_id, round, title
        FROM round_outcomes`,
     ).first<{
       player_key: string;
@@ -212,8 +212,25 @@ describe("round outcomes", () => {
       category: "pop",
       kind: "solo",
       mode: "normal",
+      game_id: id,
+      round: 1,
+      title: expect.stringMatching(/^Song /),
     });
     expect(row!.player_key).toMatch(/^a:/);
+    expect(
+      await env.DB.prepare(
+        "SELECT kind, room, category, mode, origin, players FROM games WHERE id = ?1",
+      )
+        .bind(id)
+        .first(),
+    ).toEqual({
+      kind: "solo",
+      room: null,
+      category: "pop",
+      mode: "normal",
+      origin: "solo",
+      players: 1,
+    });
   });
 
   it("records the source decade, not the Deezer year, as the era", async () => {
