@@ -980,6 +980,66 @@ describe("rooms", () => {
     back.close();
   });
 
+  it("collects Up next votes and starts the host's pick at once", async () => {
+    await stubChart(Array.from({ length: 4 }, (_, i) => `Song ${i}`));
+    const { code, key } = await createRoom();
+    const ann = await connect(code);
+    await join(ann, "Ann", key);
+    const bob = await connect(code);
+    await join(bob, "Bob");
+    ann.send({ type: "start" });
+    await waitFor(ann, inPhase("playing"));
+    await playGame(code);
+    await waitFor(bob, inPhase("done"));
+
+    type UpNext = { slug: string; votes: number; voted: boolean; by: string };
+    const upNext = (client: Client, test: (list: UpNext[]) => boolean) =>
+      waitFor(
+        client,
+        (m) => m.phase === "done" && test((m.suggestions ?? []) as UpNext[]),
+      ).then((m) => m.suggestions as UpNext[]);
+
+    bob.send({ type: "suggest", category: "nope", mode: "normal" });
+    bob.send({ type: "suggest", category: "rock", mode: "normal" });
+    expect(await upNext(bob, (list) => list.length === 1)).toMatchObject([
+      { slug: "rock", votes: 1, voted: true, by: "Bob" },
+    ]);
+    // Suggesting what is already listed votes for it.
+    ann.send({ type: "suggest", category: "rock", mode: "normal" });
+    expect(await upNext(ann, (list) => list[0]?.votes === 2)).toMatchObject([
+      { slug: "rock", votes: 2, voted: true },
+    ]);
+
+    const switchTo = (token: string) =>
+      app.fetch(
+        new Request(`${origin}/play/room/${code}/switch`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/x-www-form-urlencoded",
+            origin,
+          },
+          body: new URLSearchParams({
+            category: "rock",
+            mode: "normal",
+            k: token,
+            start: "1",
+          }).toString(),
+        }),
+        testEnv() as never,
+      );
+    expect((await switchTo("not-the-key")).status).toBe(403);
+    expect((await switchTo(key)).status).toBe(303);
+    const next = await waitFor(
+      bob,
+      (m) => m.type === "state" && m.phase !== "done" && m.phase !== "lobby",
+    );
+    expect(next.categorySlug).toBe("rock");
+    const after = await stored(code);
+    expect(after.suggestions).toEqual([]);
+    ann.close();
+    bob.close();
+  });
+
   it("refreshes a cached category board when results are written", async () => {
     const now = Math.floor(Date.now() / 1000);
     await env.DB.prepare(
