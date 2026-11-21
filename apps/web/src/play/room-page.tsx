@@ -1,5 +1,5 @@
-import type { SignedInUser } from "../auth";
-import { SignInButtons } from "../ui/empty";
+import { providerHref, type SignedInUser } from "../auth";
+import { SaveScoreCard, SignInButtons } from "../ui/empty";
 import { Mosaic } from "../ui/person";
 import { PillButton, PillLink } from "../ui/pill";
 import { ClipPlayer } from "../ui/player";
@@ -297,6 +297,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
               <ol class="score-pips" id="score-pips" />
             </section>
             <dl class="results-stats" id="done-stats" />
+            <SaveScoreCard id="done-save" title="" next={back} hidden />
             <div class="results-actions room-actions">
               <PillLink large href="/" id="done-change">
                 Change category
@@ -333,10 +334,8 @@ export function roomPage(code: string, user: SignedInUser | null) {
             </h2>
             <ol class="board-rows" id="done-board" />
             <p class="board-foot" id="done-board-foot" hidden>
-              <a href={`/auth/github?next=${encodeURIComponent(back)}`}>
-                Sign in
-              </a>{" "}
-              to put your room scores on the board.
+              <a href={providerHref("google", back)}>Sign in</a> to put your
+              next room scores on the board.
             </p>
           </section>
         </div>

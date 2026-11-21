@@ -948,6 +948,38 @@ describe("rooms", () => {
     screen.close();
   });
 
+  it("saves a guest's finished game once they sign in from the room", async () => {
+    await stubChart(Array.from({ length: 4 }, (_, i) => `Song ${i}`));
+    const { code, key } = await createRoom();
+    const ann = await connect(code);
+    await join(ann, "Ann", key);
+    ann.send({ type: "start" });
+    await waitFor(ann, inPhase("playing"));
+    await playGame(code);
+    await waitFor(ann, inPhase("done"));
+    const guestRows = await env.DB.prepare(
+      "SELECT COUNT(*) AS n FROM game_results",
+    ).first<{ n: number }>();
+    expect(guestRows?.n).toBe(0);
+    ann.close();
+
+    const cookie = await signIn("ann");
+    const back = await connect(code, cookie);
+    await join(back, undefined, key);
+    const state = (await waitFor(
+      back,
+      (m) =>
+        m.type === "state" &&
+        (m.you as { user: boolean } | undefined)?.user === true,
+    )) as { you: { name: string } };
+    expect(state.you.name).toBe("Ann");
+    const rows = await env.DB.prepare(
+      "SELECT users.name, kind FROM game_results JOIN users ON users.id = user_id",
+    ).all<{ name: string; kind: string }>();
+    expect(rows.results).toEqual([{ name: "ann", kind: "room" }]);
+    back.close();
+  });
+
   it("refreshes a cached category board when results are written", async () => {
     const now = Math.floor(Date.now() / 1000);
     await env.DB.prepare(

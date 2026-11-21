@@ -1,5 +1,6 @@
 import type { Env } from "../types";
 import { putGame, type Game } from "./game";
+import { playerKeyOf } from "./outcomes";
 
 export type GameKind = "solo" | "room" | "match";
 
@@ -51,6 +52,16 @@ export async function recordResults(env: Env, rows: ResultRow[]) {
       env.CACHE?.delete(`play:catboard:${category}`).catch(() => undefined),
     ),
   );
+}
+
+// A guest who signs in from the game-over page keeps the game they just
+// played: sign-in keeps the browser's anonymous id, and that id is the
+// game's player key. Returns whether the game changed hands.
+export function claimGame(game: Game, userId: number, anon: string | null) {
+  if (game.userId || anon === null || game.phase !== "done") return false;
+  if (game.playerKey !== playerKeyOf(null, anon)) return false;
+  game.userId = userId;
+  return true;
 }
 
 // Writes the row at the finish transition only; the flag in KV turns every

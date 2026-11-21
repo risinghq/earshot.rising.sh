@@ -15,6 +15,7 @@ import {
   roundsPerGame,
   scoreFor,
   serveRound,
+  type Game,
 } from "../src/play/game";
 import type { Candidate } from "../src/play/sources";
 
@@ -108,6 +109,23 @@ async function next(id: string) {
     }),
     testEnv() as never,
   );
+}
+
+async function signedIn(name: string) {
+  const token = `sess_1_${"s".repeat(30)}`;
+  const hash = new Uint8Array(
+    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token)),
+  );
+  const now = Math.floor(Date.now() / 1000);
+  await env.DB.batch([
+    env.DB.prepare(
+      "INSERT INTO users (id, github_id, name, is_public, created_at) VALUES (1, 1, ?1, 1, ?2)",
+    ).bind(name, now),
+    env.DB.prepare(
+      "INSERT INTO sessions (hash, user_id, expires_at) VALUES (?1, 1, ?2)",
+    ).bind(hash, now + 86400),
+  ]);
+  return `__Host-session=${token}`;
 }
 
 const get = (path: string) =>
@@ -505,6 +523,64 @@ describe("the play hub", () => {
     expect(stored.phase).toBe("done");
     const done = await get(`/play/${id}`);
     expect(await done.text()).toContain("Game over");
+  });
+
+  it("offers a guest's finished game to the account they sign in with", async () => {
+    const finished = (id: string): Game => ({
+      id,
+      userId: null,
+      playerKey: "a:guest-1",
+      mode: "normal",
+      categorySlug: "pop",
+      categoryName: "Pop",
+      candidates: [],
+      pool: [],
+      next: 0,
+      served: 1,
+      phase: "done",
+      current: null,
+      results: [
+        {
+          trackKey: "d:1",
+          title: "Song 0",
+          artist: "Artist",
+          cover: null,
+          link: null,
+          answer: "Song 0",
+          correct: true,
+          timedOut: false,
+          score: 900,
+          elapsedMs: 1500,
+          choices: [],
+        },
+      ],
+      total: 900,
+    });
+    const id = "g".repeat(22);
+    await putGame(testEnv() as never, finished(id));
+    const guestPage = await (await get(`/play/${id}`)).text();
+    expect(guestPage).toContain("Continue with Google");
+    expect(guestPage).toContain("#1 on Pop");
+    expect(guestPage).toContain(
+      `/auth/google?next=${encodeURIComponent(`/play/${id}`)}`,
+    );
+
+    const session = await signedIn("ann");
+    const page = (cookie: string) =>
+      app.fetch(
+        new Request(`${origin}/play/${id}`, { headers: { cookie } }),
+        testEnv() as never,
+      );
+    const rows = () =>
+      env.DB.prepare("SELECT user_id, score FROM game_results").all();
+    // Another browser's guest id does not take the game.
+    await page(`${session}; __Host-play-id=guest-2`);
+    expect((await rows()).results).toEqual([]);
+    const claimed = await (
+      await page(`${session}; __Host-play-id=guest-1`)
+    ).text();
+    expect(claimed).not.toContain("Continue with Google");
+    expect((await rows()).results).toEqual([{ user_id: 1, score: 900 }]);
   });
 
   it("refuses answers once a game is finished or gone", async () => {

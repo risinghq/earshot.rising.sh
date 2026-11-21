@@ -90,6 +90,42 @@ export function SignInButtons({ next }: { next: string }) {
   );
 }
 
+// The guest's offer on a game-over screen. Google leads because most guests
+// arrive from a friend's link on a phone, where a Google account is the one
+// already signed in.
+export function SaveScoreCard({
+  id,
+  title,
+  next,
+  hidden = false,
+}: {
+  id?: string;
+  title: string;
+  next: string;
+  hidden?: boolean;
+}) {
+  return (
+    <section class="save-card" id={id} hidden={hidden}>
+      <b class="save-title" data-save-title>
+        {title}
+      </b>
+      <p>
+        Sign in and this game stays on your profile and the boards, with every
+        game you play next.
+      </p>
+      <div class="sign-in-buttons">
+        <a class="btn is-lg is-block" href={providerHref("google", next)}>
+          {googleIcon}
+          Continue with Google
+        </a>
+      </div>
+      <a class="save-alt" href={providerHref("github", next)}>
+        or sign in with GitHub
+      </a>
+    </section>
+  );
+}
+
 export function SignInCard({
   title,
   body,

@@ -4,7 +4,7 @@ import { Section } from "../ui/section";
 import { Segmented } from "../ui/segmented";
 import { ClipPlayer } from "../ui/player";
 import { Page } from "../ui/shell";
-import { EmptyState } from "../ui/empty";
+import { EmptyState, SaveScoreCard } from "../ui/empty";
 import { BackLink, Monogram, Mosaic, playIcon, soundMark } from "../ui/person";
 import type { Category } from "./catalog";
 import { forYouSlug } from "./foryou";
@@ -14,7 +14,7 @@ import type { BoardEntry, BoardPeriod, CategoryBoardEntry } from "./results";
 import { categoryBoardDays, categoryBoardSize } from "./results";
 import { roundSeconds, roundsPerGame } from "./game";
 import { defaultMode, modes, type Choice, type Mode } from "./quiz";
-import type { SignedInUser } from "../auth";
+import { providerHref, type SignedInUser } from "../auth";
 import type { ArtistHit, Preview } from "./sources";
 
 export const modeNames: Record<Mode, string> = {
@@ -1215,6 +1215,13 @@ export function finalPage(
   const ownBest = board.find((entry) => entry.name === user?.name)?.score ?? 0;
   const newBest = hasBoard && user !== null && game.total > ownBest;
   const emptyBoard = hasBoard && user === null && board.length === 0;
+  const here = `/play/${game.id}`;
+  const saveTitle =
+    user !== null || game.total === 0
+      ? null
+      : placed?.rank
+        ? `That's #${placed.rank} on ${game.categoryName}`
+        : `Keep your ${game.total.toLocaleString("en-US")} points`;
   const stats = [
     { label: "Correct", value: `${correct}/${game.results.length}` },
     { label: "Best streak", value: String(bestStreak(game.results)) },
@@ -1272,6 +1279,9 @@ export function finalPage(
                 </div>
               ))}
             </dl>
+            {saveTitle !== null && (
+              <SaveScoreCard title={saveTitle} next={here} />
+            )}
             <div class="results-actions">
               <form method="post" action="/play">
                 <input
@@ -1309,7 +1319,7 @@ export function finalPage(
                   <li />
                   <li />
                 </ol>
-                <a class="board-claim" href="/auth/github">
+                <a class="board-claim" href={providerHref("google", here)}>
                   Sign in to claim it
                 </a>
               </div>
@@ -1339,10 +1349,10 @@ export function finalPage(
                   </li>
                 ))}
               </ol>
-              {user === null && (
+              {user === null && saveTitle === null && (
                 <p class="board-foot">
-                  <a href="/auth/github">Sign in</a> to keep this score on the
-                  board.
+                  <a href={providerHref("google", here)}>Sign in</a> to put your
+                  next score on the board.
                 </p>
               )}
             </section>
