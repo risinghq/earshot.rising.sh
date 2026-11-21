@@ -1,6 +1,7 @@
 import { Hono, type Context } from "hono";
 import { csrf } from "hono/csrf";
 import type { SignedInUser } from "./auth";
+import { incomingRequests, PeopleSwitch } from "./friends";
 import {
   blend,
   youtubePlaylistUrl,
@@ -11,15 +12,22 @@ import { memberOnly } from "./sign-in";
 import type { Env } from "./types";
 import { EmptyState } from "./ui/empty";
 import { Notice } from "./ui/notice";
-import { PillButton } from "./ui/pill";
-import { Playlist } from "./ui/playlist";
-import { Section } from "./ui/section";
+import {
+  BackLink,
+  Cover,
+  Monogram,
+  MonoStack,
+  Mosaic,
+  playIcon,
+} from "./ui/person";
 import { Page } from "./ui/shell";
 
 const recentDays = 90;
 const playlistLength = 25;
 const cacheSeconds = 600;
 const nameLength = 60;
+const stackSize = 3;
+const foldRows = 8;
 
 interface CandidateRow {
   track_id: number;
@@ -69,6 +77,10 @@ interface Group {
   id: number;
   name: string;
   creator_id: number;
+}
+
+interface GroupCard extends Group {
+  names: string[];
 }
 
 type GroupsContext = Context<{
@@ -147,131 +159,130 @@ async function cachedPlaylist(env: Env, group: Group, members: Member[]) {
   return items;
 }
 
-function memberName(member: Member) {
-  return member.is_public === 1 ? (
-    <a href={`/u/${encodeURIComponent(member.name)}`}>{member.name}</a>
-  ) : (
-    member.name
+const groupSeed = (group: Group) => group.name;
+
+const count = (n: number, one: string, many: string) =>
+  `${n} ${n === 1 ? one : many}`;
+
+const chevronRight = (
+  <svg class="chev" viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M9 5l7 7-7 7" />
+  </svg>
+);
+
+function ErrorLine({ error }: { error?: string }) {
+  return error === undefined ? null : (
+    <p class="form-error" role="alert">
+      <b>Error:</b> {error}
+    </p>
   );
 }
 
-function playlistBlock(items: PartyTrack[]) {
-  const missing = items.filter((item) => item.videoId === null);
-  const url = youtubePlaylistUrl(items);
-  return items.length === 0 ? (
-    <EmptyState
-      title="No plays yet"
-      body="Nobody in this group has any plays yet, so there is nothing to blend."
-    />
-  ) : (
-    <>
-      <div class="stack">
-        {url !== null && (
-          <div>
-            <a class="pill primary" href={url} target="_blank" rel="noreferrer">
-              Play on YouTube
-            </a>
-          </div>
-        )}
-        <p class="hint">
-          {url === null
-            ? "None of these tracks has a YouTube link yet."
-            : missing.length === 0
-              ? "Every track opens on YouTube."
-              : `${missing.length} of ${items.length} tracks have no YouTube link yet.`}{" "}
-          The playlist rebuilds from the latest plays as members come and go.
+function GroupList({ groups }: { groups: GroupCard[] }) {
+  if (groups.length === 0)
+    return (
+      <div class="card">
+        <p class="people-none">
+          No groups yet. Make one, then add friends to it.
         </p>
       </div>
-      <Section title="Playlist" aside={`${items.length} tracks`}>
-        <Playlist items={items} />
-      </Section>
-    </>
+    );
+  return (
+    <ul class="group-cards">
+      {groups.map((group) => (
+        <li key={group.id}>
+          <a class="group-card" href={`/groups/${group.id}`}>
+            <Mosaic seed={groupSeed(group)} />
+            <span class="body">
+              <span class="name">{group.name}</span>
+              <span class="members">
+                <MonoStack names={group.names.slice(0, stackSize)} />
+                {count(group.names.length, "member", "members")}
+              </span>
+            </span>
+            {chevronRight}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function NewGroup({ friends, error }: { friends: Member[]; error?: string }) {
+  return (
+    <form class="card is-pad new-group" method="post" action="/groups">
+      <h2 class="card-title">New group</h2>
+      <ErrorLine error={error} />
+      <div class="form-block">
+        <label class="form-label" for="name">
+          Name
+        </label>
+        <input
+          class="field"
+          id="name"
+          name="name"
+          type="text"
+          maxlength={nameLength}
+          required
+          spellcheck={false}
+          autocomplete="off"
+        />
+      </div>
+      <div class="form-block" role="group" aria-labelledby="pick-label">
+        <span class="form-label" id="pick-label">
+          Add friends
+        </span>
+        {friends.length === 0 ? (
+          <span class="form-hint">
+            Add friends on the <a href="/friends">Friends</a> page to bring them
+            in.
+          </span>
+        ) : (
+          <div class="pick-list">
+            {friends.map((friend) => (
+              <label class="pick-row" key={friend.id}>
+                <Monogram name={friend.name} />
+                <span class="name">{friend.name}</span>
+                <input
+                  class="check"
+                  type="checkbox"
+                  name="member"
+                  value={friend.id}
+                />
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+      <button class="btn is-primary is-lg is-block">Make the group</button>
+    </form>
   );
 }
 
 function listPage(
   user: SignedInUser,
-  groups: Array<Group & { members: number }>,
-  friends: Member[],
+  data: { groups: GroupCard[]; friends: Member[]; requests: number },
   options: { error?: string },
 ) {
   return Page({
     title: "Groups",
     user,
+    nav: "groups",
     children: (
       <>
-        <div class="page-head">
-          <h1>Groups</h1>
-          <p>
-            A group blends what its members play into one playlist that opens on
-            YouTube.
-          </p>
-        </div>
-        {options.error !== undefined && (
-          <p class="form-error" role="alert">
-            <b>Error:</b> {options.error}
-          </p>
-        )}
-        <div class="duo">
-          <Section title="Your groups" aside={`${groups.length}`}>
-            {groups.length === 0 ? (
-              <p class="muted">
-                No groups yet. Make one, then add friends to it.
-              </p>
-            ) : (
-              <ul class="rows">
-                {groups.map((group) => (
-                  <li key={group.id}>
-                    <span class="track">
-                      <b>
-                        <a href={`/groups/${group.id}`}>{group.name}</a>
-                      </b>
-                      <small>
-                        {group.members}{" "}
-                        {group.members === 1 ? "member" : "members"}
-                      </small>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Section>
-          <Section title="New group">
-            <form method="post" action="/groups" class="stack">
-              <div class="field">
-                <label for="name">Name</label>
-                <input
-                  id="name"
-                  name="name"
-                  type="text"
-                  maxlength={nameLength}
-                  required
-                  spellcheck={false}
-                  autocomplete="off"
-                />
-              </div>
-              {friends.length > 0 && (
-                <div class="field">
-                  <span class="label">Add friends</span>
-                  <div class="stack">
-                    {friends.map((friend) => (
-                      <label class="check" key={friend.id}>
-                        <input
-                          type="checkbox"
-                          name="member"
-                          value={friend.id}
-                        />
-                        <span>{friend.name}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div>
-                <PillButton variant="primary">Make the group</PillButton>
-              </div>
-            </form>
-          </Section>
+        <header class="head">
+          <div>
+            <h1>Groups</h1>
+            <p class="lead">
+              A group blends what its members play into one playlist that opens
+              on YouTube.
+            </p>
+          </div>
+          <PeopleSwitch current="groups" requests={data.requests} />
+        </header>
+        <div class="groups">
+          <GroupList groups={data.groups} />
+          <NewGroup friends={data.friends} error={options.error} />
         </div>
       </>
     ),
@@ -286,99 +297,277 @@ interface GroupPageData {
   mine: boolean;
 }
 
+function MemberWho({ member }: { member: Member }) {
+  const inner = (
+    <>
+      <Monogram name={member.name} />
+      <span class="who-text">
+        <span class="name">{member.name}</span>
+      </span>
+    </>
+  );
+  return member.is_public === 1 ? (
+    <a class="who" href={`/u/${encodeURIComponent(member.name)}`}>
+      {inner}
+    </a>
+  ) : (
+    <span class="who">{inner}</span>
+  );
+}
+
+function missingNote(items: PartyTrack[]) {
+  const missing = items.filter((item) => item.videoId === null).length;
+  if (missing === items.length)
+    return "None of these tracks has a YouTube link yet.";
+  if (missing === 0) return "Every track opens on YouTube.";
+  return `${missing} of ${items.length} tracks have no YouTube link and are skipped.`;
+}
+
+function GroupHero({ data }: { data: GroupPageData }) {
+  const { group, members, items } = data;
+  const url = youtubePlaylistUrl(items);
+  const sub = `${count(members.length, "member", "members")} · ${count(items.length, "track", "tracks")}`;
+  const play = (
+    <>
+      {playIcon}
+      Play on YouTube
+    </>
+  );
+  return (
+    <section
+      class={
+        items.length === 0
+          ? "hero-stage is-group is-empty"
+          : "hero-stage is-group"
+      }
+    >
+      {items.length === 0 ? (
+        <span class="mosaic is-empty" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
+      ) : (
+        <Mosaic seed={groupSeed(group)} />
+      )}
+      <div class="hero-text">
+        <p class="kicker">Group blend</p>
+        <h1 class="hero-title">{group.name}</h1>
+        <p class="hero-sub with-stack">
+          <MonoStack names={members.slice(0, stackSize).map((m) => m.name)} />
+          <span>{sub}</span>
+        </p>
+      </div>
+      <div class="hero-foot">
+        {items.length === 0 && (
+          <div class="hero-empty">
+            <h2>Nothing to blend yet</h2>
+            <p>
+              Nobody in this group has any plays yet. When someone connects a
+              source in Settings, their plays show up here.
+            </p>
+          </div>
+        )}
+        {url === null ? (
+          <button class="btn is-primary is-play" type="button" disabled>
+            {play}
+          </button>
+        ) : (
+          <a
+            class="btn is-primary is-play"
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {play}
+          </a>
+        )}
+        {items.length > 0 && <p class="hero-note">{missingNote(items)}</p>}
+      </div>
+    </section>
+  );
+}
+
+// The script folds a long playlist to its first rows and shows the button
+// that unfolds it, so without JavaScript every row stays visible.
+const foldScript = `
+const card = document.getElementById("playlist");
+const more = document.getElementById("show-all");
+if (card && more) {
+  card.classList.add("is-folded");
+  more.hidden = false;
+  more.addEventListener("click", () => {
+    card.classList.remove("is-folded");
+    more.remove();
+  });
+}
+`;
+
+function PlaylistCard({ items }: { items: PartyTrack[] }) {
+  return (
+    <section class="top-card playlist-card" id="playlist">
+      <header>
+        <h2>Playlist</h2>
+        <span class="count">{count(items.length, "track", "tracks")}</span>
+      </header>
+      <ol>
+        {items.map((item, index) => (
+          <li
+            class={item.videoId === null ? "trow is-missing" : "trow"}
+            key={item.trackId}
+          >
+            <span class="rank">{index + 1}</span>
+            <Cover seed={`${item.title} ${item.artist}`} />
+            <div class="body">
+              <span class="title">{item.title}</span>
+              <span class="artist">{item.artist}</span>
+            </div>
+            <span class="art">{item.artist}</span>
+            {item.videoId === null ? (
+              <span class="tag">No YouTube link</span>
+            ) : (
+              <span />
+            )}
+          </li>
+        ))}
+      </ol>
+      {items.length > foldRows && (
+        <>
+          <button class="show-all" id="show-all" type="button" hidden>
+            Show all {items.length}
+          </button>
+          <script
+            type="module"
+            dangerouslySetInnerHTML={{ __html: foldScript }}
+          />
+        </>
+      )}
+    </section>
+  );
+}
+
+// The manage panel is a disclosure on a phone. On desktop a script opens it
+// and the CSS hides its summary, so without JavaScript it stays a working
+// disclosure.
+const manageScript = `
+const manage = document.getElementById("manage");
+if (manage && matchMedia("(min-width: 900px)").matches) manage.open = true;
+`;
+
+function ManageGroup({ data, error }: { data: GroupPageData; error?: string }) {
+  const { group, friends, mine } = data;
+  return (
+    <details class="disclosure manage" id="manage" open={error !== undefined}>
+      <summary>Manage group</summary>
+      <div class="manage-body">
+        <ErrorLine error={error} />
+        {friends.length > 0 && (
+          <form
+            class="form-block"
+            method="post"
+            action={`/groups/${group.id}/members`}
+          >
+            <label class="form-label" for="add-member">
+              Add one of your friends
+            </label>
+            <div class="field-line is-inline">
+              <select class="field" id="add-member" name="user">
+                {friends.map((friend) => (
+                  <option value={friend.id} key={friend.id}>
+                    {friend.name}
+                  </option>
+                ))}
+              </select>
+              <button class="btn is-form">Add</button>
+            </div>
+          </form>
+        )}
+        {mine && (
+          <form
+            class="form-block"
+            method="post"
+            action={`/groups/${group.id}/rename`}
+          >
+            <label class="form-label" for="name">
+              Group name
+            </label>
+            <div class="field-line is-inline">
+              <input
+                class="field"
+                id="name"
+                name="name"
+                type="text"
+                value={group.name}
+                maxlength={nameLength}
+                required
+                spellcheck={false}
+                autocomplete="off"
+              />
+              <button class="btn is-form">Rename</button>
+            </div>
+          </form>
+        )}
+        <form
+          class="leave-row"
+          method="post"
+          action={`/groups/${group.id}/leave`}
+        >
+          <span class="is-wide">Your plays stop feeding this blend.</span>
+          <button class="btn is-leave">Leave the group</button>
+        </form>
+      </div>
+      <script
+        type="module"
+        dangerouslySetInnerHTML={{ __html: manageScript }}
+      />
+    </details>
+  );
+}
+
 function groupPage(
   user: SignedInUser,
   data: GroupPageData,
   options: { notice?: string; error?: string },
 ) {
-  const { group, members, friends, items, mine } = data;
+  const { group, members, items } = data;
   return Page({
     title: group.name,
     user,
+    nav: "groups",
     children: (
-      <>
-        <div class="page-head">
-          <h1>{group.name}</h1>
-          <p class="meta">
-            {members.length} {members.length === 1 ? "member" : "members"}
-          </p>
+      <div class="board is-group">
+        <div class="board-main">
+          <BackLink href="/groups" label="Groups" />
+          {options.notice !== undefined && <Notice>{options.notice}</Notice>}
+          <GroupHero data={data} />
+          {items.length === 0 ? (
+            <a class="btn is-lg is-block" href="/settings#sources">
+              Connect a source
+            </a>
+          ) : (
+            <PlaylistCard items={items} />
+          )}
         </div>
-        {options.notice !== undefined && <Notice>{options.notice}</Notice>}
-        {options.error !== undefined && (
-          <p class="form-error" role="alert">
-            <b>Error:</b> {options.error}
-          </p>
-        )}
-        <div class="split">
-          <div class="stack">{playlistBlock(items)}</div>
-          <div class="stack">
-            <Section title="Members">
-              <ul class="rows">
-                {members.map((member) => (
-                  <li key={member.id}>
-                    <span class="track">
-                      <b>{memberName(member)}</b>
-                      {member.id === group.creator_id && (
-                        <small>made the group</small>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              {friends.length > 0 && (
-                <form
-                  method="post"
-                  action={`/groups/${group.id}/members`}
-                  class="stack"
-                >
-                  <div class="field">
-                    <label for="add-member">Add one of your friends</label>
-                    <select id="add-member" name="user">
-                      {friends.map((friend) => (
-                        <option value={friend.id} key={friend.id}>
-                          {friend.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <PillButton small>Add to the group</PillButton>
-                  </div>
-                </form>
-              )}
-            </Section>
-            {mine && (
-              <Section title="Rename">
-                <form
-                  method="post"
-                  action={`/groups/${group.id}/rename`}
-                  class="stack"
-                >
-                  <div class="field">
-                    <label for="name">Name</label>
-                    <input
-                      id="name"
-                      name="name"
-                      type="text"
-                      value={group.name}
-                      maxlength={nameLength}
-                      required
-                      spellcheck={false}
-                      autocomplete="off"
-                    />
-                  </div>
-                  <div>
-                    <PillButton small>Rename</PillButton>
-                  </div>
-                </form>
-              </Section>
-            )}
-            <form method="post" action={`/groups/${group.id}/leave`}>
-              <PillButton small>Leave the group</PillButton>
-            </form>
+        <section class="people group-side">
+          <header>
+            <h2>Members</h2>
+          </header>
+          <div class="card">
+            <ul>
+              {members.map((member) => (
+                <li class="prow" key={member.id}>
+                  <MemberWho member={member} />
+                  {member.id === group.creator_id && (
+                    <span class="tag">Made the group</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <ManageGroup data={data} error={options.error} />
           </div>
-        </div>
-      </>
+        </section>
+      </div>
     ),
   });
 }
@@ -389,6 +578,7 @@ function missing(context: GroupsContext) {
     Page({
       title: "Group",
       user,
+      nav: "groups",
       children: (
         <EmptyState
           heading="h1"
@@ -416,40 +606,67 @@ groupsApp.use("*", csrf());
 
 groupsApp.use(
   "*",
-  memberOnly(
-    "Groups",
-    "A group blends what its members play into one playlist. Sign in to see yours.",
-  ),
+  memberOnly({
+    title: "Groups",
+    heading: "Sign in to see your groups",
+    body: "A group blends what its members play into one playlist.",
+    nav: "groups",
+  }),
 );
 
 async function listData(context: GroupsContext) {
   const user = context.get("user");
-  const [groups, friends] = await context.env.DB.batch([
-    context.env.DB.prepare(
-      `SELECT friend_groups.id, friend_groups.name, friend_groups.creator_id,
-              (SELECT COUNT(*) FROM group_members
-               WHERE group_members.group_id = friend_groups.id) AS members
-       FROM group_members
-       JOIN friend_groups ON friend_groups.id = group_members.group_id
-       WHERE group_members.user_id = ?1
-       ORDER BY friend_groups.name`,
-    ).bind(user.id),
-    context.env.DB.prepare(
-      `SELECT users.id, users.name, users.is_public
-       FROM friendships JOIN users ON users.id = friendships.friend_id
-       WHERE friendships.user_id = ?1 ORDER BY users.name`,
-    ).bind(user.id),
+  const db = context.env.DB;
+  const [groups, names, friends] = await db.batch([
+    db
+      .prepare(
+        `SELECT friend_groups.id, friend_groups.name, friend_groups.creator_id
+         FROM group_members
+         JOIN friend_groups ON friend_groups.id = group_members.group_id
+         WHERE group_members.user_id = ?1
+         ORDER BY friend_groups.name`,
+      )
+      .bind(user.id),
+    db
+      .prepare(
+        `SELECT everyone.group_id, users.name
+         FROM group_members AS mine
+         JOIN group_members AS everyone ON everyone.group_id = mine.group_id
+         JOIN users ON users.id = everyone.user_id
+         WHERE mine.user_id = ?1
+         ORDER BY users.name`,
+      )
+      .bind(user.id),
+    db
+      .prepare(
+        `SELECT users.id, users.name, users.is_public
+         FROM friendships JOIN users ON users.id = friendships.friend_id
+         WHERE friendships.user_id = ?1 ORDER BY users.name`,
+      )
+      .bind(user.id),
   ]);
+  const byGroup = new Map<number, string[]>();
+  for (const row of names.results as unknown as Array<{
+    group_id: number;
+    name: string;
+  }>) {
+    const list = byGroup.get(row.group_id) ?? [];
+    list.push(row.name);
+    byGroup.set(row.group_id, list);
+  }
   return {
-    groups: groups.results as unknown as Array<Group & { members: number }>,
+    groups: (groups.results as unknown as Group[]).map((group) => ({
+      ...group,
+      names: byGroup.get(group.id) ?? [],
+    })),
     friends: friends.results as unknown as Member[],
+    requests: await incomingRequests(db, user.id),
   };
 }
 
 groupsApp.get("/", async (context) => {
   const user = context.get("user");
-  const { groups, friends } = await listData(context);
-  return context.html(listPage(user, groups, friends, {}));
+  return context.html(listPage(user, await listData(context), {}));
 });
 
 groupsApp.post("/", async (context) => {
@@ -459,9 +676,8 @@ groupsApp.post("/", async (context) => {
   const body = await context.req.parseBody();
   const name = readName(body);
   if ([...name].length === 0 || [...name].length > nameLength) {
-    const { groups, friends } = await listData(context);
     return context.html(
-      listPage(user, groups, friends, {
+      listPage(user, await listData(context), {
         error: "The name needs 1 to 60 characters.",
       }),
       400,

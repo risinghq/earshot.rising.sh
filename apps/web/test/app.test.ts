@@ -541,9 +541,12 @@ describe("profile API", () => {
     const response = await SELF.fetch("https://earshot.rising.sh/u/alice");
     expect(response.status).toBe(200);
     const html = await response.text();
-    expect(html).toContain("<h1>alice</h1>");
-    expect(html).toContain("Sources: Spotify, YouTube Music.");
-    expect(html).toMatch(/Updated\s*<time datetime="[^"]+">[\d-]+ [\d:]+ UTC/);
+    expect(html).toContain('<h1 class="profile-name">alice</h1>');
+    expect(html).toContain('<span class="source-pill">Spotify</span>');
+    expect(html).toContain('<span class="source-pill">YouTube Music</span>');
+    expect(html).toMatch(
+      /Updated\s*<time datetime="[^"]+">\d{1,2} \w{3} \d{4}, \d\d:\d\d UTC/,
+    );
     expect(html).toContain('aria-current="page"');
   });
 

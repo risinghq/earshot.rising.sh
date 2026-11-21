@@ -12,6 +12,8 @@ export interface ResultRow {
   score: number;
   rank: number;
   players: number;
+  correct: number;
+  rounds: number;
 }
 
 // The row id is the game's identity for that player, so a finish processed
@@ -23,8 +25,9 @@ export async function recordResults(env: Env, rows: ResultRow[]) {
     rows.map((row) =>
       env.DB.prepare(
         `INSERT OR IGNORE INTO game_results
-         (id, user_id, finished_at, category, kind, score, rank, players)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`,
+         (id, user_id, finished_at, category, kind, score, rank, players,
+          correct, rounds)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)`,
       ).bind(
         row.id,
         row.userId,
@@ -34,6 +37,8 @@ export async function recordResults(env: Env, rows: ResultRow[]) {
         row.score,
         row.rank,
         row.players,
+        row.correct,
+        row.rounds,
       ),
     ),
   );
@@ -68,6 +73,8 @@ export async function recordGame(env: Env, game: Game) {
       score: game.total,
       rank: 1,
       players: 1,
+      correct: game.results.filter((result) => result.correct).length,
+      rounds: game.results.length,
     },
   ]);
   game.resultWritten = true;
@@ -125,6 +132,11 @@ export async function readBoard(env: Env, period: BoardPeriod) {
 export interface CategoryBoardEntry {
   name: string;
   score: number;
+  // Of the best game. Null for games written before migration 0018; absent
+  // from a board cached before it.
+  correct?: number | null;
+  rounds?: number | null;
+  finished_at?: number;
 }
 
 export const categoryBoardDays = 15;
@@ -139,8 +151,12 @@ export async function readCategoryBoard(env: Env, slug: string) {
   );
   if (cached) return cached;
   const since = Math.floor(Date.now() / 1000) - categoryBoardDays * 86400;
+  // SQLite fills bare columns beside a lone MAX() from the row that holds the
+  // maximum, so correct, rounds and finished_at describe the best game.
   const rows = await env.DB.prepare(
-    `SELECT users.name, MAX(game_results.score) AS score
+    `SELECT users.name, MAX(game_results.score) AS score,
+            game_results.correct, game_results.rounds,
+            game_results.finished_at
      FROM game_results
      JOIN users ON users.id = game_results.user_id
      WHERE users.is_public = 1 AND users.admin_hidden = 0

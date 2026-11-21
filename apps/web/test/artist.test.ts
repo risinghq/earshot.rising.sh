@@ -397,9 +397,22 @@ describe("category board", () => {
     await addResult(2, "pop", inside, 2000);
     await addResult(3, "pop", inside, 9999);
     const entries = await readCategoryBoard(testEnv() as never, "pop");
+    // The other columns come from the best game, not the latest one.
     expect(entries).toEqual([
-      { name: "ann", score: 5000 },
-      { name: "bob", score: 2000 },
+      {
+        name: "ann",
+        score: 5000,
+        correct: null,
+        rounds: null,
+        finished_at: inside,
+      },
+      {
+        name: "bob",
+        score: 2000,
+        correct: null,
+        rounds: null,
+        finished_at: inside,
+      },
     ]);
     const weekly = await (await get("/play/board")).text();
     expect(weekly).toContain("/play/board?category=pop");
@@ -414,7 +427,7 @@ describe("category board", () => {
     await addResult(1, "artist-27", now - 60, 4300);
     await addResult(1, "pop", now - 60, 6100);
     const entries = await readCategoryBoard(testEnv() as never, "artist-27");
-    expect(entries).toEqual([{ name: "ann", score: 4300 }]);
+    expect(entries).toMatchObject([{ name: "ann", score: 4300 }]);
     // Tiles show the name and eras only; scores live one click away on the board.
     const body = await (await get("/")).text();
     expect(body).not.toContain("/u/ann");

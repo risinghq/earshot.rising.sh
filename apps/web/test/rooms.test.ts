@@ -916,11 +916,11 @@ describe("rooms", () => {
       board: { name: string; score: number }[];
     };
     expect(done.phase).toBe("done");
-    expect(done.board).toEqual([{ name: "pro", score: 7000 }]);
+    expect(done.board).toMatchObject([{ name: "pro", score: 7000 }]);
     const screenDone = (await waitFor(screen, inPhase("done"))) as {
       board: { name: string; score: number }[];
     };
-    expect(screenDone.board).toEqual([{ name: "pro", score: 7000 }]);
+    expect(screenDone.board).toMatchObject([{ name: "pro", score: 7000 }]);
     ann.close();
     screen.close();
   });
@@ -943,10 +943,12 @@ describe("rooms", () => {
         score: 5000,
         rank: 1,
         players: 2,
+        correct: 7,
+        rounds: 10,
       },
     ]);
     expect(await readCategoryBoard(testEnv() as never, "pop")).toEqual([
-      { name: "pro", score: 5000 },
+      { name: "pro", score: 5000, correct: 7, rounds: 10, finished_at: now },
     ]);
   });
 

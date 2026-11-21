@@ -621,7 +621,7 @@ describe("points board", () => {
     const bobRow = body.indexOf("/u/bob");
     expect(annRow).toBeGreaterThan(-1);
     expect(bobRow).toBeGreaterThan(annRow);
-    expect(body).toContain("8000");
+    expect(body).toContain("8,000");
     // A one-player room writes points but never a win.
     expect(body).toContain("0 wins");
     expect(body).not.toContain("/u/shy");
@@ -631,6 +631,6 @@ describe("points board", () => {
         testEnv() as never,
       )
     ).text();
-    expect(all).toContain("17000");
+    expect(all).toContain("17,000");
   });
 });

@@ -1,14 +1,20 @@
 import { Hono, type Context } from "hono";
 import { csrf } from "hono/csrf";
-import { base64url, validName, type SignedInUser } from "./auth";
+import {
+  base64url,
+  sessionUser,
+  signInHref,
+  validName,
+  type SignedInUser,
+} from "./auth";
 import { memberOnly } from "./sign-in";
 import type { Env } from "./types";
 import { EmptyState } from "./ui/empty";
 import { Notice } from "./ui/notice";
-import { PillButton } from "./ui/pill";
-import { Section } from "./ui/section";
+import { Monogram } from "./ui/person";
+import { Segmented } from "./ui/segmented";
 import { Page } from "./ui/shell";
-import { TokenDisplay } from "./ui/token";
+import { CopyButton, TokenDisplay, TokenField } from "./ui/token";
 
 const pendingLimit = 20;
 
@@ -112,130 +118,263 @@ function friendsPage(data: PageData, options: PageOptions, origin: string) {
       <b>Error:</b> {error}
     </p>
   );
-  const friendName = (friend: FriendRow) =>
-    friend.is_public === 1 ? (
-      <a href={`/u/${encodeURIComponent(friend.name)}`}>{friend.name}</a>
-    ) : (
-      friend.name
-    );
+  const linkUrl = `${origin}/friends/add/${data.link}`;
+  const nameField = (
+    <div class="field-wrap">
+      <span class="prefix">/u/</span>
+      <input
+        class="field"
+        id="name"
+        name="name"
+        type="text"
+        maxlength={39}
+        required
+        spellcheck={false}
+        autocomplete="off"
+        {...invalid("name")}
+      />
+    </div>
+  );
+  const alone =
+    friends.length === 0 && incoming.length === 0 && outgoing.length === 0;
   return Page({
     title: "Friends",
     user,
+    nav: "groups",
     children: (
       <>
-        <div class="page-head">
-          <h1>Friends</h1>
-          <p>
-            Friends fill a group together, and the group's playlist blends what
-            each member plays.
-          </p>
-        </div>
+        <header class="head">
+          <div>
+            <h1>Friends</h1>
+            <p class="lead">
+              Friends fill a group together, and the group’s playlist blends
+              what each member plays.
+            </p>
+          </div>
+          <PeopleSwitch current="friends" requests={incoming.length} />
+        </header>
         {notice !== undefined && <Notice>{notice}</Notice>}
         {topError}
-        <div class="duo">
-          <div class="stack">
-            <Section title="Friends" aside={`${friends.length}`}>
-              {friends.length === 0 ? (
-                <p class="muted">
-                  No friends yet. Send a request below, or share your friend
-                  link.
-                </p>
-              ) : (
-                <ul class="rows">
-                  {friends.map((friend) => (
-                    <li key={friend.id}>
-                      <span class="track">
-                        <b>{friendName(friend)}</b>
-                      </span>
-                      <form method="post" action="/friends/remove">
-                        <input type="hidden" name="id" value={friend.id} />
-                        <PillButton small>Remove</PillButton>
-                      </form>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Section>
-            <Section title="Requests">
-              {incoming.length === 0 && outgoing.length === 0 ? (
-                <p class="muted">No pending requests.</p>
-              ) : (
-                <ul class="rows">
-                  {incoming.map((request) => (
-                    <li key={request.id}>
-                      <span class="track">
-                        <b>{request.name}</b>
-                        <small>asked to be your friend</small>
-                      </span>
-                      <form method="post" action="/friends/requests/accept">
-                        <input type="hidden" name="id" value={request.id} />
-                        <PillButton small variant="primary">
-                          Accept
-                        </PillButton>
-                      </form>
-                      <form method="post" action="/friends/requests/decline">
-                        <input type="hidden" name="id" value={request.id} />
-                        <PillButton small>Decline</PillButton>
-                      </form>
-                    </li>
-                  ))}
-                  {outgoing.map((request) => (
-                    <li key={request.id}>
-                      <span class="track">
-                        <b>{request.name}</b>
-                        <small>waiting for them</small>
-                      </span>
-                      <form method="post" action="/friends/requests/cancel">
-                        <input type="hidden" name="id" value={request.id} />
-                        <PillButton small>Cancel</PillButton>
-                      </form>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Section>
+        {alone ? (
+          <div class="friends is-alone">
+            <div class="empty-card">
+              <span class="circles" aria-hidden="true">
+                <Monogram name={user.name} />
+                <span class="ghost" />
+                <span class="ghost" />
+              </span>
+              <h2>No friends yet</h2>
+              <p>
+                Send your link. Anyone signed in who opens it can add you in one
+                tap.
+              </p>
+              <TokenField token={linkUrl} label="Your friend link" />
+              <CopyButton
+                label="Copy your link"
+                className="btn is-primary is-lg is-block"
+              />
+            </div>
+            <form class="card is-pad" method="post" action="/friends/request">
+              <label class="card-title" for="name">
+                Or add by profile name
+              </label>
+              {fieldError("name")}
+              <div class="field-line is-inline">
+                {nameField}
+                <button class="btn is-form">Send</button>
+              </div>
+            </form>
           </div>
-          <div class="stack">
-            <Section title="Add by name">
-              <form method="post" action="/friends/request" class="stack">
-                <div class="field">
-                  <label for="name">Profile name</label>
-                  <small>The exact name on their profile.</small>
-                  {fieldError("name")}
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    maxlength={39}
-                    required
-                    spellcheck={false}
-                    autocomplete="off"
-                    {...invalid("name")}
-                  />
+        ) : (
+          <div class="friends">
+            <div class="friends-col">
+              {incoming.length + outgoing.length > 0 && (
+                <section class="people">
+                  <header>
+                    <h2>Requests</h2>
+                  </header>
+                  <div class="card">
+                    <ul>
+                      {incoming.map((request) => (
+                        <li class="prow is-request" key={request.id}>
+                          <span class="who">
+                            <Monogram name={request.name} />
+                            <span class="who-text">
+                              <span class="name">{request.name}</span>
+                              <span class="sub">Wants to be your friend</span>
+                            </span>
+                          </span>
+                          <div class="actions">
+                            <form
+                              method="post"
+                              action="/friends/requests/accept"
+                            >
+                              <input
+                                type="hidden"
+                                name="id"
+                                value={request.id}
+                              />
+                              <button class="btn is-primary">Accept</button>
+                            </form>
+                            <form
+                              method="post"
+                              action="/friends/requests/decline"
+                            >
+                              <input
+                                type="hidden"
+                                name="id"
+                                value={request.id}
+                              />
+                              <button class="btn">Decline</button>
+                            </form>
+                          </div>
+                        </li>
+                      ))}
+                      {outgoing.map((request) => (
+                        <li class="prow is-sent" key={request.id}>
+                          <span class="who">
+                            <Monogram name={request.name} waiting />
+                            <span class="who-text">
+                              <span class="name">{request.name}</span>
+                              <span class="sub">Sent · waiting for them</span>
+                            </span>
+                          </span>
+                          <form method="post" action="/friends/requests/cancel">
+                            <input type="hidden" name="id" value={request.id} />
+                            <button class="btn is-sm">Cancel</button>
+                          </form>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </section>
+              )}
+              <section class="people">
+                <header>
+                  <h2>Your friends</h2>
+                  <span class="count">{friends.length}</span>
+                </header>
+                <div class="card">
+                  {friends.length === 0 ? (
+                    <p class="people-none">
+                      No friends yet. Answer a request, send one, or share your
+                      link.
+                    </p>
+                  ) : (
+                    <ul>
+                      {friends.map((friend) => (
+                        <li class="prow" key={friend.id}>
+                          <FriendWho friend={friend} />
+                          <form method="post" action="/friends/remove">
+                            <input type="hidden" name="id" value={friend.id} />
+                            <button class="btn is-quiet">Remove</button>
+                          </form>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-                <div>
-                  <PillButton variant="primary">Send a request</PillButton>
+              </section>
+            </div>
+            <div class="friends-col">
+              <form class="card is-pad" method="post" action="/friends/request">
+                <h2 class="card-title">Add by name</h2>
+                <div class="form-block">
+                  <label class="form-label" for="name">
+                    Profile name
+                  </label>
+                  <span class="form-hint">
+                    The exact name on their profile.
+                  </span>
+                  {fieldError("name")}
+                  <div class="field-line">
+                    {nameField}
+                    <button class="btn is-primary is-form">
+                      Send a request
+                    </button>
+                  </div>
                 </div>
               </form>
-            </Section>
-            <Section title="Friend link">
-              <p class="muted">
-                A signed-in visitor who opens your link becomes your friend at
-                once.
-              </p>
-              <TokenDisplay token={`${origin}/friends/add/${data.link}`} />
-              <div>
-                <form method="post" action="/friends/link/reset">
-                  <PillButton small>Reset the link</PillButton>
-                </form>
-              </div>
-              <small class="hint">Resetting stops the old link.</small>
-            </Section>
+              <section class="link-card">
+                <h2 class="card-title">Your friend link</h2>
+                <p>Anyone signed in who opens it can add you in one tap.</p>
+                <TokenDisplay
+                  token={linkUrl}
+                  label="Your friend link"
+                  primary
+                />
+                <div class="foot">
+                  <span>Resetting stops the old link.</span>
+                  <form method="post" action="/friends/link/reset">
+                    <button class="btn is-sm">Reset link</button>
+                  </form>
+                </div>
+              </section>
+            </div>
           </div>
-        </div>
+        )}
       </>
     ),
   });
+}
+
+function FriendWho({ friend }: { friend: FriendRow }) {
+  const inner = (
+    <>
+      <Monogram name={friend.name} />
+      <span class="who-text">
+        <span class="name">{friend.name}</span>
+      </span>
+    </>
+  );
+  return friend.is_public === 1 ? (
+    <a class="who" href={`/u/${encodeURIComponent(friend.name)}`}>
+      {inner}
+    </a>
+  ) : (
+    <span class="who">{inner}</span>
+  );
+}
+
+// Groups and friends share one place in the site nav; this switch moves
+// between them and counts the requests that wait for an answer.
+export function PeopleSwitch({
+  current,
+  requests,
+}: {
+  current: "groups" | "friends";
+  requests: number;
+}) {
+  return (
+    <div class="sub-switch">
+      <Segmented
+        label="Groups and friends"
+        options={[
+          { label: "Groups", href: "/groups", current: current === "groups" },
+          {
+            label: "Friends",
+            href: "/friends",
+            current: current === "friends",
+            badge:
+              requests > 0 ? (
+                <>
+                  {requests}
+                  <span class="sr-only"> waiting</span>
+                </>
+              ) : undefined,
+          },
+        ]}
+      />
+    </div>
+  );
+}
+
+export async function incomingRequests(db: D1Database, userId: number) {
+  const row = await db
+    .prepare("SELECT COUNT(*) AS n FROM friend_requests WHERE to_user = ?1")
+    .bind(userId)
+    .first<{ n: number }>();
+  return row?.n ?? 0;
 }
 
 function render(
@@ -320,12 +459,18 @@ export const friendsApp = new Hono<{
 
 friendsApp.use("*", csrf());
 
+// Registered before the member gate: a signed-out visitor sees whose link it
+// is and signs in from the card.
+friendsApp.get("/add/:token", addLanding);
+
 friendsApp.use(
   "*",
-  memberOnly(
-    "Friends",
-    "Friends fill a group together, and the group's playlist blends what each member plays. Sign in to see yours.",
-  ),
+  memberOnly({
+    title: "Friends",
+    heading: "Sign in to see your friends",
+    body: "Friends fill a group together, and the group's playlist blends what each member plays.",
+    nav: "groups",
+  }),
 );
 
 friendsApp.get("/", async (context) => {
@@ -501,10 +646,15 @@ friendsApp.post("/link/reset", async (context) => {
 });
 
 function linkPage(
-  user: SignedInUser,
+  user: SignedInUser | null,
   children: Parameters<typeof Page>[0]["children"],
 ) {
-  return Page({ title: "Friend link", user, children });
+  return Page({
+    title: "Friend link",
+    user,
+    nav: "groups",
+    children: <div class="signed-out">{children}</div>,
+  });
 }
 
 async function linkOwner(context: FriendsContext) {
@@ -516,8 +666,7 @@ async function linkOwner(context: FriendsContext) {
     .first<{ id: number; name: string }>();
 }
 
-function deadLink(context: FriendsContext) {
-  const user = context.get("user");
+function deadLink(context: FriendsContext, user: SignedInUser | null) {
   return context.html(
     linkPage(
       user,
@@ -525,30 +674,30 @@ function deadLink(context: FriendsContext) {
         heading="h1"
         title="This friend link does not work"
         body="It was reset or never existed. Ask for a fresh one."
-        action={{ href: "/friends", label: "Your friends" }}
+        action={user ? { href: "/friends", label: "Your friends" } : undefined}
       />,
     ),
     404,
   );
 }
 
-friendsApp.get("/add/:token", async (context) => {
-  const user = context.get("user");
+async function addLanding(context: FriendsContext) {
+  const user = await sessionUser(context);
   const owner = await linkOwner(context);
-  if (owner === null) return deadLink(context);
-  if (owner.id === user.id)
+  if (owner === null) return deadLink(context, user);
+  if (user !== null && owner.id === user.id)
     return context.html(
       linkPage(
         user,
         <EmptyState
           heading="h1"
           title="This is your own friend link"
-          body="Share it with someone signed in to Earshot; opening it makes you friends."
+          body="Share it with someone signed in to Earshot. Opening it lets them add you in one tap."
           action={{ href: "/friends", label: "Your friends" }}
         />,
       ),
     );
-  if (await isFriend(context.env.DB, user.id, owner.id))
+  if (user !== null && (await isFriend(context.env.DB, user.id, owner.id)))
     return context.html(
       linkPage(
         user,
@@ -562,26 +711,32 @@ friendsApp.get("/add/:token", async (context) => {
   return context.html(
     linkPage(
       user,
-      <>
-        <div class="page-head">
-          <h1>Add a friend</h1>
-          <p>
-            This link belongs to <b>{owner.name}</b>. Friends can add each other
-            to groups, and you can remove a friend any time.
-          </p>
-        </div>
-        <form method="post" action={context.req.path}>
-          <PillButton variant="primary">Add {owner.name}</PillButton>
-        </form>
-      </>,
+      <section class="landing">
+        <Monogram name={owner.name} />
+        <p class="kicker">Friend link</p>
+        <h1>Add {owner.name} as a friend?</h1>
+        <p>
+          Then you can be in a group together, and the group’s playlist blends
+          what you both play.
+        </p>
+        {user === null ? (
+          <a class="btn is-primary" href={signInHref(context.req.path)}>
+            Sign in with GitHub to add {owner.name}
+          </a>
+        ) : (
+          <form method="post" action={context.req.path}>
+            <button class="btn is-primary">Add {owner.name}</button>
+          </form>
+        )}
+      </section>,
     ),
   );
-});
+}
 
 friendsApp.post("/add/:token", async (context) => {
   const user = context.get("user");
   const owner = await linkOwner(context);
-  if (owner === null) return deadLink(context);
+  if (owner === null) return deadLink(context, user);
   if (owner.id !== user.id)
     await makeFriends(
       context.env.DB,

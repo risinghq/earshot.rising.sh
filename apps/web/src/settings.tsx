@@ -6,7 +6,6 @@ import {
   base64url,
   cookieClear,
   endSession,
-  sessionUser,
   sha256Bytes,
   validName,
   type SignedInUser,
@@ -24,18 +23,38 @@ import {
   SignedOutError,
   todayIn,
 } from "./youtube";
+import { memberOnly } from "./sign-in";
 import { Notice } from "./ui/notice";
-import { PillButton, PillLink } from "./ui/pill";
-import { Section } from "./ui/section";
 import { Page } from "./ui/shell";
 import { TokenDisplay } from "./ui/token";
 
 const exportPageSize = 1000;
 
+const timeZones = (() => {
+  const zones = Intl.supportedValuesOf("timeZone");
+  return zones.includes("UTC") ? zones : ["UTC", ...zones];
+})();
+
+// A stored zone wins; otherwise the browser's own zone replaces UTC.
 const tzScript = `
 const tzField = document.getElementById("ytmusic-tz");
 const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-if (tzField && zone) tzField.value = zone;
+if (tzField && tzField.dataset.stored === undefined &&
+    [...tzField.options].some((option) => option.value === zone))
+  tzField.value = zone;
+`;
+
+// The server checks the typed name again; this only arms the button.
+const deleteScript = `
+const confirmField = document.getElementById("confirm");
+const deleteButton = document.getElementById("delete-account");
+if (confirmField && deleteButton) {
+  const arm = () => {
+    deleteButton.disabled = confirmField.value.trim() !== confirmField.dataset.name;
+  };
+  arm();
+  confirmField.addEventListener("input", arm);
+}
 `;
 
 const exportScript = `
@@ -72,6 +91,7 @@ interface SourceInfo {
   maybe_missing: number;
   last_ok_at: number | null;
   has_secret: number;
+  tz: string | null;
 }
 
 interface TokenInfo {
@@ -96,19 +116,115 @@ function dayText(timestamp: number | null) {
   return new Date(timestamp * 1000).toISOString().slice(0, 10);
 }
 
-function sourceStatus(source: SourceInfo) {
-  if (source.status === "gap")
-    return "uploads lost touch; plays between the last aligned upload and the next one may be missing";
-  if (source.status === "error")
-    return `error: ${source.error ?? "the last pull failed"}`;
-  return "active";
+const leadNames: Record<string, string> = {
+  ...sourceNames,
+  listenbrainz: "your phone",
+};
+
+function sourcesLead(sources: SourceInfo[]) {
+  if (sources.length === 0)
+    return "No sources connected. Plays feed your profile, your For you mix and your groups.";
+  const names = sources.map((source) => leadNames[source.kind] ?? source.kind);
+  const list =
+    names.length === 1
+      ? names[0]
+      : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+  return `Plays arrive from ${list}. They feed your profile, your For you mix and your groups.`;
 }
 
-function sourceNote(source: SourceInfo) {
-  if (source.maybe_missing > 0)
-    return `up to ${source.maybe_missing} plays of repeated songs may be missing`;
-  return null;
+function StatusPill({ source, on }: { source?: SourceInfo; on: string }) {
+  if (source === undefined)
+    return <span class="status-pill">Not connected</span>;
+  if (source.status === "error")
+    return <span class="status-pill is-bad">Needs attention</span>;
+  if (source.status === "gap")
+    return <span class="status-pill is-bad">Plays may be missing</span>;
+  return <span class="status-pill is-on">{on}</span>;
 }
+
+function SourceProblems({ source }: { source?: SourceInfo }) {
+  if (source === undefined) return null;
+  return (
+    <>
+      {source.status === "gap" && (
+        <p class="form-error">
+          Uploads lost touch. Plays between the last aligned upload and the next
+          one may be missing.
+        </p>
+      )}
+      {source.status === "error" && (
+        <p class="form-error">{source.error ?? "The last pull failed."}</p>
+      )}
+      {source.maybe_missing > 0 && (
+        <p>
+          Up to {source.maybe_missing} plays of repeated songs may be missing.
+        </p>
+      )}
+    </>
+  );
+}
+
+function RemoveSource({ source }: { source: SourceInfo }) {
+  return (
+    <div class="row">
+      <p>Removing it deletes the plays it brought.</p>
+      <form method="post" action="/settings/sources/remove" class="inline">
+        <input type="hidden" name="id" value={source.id} />
+        <button class="btn is-sm is-leave">
+          Remove {sourceNames[source.kind] ?? source.kind}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function TokenList({ tokens }: { tokens: TokenInfo[] }) {
+  if (tokens.length === 0) return null;
+  return (
+    <ul class="token-list">
+      {tokens.map((token) => (
+        <li class="row" key={token.id}>
+          <span>
+            <code class="code-chip">…{token.hint}</code> created{" "}
+            {dayText(token.created_at)} · last used{" "}
+            {dayText(token.last_used_at)}
+          </span>
+          <form method="post" action="/settings/tokens/revoke" class="inline">
+            <input type="hidden" name="id" value={token.id} />
+            <button class="btn is-sm">Revoke</button>
+          </form>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function TokenPill({
+  tokens,
+  issued,
+}: {
+  tokens: TokenInfo[];
+  issued: boolean;
+}) {
+  if (issued) return <span class="status-pill is-on">Issued just now</span>;
+  if (tokens.length === 0) return <span class="status-pill">No token</span>;
+  return <span class="status-pill is-on">{tokens.length} active</span>;
+}
+
+function IssueToken({ kind }: { kind: string }) {
+  return (
+    <form method="post" action="/settings/tokens" class="inline">
+      <input type="hidden" name="kind" value={kind} />
+      <button class="btn is-sm">Issue a new token</button>
+    </form>
+  );
+}
+
+const downloadIcon = (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+  </svg>
+);
 
 interface PageOptions {
   notice?: string;
@@ -130,27 +246,19 @@ function settingsPage(
   const scrobblerTokens = tokens.filter(
     (token) => token.kind === "listenbrainz",
   );
-  const tokenList = (items: TokenInfo[]) => (
-    <ul class="rows">
-      {items.map((token) => (
-        <li key={token.id}>
-          <span class="track">
-            <b>
-              <code>…{token.hint}</code>
-            </b>
-            <small>
-              created {dayText(token.created_at)} · last used{" "}
-              {dayText(token.last_used_at)}
-            </small>
-          </span>
-          <form method="post" action="/settings/tokens/revoke">
-            <input type="hidden" name="id" value={token.id} />
-            <PillButton small>Revoke</PillButton>
-          </form>
-        </li>
-      ))}
-    </ul>
-  );
+  const spotify = sources.find((item) => item.kind === "spotify");
+  const ytmusic = sources.find((item) => item.kind === "ytmusic");
+  const phone = sources.find((item) => item.kind === "listenbrainz");
+  const cookieConnected = ytmusic !== undefined && ytmusic.has_secret === 1;
+  const issuedHere = (kind: string) =>
+    issuedToken !== undefined && (issuedKind ?? "ytmusic") === kind;
+  const issued = (kind: string, label: string) =>
+    issuedHere(kind) && (
+      <>
+        <TokenDisplay token={issuedToken as string} label={label} />
+        <p class="form-hint">Shown once. Store it now.</p>
+      </>
+    );
   const fieldError = (name: string) =>
     field === name && error ? (
       <p class="form-error" id={`${name}-error`} role="alert">
@@ -170,254 +278,331 @@ function settingsPage(
     title: "Settings",
     user,
     children: (
-      <>
-        <div class="page-head">
+      <div class="settings">
+        <header class="head">
           <h1>Settings</h1>
-          <p class="meta">
-            Signed in as <b>{user.name}</b>.
+          <p class="lead">
+            Signed in as <b>{user.name}</b> with GitHub.
           </p>
-        </div>
-        {notice !== undefined && <Notice>{notice}</Notice>}
-        {topError}
-        {issuedToken !== undefined && (
-          <div class="notice" aria-label="New token">
-            <p>
-              Your new {issuedKind === "listenbrainz" ? "scrobbler" : "upload"}{" "}
-              token. It is shown once. Store it now.
-            </p>
-            <TokenDisplay token={issuedToken} />
-          </div>
-        )}
-        <Section title="Sources">
-          {sources.length === 0 ? (
-            <p class="muted">No sources connected.</p>
-          ) : (
-            <ul class="rows">
-              {sources.map((source) => (
-                <li key={source.id}>
-                  <span class="track">
-                    <b>{sourceNames[source.kind] ?? source.kind}</b>
-                    <small>
-                      {source.account ??
-                        (source.kind === "ytmusic"
-                          ? source.has_secret
-                            ? "cookie"
-                            : "upload token"
-                          : "scrobbler token")}{" "}
-                      · {sourceStatus(source)}
-                      {sourceNote(source) !== null && (
-                        <> · {sourceNote(source)}</>
-                      )}
-                    </small>
-                  </span>
-                  <form method="post" action="/settings/sources/remove">
-                    <input type="hidden" name="id" value={source.id} />
-                    <PillButton small>Remove</PillButton>
-                  </form>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Section>
-        <Section title="YouTube Music">
-          {(() => {
-            const source = sources.find((item) => item.kind === "ytmusic");
-            const connected = source !== undefined && source.has_secret === 1;
-            return (
-              <>
-                {connected && (
-                  <>
-                    <p class="muted">
-                      Connected. The service pulls your history page every hour.
-                    </p>
-                    <form method="post" action="/settings/ytmusic/disconnect">
-                      <PillButton small>Disconnect cookie</PillButton>
+        </header>
+        <nav class="settings-nav" aria-label="Settings">
+          <a href="#sources">Sources</a>
+          <a href="#account">Account</a>
+          <a href="#data">Your data</a>
+          <a class="is-danger" href="#delete">
+            Delete account
+          </a>
+          <form class="nav-foot" method="post" action="/settings/sign-out">
+            <button class="btn is-sm">Sign out</button>
+          </form>
+        </nav>
+        <div class="settings-col">
+          {notice !== undefined && <Notice>{notice}</Notice>}
+          {topError}
+          <section id="sources">
+            <h2>Sources</h2>
+            <p class="lead">{sourcesLead(sources)}</p>
+            <div class="card">
+              <div class="source" id="spotify">
+                <header>
+                  <h3>Spotify</h3>
+                  <StatusPill source={spotify} on="Connected" />
+                </header>
+                <div class="row">
+                  <p>
+                    {spotify === undefined
+                      ? "Spotify asks you to approve read access to your recently played tracks, then the service pulls them every few minutes."
+                      : `Connected as ${spotify.account ?? "your account"}. The service pulls your recently played tracks every few minutes.`}
+                  </p>
+                  {(spotify === undefined || spotify.status === "error") && (
+                    <a class="btn" href="/auth/spotify">
+                      {spotify === undefined
+                        ? "Connect Spotify"
+                        : "Reconnect Spotify"}
+                    </a>
+                  )}
+                </div>
+                <SourceProblems source={spotify} />
+                {spotify !== undefined && <RemoveSource source={spotify} />}
+              </div>
+              <div class="source" id="ytmusic">
+                <header>
+                  <h3>YouTube Music</h3>
+                  {cookieConnected ? (
+                    <StatusPill source={ytmusic} on="Connected" />
+                  ) : (
+                    <span class="status-pill">Not connected</span>
+                  )}
+                </header>
+                {cookieConnected && (
+                  <div class="row">
+                    <p>The service pulls your history page every hour.</p>
+                    <form
+                      method="post"
+                      action="/settings/ytmusic/disconnect"
+                      class="inline"
+                    >
+                      <button class="btn is-sm">Disconnect cookie</button>
                     </form>
-                  </>
+                  </div>
                 )}
-                <form method="post" action="/settings/ytmusic" class="stack">
-                  <div class="field">
-                    <label for="ytmusic-cookie">Browser cookie</label>
-                    <small>
-                      On music.youtube.com, open the developer tools' Network
-                      tab, reload the page, open the history request and copy
-                      the whole Cookie request header. It signs the service in
-                      like it signs your browser in.
-                    </small>
-                    {fieldError("cookie")}
-                    <input
-                      id="ytmusic-cookie"
-                      name="cookie"
-                      type="password"
-                      required
-                      spellcheck={false}
-                      autocomplete="off"
-                      {...invalid("cookie")}
-                    />
+                <SourceProblems source={ytmusic} />
+                <form method="post" action="/settings/ytmusic">
+                  <div class="split">
+                    <div class="form-block">
+                      <label class="form-label" for="ytmusic-cookie">
+                        Browser cookie
+                      </label>
+                      <span class="form-hint">
+                        It signs the service in the same way it signs your
+                        browser in.
+                      </span>
+                      {fieldError("cookie")}
+                      <textarea
+                        class="field"
+                        id="ytmusic-cookie"
+                        name="cookie"
+                        placeholder="Paste the whole Cookie header"
+                        required
+                        spellcheck={false}
+                        autocomplete="off"
+                        {...invalid("cookie")}
+                      />
+                    </div>
+                    <div class="form-block">
+                      <label class="form-label" for="ytmusic-tz">
+                        Time zone
+                      </label>
+                      <span class="form-hint">
+                        For “Today” and “Yesterday”.
+                      </span>
+                      {fieldError("tz")}
+                      <select
+                        class="field"
+                        id="ytmusic-tz"
+                        name="tz"
+                        data-stored={ytmusic?.tz ?? undefined}
+                        {...invalid("tz")}
+                      >
+                        {timeZones.map((zone) => (
+                          <option
+                            value={zone}
+                            selected={zone === (ytmusic?.tz ?? "UTC")}
+                          >
+                            {zone}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  <div class="field">
-                    <label for="ytmusic-tz">Time zone</label>
-                    <small>
-                      An IANA name such as Europe/Berlin. "Today" and
-                      "Yesterday" on the history page are read in this zone.
-                    </small>
-                    {fieldError("tz")}
-                    <input
-                      id="ytmusic-tz"
-                      name="tz"
-                      type="text"
-                      value="UTC"
-                      required
-                      spellcheck={false}
-                      autocomplete="off"
-                      {...invalid("tz")}
-                    />
-                  </div>
+                  <details class="disclosure" open={!cookieConnected}>
+                    <summary>How to copy the cookie</summary>
+                    <ol class="steps">
+                      <li>
+                        <span>
+                          On music.youtube.com, open the developer tools’
+                          Network tab.
+                        </span>
+                      </li>
+                      <li>
+                        <span>
+                          Reload the page and open the history request.
+                        </span>
+                      </li>
+                      <li>
+                        <span>
+                          Copy the whole Cookie request header and paste it
+                          above.
+                        </span>
+                      </li>
+                    </ol>
+                  </details>
                   <div>
-                    <PillButton variant="primary">
-                      {connected
+                    <button class="btn is-primary">
+                      {cookieConnected
                         ? "Replace the cookie"
                         : "Connect YouTube Music"}
-                    </PillButton>
+                    </button>
                   </div>
                 </form>
                 <script
                   type="module"
                   dangerouslySetInnerHTML={{ __html: tzScript }}
                 />
-                <p class="hint">
-                  Pushing plays with an upload token still works and feeds the
-                  same source. Issue one and store it as UPLOAD_TOKEN in your
-                  GitHub Action's secrets.
+                {ytmusic !== undefined && <RemoveSource source={ytmusic} />}
+              </div>
+              <div class="source" id="upload">
+                <header>
+                  <h3>Upload token</h3>
+                  <TokenPill
+                    tokens={uploadTokens}
+                    issued={issuedHere("ytmusic")}
+                  />
+                </header>
+                <p>
+                  Pushing plays from a GitHub Action still works and feeds the
+                  same source as YouTube Music. Store the token as{" "}
+                  <code class="code-chip">UPLOAD_TOKEN</code> in the Action’s
+                  secrets.
                 </p>
-                {uploadTokens.length !== 0 && tokenList(uploadTokens)}
-                <form method="post" action="/settings/tokens">
-                  <input type="hidden" name="kind" value="ytmusic" />
-                  <PillButton small>Issue a new token</PillButton>
-                </form>
-              </>
-            );
-          })()}
-        </Section>
-        <Section title="Phone scrobbler">
-          <p class="muted">
-            Install Pano Scrobbler on your Android phone.
-            <br />
-            Add a ListenBrainz account with server {origin} and this token.
-            <br />
-            Every play your phone reports appears on your profile.
-          </p>
-          {scrobblerTokens.length === 0 ? (
-            <p class="muted">No scrobbler token.</p>
-          ) : (
-            tokenList(scrobblerTokens)
-          )}
-          <form method="post" action="/settings/tokens">
-            <input type="hidden" name="kind" value="listenbrainz" />
-            <PillButton>Issue a new token</PillButton>
-          </form>
-        </Section>
-        <Section title="Spotify">
-          <div>
-            <PillLink href="/auth/spotify">Connect Spotify</PillLink>
-          </div>
-          <small class="hint">
-            Spotify asks you to approve read access to your recently played
-            tracks, then the service pulls them every few minutes.
-          </small>
-        </Section>
-        <Section title="Account">
-          <form method="post" action="/settings/profile" class="stack">
-            <div class="field">
-              <label for="name">Profile name</label>
-              <small>
-                Lowercase letters, digits and hyphens, no hyphen at either end.
-                Your page is at /u/&lt;name&gt;.
-              </small>
-              {fieldError("name")}
-              <input
-                id="name"
-                name="name"
-                type="text"
-                value={user.name}
-                minlength={1}
-                maxlength={39}
-                required
-                spellcheck={false}
-                autocomplete="off"
-                {...invalid("name")}
-              />
+                {issued("ytmusic", "New upload token")}
+                <TokenList tokens={uploadTokens} />
+                <div>
+                  <IssueToken kind="ytmusic" />
+                </div>
+              </div>
+              <div class="source" id="phone">
+                <header>
+                  <h3>Phone scrobbler</h3>
+                  <TokenPill
+                    tokens={scrobblerTokens}
+                    issued={issuedHere("listenbrainz")}
+                  />
+                </header>
+                <div class="split">
+                  <ol class="steps">
+                    <li>
+                      <span>Install Pano Scrobbler on your Android phone.</span>
+                    </li>
+                    <li>
+                      <span>
+                        Add a ListenBrainz account with server{" "}
+                        <code class="code-chip">{origin}</code> and this token.
+                      </span>
+                    </li>
+                    <li>
+                      <span>
+                        Every play your phone reports appears on your profile.
+                      </span>
+                    </li>
+                  </ol>
+                  <div class="split-end">
+                    <IssueToken kind="listenbrainz" />
+                  </div>
+                </div>
+                {issued("listenbrainz", "New scrobbler token")}
+                <TokenList tokens={scrobblerTokens} />
+                <SourceProblems source={phone} />
+                {phone !== undefined && <RemoveSource source={phone} />}
+              </div>
             </div>
-            <div>
-              <label class="check" for="is_public">
+          </section>
+          <section id="account">
+            <h2>Account</h2>
+            <form class="card is-pad" method="post" action="/settings/profile">
+              <div class="form-block">
+                <label class="form-label" for="name">
+                  Profile name
+                </label>
+                <span class="form-hint">
+                  Lowercase letters, digits and hyphens, no hyphen at either
+                  end. Your page is at /u/&lt;name&gt;.
+                </span>
+                {fieldError("name")}
+                <div class="field-wrap name-field">
+                  <span class="prefix">/u/</span>
+                  <input
+                    class="field"
+                    id="name"
+                    name="name"
+                    type="text"
+                    value={user.name}
+                    minlength={1}
+                    maxlength={39}
+                    required
+                    spellcheck={false}
+                    autocomplete="off"
+                    {...invalid("name")}
+                  />
+                </div>
+              </div>
+              <label class="check-line" for="is_public">
                 <input
+                  class="check"
                   id="is_public"
                   name="is_public"
                   type="checkbox"
                   checked={user.is_public === 1}
                 />
-                <span>Public profile</span>
+                <span>
+                  <b>Public profile</b>
+                  <span class="form-hint">
+                    A hidden profile returns 404 for the page, the JSON and the
+                    card. Your plays still feed the playlist of any group you
+                    belong to, and you can leave a group any time.
+                  </span>
+                </span>
               </label>
-              <small class="hint">
-                A hidden profile returns 404 for the page, the JSON and the
-                card. Your plays still feed the playlist of any group you belong
-                to, and you can leave a group any time.
-              </small>
+              <div>
+                <button class="btn is-primary">Save profile</button>
+              </div>
+            </form>
+          </section>
+          <section id="data">
+            <h2>Your data</h2>
+            <div class="card">
+              <div class="source">
+                <div class="row">
+                  <p class="data-note">
+                    Download your plays as NDJSON, one play per line. Without
+                    JavaScript the link returns the first 1,000 plays. The Link
+                    header of each page points at the next.
+                  </p>
+                  <a
+                    class="btn"
+                    href="/settings/export"
+                    id="export-all"
+                    data-name={user.name}
+                  >
+                    {downloadIcon}
+                    Download your plays
+                  </a>
+                </div>
+                <p class="form-hint">
+                  Your quiz answers are kept so the game can pick better songs.
+                </p>
+              </div>
             </div>
-            <div>
-              <PillButton variant="primary">Save profile</PillButton>
-            </div>
-          </form>
-          <p class="hint">
-            Your quiz answers are kept so the game can pick better songs.
-          </p>
-          <p class="muted">
-            Download your plays as NDJSON, one play per line. Without JavaScript
-            the link returns the first 1,000 plays. The Link header of each page
-            points at the next.
-          </p>
-          <div>
-            <PillLink
-              href="/settings/export"
-              id="export-all"
-              dataName={user.name}
-            >
-              Download your plays
-            </PillLink>
-          </div>
-          <script
-            type="module"
-            dangerouslySetInnerHTML={{ __html: exportScript }}
-          />
-          <form method="post" action="/settings/sign-out">
-            <PillButton small>Sign out</PillButton>
-          </form>
-        </Section>
-        <Section title="Delete account">
-          <form method="post" action="/settings/delete" class="stack">
-            <p class="muted">
+            <script
+              type="module"
+              dangerouslySetInnerHTML={{ __html: exportScript }}
+            />
+          </section>
+          <section class="danger-card" id="delete">
+            <h2>Delete account</h2>
+            <p>
               Deletes every play, source, token and session of this account.
               There is no undo.
             </p>
-            <div class="field">
-              <label for="confirm">Type {user.name} to confirm</label>
+            <form method="post" action="/settings/delete" class="form-block">
+              <label class="form-label" for="confirm">
+                Type <code>{user.name}</code> to confirm
+              </label>
               {fieldError("confirm")}
-              <input
-                id="confirm"
-                name="confirm"
-                type="text"
-                required
-                spellcheck={false}
-                autocomplete="off"
-                {...invalid("confirm")}
-              />
-            </div>
-            <div>
-              <PillButton variant="danger-fill">Delete account</PillButton>
-            </div>
-          </form>
-        </Section>
-      </>
+              <div class="field-line">
+                <input
+                  class="field"
+                  id="confirm"
+                  name="confirm"
+                  type="text"
+                  data-name={user.name}
+                  required
+                  spellcheck={false}
+                  autocomplete="off"
+                  {...invalid("confirm")}
+                />
+                <button class="btn is-danger is-form" id="delete-account">
+                  Delete account
+                </button>
+              </div>
+            </form>
+            <script
+              type="module"
+              dangerouslySetInnerHTML={{ __html: deleteScript }}
+            />
+          </section>
+        </div>
+      </div>
     ),
   });
 }
@@ -508,7 +693,7 @@ async function pageData(context: SettingsContext) {
   const [sources, tokens] = await context.env.DB.batch([
     context.env.DB.prepare(
       `SELECT id, kind, account, status, error, maybe_missing, last_ok_at,
-              secret IS NOT NULL AS has_secret
+              secret IS NOT NULL AS has_secret, tz
        FROM sources WHERE user_id = ?1 ORDER BY kind, id`,
     ).bind(user.id),
     context.env.DB.prepare(
@@ -558,16 +743,14 @@ export const settingsApp = new Hono<{
 
 settingsApp.use("*", csrf());
 
-settingsApp.use("*", async (context, next) => {
-  const user = await sessionUser(context);
-  if (user === null) {
-    return context.req.method === "POST"
-      ? context.text("Forbidden", 403)
-      : context.redirect("/", 303);
-  }
-  context.set("user", user);
-  await next();
-});
+settingsApp.use(
+  "*",
+  memberOnly({
+    title: "Settings",
+    heading: "Sign in to see your settings",
+    body: "Settings connect the services your plays come from and hold your profile name.",
+  }),
+);
 
 settingsApp.get("/", async (context) => {
   const data = await pageData(context);

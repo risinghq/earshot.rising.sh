@@ -93,13 +93,15 @@ afterEach(() => {
 });
 
 describe("session and origin", () => {
-  it("redirects anonymous visitors to the sign-in page", async () => {
+  it("shows anonymous visitors a sign-in card that returns to settings", async () => {
     const response = await app.fetch(
       new Request(`${origin}/settings`),
       testEnv() as never,
     );
-    expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toBe("/");
+    expect(response.status).toBe(200);
+    const body = await response.text();
+    expect(body).toContain("Sign in to see your settings");
+    expect(body).toContain("next=%2Fsettings");
   });
 
   it("rejects an expired session", async () => {
@@ -114,8 +116,8 @@ describe("session and origin", () => {
       .bind(await sha256(session), now - 10)
       .run();
     const response = await get("/settings");
-    expect(response.status).toBe(303);
-    expect(response.headers.get("location")).toBe("/");
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain("Sign in to see your settings");
   });
 
   it("serves the settings page to a signed-in user", async () => {
@@ -219,7 +221,7 @@ describe("sources", () => {
     expect(body).toContain("Connect Spotify");
     expect(body).toContain("Phone scrobbler");
     expect(body).toContain("Pano Scrobbler");
-    expect(body).toContain(`server ${origin}`);
+    expect(body).toContain(`<code class="code-chip">${origin}</code>`);
     expect(body).not.toContain('action="/settings/sources"');
   });
 

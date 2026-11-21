@@ -1,5 +1,6 @@
 import type { Child } from "hono/jsx";
 import type { SignedInUser } from "../auth";
+import { Monogram } from "./person";
 
 export type NavSection = "play" | "board" | "groups";
 
@@ -87,6 +88,7 @@ export function Page({
         {user ? (
           <details class="account">
             <summary>
+              <Monogram name={user.name} />
               <span class="account-name">{user.name}</span>
               {caret}
             </summary>

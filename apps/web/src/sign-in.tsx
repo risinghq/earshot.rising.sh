@@ -1,27 +1,25 @@
 import type { MiddlewareHandler } from "hono";
 import { sessionUser, type SignedInUser } from "./auth";
 import type { Env } from "./types";
-import { EmptyState } from "./ui/empty";
-import { Page } from "./ui/shell";
+import { SignInCard } from "./ui/empty";
+import { Page, type NavSection } from "./ui/shell";
 
-function signInPage(title: string, body: string) {
+export interface SignInCopy {
+  title: string;
+  heading: string;
+  body: string;
+  nav?: NavSection;
+}
+
+export function signInPage(copy: SignInCopy, next: string) {
   return Page({
-    title,
-    children: (
-      <EmptyState
-        heading="h1"
-        title={title}
-        body={body}
-        action={{ href: "/auth/github", label: "Sign in" }}
-      />
-    ),
+    title: copy.title,
+    nav: copy.nav,
+    children: <SignInCard title={copy.heading} body={copy.body} next={next} />,
   });
 }
 
-export function memberOnly(
-  title: string,
-  body: string,
-): MiddlewareHandler<{
+export function memberOnly(copy: SignInCopy): MiddlewareHandler<{
   Bindings: Env;
   Variables: { user: SignedInUser };
 }> {
@@ -30,7 +28,7 @@ export function memberOnly(
     if (user === null)
       return context.req.method === "POST"
         ? context.text("Forbidden", 403)
-        : context.html(signInPage(title, body));
+        : context.html(signInPage(copy, context.req.path));
     context.set("user", user);
     await next();
   };

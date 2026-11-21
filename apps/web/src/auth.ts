@@ -104,6 +104,16 @@ function githubCredentials(context: AuthContext) {
   return { id, secret };
 }
 
+// Only a path on this origin is a return target, so the sign-in link cannot
+// send someone to another site after GitHub approves them.
+export function returnPath(value: string | undefined) {
+  return value !== undefined && /^\/(?![/\\])/.test(value) ? value : null;
+}
+
+export function signInHref(next: string) {
+  return `/auth/github?next=${encodeURIComponent(next)}`;
+}
+
 export function beginGithub(context: AuthContext) {
   const credentials = githubCredentials(context);
   if (credentials instanceof Response) return credentials;
@@ -119,6 +129,12 @@ export function beginGithub(context: AuthContext) {
     ...cookieBase,
     maxAge: stateSeconds,
   });
+  const next = returnPath(context.req.query("next"));
+  if (next !== null)
+    setCookie(context, "oauth-next", next, {
+      ...cookieBase,
+      maxAge: stateSeconds,
+    });
   return context.redirect(target.toString(), 302);
 }
 
@@ -187,6 +203,8 @@ export async function githubCallback(context: AuthContext) {
   const state = context.req.query("state");
   const expected = getCookie(context, "oauth-state", "host");
   deleteCookie(context, "oauth-state", cookieClear);
+  const next = returnPath(getCookie(context, "oauth-next", "host"));
+  deleteCookie(context, "oauth-next", cookieClear);
   if (!code || !state || expected === undefined || state !== expected)
     return context.text("The sign-in state does not match. Start again.", 400);
 
@@ -233,5 +251,5 @@ export async function githubCallback(context: AuthContext) {
     ...cookieBase,
     maxAge: sessionSeconds,
   });
-  return context.redirect("/settings", 303);
+  return context.redirect(next ?? "/settings", 303);
 }

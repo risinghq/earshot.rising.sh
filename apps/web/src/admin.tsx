@@ -539,7 +539,7 @@ function tracksPage(
                     name="track_key"
                     value={track.track_key}
                   />
-                  <span class="field">
+                  <span class="form-row">
                     <label for={`at-${track.track_key}`}>Answer title</label>
                     <input
                       id={`at-${track.track_key}`}
@@ -548,7 +548,7 @@ function tracksPage(
                       value={track.answer_title ?? ""}
                     />
                   </span>
-                  <span class="field">
+                  <span class="form-row">
                     <label for={`ay-${track.track_key}`}>Answer year</label>
                     <input
                       id={`ay-${track.track_key}`}
@@ -582,7 +582,7 @@ function tracksPage(
                     value={track.banned_at === null ? "1" : "0"}
                   />
                   {track.banned_at === null && (
-                    <span class="field">
+                    <span class="form-row">
                       <label for={`rs-${track.track_key}`}>Ban reason</label>
                       <input
                         id={`rs-${track.track_key}`}

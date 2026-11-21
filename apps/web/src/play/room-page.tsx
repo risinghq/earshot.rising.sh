@@ -46,7 +46,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
               pick a nickname to play.
             </p>
             <form id="join-form" class="guess">
-              <div class="field">
+              <div class="form-row">
                 <label for="nickname">Nickname</label>
                 <input
                   id="nickname"
@@ -113,7 +113,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
             </p>
             <div class="choices" id="choices" hidden />
             <form id="typed-form" class="guess" hidden>
-              <div class="field">
+              <div class="form-row">
                 <label for="typed-answer">Song title</label>
                 <input
                   id="typed-answer"

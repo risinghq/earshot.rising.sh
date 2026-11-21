@@ -61,6 +61,8 @@ interface Player {
   anon: string | null;
   score: number;
   streak: number;
+  // Missing from a room stored before the count existed.
+  correct?: number;
 }
 
 export type RoomKind = "room" | "match";
@@ -578,6 +580,7 @@ export class Room extends DurableObject<Env> {
     for (const p of s.players) {
       p.score = 0;
       p.streak = 0;
+      p.correct = 0;
     }
     s.candidates = shuffled(s.candidates);
     s.gameId = base64url(crypto.getRandomValues(new Uint8Array(8)));
@@ -622,6 +625,7 @@ export class Room extends DurableObject<Env> {
     s.round.answers[pid] = { answer: given, correct, score, ms: elapsed };
     player.score += score;
     player.streak = correct ? player.streak + 1 : 0;
+    if (correct) player.correct = (player.correct ?? 0) + 1;
     s.lastActive = now;
     if (this.everyoneAnswered()) {
       await this.closeRound(now);
@@ -826,6 +830,8 @@ export class Room extends DurableObject<Env> {
         score: player.score,
         rank,
         players: s.playedBy === 0 ? s.players.length : s.playedBy,
+        correct: player.correct ?? 0,
+        rounds: s.served,
       });
     }
     await recordResults(this.env, rows);
