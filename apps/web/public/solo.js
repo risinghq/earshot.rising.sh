@@ -25,6 +25,37 @@ const clipVolume = savedVolume === null ? 0.6 : Number(savedVolume) / 100;
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const roundMs = 15000;
 
+// A clip never cuts off: it fades out, then pauses. A detached element keeps
+// playing, so the old round's clip fades while the next one loads. iOS
+// ignores the volume, so there it stops at once.
+function fadeOut(media, ms = 600) {
+  if (!media || media.paused) return;
+  if (!canSetVolume || reducedMotion) {
+    media.pause();
+    return;
+  }
+  const from = media.volume;
+  const id = (media.fadeId = (media.fadeId ?? 0) + 1);
+  const t0 = performance.now();
+  const step = (t) => {
+    if (media.fadeId !== id) return;
+    // A frame's timestamp can precede t0, which would push k below 0.
+    const k = Math.min(1, Math.max(0, (t - t0) / ms));
+    media.volume = from * (1 - k);
+    if (k < 1) requestAnimationFrame(step);
+    else {
+      media.pause();
+      media.volume = from;
+    }
+  };
+  requestAnimationFrame(step);
+}
+// Playing again cancels a fade in progress.
+function playClip(media) {
+  if (media.fadeId !== undefined) media.fadeId += 1;
+  return media.play();
+}
+
 let tickTimer = null;
 // One action per screen: a second tap, a key repeat or the timeout firing
 // while a submit is in flight is dropped here, and the server refuses a
@@ -195,10 +226,13 @@ function wirePlayer(round) {
     toggle.classList.add("needs-click");
   };
   toggle.onclick = () => {
-    if (audio.paused) audio.play().catch(blocked);
-    else audio.pause();
+    if (audio.paused) playClip(audio).catch(blocked);
+    else fadeOut(audio, 250);
   };
-  audio.play().catch(blocked);
+  audio.addEventListener("timeupdate", () => {
+    if (audio.duration - audio.currentTime < 0.8) fadeOut(audio, 700);
+  });
+  playClip(audio).catch(blocked);
   wireClock(round, form);
 }
 
@@ -333,8 +367,7 @@ function swap(next) {
     location.reload();
     return;
   }
-  // A detached media element keeps playing, so the old clip stops here.
-  audio?.pause();
+  fadeOut(audio);
   $("game").replaceWith(next);
   wire(next);
 }
@@ -461,7 +494,7 @@ function wire(root) {
     fadeCovers(round);
     enterReveal(round);
   } else {
-    audio?.pause();
+    fadeOut(audio);
     document.body.classList.remove("clip-live");
   }
 }

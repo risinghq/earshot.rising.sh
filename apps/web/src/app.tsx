@@ -148,7 +148,7 @@ function ProfileActions({
 }) {
   const path = `/u/${encodeURIComponent(name)}`;
   return (
-    <div class="actions">
+    <div class="actions" id="profile-actions">
       {relation === "friends" && (
         <a class="btn is-sm" href="/friends">
           Friends
@@ -160,7 +160,11 @@ function ProfileActions({
         </span>
       )}
       {relation === "none" && (
-        <form method="post" action="/friends/request">
+        <form
+          method="post"
+          action="/friends/request"
+          data-inline="profile-actions"
+        >
           <input type="hidden" name="name" value={name} />
           <input type="hidden" name="next" value={path} />
           <button class="btn is-sm is-primary" type="submit">

@@ -75,6 +75,21 @@ export const circlesArt = (
 );
 
 // The provider returns the visitor to `next` after sign-in; auth.ts keeps it.
+export function SignInButtons({ next }: { next: string }) {
+  return (
+    <div class="sign-in-buttons">
+      <a class="btn is-ink is-lg is-block" href={providerHref("github", next)}>
+        {githubIcon}
+        Sign in with GitHub
+      </a>
+      <a class="btn is-lg is-block" href={providerHref("google", next)}>
+        {googleIcon}
+        Sign in with Google
+      </a>
+    </div>
+  );
+}
+
 export function SignInCard({
   title,
   body,
@@ -90,19 +105,7 @@ export function SignInCard({
         {circlesArt}
         <h1>{title}</h1>
         <p>{body}</p>
-        <div class="sign-in-buttons">
-          <a
-            class="btn is-ink is-lg is-block"
-            href={providerHref("github", next)}
-          >
-            {githubIcon}
-            Sign in with GitHub
-          </a>
-          <a class="btn is-lg is-block" href={providerHref("google", next)}>
-            {googleIcon}
-            Sign in with Google
-          </a>
-        </div>
+        <SignInButtons next={next} />
         <p class="after">You come back to this page after.</p>
       </div>
     </div>

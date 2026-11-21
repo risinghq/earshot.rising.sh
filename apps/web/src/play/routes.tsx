@@ -41,7 +41,7 @@ import { forYouCategory, forYouCold, forYouMix, forYouSlug } from "./foryou";
 import { deezerSearchArtists } from "./sources";
 import { byDecade } from "./pool";
 import { anonKey, anonOf, playerKeyOf } from "./outcomes";
-import { newRoomCode, newRoomSecret } from "./room";
+import { isRoomCode, newRoomCode, newRoomSecret } from "./room";
 import { roomPage } from "./room-page";
 import { screenPage } from "./screen-page";
 
@@ -146,6 +146,36 @@ playApp.post("/room", async (context) => {
   return context.redirect(`/play/room/${code}?k=${creatorToken}`, 303);
 });
 
+// The hub, opened from a finished room, posts the next category here. The
+// creator's token proves who asks; everyone stays seated.
+playApp.post("/room/:code/switch", async (context) => {
+  const code = context.req.param("code");
+  if (!isRoomCode(code))
+    return context.html(notFoundPage(await sessionUser(context)), 404);
+  const input = await gameInput(context);
+  if (input instanceof Response) return input;
+  const body = await context.req.parseBody();
+  const room = context.env.ROOMS.get(context.env.ROOMS.idFromName(code));
+  const reply = await room.fetch(
+    new Request("https://room/retarget", {
+      method: "POST",
+      body: JSON.stringify({
+        token: typeof body.k === "string" ? body.k : "",
+        categorySlug: input.category.slug,
+        categoryName: input.category.name,
+        mode: input.mode,
+        candidates: input.tracks,
+      }),
+    }),
+  );
+  if (reply.status === 404)
+    return context.html(notFoundPage(await sessionUser(context)), 404);
+  if (reply.status === 403)
+    return context.text("Only the room's creator picks the category.", 403);
+  // 409: a game is running; the room page shows it.
+  return context.redirect(`/play/room/${code}`, 303);
+});
+
 playApp.get("/room/:code/ws", async (context) => {
   if (context.req.header("upgrade") !== "websocket")
     return context.text("expected a WebSocket", 426);
@@ -154,8 +184,10 @@ playApp.get("/room/:code/ws", async (context) => {
     context.env.ROOMS.idFromName(context.req.param("code")),
   );
   const params = new URLSearchParams();
-  if (user !== null) params.set("u", String(user.id));
-  else {
+  if (user !== null) {
+    params.set("u", String(user.id));
+    params.set("n", user.name);
+  } else {
     const anon = anonOf(context);
     if (anon !== null) params.set("a", anon);
   }
@@ -362,6 +394,7 @@ export async function renderHub(context: PlayContext) {
   ]);
   const who = context.req.query("who");
   const mode = context.req.query("mode");
+  const room = context.req.query("room")?.toUpperCase();
   return context.html(
     hubPage({
       categories,
@@ -370,6 +403,7 @@ export async function renderHub(context: PlayContext) {
       who: who === "room" ? "room" : "solo",
       mode: parseMode(mode) ?? defaultMode,
       forYouColdStart: cold,
+      room: room !== undefined && isRoomCode(room) ? room : undefined,
     }),
   );
 }

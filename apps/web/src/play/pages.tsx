@@ -166,16 +166,23 @@ const whoActions: Record<PlayWho, string> = {
 };
 // The hub offers the two shown modes; ?mode=hard still reaches the tiles.
 const hubModes = ["easy", "normal"] as const satisfies readonly Mode[];
+// A room tile carries the creator's token, which room.js keeps in
+// localStorage; the room refuses a switch without it.
 const setupScript = `
 const setup = document.getElementById("play-setup");
 const actions = { solo: "/play", room: "/play/room" };
 setup.addEventListener("change", () => {
-  const who = setup.querySelector('input[name="who"]:checked').value;
+  const who = setup.querySelector('input[name="who"]:checked')?.value;
   const mode = setup.querySelector('input[name="mode"]:checked').value;
   document.querySelectorAll("form.tile").forEach((tile) => {
-    if (!tile.hasAttribute("data-solo")) tile.action = actions[who];
+    if (who && !tile.hasAttribute("data-solo") && !tile.hasAttribute("data-room"))
+      tile.action = actions[who];
     tile.querySelector('input[name="mode"]').value = mode;
   });
+});
+document.querySelectorAll("form.tile[data-room]").forEach((tile) => {
+  tile.querySelector('input[name="k"]').value =
+    localStorage.getItem("quiz-room-" + tile.dataset.room) ?? "";
 });
 `;
 
@@ -203,17 +210,33 @@ function genreArt(covers: string[]) {
   );
 }
 
+// A tile starts a game for the chosen "who", or, on the hub opened from a
+// room (`/?room=CODE`), sets that room's next category.
+type TileTarget = { who: PlayWho } | { room: string };
+
 // Every form.tile follows the setup choices through setupScript.
-function tileForm(category: Category, who: PlayWho, mode: Mode, body: Child) {
+function tileForm(
+  category: Category,
+  target: TileTarget,
+  mode: Mode,
+  body: Child,
+) {
+  const room = "room" in target ? target.room : null;
   return (
     <form
       class="tile"
       key={category.slug}
       method="post"
-      action={whoActions[who]}
+      action={
+        room === null
+          ? whoActions[(target as { who: PlayWho }).who]
+          : `/play/room/${room}/switch`
+      }
+      {...(room === null ? {} : { "data-room": room })}
     >
       <input type="hidden" name="category" value={category.slug} />
       <input type="hidden" name="mode" value={mode} />
+      {room !== null && <input type="hidden" name="k" value="" />}
       {body}
     </form>
   );
@@ -225,13 +248,13 @@ function tileForm(category: Category, who: PlayWho, mode: Mode, body: Child) {
 function genreRow(
   category: Category,
   facts: TileFacts,
-  who: PlayWho,
+  target: TileTarget,
   mode: Mode,
 ) {
   const decades = facts.eras.length;
   return tileForm(
     category,
-    who,
+    target,
     mode,
     <>
       <button
@@ -281,7 +304,7 @@ const chartLabel = (category: Category) =>
 
 function chartChip(
   category: Category,
-  who: PlayWho,
+  target: TileTarget,
   mode: Mode,
   user: SignedInUser | null,
 ) {
@@ -293,7 +316,7 @@ function chartChip(
     );
   return tileForm(
     category,
-    who,
+    target,
     mode,
     <button
       class={category.feed === "mine" ? "chip is-quiet" : "chip"}
@@ -347,6 +370,8 @@ export interface HubOptions {
   who?: PlayWho;
   mode?: Mode;
   forYouColdStart?: boolean;
+  // A room code: the hub picks that room's next category.
+  room?: string;
 }
 
 export function hubPage({
@@ -356,13 +381,15 @@ export function hubPage({
   who = "solo",
   mode = defaultMode,
   forYouColdStart = true,
+  room,
 }: HubOptions) {
   const whoChecked = (value: PlayWho) =>
     who === value ? { checked: true } : {};
+  const target: TileTarget = room === undefined ? { who } : { room };
   const genres = categories.filter((category) => !isChart(category));
   const charts = categories.filter(isChart).sort(byChartOrder);
   return Page({
-    title: "Guess the song",
+    title: room === undefined ? "Guess the song" : "Next category",
     user,
     nav: "play",
     bodyClass: "hub",
@@ -370,13 +397,28 @@ export function hubPage({
       <>
         <div class="hub-hero">
           <div class="hub-intro">
-            <h1 class="display">Guess the song.</h1>
-            <p class="lede">
-              Ten clips, {roundSeconds} seconds each. The faster you’re right,
-              the more you score.
-            </p>
+            {room === undefined ? (
+              <>
+                <h1 class="display">Guess the song.</h1>
+                <p class="lede">
+                  Ten clips, {roundSeconds} seconds each. The faster you’re
+                  right, the more you score.
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 class="display">Next category.</h1>
+                <p class="lede">
+                  Pick what room {room} plays next. Everyone stays in the room.{" "}
+                  <a href={`/play/room/${room}`}>Back to the room</a>
+                </p>
+              </>
+            )}
             <form class="play-setup" id="play-setup" method="get" action="/">
-              <fieldset class="setup-row">
+              {room !== undefined && (
+                <input type="hidden" name="room" value={room} />
+              )}
+              <fieldset class="setup-row" hidden={room !== undefined}>
                 <legend class="label">Play</legend>
                 <div class="segmented">
                   <label>
@@ -423,7 +465,7 @@ export function hubPage({
             </form>
             <script dangerouslySetInnerHTML={{ __html: setupScript }} />
           </div>
-          {forYouCard(mode, forYouColdStart)}
+          {room === undefined && forYouCard(mode, forYouColdStart)}
         </div>
         <div class="hub-lists">
           <section class="hub-section" aria-labelledby="genres-title">
@@ -439,7 +481,7 @@ export function hubPage({
                 genreRow(
                   category,
                   facts[category.slug] ?? { eras: [], covers: [] },
-                  who,
+                  target,
                   mode,
                 ),
               )}
@@ -459,12 +501,12 @@ export function hubPage({
                   <h3>Top 50 charts</h3>
                   <div class="chips">
                     {charts.map((category) =>
-                      chartChip(category, who, mode, user),
+                      chartChip(category, target, mode, user),
                     )}
                   </div>
                 </div>
               )}
-              <div class="way">
+              <div class="way" hidden={room !== undefined}>
                 <h3 id="artist-title">Play an artist</h3>
                 <form method="get" action="/play/artists" class="inline-form">
                   <input
@@ -541,7 +583,8 @@ function bestStreak(results: Game["results"]) {
 // The game's own top bar, shown in place of the site header while a game
 // runs: a way out, the segmented progress through the rounds, then the
 // streak and the score. Client scripts update it by id as rounds land. A
-// finished round's segment turns right or wrong when marks says which.
+// finished round's segment turns right or wrong when marks says which. A
+// room passes its mode, which takes the streak's place.
 export function gameBar({
   done,
   marks = [],
@@ -550,6 +593,7 @@ export function gameBar({
   streak,
   quit = "/",
   current = true,
+  mode,
 }: {
   done: number;
   marks?: boolean[];
@@ -558,6 +602,7 @@ export function gameBar({
   streak: number;
   quit?: string;
   current?: boolean;
+  mode?: string;
 }) {
   const round = current ? Math.min(done + 1, total) : Math.max(done, 1);
   return (
@@ -581,9 +626,13 @@ export function gameBar({
         ))}
       </ol>
       <div class="game-side">
-        <span class="game-streak" hidden={streak < 2}>
-          Streak ×<span class="game-streak-n">{streak}</span>
-        </span>
+        {mode === undefined ? (
+          <span class="game-streak" hidden={streak < 2}>
+            Streak ×<span class="game-streak-n">{streak}</span>
+          </span>
+        ) : (
+          <span class="room-mode">{mode}</span>
+        )}
         <span class="game-score">
           <span class="game-score-n">{score.toLocaleString("en-US")}</span>
         </span>
@@ -612,7 +661,14 @@ export function quitDialog(back: string = "/") {
   );
 }
 
-function reportForm(result: RoundResult, categorySlug: string, back: string) {
+// The song a reveal shows. The room page renders it empty as a template and
+// room.js fills it.
+type ShownSong = Pick<
+  RoundResult,
+  "trackKey" | "title" | "original" | "artist" | "cover" | "link"
+>;
+
+function reportForm(result: ShownSong, categorySlug: string, back: string) {
   return (
     <details class="report sheet-report">
       <summary aria-label="Report this clip">
@@ -656,9 +712,13 @@ const outIcon = (
 );
 
 // The answered song, shown on the clip's own stage while the clip plays on.
-// solo.js moves this block into the question's player, so the audio and its
-// pause button survive the reveal.
-function nowPlaying(result: RoundResult, categorySlug: string, back: string) {
+// solo.js and room.js move this block into the question's player, so the
+// audio and its pause button survive the reveal.
+export function nowPlaying(
+  result: ShownSong,
+  categorySlug: string,
+  back: string,
+) {
   return (
     <div class="now">
       <p class="now-label">
@@ -750,6 +810,7 @@ export function questionPage(
             worthId="count-worth"
             volumeId="clip-volume"
             timerWaits
+            round={`Round ${game.results.length + 1} of ${roundsPerGame}`}
           />
           <h1 class="round-title">Which song is this?</h1>
           {game.mode !== "hard" ? (
@@ -863,9 +924,13 @@ function revealPage(
           data-score={String(result.score)}
           aria-live="polite"
         >
+          <p class="label round-count">
+            Round {game.results.length} of {roundsPerGame}
+          </p>
           <div class="player is-reveal">
             {nowPlaying(result, game.categorySlug, `/play/${game.id}`)}
           </div>
+          <h1 class="round-title">Which song is this?</h1>
           {result.choices.length > 0 ? (
             <div class="choices reveal-choices">
               {result.choices.map((choice, index) => (

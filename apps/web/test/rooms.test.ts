@@ -80,11 +80,34 @@ interface Client {
   close: () => void;
 }
 
-async function connect(code: string): Promise<Client> {
+async function sha256(value: string) {
+  return new Uint8Array(
+    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)),
+  );
+}
+
+let userSeq = 0;
+async function signIn(name: string) {
+  userSeq += 1;
+  const id = 100 + userSeq;
+  const token = `sess_${id}_${"s".repeat(30)}`;
+  const now = Math.floor(Date.now() / 1000);
+  await env.DB.batch([
+    env.DB.prepare(
+      "INSERT INTO users (id, github_id, name, is_public, created_at) VALUES (?1, ?2, ?3, 1, ?4)",
+    ).bind(id, id, name, now),
+    env.DB.prepare(
+      "INSERT INTO sessions (hash, user_id, expires_at) VALUES (?1, ?2, ?3)",
+    ).bind(await sha256(token), id, now + 86400),
+  ]);
+  return `__Host-session=${token}`;
+}
+
+async function connect(code: string, cookie?: string): Promise<Client> {
+  const headers: Record<string, string> = { upgrade: "websocket" };
+  if (cookie) headers.cookie = cookie;
   const response = await app.fetch(
-    new Request(`${origin}/play/room/${code}/ws`, {
-      headers: { upgrade: "websocket" },
-    }),
+    new Request(`${origin}/play/room/${code}/ws`, { headers }),
     testEnv() as never,
   );
   const ws = response.webSocket!;
@@ -968,6 +991,100 @@ describe("rooms", () => {
     expect(cleared.state).toBeUndefined();
     expect(cleared.alarm === null || cleared.alarm > tickAt).toBe(true);
     ann.close();
+  });
+
+  it("seats the creator as Host without a nickname", async () => {
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    const { code, key } = await createRoom();
+    const host = await connect(code);
+    await join(host, undefined, key);
+    const players = (await stored(code)).players as {
+      name: string;
+      creator: boolean;
+    }[];
+    expect(players).toEqual([
+      expect.objectContaining({ name: "Host", creator: true }),
+    ]);
+    host.close();
+  });
+
+  it("seats a signed-in player under their name, once across devices", async () => {
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    const { code } = await createRoom();
+    const cookie = await signIn("ann");
+    const phone = await connect(code, cookie);
+    await join(phone, undefined);
+    const laptop = await connect(code, cookie);
+    await join(laptop, undefined);
+    const players = (await stored(code)).players as { name: string }[];
+    expect(players.map((p) => p.name)).toEqual(["ann"]);
+    const state = (await waitFor(laptop, inPhase("lobby"))) as {
+      players: { name: string; user: boolean }[];
+      seats: number;
+    };
+    expect(state.players[0]).toMatchObject({ name: "ann", user: true });
+    expect(state.seats).toBeGreaterThan(1);
+    phone.close();
+    laptop.close();
+  });
+
+  it("previews the room to a guest who has not picked a name", async () => {
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    const { code, key } = await createRoom();
+    const host = await connect(code);
+    await join(host, undefined, key);
+    const guest = await connect(code);
+    guest.send({ type: "join" });
+    const preview = (await waitFor(guest, isType("preview"))) as {
+      category: string;
+      players: string[];
+    };
+    expect(preview.category).toBe("Pop");
+    expect(preview.players).toEqual(["Host"]);
+    expect(await waitFor(guest, isType("error"))).toMatchObject({
+      code: "name",
+    });
+    host.close();
+    guest.close();
+  });
+
+  it("keeps the pick and the correct count in the snapshot", async () => {
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    const { code, key } = await createRoom();
+    const ann = await connect(code);
+    const bob = await connect(code);
+    const joined = (await join(ann, "Ann", key)) as { token: string };
+    await join(bob, "Bob");
+    ann.send({ type: "start" });
+    await waitFor(ann, inPhase("playing"));
+    const s = await stored(code);
+    const current = s.round as { index: number; startedAt: number };
+    const title = (s.candidates as { title: string }[])[current.index].title;
+    const players = s.players as { id: string; name: string }[];
+    const pid = (name: string) => players.find((p) => p.name === name)!.id;
+    // Bob has not answered, so the round stays open and a reload of Ann's
+    // page must still show her pick.
+    await call(code, (room) =>
+      room.answer(pid("Ann"), title, current.startedAt + 1_000),
+    );
+    const reload = await connect(code);
+    await join(reload, undefined, joined.token);
+    const mine = (await waitFor(reload, inPhase("playing"))) as {
+      you: { answer: string | null };
+    };
+    expect(mine.you.answer).toBe(title);
+    await call(code, (room) =>
+      room.answer(pid("Bob"), "wrong", current.startedAt + 2_000),
+    );
+    const after = (await stored(code)).players as {
+      name: string;
+      correct?: number;
+    }[];
+    expect(after.find((p) => p.name === "Ann")!.correct).toBe(1);
+    expect(after.find((p) => p.name === "Bob")!.correct ?? 0).toBe(0);
+    ann.close();
+    bob.close();
+    reload.close();
   });
 
   it("announces the sheet verdict in a live region", async () => {

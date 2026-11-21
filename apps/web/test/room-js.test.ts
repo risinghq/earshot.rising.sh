@@ -1,117 +1,91 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-// Drives public/room.js's reveal renderer against a fake DOM, the same way
-// match-js.test.ts drives match.js: elements are stubs, state messages are
-// delivered through a fake WebSocket.
-const baseEl = () => ({
-  hidden: true,
-  open: false,
-  textContent: "",
-  value: "",
-  className: "",
-  src: "",
-  href: "",
-  volume: 1,
-  dataset: {},
-  listeners: {} as Record<string, (event: unknown) => void>,
-  addEventListener(type: string, fn: (event: unknown) => void) {
-    this.listeners[type] = fn;
-  },
-  replaceChildren() {},
-  append() {},
-  classList: { add: () => {}, toggle: () => {}, remove: () => {} },
-  reset() {},
-  play: async () => {},
-  pause() {},
-  removeAttribute() {},
-  setAttribute() {},
-  querySelector: null as never,
-  querySelectorAll() {
-    return [];
-  },
-});
-type Stub = Omit<ReturnType<typeof baseEl>, "querySelector"> & {
-  querySelector: (sel: string) => Stub;
-};
-const makeEl = (): Stub => {
-  const stub = baseEl();
-  (stub as never as Stub).querySelector = () => makeEl();
-  return stub as never as Stub;
+// Drives public/room.js against a fake DOM: every element is a stub that
+// records its children, and state messages arrive through a fake WebSocket.
+// The tests run in the Workers runtime, which has no DOM of its own.
+type Stub = {
+  [key: string]: unknown;
+  id: string;
+  hidden: boolean;
+  open: boolean;
+  textContent: string;
+  value: string;
+  children: unknown[];
+  dataset: Record<string, string>;
+  append: (...nodes: unknown[]) => void;
 };
 
-const els = new Map<string, Stub>();
-const el = (id: string, dataset: Record<string, string> = {}) => {
-  const stub = makeEl();
-  stub.dataset = dataset;
-  els.set(id, stub);
+let clones = 0;
+const makeEl = (id = ""): Stub => {
+  const stub: Stub = {
+    id,
+    hidden: true,
+    open: false,
+    textContent: "",
+    value: "",
+    className: "",
+    src: "",
+    href: "",
+    volume: 1,
+    paused: true,
+    children: [],
+    childNodes: [],
+    dataset: {},
+    style: { setProperty() {}, removeProperty() {}, transform: "" },
+    classList: { add() {}, toggle() {}, remove() {}, contains: () => false },
+    elements: new Proxy({}, { get: () => ({ value: "" }) }),
+    content: {
+      firstElementChild: {
+        cloneNode: () => {
+          clones += 1;
+          return makeEl();
+        },
+      },
+    },
+    append(...nodes: unknown[]) {
+      stub.children.push(...nodes);
+    },
+    replaceChildren(...nodes: unknown[]) {
+      stub.children = [...nodes];
+    },
+    addEventListener() {},
+    setAttribute() {},
+    removeAttribute() {},
+    toggleAttribute() {},
+    remove() {},
+    focus() {},
+    select() {},
+    reset() {},
+    pause() {},
+    load() {},
+    play: async () => {},
+    closest: () => null,
+    querySelector: () => makeEl(),
+    querySelectorAll: () => [],
+  };
   return stub;
 };
 
-el("room", { code: "abcd" });
-for (const id of [
-  "join-card",
-  "lobby-card",
-  "game-card",
-  "reveal-card",
-  "final-card",
-  "players-card",
-  "room-link",
-  "room-meta",
-  "room-error",
-  "join-form",
-  "nickname",
-  "lobby-hint",
-  "start-button",
-  "count-left",
-  "count-bar",
-  "clip",
-  "clip-status",
-  "clip-toggle",
-  "clip-volume",
-  "choices",
-  "typed-form",
-  "typed-answer",
-  "answer-status",
-  "points-hint",
-  "players",
-  "player-wrap",
-  "reveal-scores",
-  "room-sheet",
-  "sheet-check",
-  "sheet-cross",
-  "sheet-verdict",
-  "sheet-points",
-  "sheet-title",
-  "sheet-artist",
-  "sheet-link",
-  "sheet-next",
-  "quit-dialog",
-  "standings",
-  "board",
-  "board-empty",
-  "rematch-button",
-])
-  el(id);
+const els = new Map<string, Stub>();
+const byId = (id: string) => {
+  if (!els.has(id)) els.set(id, makeEl(id));
+  return els.get(id)!;
+};
+byId("game").dataset = { code: "ABCD23", user: "1" };
+byId("clip").closest = () => makeEl();
 
-const report = el("reveal-report");
-const reason = makeEl();
-const failHint = makeEl();
-const fields = {
-  "#report-track": el("report-track"),
-  "#report-title": el("report-title"),
-  "#report-artist": el("report-artist"),
-  "#report-category": el("report-category"),
-  "#report-back": el("report-back"),
-  select: reason,
-  ".report-failed": failHint,
-};
-const form = {
-  action: "/play/report",
-  reset: vi.fn(),
-  querySelector: (sel: string) => fields[sel as never] ?? makeEl(),
-};
-report.querySelector = (sel: string) =>
-  sel === "form" ? (form as never) : (fields[sel as never] ?? makeEl());
+const listeners: Record<string, (event: unknown) => void> = {};
+vi.stubGlobal("document", {
+  getElementById: byId,
+  createElement: () => makeEl(),
+  createDocumentFragment: () => makeEl(),
+  addEventListener: (type: string, fn: (event: unknown) => void) => {
+    listeners[type] = fn;
+  },
+  querySelector: () => null,
+  querySelectorAll: () => [],
+  body: makeEl(),
+});
 
 class FakeSocket {
   static last: FakeSocket;
@@ -133,80 +107,94 @@ class FakeSocket {
   }
 }
 
-const revealState = (track: string) => ({
+const revealState = (number: number, track: string) => ({
   type: "state",
-  phase: "reveal",
-  rounds: 10,
+  kind: "room",
+  code: "ABCD23",
+  category: "Pop",
   categorySlug: "pop",
-  you: { name: "Ann", creator: true, user: true },
-  players: [],
-  reveal: { number: 1, track, title: "Song", artist: "Artist", results: [] },
+  mode: "easy",
+  phase: "reveal",
+  now: Date.now(),
+  rounds: 10,
+  seats: 8,
+  you: { name: "Ann", creator: true, user: true, marks: [], streak: 0 },
+  players: [{ name: "Ann", creator: true, score: 0, connected: true }],
+  reveal: {
+    number,
+    track,
+    title: "Song",
+    artist: "Artist",
+    until: Date.now() + 5000,
+    choices: [],
+    results: [],
+  },
 });
 
-vi.stubGlobal("document", {
-  getElementById: (id: string) => els.get(id),
-  createElement: () => makeEl(),
-  addEventListener: () => {},
-  querySelector: () => null,
-});
+// The visible words of a stub and everything it holds.
+const text = (node: unknown): string =>
+  typeof node === "string"
+    ? node
+    : `${(node as Stub).textContent}${(node as Stub).children.map(text).join("")}`;
+
 vi.stubGlobal("location", {
   protocol: "https:",
-  host: "music.rising.sh",
-  origin: "https://music.rising.sh",
-  pathname: "/play/room/abcd",
+  host: "earshot.rising.sh",
+  origin: "https://earshot.rising.sh",
+  pathname: "/play/room/ABCD23",
   search: "",
 });
 vi.stubGlobal("WebSocket", FakeSocket);
 vi.stubGlobal("localStorage", { getItem: () => null, setItem: () => {} });
 vi.stubGlobal("history", { replaceState: () => {} });
-vi.stubGlobal("navigator", { vibrate: () => {} });
+vi.stubGlobal("navigator", {});
 vi.stubGlobal("requestAnimationFrame", () => {});
 vi.stubGlobal("matchMedia", () => ({ matches: false }));
 
-describe("room.js report details", () => {
+describe("room.js reveal", () => {
   beforeAll(async () => {
     // @ts-expect-error plain browser script has no type declarations
     await import("../public/room.js");
     await Promise.resolve();
   });
 
-  it("keeps an in-progress report across repeat reveal states", () => {
-    FakeSocket.last.deliver(revealState("dz:1"));
-    expect(report.open).toBe(false);
-    report.open = true;
-    reason.value = "bad_clip";
-    FakeSocket.last.deliver(revealState("dz:1"));
-    expect(report.open).toBe(true);
-    expect(reason.value).toBe("bad_clip");
-    FakeSocket.last.deliver(revealState("dz:2"));
-    expect(report.open).toBe(false);
-    expect(form.reset).toHaveBeenCalled();
+  it("builds the now-playing card once per round, so an open report stays open", () => {
+    FakeSocket.last.deliver(revealState(1, "dz:1"));
+    const first = clones;
+    FakeSocket.last.deliver(revealState(1, "dz:1"));
+    expect(clones).toBe(first);
+    FakeSocket.last.deliver(revealState(2, "dz:2"));
+    expect(clones).toBeGreaterThan(first);
   });
 
-  it("says results soon on the final reveal", () => {
-    FakeSocket.last.deliver({
-      ...revealState("dz:9"),
-      reveal: {
-        number: 10,
-        track: "dz:9",
-        title: "Song",
-        artist: "Artist",
-        results: [],
-      },
-    });
-    expect(els.get("sheet-next")!.textContent).toBe("Results soon");
+  it("counts down to the results on the final reveal", () => {
+    FakeSocket.last.deliver(revealState(10, "dz:10"));
+    expect(text(byId("sheet-sub"))).toMatch(/^Results in \d+ s$/);
   });
 
   it("shows the failure hint when the report is rejected", async () => {
-    FakeSocket.last.deliver(revealState("dz:3"));
-    const submit = report.listeners.submit!;
+    const form = makeEl();
+    form.action = "/play/report";
+    form.closest = () => makeEl();
+    vi.stubGlobal(
+      "FormData",
+      class {
+        entries() {
+          return [][Symbol.iterator]();
+        }
+      },
+    );
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({ ok: false, type: "basic", status: 429 })),
     );
-    submit({ preventDefault: () => {}, target: form });
-    await Promise.resolve();
-    await Promise.resolve();
-    expect(failHint.hidden).toBe(false);
+    listeners.submit!({
+      preventDefault() {},
+      target: {
+        closest: (sel: string) => (sel === ".report-form" ? form : null),
+      },
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(form.children.map(text)).toContain("Could not send the report.");
   });
 });

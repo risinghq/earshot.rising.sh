@@ -1,90 +1,74 @@
+// The room's TV page. It watches the room over the same WebSocket as the
+// phones, plays the clip and shows the game; the phones answer.
 const root = document.getElementById("screen");
 const code = root.dataset.code;
 const $ = (id) => document.getElementById(id);
 const show = (el, on) => {
   el.hidden = !on;
 };
-const listenLabel = (link) =>
-  `Listen on ${link.includes("apple.com") ? "Apple Music" : "Deezer"}`;
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const number = (value) => value.toLocaleString("en-US");
+const roundMs = 15000;
+// Mirrors scoreFor in src/play/quiz.ts: 1000 at the start, 100 at the end.
+const worthAt = (ms) => (ms > 0 ? Math.round(100 + (900 * ms) / roundMs) : 0);
+const modeLabels = { easy: "Easy", normal: "Normal", hard: "Hard" };
 const cards = ["lobby", "game", "reveal", "final"].map((name) =>
   $(`screen-${name}`),
 );
-const modeLabels = {
-  easy: "titles with artists",
-  normal: "titles only",
-  hard: "type the title",
+const el = (tag, className, text) => {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
 };
-// The same label the server renders in pages.tsx choiceLabel.
-const choiceLabel = (choice) => {
-  const label = document.createElement("span");
-  label.className = "choice-label";
-  const title = document.createElement("span");
-  title.className = "choice-title";
-  title.textContent = choice.title;
-  label.append(title);
-  if (choice.artist) {
-    const artist = document.createElement("span");
-    artist.className = "choice-artist";
-    artist.textContent = choice.artist;
-    label.append(artist);
-  }
-  return label;
+// The same hash as hueOf in src/ui/person.tsx, so a person and a category
+// keep the colours the server pages give them.
+const hueOf = (text) =>
+  [...text].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 360, 7);
+const mono = (name) => {
+  const span = el("span", "mono", [...name][0] ?? "?");
+  span.style.setProperty("--hue", String(hueOf(name)));
+  span.setAttribute("aria-hidden", "true");
+  return span;
 };
+const host = (s) => s.players.find((p) => p.creator)?.name;
 
 let ws;
+let gone = false;
+let phase = "connecting";
 let offset = 0; // server time minus local time
 let tickTimer = null;
+let nextTimer = null;
 let playTimer = null;
 let loadedFor = 0; // the round number this screen last reported ready
 
-// The page can set clip volume everywhere except iOS, where setting it is
-// silently ignored; the slider stays hidden there.
-const volumeProbe = document.createElement("audio");
-volumeProbe.volume = 0.5;
-const canSetVolume = volumeProbe.volume !== 1;
-const volumeKey = "earshot-volume";
-const savedVolume = localStorage.getItem(volumeKey);
-
-const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-{
-  const audio = $("screen-clip");
-  audio.volume = savedVolume === null ? 0.6 : Number(savedVolume) / 100;
-  const volumeInput = $("screen-volume");
-  if (volumeInput && canSetVolume) {
-    volumeInput.hidden = false;
-    volumeInput.value = String(Math.round(audio.volume * 100));
-    volumeInput.oninput = () => {
-      const v = Number(volumeInput.value);
-      audio.volume = v / 100;
-      localStorage.setItem(volumeKey, String(v));
-    };
-  }
-  // The sound button follows the media element's real state: it shows only
-  // while the round wants sound and a play attempt was blocked — a clip
-  // that is merely still loading must not raise it.
-  let wantsSound = false;
-  let blocked = false;
-  const syncSound = () =>
-    show($("screen-sound"), wantsSound && blocked && audio.paused);
-  audio.addEventListener("playing", () => {
-    blocked = false;
-    syncSound();
-  });
-  audio.syncSound = () => {
-    wantsSound = true;
-    syncSound();
-  };
-  audio.blockSound = () => {
-    blocked = true;
-    syncSound();
-  };
-  audio.stopSound = () => {
-    wantsSound = false;
-    blocked = false;
-    syncSound();
-  };
+// Browsers hold sound until the page gets a click. In the lobby the button
+// asks for that click ahead of time; in a round it shows when a play was
+// blocked. Once the page has had a click, Chrome and Firefox let every
+// later clip play.
+const audio = $("screen-clip");
+const soundButton = $("screen-sound");
+let wantsSound = false;
+let blocked = false;
+const activated = () =>
+  navigator.getAutoplayPolicy?.("mediaelement") === "allowed" ||
+  navigator.userActivation?.hasBeenActive === true;
+function syncSound() {
+  const lobby = phase === "lobby" && !activated();
+  const stuck = wantsSound && blocked && audio.paused;
+  show(soundButton, lobby || stuck);
 }
+audio.addEventListener("playing", () => {
+  blocked = false;
+  root.classList.add("is-live");
+  syncSound();
+});
+audio.addEventListener("pause", () => root.classList.remove("is-live"));
+soundButton.onclick = () => {
+  if (wantsSound) audio.play().catch(() => {});
+  else syncSound();
+};
+document.addEventListener("pointerdown", () => setTimeout(syncSound));
 
 function connect() {
   ws = new WebSocket(
@@ -94,12 +78,10 @@ function connect() {
   ws.onmessage = (event) => handle(JSON.parse(event.data));
   ws.onclose = (event) => {
     if (event.code === 1001) {
-      connect.gone = true;
-      error("This room has closed.");
-      cards.forEach((card) => show(card, false));
+      closed("This room has closed.");
       return;
     }
-    if (!connect.gone) setTimeout(connect, 1000);
+    if (!gone) setTimeout(connect, 1000);
   };
 }
 
@@ -110,9 +92,7 @@ function send(value) {
 function handle(message) {
   if (message.type === "error") {
     if (message.code === "gone") {
-      connect.gone = true;
-      error("This room is closed. Start a new one from the categories page.");
-      cards.forEach((card) => show(card, false));
+      closed("This room has closed. Start a new one from the hub.");
       ws.close();
       return;
     }
@@ -123,48 +103,71 @@ function handle(message) {
 }
 
 function error(text) {
-  const el = $("screen-error");
-  el.textContent = text;
-  show(el, text !== "");
+  const node = $("screen-error");
+  node.textContent = text;
+  show(node, text !== "");
 }
 
-const row = (name, sub, count) => {
-  const li = document.createElement("li");
-  const track = document.createElement("div");
-  track.className = "track";
-  const b = document.createElement("b");
-  b.textContent = name;
-  track.append(b);
-  if (sub) {
-    const small = document.createElement("small");
-    small.textContent = sub;
-    track.append(small);
-  }
-  const span = document.createElement("span");
-  span.className = "count";
-  span.textContent = count;
-  li.append(track, span);
-  return li;
-};
+function closed(text) {
+  gone = true;
+  phase = "closed";
+  stopClip();
+  wantsSound = false;
+  syncSound();
+  cards.forEach((card) => show(card, false));
+  error(text);
+}
 
+// The clip fades out over 600 ms rather than cutting off, then lets go of its
+// source. A new clip arriving meanwhile cancels the fade.
 function stopClip() {
-  const audio = $("screen-clip");
-  audio.pause();
-  audio.removeAttribute("src");
-  audio.load();
-  delete audio.dataset.url;
   clearTimeout(playTimer);
+  const url = audio.dataset.url;
+  delete audio.dataset.url;
+  const release = () => {
+    if (audio.dataset.url !== undefined) return;
+    audio.pause();
+    audio.removeAttribute("src");
+    audio.load();
+  };
+  if (audio.paused || url === undefined) {
+    release();
+    return;
+  }
+  const from = audio.volume;
+  const t0 = performance.now();
+  const step = (t) => {
+    if (audio.dataset.url !== undefined) {
+      audio.volume = from;
+      return;
+    }
+    // A frame's timestamp can precede t0, which would push k below 0.
+    const k = Math.min(1, Math.max(0, (t - t0) / 600));
+    audio.volume = from * (1 - k);
+    if (k < 1) requestAnimationFrame(step);
+    else {
+      release();
+      audio.volume = from;
+    }
+  };
+  requestAnimationFrame(step);
 }
 
 function render(s) {
   error("");
   offset = s.now - Date.now();
+  phase = s.phase;
+  root.dataset.phase = s.phase;
   // The clip plays through its round's reveal, so the room hears the rest of
   // the song; the lobby, the next load and the final standings silence it.
   if (s.phase !== "playing" && s.phase !== "reveal") {
     stopClip();
-    $("screen-clip").stopSound();
+    wantsSound = false;
+    blocked = false;
   }
+  clearInterval(tickTimer);
+  clearInterval(nextTimer);
+  fillRoom(s);
   show($("screen-lobby"), s.phase === "lobby");
   show($("screen-game"), s.phase === "loading" || s.phase === "playing");
   show($("screen-reveal"), s.phase === "reveal");
@@ -173,28 +176,74 @@ function render(s) {
   if (s.phase === "loading" || s.phase === "playing") renderRound(s);
   if (s.phase === "reveal") renderReveal(s);
   if (s.phase === "done") renderDone(s);
+  syncSound();
+}
+
+function fillRoom(s) {
+  root.querySelectorAll("[data-room='category']").forEach((node) => {
+    node.textContent = s.category;
+  });
+  root.querySelectorAll(".mosaic").forEach((node) => {
+    node.style.setProperty("--hue", String(hueOf(s.categorySlug || "")));
+  });
+}
+
+// "Waiting for <host> to …", with the host's monogram in front.
+function waitLine(node, s, what, after = "") {
+  const name = host(s);
+  node.replaceChildren();
+  if (name) node.append(mono(name));
+  // One text span, so the row's gap falls only after the monogram.
+  const text = el("span");
+  text.append("Waiting for ", el("strong", "", name ?? "the host"));
+  text.append(` to ${what}.${after}`);
+  node.append(text);
 }
 
 function renderLobby(s) {
-  $("screen-category").textContent = `${s.category} · ${modeLabels[s.mode]}`;
-  $("screen-lobby-hint").textContent =
-    s.kind === "match"
-      ? "The game starts as soon as everyone is connected."
-      : "Waiting for the room's creator to start the game.";
-  $("screen-roster").replaceChildren(
-    ...s.players.map((p) => row(p.name, p.connected ? "" : "away", p.score)),
-  );
+  $("screen-mode").textContent =
+    `${modeLabels[s.mode] ?? ""} · ${s.rounds} rounds`;
+  $("screen-seats").textContent = `${s.players.length} of ${s.seats}`;
+  const rows = s.players.map((p) => {
+    const li = el("li", p.connected ? "" : "is-away");
+    li.append(mono(p.name), el("b", "", p.name));
+    if (p.creator) li.append(el("span", "tv-tag", "Host"));
+    else if (!p.connected) li.append(el("span", "tv-tag", "Away"));
+    return li;
+  });
+  const open = Math.max(0, s.seats - s.players.length);
+  const seats = Array.from({ length: open }, () => {
+    const li = el("li", "is-open");
+    li.append(el("span", "tv-seat-empty"), el("b", "", "Open seat"));
+    return li;
+  });
+  $("screen-roster").replaceChildren(...rows, ...seats);
+  const hint = $("screen-lobby-hint");
+  if (s.kind === "match") {
+    hint.replaceChildren("The game starts once everyone is connected.");
+  } else waitLine(hint, s, "start the game");
+}
+
+// Done rounds are light, the current one is the accent.
+function fillSegments(panel, s, current) {
+  panel.querySelectorAll(".tv-segs li").forEach((li, i) => {
+    li.className = i < current ? "is-done" : i === current ? "is-now" : "";
+  });
 }
 
 function renderRound(s) {
   const playing = s.phase === "playing";
+  const panel = $("screen-game");
+  panel.classList.toggle("is-many", s.players.length > 4);
   $("screen-round-title").textContent = `Round ${s.round} of ${s.rounds}`;
-  show($("screen-loading"), !playing || !s.clip);
-  $("screen-loading").textContent = playing
-    ? "Loading the clip…"
-    : "Getting the next song ready…";
-  show($("screen-bar").parentNode, playing);
-  const audio = $("screen-clip");
+  fillSegments(panel, s, s.round - 1);
+  $("screen-loading").textContent = !playing
+    ? "Getting the next song ready…"
+    : !s.clip
+      ? "Loading the clip…"
+      : s.mode === "hard"
+        ? "Type the title on your phone."
+        : "Answer on your phone.";
   if (playing && s.clip && audio.dataset.url !== s.clip) {
     audio.dataset.url = s.clip;
     audio.src = s.clip;
@@ -210,135 +259,131 @@ function renderRound(s) {
       });
   }
   if (playing && s.clip) {
-    audio.syncSound();
+    wantsSound = true;
     // The clip starts on the server's stamp, the same moment the players'
     // phones open their answers — speed points stay fair.
     const begin = () => {
-      audio.play().catch(() => audio.blockSound());
+      audio.play().catch(() => {
+        blocked = true;
+        syncSound();
+      });
     };
     const delay = s.startedAt - offset - Date.now();
     clearTimeout(playTimer);
     if (delay > 0) playTimer = setTimeout(begin, delay);
     else begin();
   }
-  const box = $("screen-choices");
-  show(box, playing && s.mode !== "hard");
-  if (s.mode !== "hard" && s.choices) {
-    if (box.dataset.round !== String(s.round)) {
-      box.dataset.round = String(s.round);
-      box.replaceChildren(
-        ...s.choices.map((choice) => {
-          const li = document.createElement("li");
-          li.append(choiceLabel(choice));
-          return li;
-        }),
-      );
-    }
-  }
   $("screen-answers").replaceChildren(
-    ...s.players.map((p) => row(p.name, p.answered ? "answered" : "", p.score)),
+    ...s.players.map((p) => {
+      const li = el("li", p.answered ? "is-done" : "");
+      const text = el("span");
+      text.append(
+        el("b", "", p.name),
+        el("small", "", p.answered ? "Answered" : "Thinking…"),
+      );
+      li.append(mono(p.name), text);
+      return li;
+    }),
   );
-  clearInterval(tickTimer);
-  if (playing) {
-    const tick = () => {
-      const left = Math.max(0, s.endsAt - offset - Date.now());
-      $("screen-count").textContent = Math.ceil(left / 1000);
-      $("screen-bar").style.transform = `scaleX(${left / 15000})`;
-      if (left <= 0) clearInterval(tickTimer);
-    };
-    tick();
-    tickTimer = setInterval(tick, 200);
-  }
+  const ring = $("screen-ring");
+  const tick = () => {
+    const left = playing
+      ? Math.max(0, Math.min(roundMs, s.endsAt - offset - Date.now()))
+      : roundMs;
+    ring.style.setProperty("--left", String(left / roundMs));
+    $("screen-count").textContent = Math.ceil(left / 1000);
+    $("screen-worth").textContent = `seconds · worth ${number(worthAt(left))}`;
+    if (left <= 0) clearInterval(tickTimer);
+  };
+  tick();
+  if (playing) tickTimer = setInterval(tick, 200);
 }
 
 function renderReveal(s) {
   const r = s.reveal;
-  $("screen-reveal-title").textContent = `Round ${r.number}`;
+  const panel = $("screen-reveal");
+  panel.classList.toggle("is-many", r.results.length > 4);
+  $("screen-reveal-title").textContent = `Round ${r.number} of ${s.rounds}`;
+  fillSegments(panel, s, r.number - 1);
   $("screen-reveal-track").textContent = r.title;
   $("screen-reveal-artist").textContent = r.original
     ? `${r.original} · ${r.artist}`
     : r.artist;
+  $("screen-cover").style.setProperty("--hue", String(hueOf(r.title)));
   const cover = $("screen-reveal-cover");
   show(cover, !!r.cover);
   if (r.cover) cover.src = r.cover;
-  const link = $("screen-reveal-link");
-  show(link, !!r.link);
-  if (r.link) {
-    link.href = r.link;
-    link.textContent = listenLabel(r.link);
-  }
+  const totals = new Map(s.players.map((p) => [p.name, p.score]));
   $("screen-reveal-scores").replaceChildren(
-    ...r.results.map((result) => {
-      const li = row(
-        result.name,
-        result.correct
-          ? "correct" +
-              (result.streak >= 2 ? ` · ${result.streak} in a row` : "")
-          : result.answer
-            ? `answered ${result.answer}`
-            : "no answer",
-        `+${result.score}`,
-      );
-      li.classList.add(result.correct ? "is-right" : "is-wrong");
-      const count = li.querySelector(".count");
-      if (result.score > 0 && !reducedMotion) {
-        const t0 = performance.now();
-        const step = (t) => {
-          const k = Math.min(1, (t - t0) / 500);
-          count.textContent = `+${Math.round(result.score * k)}`;
-          if (k < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-      }
-      return li;
-    }),
+    ...[...r.results]
+      .sort((a, b) => b.score - a.score)
+      .map((result) => {
+        const li = el("li", result.correct ? "is-right" : "");
+        const points = el("span", "tv-pts", `+${number(result.score)}`);
+        li.append(
+          mono(result.name),
+          el("b", "", result.name),
+          points,
+          el("span", "tv-total", number(totals.get(result.name) ?? 0)),
+        );
+        if (result.score > 0 && !reducedMotion) {
+          const t0 = performance.now();
+          const step = (t) => {
+            const k = Math.min(1, (t - t0) / 500);
+            points.textContent = `+${number(Math.round(result.score * k))}`;
+            if (k < 1) requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        }
+        return li;
+      }),
   );
+  const last = r.number >= s.rounds;
+  const next = () => {
+    const left = Math.ceil(Math.max(0, r.until - offset - Date.now()) / 1000);
+    $("screen-next").textContent = last
+      ? `results in ${left} s`
+      : `next round in ${left} s`;
+  };
+  next();
+  nextTimer = setInterval(next, 250);
 }
 
 function renderDone(s) {
+  const [first, ...rest] = s.standings;
+  const panel = $("screen-final");
+  panel.classList.toggle("is-many", rest.length > 4);
+  const tied = rest.length > 0 && rest[0].score === first?.score;
+  $("screen-winner-label").textContent = tied ? "Tied for first" : "Winner";
+  const who = $("screen-winner");
+  who.replaceChildren();
+  if (first) who.append(mono(first.name), el("b", "", first.name));
+  $("screen-winner-score").textContent = first ? number(first.score) : "";
+  $("screen-winner-correct").textContent = first
+    ? `${first.correct}/${s.rounds} correct`
+    : "";
   $("screen-standings").replaceChildren(
-    ...s.standings.map((p, index) => {
-      const li = document.createElement("li");
-      const rank = document.createElement("span");
-      rank.className = "rank";
-      rank.textContent = index + 1;
-      const track = document.createElement("div");
-      track.className = "track";
-      const name = document.createElement("b");
-      name.textContent = p.name;
-      track.append(name);
-      const score = document.createElement("span");
-      score.className = "count";
-      score.textContent = p.score;
-      li.append(rank, track, score);
+    ...rest.map((p, i) => {
+      const li = el("li");
+      const text = el("span", "tv-who");
+      text.append(
+        el("b", "", p.name),
+        el("small", "", `${p.correct}/${s.rounds} correct`),
+      );
+      li.append(
+        el("span", "tv-rank", String(i + 2)),
+        mono(p.name),
+        text,
+        el("span", "tv-score", number(p.score)),
+      );
       return li;
     }),
   );
-  show($("screen-board-empty"), (s.board ?? []).length === 0);
-  $("screen-board").replaceChildren(
-    ...(s.board ?? []).map((entry, index) => {
-      const li = document.createElement("li");
-      const rank = document.createElement("span");
-      rank.className = "rank";
-      rank.textContent = index + 1;
-      const track = document.createElement("div");
-      track.className = "track";
-      const name = document.createElement("b");
-      name.textContent = entry.name;
-      track.append(name);
-      const score = document.createElement("span");
-      score.className = "count";
-      score.textContent = entry.score.toLocaleString("en-US");
-      li.append(rank, track, score);
-      return li;
-    }),
-  );
+  const hint = $("screen-final-hint");
+  if (s.kind === "match")
+    hint.replaceChildren("Full results are on every phone.");
+  else
+    waitLine(hint, s, "start a rematch", " Full results are on every phone.");
 }
-
-$("screen-sound").onclick = () => {
-  $("screen-clip")
-    .play()
-    .catch(() => {});
-};
 
 connect();
