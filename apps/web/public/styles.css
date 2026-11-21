@@ -988,16 +988,21 @@ select:disabled {
   color: var(--fg-muted);
   cursor: default;
 }
-input:is(
-    [type="text"],
-    [type="search"],
-    [type="number"],
-    [type="url"],
-    [type="password"],
-    [type="email"],
-    [type="tel"]
-  ):read-only:not(:focus-visible),
-:where(input:not([type]), textarea):read-only:not(:focus-visible) {
+/* Specificity 0,2,0: above the base field rule, below a component's own
+   input rule such as .room-share input.room-link. */
+:where(
+    input:is(
+        [type="text"],
+        [type="search"],
+        [type="number"],
+        [type="url"],
+        [type="password"],
+        [type="email"],
+        [type="tel"]
+      ),
+    input:not([type]),
+    textarea
+  ):read-only:not(:focus-visible) {
   background: var(--fill);
   border-color: var(--edge);
 }
