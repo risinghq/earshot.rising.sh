@@ -6,6 +6,8 @@ import {
   base64url,
   cookieClear,
   endSession,
+  providerHref,
+  providerNames,
   sha256Bytes,
   validName,
   type SignedInUser,
@@ -92,6 +94,12 @@ interface SourceInfo {
   last_ok_at: number | null;
   has_secret: number;
   tz: string | null;
+}
+
+// The GitHub login and Google address that sign this user in, or null.
+interface Logins {
+  github: string | null;
+  google: string | null;
 }
 
 interface TokenInfo {
@@ -238,6 +246,7 @@ function settingsPage(
   user: SignedInUser,
   sources: SourceInfo[],
   tokens: TokenInfo[],
+  logins: Logins,
   options: PageOptions,
   origin: string,
 ) {
@@ -282,7 +291,11 @@ function settingsPage(
         <header class="head">
           <h1>Settings</h1>
           <p class="lead">
-            Signed in as <b>{user.name}</b> with GitHub.
+            Signed in as <b>{user.name}</b> with{" "}
+            {[logins.github && "GitHub", logins.google && "Google"]
+              .filter(Boolean)
+              .join(" or ")}
+            .
           </p>
         </header>
         <nav class="settings-nav" aria-label="Settings">
@@ -489,6 +502,32 @@ function settingsPage(
           </section>
           <section id="account">
             <h2>Account</h2>
+            <div class="card sign-in-methods">
+              {(["github", "google"] as const).map((provider) => {
+                const login = logins[provider];
+                return (
+                  <div class="source">
+                    <div class="row">
+                      <p class="data-note">
+                        <b>{providerNames[provider]}</b>
+                        <br />
+                        {login === null
+                          ? "Not linked. Link it to sign in with either."
+                          : `Signs you in as ${login}.`}
+                      </p>
+                      {login === null && (
+                        <a
+                          class="btn"
+                          href={providerHref(provider, "/settings#account")}
+                        >
+                          Link {providerNames[provider]}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
             <form class="card is-pad" method="post" action="/settings/profile">
               <div class="form-block">
                 <label class="form-label" for="name">
@@ -690,7 +729,7 @@ type SettingsContext = Context<{
 
 async function pageData(context: SettingsContext) {
   const user = context.get("user");
-  const [sources, tokens] = await context.env.DB.batch([
+  const [sources, tokens, logins] = await context.env.DB.batch([
     context.env.DB.prepare(
       `SELECT id, kind, account, status, error, maybe_missing, last_ok_at,
               secret IS NOT NULL AS has_secret, tz
@@ -704,11 +743,21 @@ async function pageData(context: SettingsContext) {
        WHERE sources.user_id = ?1 AND tokens.revoked_at IS NULL
        ORDER BY tokens.id`,
     ).bind(user.id),
+    context.env.DB.prepare(
+      `SELECT CASE WHEN github_id > 0
+                   THEN coalesce(github_login, 'id ' || github_id) END AS github,
+              google_email AS google
+       FROM users WHERE id = ?1`,
+    ).bind(user.id),
   ]);
   return {
     user,
     sources: sources.results as unknown as SourceInfo[],
     tokens: tokens.results as unknown as TokenInfo[],
+    logins: (logins.results[0] ?? {
+      github: null,
+      google: null,
+    }) as unknown as Logins,
   };
 }
 
@@ -723,6 +772,7 @@ function render(
       data.user,
       data.sources,
       data.tokens,
+      data.logins,
       options,
       new URL(context.req.url).origin,
     ),

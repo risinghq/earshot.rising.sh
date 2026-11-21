@@ -45,11 +45,14 @@ export function Mosaic({ seed, size }: { seed: string; size?: number }) {
   );
 }
 
+// The colour tile shows until the image loads, and stays when there is none.
 export function Cover({
   seed,
+  src = null,
   disc = false,
 }: {
   seed: string;
+  src?: string | null;
   disc?: boolean;
 }) {
   return (
@@ -57,7 +60,9 @@ export function Cover({
       class={disc ? "cover is-disc" : "cover"}
       style={hueStyle(seed)}
       aria-hidden="true"
-    />
+    >
+      {src && <img src={src} alt="" loading="lazy" decoding="async" />}
+    </span>
   );
 }
 

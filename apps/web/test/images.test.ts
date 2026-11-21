@@ -1,0 +1,123 @@
+import { applyD1Migrations, env, reset, SELF } from "cloudflare:test";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import migrations from "virtual:web-migrations";
+import { fillImages, missRetrySeconds } from "../src/images";
+
+const now = Math.floor(Date.now() / 1000);
+const cover = "https://cdn-images.dzcdn.net/images/cover/abc/250x250.jpg";
+const picture = "https://cdn-images.dzcdn.net/images/artist/def/250x250.jpg";
+
+function stubDeezer(
+  tracks: unknown[],
+  artists: unknown[],
+  seen: string[] = [],
+) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL) => {
+      const url = typeof input === "string" ? input : input.toString();
+      seen.push(url);
+      const data = url.includes("/search/artist") ? artists : tracks;
+      return new Response(JSON.stringify({ data }), {
+        headers: { "content-type": "application/json" },
+      });
+    }),
+  );
+}
+
+async function seed() {
+  await env.DB.batch([
+    env.DB.prepare(
+      "INSERT INTO users (id, github_id, name, created_at) VALUES (1, 1, 'alice', ?1)",
+    ).bind(now),
+    env.DB.prepare(
+      "INSERT INTO sources (id, user_id, kind) VALUES (10, 1, 'spotify')",
+    ),
+    env.DB.prepare(
+      "INSERT INTO artists (id, key, name) VALUES (1, 'weezer', 'Weezer')",
+    ),
+    env.DB.prepare(
+      "INSERT INTO tracks (id, key, artist_id, title) VALUES (1, 'weezer-buddyholly', 1, 'Buddy Holly')",
+    ),
+    env.DB.prepare(
+      "INSERT INTO plays (user_id, played_at, source_id, track_id) VALUES (1, ?1, 10, 1)",
+    ).bind(now - 60),
+  ]);
+}
+
+beforeEach(async () => {
+  await reset();
+  await applyD1Migrations(env.DB, migrations);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe("fillImages", () => {
+  it("stores a cover by the same artist and a picture by the same name", async () => {
+    await seed();
+    stubDeezer(
+      [
+        {
+          artist: { name: "Weezer Tribute Band" },
+          album: { cover_medium: "x" },
+        },
+        { artist: { name: "weezer" }, album: { cover_medium: cover } },
+      ],
+      [{ id: 5, name: "Weezer", picture_medium: picture }],
+    );
+    await fillImages(env, now);
+    const track = await env.DB.prepare(
+      "SELECT image, image_at FROM tracks WHERE id = 1",
+    ).first();
+    const artist = await env.DB.prepare(
+      "SELECT image, image_at FROM artists WHERE id = 1",
+    ).first();
+    expect(track).toEqual({ image: cover, image_at: now });
+    expect(artist).toEqual({ image: picture, image_at: now });
+
+    const json = await (
+      await SELF.fetch("https://music.rising.sh/u/alice.json")
+    ).json<any>();
+    expect(json.top_tracks[0].image).toBe(cover);
+    expect(json.top_artists[0].image).toBe(picture);
+    const page = await (
+      await SELF.fetch("https://earshot.rising.sh/u/alice?period=month")
+    ).text();
+    expect(page).toContain(`<img src="${cover}"`);
+  });
+
+  it("records a miss and looks it up again only after the retry window", async () => {
+    await seed();
+    const seen: string[] = [];
+    stubDeezer(
+      [],
+      [{ name: "Weezer", picture_medium: "https://x/images/artist//250.jpg" }],
+      seen,
+    );
+    await fillImages(env, now);
+    expect(
+      await env.DB.prepare("SELECT image, image_at FROM artists").first(),
+    ).toEqual({ image: null, image_at: now });
+    expect(seen).toHaveLength(2);
+
+    await fillImages(env, now + 60);
+    expect(seen).toHaveLength(2);
+
+    await fillImages(env, now + missRetrySeconds + 1);
+    expect(seen).toHaveLength(4);
+  });
+
+  it("leaves a row due when Deezer fails", async () => {
+    await seed();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("busy", { status: 503 })),
+    );
+    await fillImages(env, now);
+    expect(await env.DB.prepare("SELECT image_at FROM tracks").first()).toEqual(
+      { image_at: null },
+    );
+  });
+});

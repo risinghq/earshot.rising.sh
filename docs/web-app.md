@@ -784,18 +784,31 @@ A `429` from Spotify waits out `Retry-After`; a revoked grant marks the source
 
 ## 5. Accounts and deletion
 
-**Sign-in is GitHub OAuth,** with a GitHub OAuth App and no scopes. A token with
-no scope reads public profile data, which is `id` and `login`
+**Sign-in is GitHub or Google OAuth.** GitHub uses an OAuth App with no scopes.
+A token with no scope reads public profile data, which is `id` and `login`
 ([scopes](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/scopes-for-oauth-apps)).
-The users of this service are people who run GitHub Actions for YouTube Music,
-or who put a card in a README, so they have an account. There is no password, no
-email address and no other identity provider to run. GitHub recommends GitHub
-Apps over OAuth Apps for integrations. This service only asks who the visitor is
-and keeps no token, so the permissions model of a GitHub App buys nothing.
+GitHub recommends GitHub Apps over OAuth Apps for integrations. This service
+only asks who the visitor is and keeps no token, so the permissions model of a
+GitHub App buys nothing. Google covers the players and group members who have
+no GitHub account. It asks for `openid email profile`, the scopes that need no
+Google review. There is no password to run.
 
-- `/auth/github` sets a random `state` in a cookie and redirects. The callback
-  checks it, exchanges the code, reads `GET /user`, stores `github_id` and the
-  login, and discards the GitHub token at once.
+- `/sign-in?next=PATH` offers both providers; the header's Sign in links there.
+- `/auth/github` and `/auth/google` set a random `state` in a cookie and
+  redirect. The callback checks it and exchanges the code. GitHub's token reads
+  `GET /user` and is discarded; Google's token response carries an ID token,
+  whose `aud` must be this client and `iss` Google. It comes straight from
+  Google's token endpoint over TLS, so its signature needs no check.
+- A user row holds `github_id` and `github_login`, `google_sub` and
+  `google_email`, or both. `github_id` is `NOT NULL` from the first schema, and
+  rebuilding `users` in D1 would cascade-delete friends and groups, so an
+  account with no GitHub link holds a negative `github_id`. A new Google user's
+  profile name comes from the given name, never the address; the address shows
+  only on the owner's settings page.
+- A callback that finds a signed-in visitor links that provider to their
+  account, from **Settings → Account**. It answers 409 when the account at the
+  provider already signs in to another profile, or the visitor already has one
+  from that provider.
 - The session is a random 32-byte value in a `__Host-session` cookie
   (`HttpOnly`, `Secure`, `SameSite=Lax`, path `/`, 30 days). D1 stores its
   SHA-256 in `sessions`, so the server can end a session. A signed cookie could
@@ -879,7 +892,16 @@ list by name, and the member can leave any group.
   key and groups with one temporary b-tree.
 - **JSON.**
   `{"schema": 1, "user": …, "period": …, "from": …, "to": …, "plays": …, "unique_tracks": …, "unique_artists": …, "top_tracks": […], "top_artists": […], "daily": […], "updated_at": …}`.
-  It sends `Access-Control-Allow-Origin: *`, because it is public data.
+  It sends `Access-Control-Allow-Origin: *`, because it is public data. Each
+  top track and top artist carries `image`: a Deezer album cover or artist
+  picture URL, or `null` when none is known yet.
+- **Images.** No source sends usable artwork for every play, so the cron
+  looks each track and artist up on Deezer by name (`src/images.ts`): a track
+  takes the album cover of the first hit by the same artist, an artist the
+  picture of the hit with the same name. Each tick looks up six of each,
+  newest first, and a miss is tried again after 30 days. The profile and the
+  group playlist show the image over the colour tile, which stays when there
+  is none.
 - **Snapshots.** The figures of one user and period are cached in KV under
   `snap:<user id>:<period>`, with a TTL of 15 minutes for `week` and `month` and
   6 hours for `all`. A request that finds no snapshot computes it from D1 and

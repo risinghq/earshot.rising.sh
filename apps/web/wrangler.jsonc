@@ -7,6 +7,9 @@
   "vars": {
     // Numeric GitHub ids, comma separated. Filled in per deployment.
     "ADMIN_GITHUB_IDS": "20960328",
+    // The "earshot" client of the shared rising.sh Google project. The id is
+    // public; its secret is the GOOGLE_CLIENT_SECRET Worker secret.
+    "GOOGLE_CLIENT_ID": "366344968940-38bb4u65ndtg1gp25l8etofahvetim88.apps.googleusercontent.com",
   },
   "routes": [
     { "pattern": "earshot.rising.sh", "custom_domain": true },

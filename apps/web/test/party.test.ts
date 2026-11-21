@@ -18,6 +18,7 @@ function candidate(
     artist,
     artistKey: artist,
     videoId,
+    image: null,
     plays,
   };
 }

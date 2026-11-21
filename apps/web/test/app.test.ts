@@ -577,10 +577,12 @@ describe("profile API", () => {
       title,
       artist,
       plays,
+      image: null,
     });
     const artist = (name: string, plays: number) => ({
       artist: name,
       plays,
+      image: null,
     });
     const daily = (day: string, plays: number) => ({ day, plays });
     const base = {

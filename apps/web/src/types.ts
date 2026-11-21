@@ -9,6 +9,8 @@ export interface Env {
   ADMIN_GITHUB_IDS?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
   SPOTIFY_CLIENT_ID?: string;
   SPOTIFY_CLIENT_SECRET?: string;
   SOURCE_ENCRYPTION_KEY?: string;
@@ -53,8 +55,13 @@ export interface PeriodStats {
   plays: number;
   unique_tracks: number;
   unique_artists: number;
-  top_tracks: Array<{ title: string; artist: string; plays: number }>;
-  top_artists: Array<{ artist: string; plays: number }>;
+  top_tracks: Array<{
+    title: string;
+    artist: string;
+    plays: number;
+    image: string | null;
+  }>;
+  top_artists: Array<{ artist: string; plays: number; image: string | null }>;
   daily: Array<{ day: string; plays: number }>;
   updated_at: number;
 }

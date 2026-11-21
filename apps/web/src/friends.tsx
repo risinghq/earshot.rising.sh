@@ -721,7 +721,7 @@ async function addLanding(context: FriendsContext) {
         </p>
         {user === null ? (
           <a class="btn is-primary" href={signInHref(context.req.path)}>
-            Sign in with GitHub to add {owner.name}
+            Sign in to add {owner.name}
           </a>
         ) : (
           <form method="post" action={context.req.path}>

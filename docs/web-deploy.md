@@ -104,6 +104,38 @@ GITHUB_CLIENT_ID=the-client-id
 GITHUB_CLIENT_SECRET=the-local-client-secret
 ```
 
+## Configure Google sign-in
+
+Every rising.sh product signs in with Google through one Google Cloud project,
+`teams-rising-sh`, so the consent screen is the same everywhere. Each product
+has its own OAuth client in it, so revoking one product's secret leaves the
+others signed in. Do not create a new project.
+
+In the [Google Auth Platform](https://console.cloud.google.com/auth/clients?project=teams-rising-sh)
+choose **Create client**, type **Web application**, name it after the product,
+and add these **Authorized redirect URIs**:
+
+- `https://earshot.rising.sh/auth/google/callback`
+- `https://music.rising.sh/auth/google/callback`
+- `http://localhost:8787/auth/google/callback`
+
+Google shows the client secret once, when the client is created. The client id
+is public and lives in `GOOGLE_CLIENT_ID` under `vars` in
+[`apps/web/wrangler.jsonc`](../apps/web/wrangler.jsonc). Store the secret as the
+repository secret `GOOGLE_CLIENT_SECRET`, from the repository root:
+
+```sh
+gh secret set GOOGLE_CLIENT_SECRET
+```
+
+The `web` workflow uploads it with each deploy (`wrangler deploy
+--secrets-file`), so no local Wrangler login is needed. For `wrangler dev`, put
+`GOOGLE_CLIENT_SECRET` in `apps/web/.dev.vars`.
+
+The app's branding still says "Rising Teams" and is not verified, so Google
+shows no app name on the consent screen. Renaming it to rising.sh and verifying
+it needs a rising.sh home page and privacy policy.
+
 ## Attach the custom domain
 
 The `routes` entry in `apps/web/wrangler.jsonc` attaches `earshot.rising.sh` and

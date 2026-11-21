@@ -4282,6 +4282,15 @@ details.disclosure > :not(summary) {
 .cover.is-disc {
   border-radius: 50%;
 }
+.cover {
+  overflow: hidden;
+}
+.cover img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
 
 .btn {
   align-items: center;
@@ -6041,6 +6050,19 @@ a.list-more {
 }
 .empty-card .btn {
   margin-top: 10px;
+}
+.sign-in-buttons {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+  width: 100%;
+}
+.sign-in-buttons .btn {
+  margin-top: 0;
+}
+.sign-in-buttons svg {
+  height: 20px;
+  width: 20px;
 }
 .empty-card .after {
   color: var(--ink-3);

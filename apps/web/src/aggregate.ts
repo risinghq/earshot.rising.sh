@@ -1,16 +1,8 @@
 import type { D1Database } from "@cloudflare/workers-types";
 import type { Period, PeriodStats } from "./types";
 
-interface TrackCount {
-  title: string;
-  artist: string;
-  plays: number;
-}
-
-interface ArtistCount {
-  artist: string;
-  plays: number;
-}
+type TrackCount = PeriodStats["top_tracks"][number];
+type ArtistCount = PeriodStats["top_artists"][number];
 
 interface DailyCount {
   day: number;
@@ -39,23 +31,25 @@ export async function getStats(
   const rangeBind = from === null ? [userId] : [userId, from];
   const trackSql =
     period === "all"
-      ? `SELECT tracks.title, artists.name AS artist, track_totals.plays
+      ? `SELECT tracks.title, artists.name AS artist, track_totals.plays,
+         tracks.image
          FROM track_totals JOIN tracks ON tracks.id = track_totals.track_id
          JOIN artists ON artists.id = tracks.artist_id
          WHERE track_totals.user_id = ?1
          ORDER BY track_totals.plays DESC, track_totals.track_id LIMIT 10`
-      : `SELECT tracks.title, artists.name AS artist, COUNT(*) AS plays
+      : `SELECT tracks.title, artists.name AS artist, COUNT(*) AS plays,
+         tracks.image
          FROM plays JOIN tracks ON tracks.id = plays.track_id
          JOIN artists ON artists.id = tracks.artist_id
          WHERE plays.user_id = ?1 AND plays.dup = 0${range}
          GROUP BY plays.track_id ORDER BY plays DESC, tracks.id LIMIT 10`;
   const artistSql =
     period === "all"
-      ? `SELECT artists.name AS artist, artist_totals.plays
+      ? `SELECT artists.name AS artist, artist_totals.plays, artists.image
          FROM artist_totals JOIN artists ON artists.id = artist_totals.artist_id
          WHERE artist_totals.user_id = ?1
          ORDER BY artist_totals.plays DESC, artist_totals.artist_id LIMIT 10`
-      : `SELECT artists.name AS artist, COUNT(*) AS plays
+      : `SELECT artists.name AS artist, COUNT(*) AS plays, artists.image
          FROM plays JOIN tracks ON tracks.id = plays.track_id
          JOIN artists ON artists.id = tracks.artist_id
          WHERE plays.user_id = ?1 AND plays.dup = 0${range}

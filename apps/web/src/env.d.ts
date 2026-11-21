@@ -7,6 +7,8 @@ declare namespace Cloudflare {
     SOLO: DurableObjectNamespace<import("./play/solo-store").SoloGame>;
     GITHUB_CLIENT_ID?: string;
     GITHUB_CLIENT_SECRET?: string;
+    GOOGLE_CLIENT_ID?: string;
+    GOOGLE_CLIENT_SECRET?: string;
     SPOTIFY_CLIENT_ID?: string;
     SPOTIFY_CLIENT_SECRET?: string;
     SOURCE_ENCRYPTION_KEY?: string;

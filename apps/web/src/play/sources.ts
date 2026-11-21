@@ -264,6 +264,30 @@ export async function deezerSearchPreview(
     : null;
 }
 
+// The album cover of the first hit by the wanted artist, preview or not.
+export async function deezerTrackCover(artist: string, title: string) {
+  const body = (await deezerGet(
+    `https://api.deezer.com/search?q=${encodeURIComponent(`${artist} ${title}`)}&limit=5`,
+  )) as { data?: DeezerTrack[] };
+  const hit = (body.data ?? []).find((track) =>
+    artistMatches(track.artist?.name, artist),
+  );
+  return hit?.album?.cover_medium || null;
+}
+
+// Deezer gives an artist with no picture a blank image whose path has an
+// empty hash (".../images/artist//250x250-..."), which counts as none.
+export async function deezerArtistPicture(name: string) {
+  const body = (await deezerGet(
+    `https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=5`,
+  )) as { data?: DeezerArtist[] };
+  const hit = (body.data ?? []).find((artist) =>
+    artistMatches(artist.name, name),
+  );
+  const picture = hit?.picture_medium;
+  return picture && !picture.includes("/artist//") ? picture : null;
+}
+
 // Deezer's ISRC lookup answers {"error":{"code":800}} for an unknown code.
 export async function deezerIsrcPreview(
   isrc: string,

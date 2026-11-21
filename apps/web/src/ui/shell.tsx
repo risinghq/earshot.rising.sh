@@ -102,7 +102,7 @@ export function Page({
             </div>
           </details>
         ) : (
-          <a class="pill" href="/auth/github">
+          <a class="pill" href="/sign-in">
             Sign in
           </a>
         )}

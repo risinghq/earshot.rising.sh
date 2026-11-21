@@ -171,8 +171,15 @@ describe("card text", () => {
     plays: 3,
     unique_tracks: 1,
     unique_artists: 1,
-    top_tracks: [{ title: "A<&\"' title", artist: "An<&\"' artist", plays: 3 }],
-    top_artists: [{ artist: "An<&\"' artist", plays: 3 }],
+    top_tracks: [
+      {
+        title: "A<&\"' title",
+        artist: "An<&\"' artist",
+        plays: 3,
+        image: null,
+      },
+    ],
+    top_artists: [{ artist: "An<&\"' artist", plays: 3, image: null }],
     daily: [{ day: "2026-11-12", plays: 3 }],
     updated_at: now,
   } satisfies PeriodStats;
@@ -207,6 +214,7 @@ describe("card text", () => {
             title: "あいうえおかきくけこさしすせそ",
             artist: "artist",
             plays: 1,
+            image: null,
           },
         ],
       },

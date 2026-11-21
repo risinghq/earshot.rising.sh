@@ -3,14 +3,17 @@ import { bodyLimit } from "hono/body-limit";
 import type { Env, Period, PeriodStats } from "./types";
 import { getStats } from "./aggregate";
 import {
-  beginGithub,
-  githubCallback,
+  beginSignIn,
+  returnPath,
   sessionUser,
+  signInCallback,
   type SignedInUser,
 } from "./auth";
+import { signInPage } from "./sign-in";
 import { legacyHostRedirect } from "./host";
 import { renderCard, type CardTheme } from "./card";
 import { pullDueSources } from "./cron";
+import { fillImages } from "./images";
 import { refreshCatalog } from "./play/refresh";
 import { warmChartCache } from "./play/catalog";
 import { sourceNames } from "./names";
@@ -175,16 +178,23 @@ function ProfileActions({
   );
 }
 
-// Every cover is a colour tile hashed from a seed: a track's own title and
-// artist, and for an artist the seed of their top track, so an artist's disc
-// matches that track's cover.
+// A cover shows the Deezer image when one was found, over a colour tile
+// hashed from a seed: a track's own title and artist, and for an artist the
+// seed of their top track, so an artist's disc matches that track's cover.
 function TopList({
   title,
   rows,
   artists = false,
 }: {
   title: string;
-  rows: { title: string; artist?: string; plays: number; seed: string }[];
+  rows: {
+    title: string;
+    artist?: string;
+    plays: number;
+    // Snapshots cached before images existed carry none.
+    image?: string | null;
+    seed: string;
+  }[];
   artists?: boolean;
 }) {
   const max = Math.max(1, rows[0]?.plays ?? 1);
@@ -201,7 +211,7 @@ function TopList({
           return (
             <li class="trow">
               <span class="rank">{index + 1}</span>
-              <Cover seed={row.seed} disc={artists} />
+              <Cover seed={row.seed} src={row.image} disc={artists} />
               <div class="body">
                 <div class="line">
                   <span class="title">{row.title}</span>
@@ -379,6 +389,7 @@ function profilePage(
                 return {
                   title: item.artist,
                   plays: item.plays,
+                  image: item.image,
                   seed: top ? trackSeed(top) : item.artist,
                 };
               })}
@@ -443,9 +454,27 @@ app.all("/1/*", (context) =>
 
 app.get("/", (context) => renderHub(context));
 
-app.get("/auth/github", (context) => beginGithub(context));
+app.get("/sign-in", async (context) => {
+  const next = returnPath(context.req.query("next")) ?? "/";
+  if ((await sessionUser(context)) !== null) return context.redirect(next, 303);
+  return context.html(
+    signInPage(
+      {
+        title: "Sign in",
+        heading: "Sign in to Earshot",
+        body: "Use GitHub or Google. Both keep your profile, friends and groups.",
+      },
+      next,
+    ),
+  );
+});
 
-app.get("/auth/github/callback", (context) => githubCallback(context));
+for (const provider of ["github", "google"] as const) {
+  app.get(`/auth/${provider}`, (context) => beginSignIn(context, provider));
+  app.get(`/auth/${provider}/callback`, (context) =>
+    signInCallback(context, provider),
+  );
+}
 
 app.get("/auth/spotify", (context) => beginSpotify(context));
 
@@ -559,4 +588,5 @@ export async function scheduled(_controller: ScheduledController, env: Env) {
   await pullDueSources(env);
   await refreshCatalog(env);
   await warmChartCache(env);
+  await fillImages(env);
 }

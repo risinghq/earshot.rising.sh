@@ -36,11 +36,12 @@ interface CandidateRow {
   artist_id: number;
   plays: number;
   video_id: string | null;
+  image: string | null;
 }
 
 const recentSql = `
   SELECT plays.track_id, tracks.title, artists.name AS artist,
-         tracks.artist_id, COUNT(*) AS plays,
+         tracks.artist_id, COUNT(*) AS plays, tracks.image,
          (SELECT MIN(alias.source_key) FROM track_aliases AS alias
           WHERE alias.kind = 'ytmusic'
             AND alias.track_id = plays.track_id) AS video_id
@@ -55,7 +56,7 @@ const recentSql = `
 
 const allTimeSql = `
   SELECT totals.track_id, tracks.title, artists.name AS artist,
-         tracks.artist_id, totals.plays,
+         tracks.artist_id, totals.plays, tracks.image,
          (SELECT MIN(alias.source_key) FROM track_aliases AS alias
           WHERE alias.kind = 'ytmusic'
             AND alias.track_id = totals.track_id) AS video_id
@@ -128,6 +129,7 @@ async function buildPlaylist(db: D1Database, members: Member[], now: number) {
         artist: row.artist,
         artistKey: String(row.artist_id),
         videoId: row.video_id,
+        image: row.image,
         // Shared ranking sums 90-day counts, so fill rows count as 0.
         plays: index2 < recent.length ? row.plays : 0,
       }));
@@ -418,7 +420,7 @@ function PlaylistCard({ items }: { items: PartyTrack[] }) {
             key={item.trackId}
           >
             <span class="rank">{index + 1}</span>
-            <Cover seed={`${item.title} ${item.artist}`} />
+            <Cover seed={`${item.title} ${item.artist}`} src={item.image} />
             <div class="body">
               <span class="title">{item.title}</span>
               <span class="artist">{item.artist}</span>

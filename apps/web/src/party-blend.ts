@@ -4,6 +4,7 @@ export interface PartyCandidate {
   artist: string;
   artistKey: string;
   videoId: string | null;
+  image: string | null;
   plays: number;
 }
 
@@ -18,6 +19,8 @@ export interface PartyTrack {
   artist: string;
   names: string[];
   videoId: string | null;
+  // Playlists cached before images existed carry none.
+  image?: string | null;
 }
 
 interface Entry {
@@ -71,6 +74,7 @@ export function blend(users: PartyUser[], length: number): PartyTrack[] {
       artist: entry.track.artist,
       names: entry.holders.map((index) => users[index].name),
       videoId: entry.track.videoId,
+      image: entry.track.image,
     });
     recent.push(entry.track.artistKey);
     if (recent.length > artistGap) recent.shift();

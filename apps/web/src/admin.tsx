@@ -2,7 +2,7 @@ import { Hono, type Context } from "hono";
 import type { Child } from "hono/jsx";
 import { csrf } from "hono/csrf";
 import { notFoundPage } from "./app";
-import { sessionUser, type SignedInUser } from "./auth";
+import { hasGithub, sessionUser, type SignedInUser } from "./auth";
 import {
   dropTrackCaches,
   fillMissingYears,
@@ -733,7 +733,9 @@ function usersPage(
             <div class="group-row" key={row.id}>
               <span class="row-text">
                 <b>{row.name}</b>
-                <small>GitHub {row.github_id}</small>
+                <small>
+                  {hasGithub(row) ? `GitHub ${row.github_id}` : "Google only"}
+                </small>
               </span>
               <span class="badges">
                 {row.is_public === 0 && (

@@ -11,6 +11,8 @@ const testEnv = () => ({
   CACHE: env.CACHE,
   GITHUB_CLIENT_ID: "test-client-id",
   GITHUB_CLIENT_SECRET: "test-client-secret",
+  GOOGLE_CLIENT_ID: "google-client-id",
+  GOOGLE_CLIENT_SECRET: "google-client-secret",
 });
 
 function cookieValue(response: Response, name: string) {
@@ -225,5 +227,127 @@ describe("/auth/github/callback", () => {
       testEnv() as never,
     );
     expect(response.status).toBe(502);
+  });
+});
+
+const encode = (value: unknown) =>
+  btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(value))))
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replaceAll("=", "");
+
+function googleMock(claims: Record<string, unknown>) {
+  const token = `${encode({ alg: "RS256" })}.${encode({
+    iss: "https://accounts.google.com",
+    aud: "google-client-id",
+    ...claims,
+  })}.signature`;
+  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === "string" ? input : input.toString();
+    if (url === "https://oauth2.googleapis.com/token") {
+      const body = new URLSearchParams(String(init?.body));
+      expect(body.get("client_secret")).toBe("google-client-secret");
+      expect(body.get("redirect_uri")).toBe(`${origin}/auth/google/callback`);
+      return new Response(JSON.stringify({ id_token: token }), {
+        headers: { "content-type": "application/json" },
+      });
+    }
+    return new Response("unexpected", { status: 500 });
+  });
+}
+
+async function googleSignIn(claims: Record<string, unknown>, cookie = "") {
+  const begin = await app.fetch(
+    new Request(`${origin}/auth/google`),
+    testEnv() as never,
+  );
+  const state = new URL(begin.headers.get("location") ?? "").searchParams.get(
+    "state",
+  );
+  vi.stubGlobal("fetch", googleMock(claims));
+  return app.fetch(
+    new Request(`${origin}/auth/google/callback?code=c&state=${state}`, {
+      headers: { cookie: `__Host-oauth-state=${state}${cookie}` },
+    }),
+    testEnv() as never,
+  );
+}
+
+describe("Google sign-in", () => {
+  it("asks Google for the openid, email and profile scopes", async () => {
+    const response = await app.fetch(
+      new Request(`${origin}/auth/google?next=/groups`),
+      testEnv() as never,
+    );
+    const target = new URL(response.headers.get("location") ?? "");
+    expect(target.origin).toBe("https://accounts.google.com");
+    expect(target.searchParams.get("scope")).toBe("openid email profile");
+    expect(target.searchParams.get("client_id")).toBe("google-client-id");
+    expect(response.headers.get("set-cookie")).toContain("__Host-oauth-next=");
+  });
+
+  it("creates a user named after the given name, with no GitHub id", async () => {
+    const response = await googleSignIn({
+      sub: "g-1",
+      email: "ana@example.com",
+      given_name: "Ána",
+    });
+    expect(response.status).toBe(303);
+    expect(cookieValue(response, "__Host-session")).toBeTruthy();
+    const user = await env.DB.prepare(
+      "SELECT github_id, google_sub, google_email, name FROM users",
+    ).first<Record<string, unknown>>();
+    expect(user).toMatchObject({
+      google_sub: "g-1",
+      google_email: "ana@example.com",
+      name: "ana",
+    });
+    expect(user?.github_id).toBeLessThan(0);
+
+    await googleSignIn({ sub: "g-1", email: "new@example.com" });
+    const again = await env.DB.prepare(
+      "SELECT COUNT(*) AS n, MAX(google_email) AS email FROM users",
+    ).first();
+    expect(again).toEqual({ n: 1, email: "new@example.com" });
+  });
+
+  it("refuses a token meant for another client", async () => {
+    const response = await googleSignIn({
+      sub: "g-1",
+      email: "a@example.com",
+      aud: "someone-else",
+    });
+    expect(response.status).toBe(502);
+  });
+
+  it("links Google to the signed-in GitHub account, once", async () => {
+    const { session } = await signIn({ id: 7, login: "octo" });
+    vi.unstubAllGlobals();
+    const linked = await googleSignIn(
+      { sub: "g-7", email: "octo@example.com" },
+      `; __Host-session=${session}`,
+    );
+    expect(linked.status).toBe(303);
+    expect(linked.headers.get("location")).toBe("/settings#account");
+    const user = await env.DB.prepare(
+      "SELECT COUNT(*) AS n, MAX(github_id) AS github_id, MAX(google_sub) AS sub FROM users",
+    ).first();
+    expect(user).toEqual({ n: 1, github_id: 7, sub: "g-7" });
+
+    const second = await googleSignIn(
+      { sub: "g-8", email: "other@example.com" },
+      `; __Host-session=${session}`,
+    );
+    expect(second.status).toBe(409);
+  });
+
+  it("refuses to link an account that signs in to another profile", async () => {
+    await googleSignIn({ sub: "g-9", email: "first@example.com" });
+    const { session } = await signIn({ id: 8, login: "second" });
+    const response = await googleSignIn(
+      { sub: "g-9", email: "first@example.com" },
+      `; __Host-session=${session}`,
+    );
+    expect(response.status).toBe(409);
   });
 });
