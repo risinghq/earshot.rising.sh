@@ -105,6 +105,7 @@ interface Round {
   choices: Choice[];
   link: string | null;
   cover: string | null;
+  credit?: string;
   answers: Record<string, RoundAnswer>;
 }
 
@@ -813,7 +814,7 @@ export class Room extends DurableObject<Env> {
       track: trackKeyFor(candidate),
       title: candidate.title,
       original: candidate.original ?? null,
-      artist: candidate.artist,
+      artist: round.credit ?? candidate.artist,
       cover: round.cover,
       link: round.link,
       until: now + revealMs,
@@ -894,6 +895,7 @@ export class Room extends DurableObject<Env> {
         ]),
         link: preview.link ?? candidate.link,
         cover: preview.cover ?? candidate.cover,
+        credit: preview.credit,
         answers: {},
       };
       (s.shown ??= []).push(

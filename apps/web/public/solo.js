@@ -157,6 +157,10 @@ function runBar(bar, remaining) {
 
 // Mirrors scoreFor in src/play/quiz.ts: 1000 at the start, 100 at the end.
 const worthAt = (ms) => (ms > 0 ? Math.round(100 + (900 * ms) / roundMs) : 0);
+// The worth falls 60 points a second, so a slower redraw moves it in visible,
+// uneven jumps. A timer, not animation frames: a hidden tab pauses frames, and
+// this tick also ends the round.
+const tickMs = 50;
 
 // The server's clock starts when this clip reports "playing": the bar stays
 // full until the report comes back, then runs down the server's remaining
@@ -182,7 +186,7 @@ function wireClock(round, form) {
         clearInterval(tickTimer);
         if (form) answer(form, null);
       }
-    }, 250);
+    }, tickMs);
   };
   const report = () => {
     if (reported) return;

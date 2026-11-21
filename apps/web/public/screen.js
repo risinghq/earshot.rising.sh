@@ -11,6 +11,9 @@ const number = (value) => value.toLocaleString("en-US");
 const roundMs = 15000;
 // Mirrors scoreFor in src/play/quiz.ts: 1000 at the start, 100 at the end.
 const worthAt = (ms) => (ms > 0 ? Math.round(100 + (900 * ms) / roundMs) : 0);
+// The worth falls 60 points a second; a slower redraw moves it in visible,
+// uneven jumps.
+const tickMs = 50;
 const modeLabels = { easy: "Easy", normal: "Normal", hard: "Hard" };
 const cards = ["lobby", "game", "reveal", "final"].map((name) =>
   $(`screen-${name}`),
@@ -301,7 +304,7 @@ function renderRound(s) {
     if (left <= 0) clearInterval(tickTimer);
   };
   tick();
-  if (playing) tickTimer = setInterval(tick, 200);
+  if (playing) tickTimer = setInterval(tick, tickMs);
 }
 
 function renderReveal(s) {
