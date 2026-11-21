@@ -237,6 +237,36 @@ describe("deezer_artist feed", () => {
     ]);
   });
 
+  it("plays each song once, as its plainest release, where it first ranks", async () => {
+    stubFetch([
+      [
+        /api\.deezer\.com\/artist\/3\/top/,
+        {
+          data: [
+            deezerTrack(1, "BOOMPALA (SAKURA ver.)"),
+            deezerTrack(2, "Perfect Night"),
+            deezerTrack(3, "BOOMPALA"),
+            deezerTrack(4, "CRAZY (David Guetta Remix) - Extended ver."),
+            deezerTrack(5, "BOOMPALA"),
+            deezerTrack(6, "Perfect Night (Instrumental)"),
+            deezerTrack(7, "Live My Life"),
+          ],
+        },
+      ],
+    ]);
+    const tracks = await catalog(
+      testEnv() as never,
+      { slug: "artist-3", name: "C", feed: "deezer_artist", ref: "3" },
+      null,
+    );
+    expect(tracks.map((track) => track.title)).toEqual([
+      "BOOMPALA",
+      "Perfect Night",
+      "CRAZY (David Guetta Remix) - Extended ver.",
+      "Live My Life",
+    ]);
+  });
+
   it("answers not found for an id Deezer says is unknown", async () => {
     stubFetch([
       [/api\.deezer\.com\/artist\/999\/top/, { error: { code: 800 } }],

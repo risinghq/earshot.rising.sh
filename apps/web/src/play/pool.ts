@@ -1,5 +1,5 @@
 import { normalizeText } from "../normalize";
-import { answerKey } from "./quiz";
+import { answerKey, isVersion } from "./quiz";
 import type { Candidate } from "./sources";
 
 // A decade a category offers as its own game needs enough distinct songs to
@@ -30,6 +30,24 @@ export interface PoolRow {
 // in two playlists under one track key, and two keys can be the same answer —
 // a single and the album cut — so rows dedupe on the key first, then on the
 // answer title per artist.
+// An artist's Deezer top list holds every release of a song: the single, its
+// English and Japanese versions, remixes and instrumentals. A round asks for
+// the title, so each song plays once, as its plainest release (the first with
+// no version clause, else the first) in the place where the song first ranks.
+export function songsOnce(tracks: Candidate[]): Candidate[] {
+  const chosen = new Map<string, Candidate>();
+  for (const track of tracks) {
+    const key = answerKey(track.title) || track.title;
+    const held = chosen.get(key);
+    if (
+      held === undefined ||
+      (isVersion(held.title) && !isVersion(track.title))
+    )
+      chosen.set(key, track);
+  }
+  return [...chosen.values()];
+}
+
 export function dedupePool(rows: PoolRow[]): Candidate[] {
   const seenKeys = new Set<string>();
   const seenAnswers = new Set<string>();
