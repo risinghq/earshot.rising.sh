@@ -65,6 +65,45 @@ export interface Outcome {
   kind: GameKind;
   correct: boolean;
   elapsedMs: number;
+  gameId: string;
+  round: number;
+}
+
+export type GameOrigin = "start" | "rematch" | "pick" | "match" | "solo";
+
+export interface GameStart {
+  id: string;
+  kind: GameKind;
+  room: string | null;
+  category: string;
+  mode: Mode;
+  origin: GameOrigin;
+  players: number;
+}
+
+// The game log reads the room's play without asking the client for anything:
+// the row is written on the server when the game begins.
+export async function recordGameStart(
+  env: Env,
+  game: GameStart,
+  now = Math.floor(Date.now() / 1000),
+) {
+  await env.DB.prepare(
+    `INSERT OR IGNORE INTO games
+       (id, kind, room, category, mode, origin, players, started_at)
+     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`,
+  )
+    .bind(
+      game.id,
+      game.kind,
+      game.room,
+      game.category,
+      game.mode,
+      game.origin,
+      game.players,
+      now,
+    )
+    .run();
 }
 
 export async function recordOutcomes(
@@ -78,8 +117,8 @@ export async function recordOutcomes(
       env.DB.prepare(
         `INSERT INTO round_outcomes
            (player_key, user_id, track_key, category, era, mode, kind,
-            correct, elapsed_ms, answered_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)`,
+            correct, elapsed_ms, answered_at, game_id, round, title, artist)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`,
       ).bind(
         row.playerKey,
         row.userId,
@@ -91,6 +130,10 @@ export async function recordOutcomes(
         row.correct ? 1 : 0,
         row.elapsedMs,
         now,
+        row.gameId,
+        row.round,
+        row.track.title,
+        row.track.artist,
       ),
     ),
   );

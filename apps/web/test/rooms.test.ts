@@ -1036,6 +1036,26 @@ describe("rooms", () => {
     expect(next.categorySlug).toBe("rock");
     const after = await stored(code);
     expect(after.suggestions).toEqual([]);
+
+    // The game log holds both games and what started each.
+    const games = await env.DB.prepare(
+      "SELECT id, kind, category, origin, players FROM games WHERE room = ?1 ORDER BY started_at, origin DESC",
+    )
+      .bind(code)
+      .all<{ id: string; origin: string }>();
+    expect(games.results).toMatchObject([
+      { kind: "room", category: "pop", origin: "start", players: 2 },
+      { kind: "room", category: "rock", origin: "pick", players: 2 },
+    ]);
+    const first = await env.DB.prepare(
+      "SELECT round, title, artist FROM round_outcomes WHERE game_id = ?1 ORDER BY round LIMIT 1",
+    )
+      .bind(games.results[0].id)
+      .first<{ round: number; title: string; artist: string }>();
+    expect(first).toMatchObject({
+      round: 1,
+      title: expect.stringMatching(/^Song /),
+    });
     ann.close();
     bob.close();
   });

@@ -1051,10 +1051,13 @@ stops when the next round loads or the game ends.
   means one board and one cache entry. `getCategory` resolves them at runtime
   with `/artist/{id}` for the display name, so solo games, rooms and random
   matches take them unchanged. The feed is the artist's `/artist/{id}/top`
-  tracks, two artists interleaved one for one. The player finds artists through
-  the search box on `/`, which answers `/search/artist?q=` hits sorted by fan
-  count, and starts a game on `/play/artist/IDS`. A malformed slug is a 404; an
-  unknown id or an artist with fewer than four distinct titles shows the
+  tracks, two artists interleaved one for one. That list holds every release of
+  a song, so the feed keeps one entry per answer title: the first release with
+  no remix, live, instrumental or language-version clause, at the song's first
+  rank (`songsOnce` in `src/play/pool.ts`). The player finds artists through the
+  search box on `/`, which answers `/search/artist?q=` hits sorted by fan count,
+  and starts a game on `/play/artist/IDS`. A malformed slug is a 404; an unknown
+  id or an artist with fewer than four distinct titles shows the
   category-unavailable page. No D1 row is written per artist.
 - **Sources.** Feeds come from the Deezer public API (`/chart/{genre}/tracks`,
   `/playlist/{id}/tracks`, `/artist/{id}/top`, `/artist/{id}`, `/search/artist`,
@@ -1233,6 +1236,31 @@ the last 15 days, top 10, read through the `game_results_category` index added
 in migration `0010`. It shows at `/play/board?category=SLUG`, linked from
 `/play/board`, on `/play/artist/IDS` and on the game-over page, and sits in KV
 for five minutes under `play:catboard:SLUG`.
+
+### Game log
+
+The game log answers how people play without a request, cookie or script of its
+own. Migration `0021` adds it, and the server writes it at moments that already
+happen:
+
+- **`games`.** One row per game, guests included, written when the game begins:
+  kind, room code, category, mode, the seated players, and `origin`. The origin
+  is `start` for the lobby's Start, `rematch` for Start after a game, `pick` for
+  the host's Up next pick, `match` for a random match, and `solo`.
+- **`round_outcomes`.** Each answer also carries `game_id`, the round number,
+  and the title and artist the round played. An artist feed's track has no
+  catalog row, so the title cannot be read from anywhere else.
+
+These questions read straight from the two tables:
+
+| Question                      | Read                                                                 |
+| ----------------------------- | -------------------------------------------------------------------- |
+| Gap between a room's games    | `games` by `room`, ordered by `started_at`                           |
+| Games abandoned               | `games` whose `game_id` has fewer than 10 rounds in `round_outcomes` |
+| Players who quit mid-game     | distinct `player_key` per round of one `game_id`                     |
+| Does Up next replace detours  | share of `origin = 'pick'` and the gap before it                     |
+| Hard or broken songs          | correct rate per `track_key`, named by `title`                       |
+| A song played twice in a game | `game_id`, `title` with more than one `round`                        |
 
 ### Friends and groups
 
