@@ -134,12 +134,12 @@ The `web` workflow uploads it with each deploy
 `wrangler dev`, put `GOOGLE_CLIENT_SECRET` in `apps/web/.dev.vars`.
 
 The project's branding is verified: the consent screen reads "continue to
-Rising". Google checks it against the home page `https://rising.sh`, whose
-**Sign in with Rising** section must name the app and say what the sign-in is
+rising.sh". Google checks it against the home page `https://rising.sh`, whose
+**Sign in with rising.sh** section must name the app and say what the sign-in is
 for, and against the policy at `https://rising.sh/privacy/`. Both live in the
 `risinghq/rising.sh` repository. A product that starts asking Google for more
-data updates that policy first. Google refused the plain "r" mark as a logo
-because it does not identify the brand, so the app has no logo.
+data updates that policy first. Google refused a plain "r" mark as a logo
+because it does not identify the brand. The logo is the rising.sh flame.
 
 ## Attach the custom domain
 
