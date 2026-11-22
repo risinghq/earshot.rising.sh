@@ -41,6 +41,7 @@ import { claimGame, readBoard, readCategoryBoard, recordGame } from "./results";
 import { forYouCategory, forYouCold, forYouMix, forYouSlug } from "./foryou";
 import { deezerSearchArtists } from "./sources";
 import { byDecade } from "./pool";
+import { eraName } from "./eras";
 import { anonKey, anonOf, playerKeyOf } from "./outcomes";
 import { isRoomCode, newRoomCode, newRoomSecret } from "./room";
 import { roomPage } from "./room-page";
@@ -115,7 +116,7 @@ async function gameInput(
     category:
       era === null
         ? category
-        : { ...category, name: `${category.name} · ${era}s` },
+        : { ...category, name: `${category.name} · ${eraName(era)}` },
     mode,
     tracks,
     userId: user?.id ?? null,

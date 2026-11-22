@@ -114,7 +114,7 @@ function pickSheet(code: string) {
         Pick one above
       </button>
       <a class="pick-hub" id="pick-hub" href={`/?room=${code}`}>
-        Pick a decade on the hub
+        Pick an era on the hub
       </a>
     </dialog>
   );

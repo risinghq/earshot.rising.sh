@@ -9,6 +9,8 @@ import { catalog, warmChartCache } from "../src/play/catalog";
 import { refreshCatalog, refreshSource } from "../src/play/refresh";
 import curated from "../src/play/curated.json";
 import seeds from "../scripts/curated-seeds.json";
+import { fold, sameArtist } from "../scripts/artist-names";
+import { eraLabel, eraName, erasCount, generations } from "../src/play/eras";
 import { answerKey } from "../src/play/quiz";
 import { mergeAnonOutcomes } from "../src/play/outcomes";
 
@@ -322,6 +324,45 @@ describe("curated sources", () => {
     expect(anime.filter((track) => track.work).length).toBeGreaterThan(100);
   });
 
+  it("files K-pop by the generation of each act", () => {
+    const eras = Object.keys(generations);
+    expect(Object.keys(curated["k-pop"])).toEqual(eras);
+    expect(Object.keys(seeds["k-pop"].generations)).toEqual(eras);
+    const actsOf = (era: string) =>
+      new Set(
+        (seeds["k-pop"].generations as Record<string, string[]>)[era].map(
+          (act) => fold(act),
+        ),
+      );
+    const misfiled = Object.entries(curated["k-pop"]).flatMap(([era, tracks]) =>
+      (tracks as { artist: string; title: string }[])
+        .filter((track) => !actsOf(era).has(fold(track.artist)))
+        .map((track) => `${era}: ${track.artist} | ${track.title}`),
+    );
+    expect(misfiled).toEqual([]);
+  });
+
+  it("labels decades and K-pop generations", () => {
+    expect([1990, 2010, 1996, 2023].map(eraLabel)).toEqual([
+      "90s",
+      "10s",
+      "1st gen",
+      "5th gen",
+    ]);
+    expect(eraName(2000)).toBe("2000s");
+    expect(erasCount([1996, 2004, 2012])).toBe("3 generations");
+    expect(erasCount([1990, 2000])).toBe("2 decades");
+  });
+
+  it("matches an artist name only on whole words", () => {
+    expect(sameArtist("BIGBANG", "BIGBANG (빅뱅)")).toBe(true);
+    expect(sameArtist("多田葵", "多田 葵 & VISUAL ARTS / Key")).toBe(true);
+    expect(sameArtist("Girls' Generation", "Girls Generation")).toBe(true);
+    expect(sameArtist("Shine", "SHINee")).toBe(false);
+    expect(sameArtist("Bishop Briggs", "BiSH")).toBe(false);
+    expect(sameArtist("", "IU")).toBe(false);
+  });
+
   it(
     "fills every curated source from the bundle without a request",
     {
@@ -357,6 +398,9 @@ describe("curated sources", () => {
         expect(source, source.ref).toMatchObject({ refreshed_at: 1000 });
       const empty = sources.results.filter((s) => s.tracks_count < 20);
       expect(empty.map((s) => s.ref)).toEqual([]);
+      expect(await poolEras(await catalogPool(env.DB, "k-pop"))).toEqual(
+        Object.keys(generations).map(Number),
+      );
 
       const track = await env.DB.prepare(
         `SELECT title, year, answer_title, banned_at FROM catalog_tracks

@@ -13,6 +13,7 @@ import { deezerPlaylistInfo } from "./play/sources";
 import type { Env } from "./types";
 import { PillButton } from "./ui/pill";
 import { Page } from "./ui/shell";
+import { eraLabel, generations } from "./play/eras";
 
 type AdminContext = Context<{
   Bindings: Env;
@@ -75,10 +76,10 @@ async function field(context: AdminContext, name: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function eraLabel(decade: number) {
-  return `${String(decade).slice(2)}s`;
-}
-const decadeChoices = ["1960", "1970", "1980", "1990", "2000", "2010", "2020"];
+const decadeChoices = [
+  ...["1960", "1970", "1980", "1990", "2000", "2010", "2020"],
+  ...Object.keys(generations),
+].sort();
 
 type AdminSection = "categories" | "reports" | "users";
 

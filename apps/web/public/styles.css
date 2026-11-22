@@ -1978,6 +1978,18 @@ button:disabled {
 .genre-chips .chip {
   padding: 0 11px;
 }
+/* Generation labels ("2nd gen") are too wide to scroll in a row, so the six
+   chips sit in a three-column grid. */
+.genre-chips[data-kind="gen"] {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: visible;
+  padding-right: 0;
+}
+.genre-chips[data-kind="gen"] .chip {
+  justify-content: center;
+  white-space: nowrap;
+}
 .genre-more {
   color: var(--ink-3);
   font-size: 16px;

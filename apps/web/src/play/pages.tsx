@@ -9,6 +9,7 @@ import { BackLink, Monogram, Mosaic, playIcon, soundMark } from "../ui/person";
 import type { ArtistProfile, Category } from "./catalog";
 import { forYouSlug } from "./foryou";
 import { tileCovers, type TileFacts } from "./hub";
+import { eraLabel, eraName, erasCount, isGeneration } from "./eras";
 import type { Game, RoundResult } from "./game";
 import type { BoardEntry, BoardPeriod, CategoryBoardEntry } from "./results";
 import { categoryBoardDays, categoryBoardSize } from "./results";
@@ -145,8 +146,6 @@ document.addEventListener("submit", (event) => {
 });
 `;
 
-const eraLabel = (decade: number) => `${String(decade).slice(2)}s`;
-
 // Four covers make a mosaic; fewer show the first one whole, and none shows
 // the mark on a tint.
 function genreArt(covers: string[]) {
@@ -210,7 +209,7 @@ function genreRow(
   target: TileTarget,
   mode: Mode,
 ) {
-  const decades = facts.eras.length;
+  const by = facts.eras.some(isGeneration) ? "generation" : "decade";
   return tileForm(
     category,
     target,
@@ -227,17 +226,18 @@ function genreRow(
       <div class="genre-body">
         <p class="genre-title">
           <b>{category.name}</b>
-          {decades > 1 && <span>{decades} decades</span>}
+          {facts.eras.length > 1 && <span>{erasCount(facts.eras)}</span>}
         </p>
         <div
           class="genre-chips"
+          data-kind={by === "generation" ? "gen" : undefined}
           role="group"
-          aria-label={`${category.name} by decade`}
+          aria-label={`${category.name} by ${by}`}
         >
           <button
             class="chip is-all"
             type="submit"
-            aria-label={`${category.name}, every decade`}
+            aria-label={`${category.name}, every ${by}`}
           >
             All
           </button>
@@ -247,7 +247,7 @@ function genreRow(
               type="submit"
               name="era"
               value={era}
-              aria-label={`${category.name}, ${era}s`}
+              aria-label={`${category.name}, ${eraName(era)}`}
             >
               {eraLabel(era)}
             </button>
@@ -431,8 +431,8 @@ export function hubPage({
             <div class="hub-section-head">
               <h2 id="genres-title">Genres</h2>
               <p>
-                <span class="is-narrow">Tap a decade</span>
-                <span class="is-wide">Pick a decade, or All</span>
+                <span class="is-narrow">Tap an era</span>
+                <span class="is-wide">Pick an era, or All</span>
               </p>
             </div>
             <div class="genres">
