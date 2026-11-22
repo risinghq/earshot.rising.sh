@@ -1007,12 +1007,13 @@ stops when the next round loads or the game ends.
     preview falls back to the artist's iTunes track, stored with its preview URL
     and Apple Music link.
   - A list holds one cut of each song. Two cuts share the folded title outside
-    its brackets and the artist's name. In Anime and Soundtracks, whose seeds
-    name works, the title alone is the key, because one theme comes credited to
-    its singer, a cover, a duet partner or a romanized name. The song keeps its
-    first cut's place in popularity order, and a plain cut wins over one marked
-    `Version`, `Ver.`, `Radio Edit` or `Rerecorded`. When that cut misses its
-    decade or the artist's cap, the next cut is tried.
+    its brackets and the artist's name. A seed with `titleKey` (Anime) keys on
+    the title alone, because one theme comes credited to its singer, a cover, a
+    duet partner or a romanized name. Soundtracks keep the artist, since many
+    scores have a "Main Title". The song keeps its first cut's place in
+    popularity order, and a plain cut wins over one marked `Version`, `Ver.`,
+    `Radio Edit` or `Rerecorded`. When that cut misses its decade or the
+    artist's cap, the next cut is tried.
   - A title in Han, kana or hangul is anchored on the iTunes track first, and
     the US store's name for it (`lookup?id=&country=US`) is its Latin name.
     Deezer romanizes some titles (紅蓮華 is "Gurenge") and translates others, so

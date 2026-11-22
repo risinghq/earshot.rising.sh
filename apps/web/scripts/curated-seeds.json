@@ -2289,6 +2289,7 @@
   },
   "anime": {
     "itunesStore": "JP",
+    "titleKey": true,
     "decades": [1980, 1990, 2000, 2010, 2020],
     "perArtist": 4,
     "artists": [

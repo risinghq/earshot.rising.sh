@@ -8,6 +8,7 @@ import { catalogPool, poolEras, byDecade } from "../src/play/pool";
 import { catalog, warmChartCache } from "../src/play/catalog";
 import { refreshCatalog, refreshSource } from "../src/play/refresh";
 import curated from "../src/play/curated.json";
+import seeds from "../scripts/curated-seeds.json";
 import { answerKey } from "../src/play/quiz";
 import { mergeAnonOutcomes } from "../src/play/outcomes";
 
@@ -292,9 +293,9 @@ describe("curated sources", () => {
       const seen = new Map<string, string>();
       const tracks: { artist: string; title: string; work?: string }[] =
         Object.values(decades).flat();
-      // Songs from works come credited to covers and romanized names, so
-      // there the title alone names the song.
-      const byTitle = tracks.some((track) => track.work);
+      const byTitle =
+        (seeds as Record<string, { titleKey?: boolean }>)[slug]?.titleKey ===
+        true;
       for (const track of tracks) {
         const title = answerKey(track.title);
         const key = byTitle ? title : `${track.artist}|${title}`;

@@ -166,7 +166,6 @@ async function main() {
       if (show.idMal === null) continue;
       const body = await request(`https://myanimelist.net/anime/${show.idMal}`);
       for (const parsed of parseMalThemes(body)) {
-        if (!parsed) continue;
         found += 1;
         const key = `${parsed.artist}|${parsed.title}`;
         const decade = Math.floor(year / 10) * 10;

@@ -50,6 +50,8 @@ interface CategorySeed {
   songs?: Record<string, string[]>;
   work?: Record<string, string>;
   themes?: Record<string, string>;
+  // Two cuts of one song share their title alone, whoever is credited.
+  titleKey?: boolean;
 }
 
 interface TrackMetadata {
@@ -607,10 +609,10 @@ async function artistSongs(seed: ArtistSeed) {
 
 // Two cuts of one song share the title outside its brackets: "Fly Me to the
 // Moon (Rei #5 Version)" is "Fly Me to the Moon". Elsewhere they also share
-// the artist's name, since an iTunes-only cut has no Deezer artist id. In a
-// category of songs from works (anime, soundtracks) one song comes credited
-// to its singer, a cover, a duet partner or a romanized name, so the title
-// alone is the key; two songs that share a title would share the answer.
+// the artist's name, since an iTunes-only cut has no Deezer artist id. A
+// seed with `titleKey` (Anime) keys on the title alone: one theme comes
+// credited to its singer, a cover, a duet partner or a romanized name.
+// Soundtracks keep the artist, since every score has a "Main Title".
 type Cut = { artist: string; title: string };
 
 const cutKey = (byTitle: boolean) => (track: Cut) =>
@@ -839,7 +841,7 @@ async function curateCategory(slug: string, seed: CategorySeed) {
     return raw?.cap ?? seed.perArtist;
   };
   const seenSongs = new Set<string>();
-  const songKey = cutKey(seed.work !== undefined);
+  const songKey = cutKey(seed.titleKey === true);
   for (const track of plainFirst(picked, songKey)) {
     const decade = Math.floor(track.year / 10) * 10;
     const list = byDecade.get(decade);
