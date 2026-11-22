@@ -560,6 +560,7 @@ export class Room extends DurableObject<Env> {
         by: s.players.find((p) => p.id === x.by)?.name ?? "",
         votes: x.voters.length,
         voted: pid !== undefined && x.voters.includes(pid),
+        mine: pid !== undefined && x.by === pid,
       }))
       .sort((a, b) => b.votes - a.votes);
   }
@@ -718,6 +719,14 @@ export class Room extends DurableObject<Env> {
         streak: 0,
       };
       s.players.push(player);
+    }
+    // A seat plays on one device. Joining from another moves it there: the
+    // device that held it is told, drops the seat and stops reconnecting.
+    for (const other of this.socketsOf(player.id)) {
+      if (other === ws) continue;
+      this.send(other, { type: "moved" });
+      other.serializeAttachment({ ...this.infoOf(other), pid: undefined });
+      other.close(4001, "seat moved");
     }
     ws.serializeAttachment({
       ...this.infoOf(ws),

@@ -553,6 +553,7 @@ export function gameBar({
   quit = "/",
   current = true,
   mode,
+  tools,
 }: {
   done: number;
   marks?: boolean[];
@@ -562,6 +563,8 @@ export function gameBar({
   quit?: string;
   current?: boolean;
   mode?: string;
+  // Controls that sit beside the quit button, such as the room's Devices.
+  tools?: Child;
 }) {
   const round = current ? Math.min(done + 1, total) : Math.max(done, 1);
   return (
@@ -569,6 +572,7 @@ export function gameBar({
       <a class="game-quit" href={quit} aria-label="Leave the game">
         {quitIcon}
       </a>
+      {tools}
       <ol
         class="game-progress"
         role="progressbar"

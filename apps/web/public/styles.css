@@ -66,7 +66,10 @@
   --accent: #3b38f0;
   --accent-press: #2522b8;
   --accent-tint: #e4e3fd;
+  --accent-tint-2: #d3d2fb;
+  --accent-deep: #17157a;
   --on-accent: #ffffff;
+  --focus-ring: 2px solid var(--ink);
   --right: #12804a;
   --right-ink: #0c5f36;
   --right-tint: #dcf3e5;
@@ -242,6 +245,8 @@
     --accent: #8583ff;
     --accent-press: #4a47d1;
     --accent-tint: #26254a;
+    --accent-tint-2: #33316a;
+    --accent-deep: #2b2896;
     --on-accent: #0e0d1a;
     --right: #3cc777;
     --right-ink: #7be3a6;
@@ -3272,14 +3277,58 @@ body:not(.clip-live) .now-eq i {
 .room-mode:empty {
   display: none;
 }
-/* On a phone the round's count leaves the stage for a row above it, which
-   it shares with the mode pill. */
-.room #round > .round-count {
+/* On a phone the mode pill and the Devices button take a row between the
+   bar and the stage; the round's number lives in the ready ring. */
+.room #round {
+  margin-top: 56px;
+}
+.room .game-bar .room-mode {
+  left: 16px;
+  right: auto;
+  top: 66px;
+}
+.room .game-bar .room-devices {
+  position: absolute;
+  right: 16px;
+  top: 58px;
+  z-index: 2;
+}
+.room-devices {
   align-items: center;
-  display: flex;
-  font-size: 13px;
-  height: 28px;
-  margin: 4px 0 10px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  display: inline-flex;
+  font-size: 15px;
+  font-weight: var(--weight-heavy);
+  gap: 8px;
+  height: 44px;
+  padding: 0 14px 0 12px;
+}
+.room-devices svg {
+  fill: none;
+  height: 20px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 20px;
+}
+.room-devices:hover {
+  background: var(--surface-2);
+  border-color: var(--press);
+}
+.room-devices:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+.room-devices[data-tv]::after {
+  background: var(--right);
+  border-radius: 50%;
+  content: "";
+  height: 8px;
+  width: 8px;
 }
 .room .player-round {
   display: none;
@@ -3762,32 +3811,92 @@ input.room-link:focus-visible {
   padding: 0;
   position: static;
 }
+/* The round's card. One box from the question to the reveal: chips keep
+   their cells while their state changes, so nothing reflows. On a phone
+   the box sits at the bottom of the round and, at the reveal, gains the
+   sheet's chrome with the verdict as its header. */
 .room-slot {
+  --chip-room: 48px;
+  --verdict-h: 52px;
+}
+.room #round {
+  padding-bottom: 180px;
+  position: relative;
+}
+.room-slot {
+  background: var(--bg);
+  bottom: 0;
+  display: grid;
+  gap: 8px;
+  left: 0;
+  padding: 8px 16px 16px;
+  position: absolute;
+  right: 0;
+  transition:
+    background-color 160ms var(--ease),
+    box-shadow 160ms var(--ease);
+}
+.room-slot[data-v] {
+  background: var(--surface);
+  border-radius: 24px 24px 0 0;
+  border-top: 2px solid var(--v-ink);
+  box-shadow: 0 -12px 32px -12px rgb(23 22 26 / 0.18);
+}
+.room-slot[data-v="right"] {
+  --v-ink: var(--right);
+}
+.room-slot:is([data-v="wrong"], [data-v="late"]) {
+  --v-ink: var(--wrong);
+}
+.room-verdict {
+  align-items: center;
+  border: 2px solid transparent;
+  border-radius: 22px;
+  display: none;
+  gap: 12px;
+  height: var(--verdict-h);
+  margin: 0;
+  max-width: none;
+}
+.room-slot[data-v] .room-verdict {
+  display: flex;
+}
+.room-verdict :is(.v-word, .v-pts) {
+  color: var(--v-ink);
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+}
+.room-verdict .v-place {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: var(--weight-heavy);
+  margin-left: auto;
+}
+.room-slot-card {
   display: grid;
   gap: 10px;
-  min-height: var(--slot-h);
-  padding: 14px 0 24px;
+}
+.room-slot[data-v] .room-slot-head {
+  display: none;
 }
 .room-slot-head {
-  color: var(--ink-2);
   display: flex;
-  font-size: 12px;
+  font-size: 15px;
   font-weight: var(--weight-heavy);
   justify-content: space-between;
-  letter-spacing: 0.08em;
+  margin: 0;
   max-width: none;
-  text-transform: uppercase;
 }
 .room-slot-head b {
-  color: var(--ink);
-}
-.room-slot.is-covered {
-  visibility: hidden;
+  color: var(--ink-2);
+  font-size: 14px;
 }
 .room-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   list-style: none;
   margin: 0;
   padding: 0;
@@ -3795,101 +3904,161 @@ input.room-link:focus-visible {
 .room-chip {
   align-items: center;
   border: 1.5px dashed var(--press);
-  border-radius: var(--radius-pill);
+  border-radius: 14px;
   color: var(--ink-3);
-  display: inline-flex;
-  font-weight: var(--weight-strong);
-  gap: 8px;
-  height: var(--chip-h);
-  padding: 0 12px 0 4px;
+  /* A phone cell is narrow: the avatar and name share the first line, and
+     the status takes the cell's whole width under them. */
+  column-gap: 4px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  height: var(--chip-room);
+  min-width: 0;
+  padding: 0 6px;
   transition:
     background-color var(--duration-base) var(--ease),
     color var(--duration-base) var(--ease);
 }
 .room-chip .mono {
-  opacity: 0.4;
+  --s: 14px;
 }
-.room-chip[data-answered] {
-  background: var(--ink);
-  border: 1.5px solid var(--ink);
-  color: var(--bg);
+.c-text {
+  display: contents;
+  line-height: 1.15;
 }
-.room-chip[data-answered] .mono {
-  opacity: 1;
-}
-
-/* The verdict sheet: what you scored, where you stand, and every player's
-   points this round. */
-.room #sheet .sheet-in {
-  row-gap: 4px;
-}
-.room #sheet .sheet-points {
-  align-self: center;
-  grid-row: 1;
-}
-.room .sheet-sub {
-  gap: 12px;
-  grid-column: 1 / -1;
-  margin-top: 0;
-}
-.room .sheet-sub strong {
-  color: var(--ink);
-}
-.room-until {
-  background: var(--surface-2);
-  border-radius: 2px;
-  flex: 1;
-  height: 4px;
-  overflow: hidden;
-}
-.room-until i {
-  background: var(--ink-3);
-  display: block;
-  height: 100%;
-  transform-origin: left;
-  transition: transform 250ms linear;
-}
-.room-points {
-  display: grid;
-  gap: 6px;
-  grid-column: 1 / -1;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  list-style: none;
-  margin: 10px 0 0;
-  padding: 0;
-}
-.room-point {
-  border: 1.5px solid var(--line);
-  border-radius: 12px;
-  display: grid;
-  gap: 2px;
-  min-height: 52px;
-  padding: 6px 8px;
-}
-.room-point.is-you {
-  background: var(--accent-tint);
-  border-color: var(--accent);
-}
-.room-point-who {
-  align-items: center;
-  display: flex;
-  font-size: 12px;
-  font-weight: var(--weight-strong);
-  gap: 5px;
-  min-width: 0;
-}
-.room-point-who > span:last-child {
+.c-text :is(b, small) {
+  font-size: 13px;
+  font-weight: var(--weight-heavy);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.room-point b {
-  color: var(--ink-3);
-  font-size: 15px;
-  font-weight: var(--weight-heavy);
+.c-text small {
+  font-size: 12px;
+  font-weight: var(--weight-strong);
+  grid-column: 1 / -1;
 }
-.room-point.is-right b {
-  color: var(--right);
+.c-text b {
+  color: var(--ink);
+}
+.room-chip[data-s="waiting"] .c-text b {
+  color: var(--ink-3);
+}
+.room-chip[data-s="answered"] {
+  background: var(--ink);
+  border: 1.5px solid var(--ink);
+  color: var(--bg);
+}
+.room-chip[data-s="answered"] .c-text b {
+  color: var(--bg);
+}
+.room-chip[data-s="right"] {
+  background: var(--right-tint);
+  border: 1.5px solid var(--right);
+}
+.room-chip[data-s="right"] .c-pts {
+  color: var(--right-ink);
+}
+.room-chip[data-s="wrong"] {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+}
+.room-chip[data-s="wrong"] .c-pts {
+  color: var(--wrong-ink);
+}
+.room-chip[data-s="none"] {
+  opacity: 0.8;
+}
+
+/* The game bar's segment for the revealed round is the countdown to the
+   next one: it fills in the verdict's colour over --next-ms. */
+.seg[data-reveal] {
+  background: var(--seg-tint);
+  overflow: hidden;
+  position: relative;
+}
+.seg[data-reveal]::after {
+  animation: seg-fill var(--next-ms, 5000ms) linear forwards;
+  background: var(--seg-ink);
+  content: "";
+  inset: 0;
+  position: absolute;
+  transform-origin: left;
+}
+.seg[data-reveal="right"] {
+  --seg-ink: var(--right);
+  --seg-tint: var(--right-tint);
+}
+.seg[data-reveal="wrong"] {
+  --seg-ink: var(--wrong);
+  --seg-tint: var(--wrong-tint);
+}
+@keyframes seg-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seg[data-reveal]::after {
+    animation: none;
+  }
+}
+
+/* Before the clip the ring holds the round: "7 of 10" on a phone, with
+   "Get ready" beside it as the stage's heading; "Round 7 of 10 · Get
+   ready" inside the ring from 900px. */
+.room .player.is-loading .player-loading {
+  display: grid;
+  justify-items: center;
+  line-height: 1;
+}
+.room .player-loading .r-kick {
+  color: var(--stage-ink-2);
+  font-size: 11px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.room .player-loading .r-num {
+  font-size: 56px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+.room .player-loading .r-word,
+.room .player-loading .r-go {
+  display: none;
+}
+.room .player-loading .r-of {
+  color: var(--stage-ink-2);
+  font-size: 13px;
+  font-weight: var(--weight-strong);
+}
+.room .player.is-loading .player-ring {
+  height: 132px;
+  width: 132px;
+}
+.room .player.is-loading .player-head {
+  align-self: center;
+  display: grid;
+}
+.room .player.is-loading .player-round {
+  display: none;
+}
+.room .player.is-loading .player-ask {
+  font-size: 26px;
+}
+.room .player-sub {
+  color: var(--stage-ink-2);
+  font-size: 14px;
+  line-height: 1.35;
+  margin-top: 6px;
+}
+/* The phone's ready stage keeps the sound button and the round's stakes. */
+.room .player.is-loading :is(.player-top, .player-foot) {
+  display: flex;
 }
 
 /* The final screen: standings are people, rounds are songs. */
@@ -4176,40 +4345,111 @@ input.room-link:focus-visible {
     grid-template-columns: auto 1fr;
   }
 
-  .room-slot {
-    padding-top: 20px;
+  /* The slot's two parts join the round's grid: the verdict replaces the
+     question, the card stays under the answers. */
+  .room #round {
+    margin-top: 0;
+    padding-bottom: 0;
   }
-  .room #sheet {
-    animation: none;
-    border: 2px solid var(--line);
-    border-radius: 24px;
-    box-shadow: none;
-    margin: 16px auto 0;
-    max-width: 640px;
-    padding: 18px 20px;
+  .room .game-bar .room-devices {
     position: static;
-    width: 100%;
   }
-  .room #sheet.is-good {
-    border-color: var(--right);
+  .room-slot {
+    --chip-room: 56px;
+    --verdict-h: 96px;
+    display: contents;
   }
-  .room #sheet.is-bad {
-    border-color: var(--wrong);
+  .room-slot[data-v] .room-verdict {
+    background: var(--surface);
+    border-color: var(--v-ink);
+    padding: 0 22px;
   }
-  .room #sheet .sheet-in {
-    grid-template-columns: 1fr auto;
+  .room-verdict :is(.v-word, .v-pts) {
+    font-size: 34px;
   }
-  .room-slot.is-covered {
+  .room-verdict .v-place {
+    color: var(--ink);
+    font-size: 16px;
+  }
+  .room #round[data-phase="reveal"] > .round-title {
     display: none;
   }
-  .room #round:has(#sheet:not([hidden])) .room-slot {
+  .room #round > .room-slot > .room-verdict {
+    align-self: start;
+    grid-column: 2;
+    grid-row: 3;
+    margin-bottom: 24px;
+  }
+  .room #round > .room-slot > .room-slot-card {
+    align-self: start;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 22px;
+    grid-column: 2;
+    grid-row: 5;
+    margin-top: 20px;
+    min-height: 168px;
+    padding: 20px 18px 16px;
+  }
+  .room-slot[data-v] .room-slot-head {
+    display: flex;
+  }
+  .room-chips {
+    gap: 8px;
+  }
+  .room-chip {
+    display: flex;
+    gap: 8px;
+    padding: 0 8px;
+  }
+  .room-chip .mono {
+    --s: 30px;
+  }
+  .c-text {
+    display: grid;
+    min-width: 0;
+  }
+  .c-text b {
+    font-size: 14px;
+  }
+  .c-text small {
+    font-size: 13px;
+  }
+  .room .player-loading .r-num {
+    font-size: 72px;
+  }
+  .room .player-loading .r-word {
+    display: inline;
+  }
+  .room .player-loading .r-kick {
     display: none;
   }
-  .room-slot,
-  #round .room-slot {
-    margin-inline: auto;
-    max-width: 640px;
-    width: 100%;
+  .room .player-loading .r-of {
+    font-size: 22px;
+    margin-top: 8px;
+  }
+  .room .player-loading .r-go {
+    align-items: center;
+    color: var(--stage-ink);
+    display: flex;
+    font-size: 20px;
+    font-weight: var(--weight-heavy);
+    gap: 8px;
+    margin-top: 22px;
+  }
+  .room .player-loading .r-go::before {
+    background: currentColor;
+    border-radius: 50%;
+    content: "";
+    height: 8px;
+    width: 8px;
+  }
+  .room .player.is-loading .player-ring {
+    height: 340px;
+    width: 340px;
+  }
+  .room .player.is-loading :is(.player-head, .player-top, .player-foot) {
+    display: none;
   }
 
   .room #done-panel.room-done {
@@ -4417,12 +4657,6 @@ input.room-link:focus-visible {
     padding: 2px 7px;
   }
   #round[data-phase="reveal"] > #sheet {
-    align-self: start;
-    grid-row: 5;
-  }
-  /* A room's answered panel takes the row the verdict sheet takes next, so
-     it never lands in a spacer row and the answers stay put. */
-  .room #round > .room-slot {
     align-self: start;
     grid-row: 5;
   }
@@ -5086,52 +5320,117 @@ input.room-link:focus-visible {
   padding: 4px 8px;
 }
 
-/* Up next and its pick sheet come from the Claude Design file "Earshot Play
-   Flow". */
-.up-next {
+/* The Next game step and the pick sheet come from the Claude Design file
+   "Earshot Room Flow". */
+/* A step of the results: it takes the whole phone screen, and from 900px
+   the results' column while the rounds stay beside it. */
+.room-done[data-step="next"] > :not(.room-next) {
+  display: none;
+}
+@media (min-width: 900px) {
+  .room-done[data-step="next"] > .results-rounds {
+    display: grid;
+  }
+  .room-done .room-next {
+    grid-area: main;
+    grid-row: 1 / -1;
+  }
+}
+.room-next {
+  display: grid;
+  gap: 16px;
+}
+.room-back {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: var(--ink-2);
+  display: inline-flex;
+  font: inherit;
+  font-weight: var(--weight-heavy);
+  gap: 4px;
+  justify-self: start;
+  min-height: 44px;
+  padding: 0;
+}
+.room-back svg {
+  fill: none;
+  height: 20px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+  width: 20px;
+}
+.room-back:hover {
+  color: var(--ink);
+}
+.room-next-head h1 {
+  font-size: 34px;
+  letter-spacing: -0.03em;
+  margin: 0;
+}
+.room-next-head h1:focus {
+  outline: none;
+}
+.room-next-head p {
+  color: var(--ink-2);
+  margin: 6px 0 0;
+}
+.room-sugs {
   background: var(--surface);
-  border: 1.5px solid var(--accent);
+  border: 1.5px solid var(--line);
   border-radius: 22px;
   display: grid;
-  gap: 12px;
+  gap: 8px;
   padding: 16px;
 }
-.up-next-head {
+.room-sugs-head {
   align-items: baseline;
   display: flex;
   justify-content: space-between;
 }
-.up-next-head h2 {
-  font-size: 20px;
+.room-sugs-head h2 {
+  font-size: 17px;
   margin: 0;
 }
-.up-next-live {
+.room-sugs-head small {
   color: var(--ink-2);
   font-size: 13px;
+  font-weight: var(--weight-strong);
 }
-.up-next-empty {
+.room-sug-empty {
+  border: 2px dashed var(--line);
+  border-radius: 16px;
   color: var(--ink-2);
-  font-size: 14px;
   margin: 0;
+  padding: 24px;
+  text-align: center;
   text-wrap: pretty;
 }
-.up-next-empty[hidden] {
+.room-sug-empty[hidden] {
   display: none;
 }
-.up-next-list {
+.room-sug-list {
   display: grid;
+  gap: 4px;
   list-style: none;
   margin: 0;
   padding: 0;
 }
-.up-next-row {
+.room-sug {
   align-items: center;
-  border-top: 1px solid var(--surface-2);
-  display: flex;
-  gap: 10px;
-  padding: 8px 0;
+  border-radius: 14px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
+  min-height: 64px;
+  padding: 8px 10px;
 }
-.up-next-tile,
+.room-sug[data-top] {
+  background: var(--accent-tint);
+}
+.room-sug-tile,
 .pick-art {
   align-items: center;
   background: var(--surface-2);
@@ -5145,83 +5444,263 @@ input.room-link:focus-visible {
   object-fit: cover;
   width: 44px;
 }
-.up-next-text,
+.room-sug-text,
 .pick-text {
   display: grid;
   flex: 1;
   gap: 2px;
   min-width: 0;
 }
-.up-next-text b,
+.room-sug-text b,
 .pick-text b {
   font-size: 15px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.up-next-text small,
+.room-sug-text small,
 .pick-text small {
   color: var(--ink-2);
   font-size: 12px;
 }
-.up-next-vote,
-.up-next-play,
-.up-next-chip {
-  border-radius: 999px;
-  cursor: pointer;
-  font: inherit;
-  font-size: 13px;
-  font-weight: var(--weight-strong);
-  min-height: 36px;
-  padding: 0 12px;
-  white-space: nowrap;
-}
-.up-next-vote {
+.room-mine {
+  align-items: center;
   background: var(--surface);
-  border: 1px solid var(--line);
-  box-shadow: var(--press-sm);
-  color: var(--ink);
+  border: 1.5px solid var(--line);
+  border-radius: 16px;
+  display: flex;
+  gap: 12px;
+  padding: 10px 10px 10px 16px;
 }
-.up-next-vote.is-voted {
-  background: var(--accent-tint);
-  border-color: var(--accent-tint);
-  box-shadow: none;
-  color: var(--accent-press);
+.room-mine p {
+  display: grid;
+  flex: 1;
+  margin: 0;
+  min-width: 0;
 }
-.up-next-play {
-  background: var(--accent);
+.room-mine small {
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: var(--weight-heavy);
+}
+.room-mine-change {
+  background: none;
   border: 0;
-  box-shadow: 0 2px 0 var(--accent-press);
-  color: #fff;
+  color: var(--accent);
+  font: inherit;
+  font-weight: var(--weight-heavy);
+  min-height: 44px;
+  padding: 0 8px;
 }
-.up-next-add {
-  border-top: 1px solid var(--surface-2);
+.room-mine-add {
   display: grid;
   gap: 8px;
   grid-template-columns: 1fr 1fr;
-  padding-top: 12px;
 }
-.up-next-chip {
+.room-mine-add[hidden],
+.room-mine[hidden] {
+  display: none;
+}
+/* Six states each; a hover darkens and never lightens, and :active drops
+   the button by its shadow's depth. button:hover outranks a bare class, so
+   each state names the element. */
+button.btn-vote {
   background: var(--surface);
-  border: 1px solid var(--line);
-  box-shadow: var(--press-sm);
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 2px 0 var(--line);
   color: var(--ink);
-  font-size: 14px;
-  min-height: 44px;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-heavy);
+  height: 40px;
+  min-width: 64px;
+  padding: 0 12px;
+  white-space: nowrap;
 }
-/* button:hover outranks a bare class, so each hover is restated here. */
-button:is(.up-next-vote, .up-next-chip):hover {
-  background: var(--neutral-2);
+button.btn-vote:hover {
+  background: var(--surface-2);
+  border-color: var(--press);
 }
-button.up-next-vote.is-voted:hover {
-  background: color-mix(in oklch, var(--accent-tint) 80%, var(--accent));
-}
-button.up-next-play:hover {
-  background: color-mix(in oklch, var(--accent) 90%, var(--ink));
-}
-:is(.up-next-vote, .up-next-play, .up-next-chip):active {
+button.btn-vote:active {
   box-shadow: none;
   transform: translateY(2px);
+}
+button.btn-vote[aria-pressed="true"] {
+  background: var(--accent-tint);
+  border-color: var(--accent);
+  box-shadow: 0 2px 0 var(--accent);
+  color: var(--accent);
+}
+button.btn-vote[aria-pressed="true"]:hover {
+  background: var(--accent-tint-2);
+  color: var(--accent-press);
+}
+button.btn-vote:disabled {
+  background: var(--surface-2);
+  border-color: transparent;
+  box-shadow: none;
+  color: var(--ink-3);
+  cursor: not-allowed;
+}
+button.btn-play-this {
+  background: var(--accent);
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 3px 0 var(--accent-press);
+  color: var(--on-accent);
+  font: inherit;
+  font-weight: var(--weight-heavy);
+  height: 40px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+button.btn-play-this:hover {
+  background: var(--accent-press);
+  box-shadow: 0 3px 0 var(--accent-deep);
+}
+button.btn-play-this:active {
+  box-shadow: none;
+  transform: translateY(3px);
+}
+button.btn-play-this:disabled {
+  background: var(--surface-2);
+  box-shadow: none;
+  color: var(--ink-3);
+}
+:is(.btn-vote, .btn-play-this, .room-back, .room-mine-change):focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+/* Rematch and Next game carry a second line: what each one plays. */
+.room-two-line {
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.1;
+}
+.room-two-line small {
+  font-size: 12px;
+  font-weight: var(--weight-strong);
+  opacity: 0.8;
+}
+.room-two-line small:empty {
+  display: none;
+}
+.room-done :is(.room-done-actions, .room-next-actions) {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+.room-done :is(.room-done-actions, .room-next-actions) .room-wait {
+  grid-column: 1 / -1;
+}
+
+/* The Devices sheet and the screen a device shows once its seat moved. */
+dialog.room-sheet {
+  display: none;
+  gap: 12px;
+}
+dialog.room-sheet[open] {
+  display: grid;
+}
+.room-dev-item {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 20px;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+.room-dev-item h3 {
+  font-size: 17px;
+  margin: 0;
+}
+.room-dev-item p {
+  color: var(--ink-2);
+  font-size: 14px;
+  margin: 0;
+}
+.room-dev-item svg {
+  fill: none;
+  height: 20px;
+  stroke: currentColor;
+  stroke-width: 2;
+  width: 20px;
+}
+.room-dev-item.is-move {
+  grid-template-columns: 112px minmax(0, 1fr);
+}
+.room-dev-item.is-move > :not(.room-dev-qr, .room-dev-text) {
+  grid-column: 1 / -1;
+}
+.room-dev-qr {
+  background: #fff;
+  border-radius: 12px;
+  height: 112px;
+  padding: 6px;
+  width: 112px;
+}
+.room-dev-text {
+  align-content: center;
+  display: grid;
+  gap: 6px;
+}
+.room-dev-item .room-seat-warn {
+  align-items: center;
+  background: var(--wrong-tint);
+  border-radius: 12px;
+  color: var(--wrong-ink);
+  display: flex;
+  font-weight: var(--weight-heavy);
+  gap: 10px;
+  padding: 10px 12px;
+}
+.room-seat-warn svg {
+  flex: none;
+}
+.room-away {
+  background: var(--stage);
+  border-radius: 32px;
+  color: var(--stage-ink);
+  margin: 24px auto;
+  max-width: 520px;
+  padding: 32px;
+  text-align: center;
+}
+.room-away[hidden] {
+  display: none;
+}
+.room-away-card {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+}
+.room-away h1 {
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.room-away p {
+  color: var(--stage-ink-2);
+  margin: 0;
+}
+.room-away-icon {
+  background: var(--stage-2);
+  border-radius: 50%;
+  display: grid;
+  height: 72px;
+  place-items: center;
+  width: 72px;
+}
+.room-away-icon svg {
+  fill: none;
+  height: 32px;
+  stroke: currentColor;
+  stroke-width: 2;
+  width: 32px;
+}
+.room-away .room-away-note {
+  font-size: 13px;
 }
 
 /* A bottom sheet on a phone, a centred panel on a wide screen. */

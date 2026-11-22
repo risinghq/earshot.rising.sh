@@ -167,9 +167,13 @@ describe("room.js reveal", () => {
     expect(clones).toBeGreaterThan(first);
   });
 
-  it("counts down to the results on the final reveal", () => {
+  it("heads the final reveal's card with the verdict and the results", () => {
     FakeSocket.last.deliver(revealState(10, "dz:10"));
-    expect(text(byId("sheet-sub"))).toMatch(/^Results in \d+ s$/);
+    expect(byId("verdict-word").textContent).toBe("Time ran out");
+    expect(byId("room-slot").dataset.v).toBe("late");
+    expect(byId("slot-note").textContent).toBe(
+      "The results come when the bar above fills.",
+    );
   });
 
   it("shows the failure hint when the report is rejected", async () => {
@@ -196,5 +200,11 @@ describe("room.js reveal", () => {
     });
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(form.children.map(text)).toContain("Could not send the report.");
+  });
+
+  it("shows the away screen once the seat moves to another device", () => {
+    FakeSocket.last.deliver({ type: "moved" });
+    expect(byId("away-panel").hidden).toBe(false);
+    expect(byId("round").hidden).toBe(true);
   });
 });
