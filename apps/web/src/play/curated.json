@@ -42,20 +42,20 @@
         "year": 1963
       },
       {
-        "id": 108313196,
-        "title": "Will You Love Me Tomorrow",
-        "artist": "The Shirelles",
-        "artistId": 90451,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/c06ed4bf6aa61922ef4edebac07b527a/250x250-000000-80-0-0.jpg",
-        "year": 1960
-      },
-      {
         "id": 108314762,
         "title": "Mama Said",
         "artist": "The Shirelles",
         "artistId": 90451,
         "cover": "https://cdn-images.dzcdn.net/images/cover/6180a5d1202061519ab633eab50518a3/250x250-000000-80-0-0.jpg",
         "year": 1961
+      },
+      {
+        "id": 108313196,
+        "title": "Will You Love Me Tomorrow",
+        "artist": "The Shirelles",
+        "artistId": 90451,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c06ed4bf6aa61922ef4edebac07b527a/250x250-000000-80-0-0.jpg",
+        "year": 1960
       },
       {
         "id": 108314766,
@@ -476,6 +476,22 @@
         "year": 1976
       },
       {
+        "id": 676011672,
+        "title": "Isn't She Lovely",
+        "artist": "Stevie Wonder",
+        "artistId": 166,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ed7d05fc8407ff367c7fe39bd0d28a56/250x250-000000-80-0-0.jpg",
+        "year": 1976
+      },
+      {
+        "id": 676011622,
+        "title": "I Wish",
+        "artist": "Stevie Wonder",
+        "artistId": 166,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ed7d05fc8407ff367c7fe39bd0d28a56/250x250-000000-80-0-0.jpg",
+        "year": 1976
+      },
+      {
         "id": 725715,
         "title": "December, 1963 (Oh What a Night!)",
         "artist": "The Four Seasons",
@@ -776,14 +792,6 @@
         "year": 1977
       },
       {
-        "id": 676011672,
-        "title": "Isn't She Lovely",
-        "artist": "Stevie Wonder",
-        "artistId": 166,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/ed7d05fc8407ff367c7fe39bd0d28a56/250x250-000000-80-0-0.jpg",
-        "year": 1976
-      },
-      {
         "id": 427219162,
         "title": "Stayin' Alive",
         "artist": "Bee Gees",
@@ -840,14 +848,6 @@
         "artistId": 6111,
         "cover": "https://cdn-images.dzcdn.net/images/cover/881d11fe5b2d92509cfe7d08f7ced70f/250x250-000000-80-0-0.jpg",
         "year": 1975
-      },
-      {
-        "id": 676011622,
-        "title": "I Wish",
-        "artist": "Stevie Wonder",
-        "artistId": 166,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/ed7d05fc8407ff367c7fe39bd0d28a56/250x250-000000-80-0-0.jpg",
-        "year": 1976
       },
       {
         "id": 350027741,
@@ -1068,6 +1068,30 @@
         "year": 1987
       },
       {
+        "id": 555639,
+        "title": "Thriller",
+        "artist": "Michael Jackson",
+        "artistId": 259,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/92a024220a9532489c75c9d994835697/250x250-000000-80-0-0.jpg",
+        "year": 1982
+      },
+      {
+        "id": 2015880517,
+        "title": "P.Y.T. (Pretty Young Thing)",
+        "artist": "Michael Jackson",
+        "artistId": 259,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ad147d71933eb449a3bc3417e2f8b62d/250x250-000000-80-0-0.jpg",
+        "year": 1982
+      },
+      {
+        "id": 4603411,
+        "title": "Man in the Mirror",
+        "artist": "Michael Jackson",
+        "artistId": 259,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/a0ad67d1beb761f2cb9f8b60e5bcf07a/250x250-000000-80-0-0.jpg",
+        "year": 1987
+      },
+      {
         "itunesId": 429945764,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ce/c3/07/cec307ab-f2ab-fe82-48b9-8140f61c7abd/mzaf_17094526205717227825.plus.aac.p.m4a",
         "link": "https://music.apple.com/us/album/i-knew-you-were-waiting-for-me/429945575?i=429945764",
@@ -1166,6 +1190,14 @@
         "artistId": 290,
         "cover": "https://cdn-images.dzcdn.net/images/cover/329c772be6103678d4c53c43d293cd51/250x250-000000-80-0-0.jpg",
         "year": 1984
+      },
+      {
+        "id": 723836,
+        "title": "Holiday",
+        "artist": "Madonna",
+        "artistId": 290,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/329c772be6103678d4c53c43d293cd51/250x250-000000-80-0-0.jpg",
+        "year": 1983
       },
       {
         "id": 75981528,
@@ -1624,28 +1656,12 @@
         "year": 1984
       },
       {
-        "id": 555639,
-        "title": "Thriller",
-        "artist": "Michael Jackson",
-        "artistId": 259,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/92a024220a9532489c75c9d994835697/250x250-000000-80-0-0.jpg",
-        "year": 1982
-      },
-      {
         "id": 884035,
         "title": "The Winner Takes It All",
         "artist": "ABBA",
         "artistId": 180,
         "cover": "https://cdn-images.dzcdn.net/images/cover/b8b70d474b7a8f27799e0d665e9b737e/250x250-000000-80-0-0.jpg",
         "year": 1980
-      },
-      {
-        "id": 723836,
-        "title": "Holiday",
-        "artist": "Madonna",
-        "artistId": 290,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/329c772be6103678d4c53c43d293cd51/250x250-000000-80-0-0.jpg",
-        "year": 1983
       },
       {
         "id": 831196,
@@ -1720,14 +1736,6 @@
         "year": 1982
       },
       {
-        "id": 2015880517,
-        "title": "P.Y.T. (Pretty Young Thing)",
-        "artist": "Michael Jackson",
-        "artistId": 259,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/ad147d71933eb449a3bc3417e2f8b62d/250x250-000000-80-0-0.jpg",
-        "year": 1982
-      },
-      {
         "id": 65121042,
         "title": "I Think We're Alone Now",
         "artist": "Tiffany",
@@ -1750,14 +1758,6 @@
         "artistId": 2179,
         "cover": "https://cdn-images.dzcdn.net/images/cover/ab113555b056cb808b050dff43a9590a/250x250-000000-80-0-0.jpg",
         "year": 1988
-      },
-      {
-        "id": 4603411,
-        "title": "Man in the Mirror",
-        "artist": "Michael Jackson",
-        "artistId": 259,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/a0ad67d1beb761f2cb9f8b60e5bcf07a/250x250-000000-80-0-0.jpg",
-        "year": 1987
       },
       {
         "id": 884033,
@@ -2372,6 +2372,14 @@
         "artistId": 785,
         "cover": "https://cdn-images.dzcdn.net/images/cover/18c4f2d9608910a2b8eb1835052e895b/250x250-000000-80-0-0.jpg",
         "year": 1996
+      },
+      {
+        "id": 3134155,
+        "title": "Spice Up Your Life",
+        "artist": "Spice Girls",
+        "artistId": 785,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/b6f00b7fbad1047dd4fddbf00bf173ee/250x250-000000-80-0-0.jpg",
+        "year": 1997
       },
       {
         "id": 62710442,
@@ -3078,14 +3086,6 @@
         "year": 1995
       },
       {
-        "id": 3134155,
-        "title": "Spice Up Your Life",
-        "artist": "Spice Girls",
-        "artistId": 785,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/b6f00b7fbad1047dd4fddbf00bf173ee/250x250-000000-80-0-0.jpg",
-        "year": 1997
-      },
-      {
         "id": 846215,
         "title": "Baby, I Love Your Way",
         "artist": "Big Mountain",
@@ -3248,14 +3248,6 @@
     ],
     "2000": [
       {
-        "id": 6061333,
-        "title": "Will You Love Me Tomorrow (Rerecorded)",
-        "artist": "The Shirelles",
-        "artistId": 90451,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/028454b12e7579e22a9df088adeca735/250x250-000000-80-0-0.jpg",
-        "year": 2001
-      },
-      {
         "id": 679217,
         "title": "Hung Up",
         "artist": "Madonna",
@@ -3302,6 +3294,22 @@
         "artistId": 483,
         "cover": "https://cdn-images.dzcdn.net/images/cover/2ee378abaa92e28306850b4b0efe2f03/250x250-000000-80-0-0.jpg",
         "year": 2000
+      },
+      {
+        "id": 82199332,
+        "title": "Womanizer",
+        "artist": "Britney Spears",
+        "artistId": 483,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/16d60157d51a9e21ffac61b50a7d02d0/250x250-000000-80-0-0.jpg",
+        "year": 2008
+      },
+      {
+        "id": 82199334,
+        "title": "Circus",
+        "artist": "Britney Spears",
+        "artistId": 483,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/16d60157d51a9e21ffac61b50a7d02d0/250x250-000000-80-0-0.jpg",
+        "year": 2008
       },
       {
         "id": 71179778,
@@ -3658,6 +3666,14 @@
         "year": 2006
       },
       {
+        "id": 7562977,
+        "title": "I'm Like A Bird",
+        "artist": "Nelly Furtado",
+        "artistId": 133,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/fbd6d06c71d72755bba27af0b1e3c88e/250x250-000000-80-0-0.jpg",
+        "year": 2000
+      },
+      {
         "id": 15489383,
         "title": "SexyBack",
         "artist": "Justin Timberlake",
@@ -3704,6 +3720,14 @@
         "artistId": 1020109,
         "cover": "https://cdn-images.dzcdn.net/images/cover/ea30377840f4ef9ac62406c5e16e9c4b/250x250-000000-80-0-0.jpg",
         "year": 2009
+      },
+      {
+        "id": 7375556,
+        "title": "Pump It",
+        "artist": "Black Eyed Peas",
+        "artistId": 1020109,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/595ae492a34647054ea30d805096d5b5/250x250-000000-80-0-0.jpg",
+        "year": 2005
       },
       {
         "id": 1161005,
@@ -4244,6 +4268,14 @@
         "year": 2002
       },
       {
+        "id": 3098841,
+        "title": "Clocks",
+        "artist": "Coldplay",
+        "artistId": 892,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5ba1787e1ec36dbbca38ff01fea8fb21/250x250-000000-80-0-0.jpg",
+        "year": 2002
+      },
+      {
         "id": 13142618,
         "title": "Stronger",
         "artist": "Britney Spears",
@@ -4412,14 +4444,6 @@
         "year": 2002
       },
       {
-        "id": 7375556,
-        "title": "Pump It",
-        "artist": "Black Eyed Peas",
-        "artistId": 1020109,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/595ae492a34647054ea30d805096d5b5/250x250-000000-80-0-0.jpg",
-        "year": 2005
-      },
-      {
         "id": 3158004,
         "title": "Naive",
         "artist": "The Kooks",
@@ -4476,28 +4500,12 @@
         "year": 2009
       },
       {
-        "id": 82199334,
-        "title": "Circus",
-        "artist": "Britney Spears",
-        "artistId": 483,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/16d60157d51a9e21ffac61b50a7d02d0/250x250-000000-80-0-0.jpg",
-        "year": 2008
-      },
-      {
         "id": 13132590,
         "title": "Love Song",
         "artist": "Sara Bareilles",
         "artistId": 14713,
         "cover": "https://cdn-images.dzcdn.net/images/cover/2cbeff6ff69a7b4dc89797ae44604b75/250x250-000000-80-0-0.jpg",
         "year": 2007
-      },
-      {
-        "id": 3098841,
-        "title": "Clocks",
-        "artist": "Coldplay",
-        "artistId": 892,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/5ba1787e1ec36dbbca38ff01fea8fb21/250x250-000000-80-0-0.jpg",
-        "year": 2002
       },
       {
         "id": 7561780,
@@ -4522,14 +4530,6 @@
         "artistId": 152788,
         "cover": "https://cdn-images.dzcdn.net/images/cover/e5c9012209877b0418f9253832b9ba5c/250x250-000000-80-0-0.jpg",
         "year": 2009
-      },
-      {
-        "id": 82199332,
-        "title": "Womanizer",
-        "artist": "Britney Spears",
-        "artistId": 483,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/16d60157d51a9e21ffac61b50a7d02d0/250x250-000000-80-0-0.jpg",
-        "year": 2008
       },
       {
         "id": 29093801,
@@ -4634,14 +4634,6 @@
         "artistId": 7,
         "cover": "https://cdn-images.dzcdn.net/images/cover/5fc6c36d3b78be9862f91112afe6ad91/250x250-000000-80-0-0.jpg",
         "year": 2001
-      },
-      {
-        "id": 7562977,
-        "title": "I'm Like A Bird",
-        "artist": "Nelly Furtado",
-        "artistId": 133,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/fbd6d06c71d72755bba27af0b1e3c88e/250x250-000000-80-0-0.jpg",
-        "year": 2000
       },
       {
         "id": 70179720,
@@ -4832,6 +4824,30 @@
       {
         "id": 17135114,
         "title": "The One That Got Away",
+        "artist": "Katy Perry",
+        "artistId": 144227,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/99578b0bb8c838383c414a5b62b5e15d/250x250-000000-80-0-0.jpg",
+        "year": 2010
+      },
+      {
+        "id": 3892384211,
+        "title": "Firework",
+        "artist": "Katy Perry",
+        "artistId": 144227,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/74572e68ba0588c0c1a7cc7fdecb4b7b/250x250-000000-80-0-0.jpg",
+        "year": 2010
+      },
+      {
+        "id": 17135110,
+        "title": "California Gurls",
+        "artist": "Katy Perry",
+        "artistId": 144227,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/99578b0bb8c838383c414a5b62b5e15d/250x250-000000-80-0-0.jpg",
+        "year": 2010
+      },
+      {
+        "id": 17135108,
+        "title": "Teenage Dream",
         "artist": "Katy Perry",
         "artistId": 144227,
         "cover": "https://cdn-images.dzcdn.net/images/cover/99578b0bb8c838383c414a5b62b5e15d/250x250-000000-80-0-0.jpg",
@@ -5118,6 +5134,30 @@
         "year": 2019
       },
       {
+        "id": 89077555,
+        "title": "Shake It Off",
+        "artist": "Taylor Swift",
+        "artistId": 12246,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/68b4e986958b17f05b062ffa8d7ae114/250x250-000000-80-0-0.jpg",
+        "year": 2014
+      },
+      {
+        "id": 435491472,
+        "title": "Don’t Blame Me",
+        "artist": "Taylor Swift",
+        "artistId": 12246,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/e6f3afd8a5c3d8ea797f458694166e47/250x250-000000-80-0-0.jpg",
+        "year": 2017
+      },
+      {
+        "id": 435491492,
+        "title": "Look What You Made Me Do",
+        "artist": "Taylor Swift",
+        "artistId": 12246,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/e6f3afd8a5c3d8ea797f458694166e47/250x250-000000-80-0-0.jpg",
+        "year": 2017
+      },
+      {
         "id": 69959816,
         "title": "Popular Song",
         "artist": "Mika",
@@ -5222,6 +5262,22 @@
         "year": 2016
       },
       {
+        "id": 8011849,
+        "title": "Grenade",
+        "artist": "Bruno Mars",
+        "artistId": 429675,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5b59dc18e109515420f8237719bd2186/250x250-000000-80-0-0.jpg",
+        "year": 2010
+      },
+      {
+        "id": 136336110,
+        "title": "24K Magic",
+        "artist": "Bruno Mars",
+        "artistId": 429675,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/012b27906b430a37ec1d8f793d5c4fa6/250x250-000000-80-0-0.jpg",
+        "year": 2016
+      },
+      {
         "itunesId": 1544491998,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/08/22/2e/08222e25-43f5-20e6-a442-b8127ac83368/mzaf_1689070223363740216.plus.aac.p.m4a",
         "link": "https://music.apple.com/us/album/someone-like-you/1544491232?i=1544491998",
@@ -5278,6 +5334,14 @@
         "artistId": 1562681,
         "cover": "https://cdn-images.dzcdn.net/images/cover/b5021d5a88c44071a97416c65d4dbdd9/250x250-000000-80-0-0.jpg",
         "year": 2014
+      },
+      {
+        "id": 1375215242,
+        "title": "Into You",
+        "artist": "Ariana Grande",
+        "artistId": 1562681,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/1a8f399e9ddbb8ec2530232c0dfd953f/250x250-000000-80-0-0.jpg",
+        "year": 2016
       },
       {
         "id": 112662368,
@@ -5352,6 +5416,14 @@
         "year": 2018
       },
       {
+        "id": 136337268,
+        "title": "ocean eyes",
+        "artist": "Billie Eilish",
+        "artistId": 9635624,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/d85200712419ae036b277deffeea5181/250x250-000000-80-0-0.jpg",
+        "year": 2015
+      },
+      {
         "id": 908604612,
         "title": "Blinding Lights",
         "artist": "The Weeknd",
@@ -5376,6 +5448,22 @@
         "year": 2016
       },
       {
+        "id": 136889434,
+        "title": "I Feel It Coming",
+        "artist": "The Weeknd",
+        "artistId": 4050205,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/134778e4c4f19ea71c82408300925a9a/250x250-000000-80-0-0.jpg",
+        "year": 2016
+      },
+      {
+        "id": 106506516,
+        "title": "Can't Feel My Face",
+        "artist": "The Weeknd",
+        "artistId": 4050205,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/eea9f7fc913300e40307a0ff70dc73cf/250x250-000000-80-0-0.jpg",
+        "year": 2015
+      },
+      {
         "id": 698905582,
         "title": "Señorita",
         "artist": "Shawn Mendes",
@@ -5398,6 +5486,14 @@
         "artistId": 5962948,
         "cover": "https://cdn-images.dzcdn.net/images/cover/35d5f7dd0b398bb37287b3454f0b05b9/250x250-000000-80-0-0.jpg",
         "year": 2016
+      },
+      {
+        "id": 113418500,
+        "title": "Stitches",
+        "artist": "Shawn Mendes",
+        "artistId": 5962948,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/46fab8006e0da286831fe157ccc4f31c/250x250-000000-80-0-0.jpg",
+        "year": 2015
       },
       {
         "id": 447098092,
@@ -5472,6 +5568,22 @@
         "year": 2014
       },
       {
+        "id": 12724819,
+        "title": "Moves Like Jagger",
+        "artist": "Maroon 5",
+        "artistId": 1188,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/86fb42ca017f0266d0885c1bede988bf/250x250-000000-80-0-0.jpg",
+        "year": 2010
+      },
+      {
+        "id": 511062522,
+        "title": "What Lovers Do",
+        "artist": "Maroon 5",
+        "artistId": 1188,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/768d869cc8b4ca2990c76e742f6d4f8e/250x250-000000-80-0-0.jpg",
+        "year": 2017
+      },
+      {
         "id": 78527795,
         "title": "Counting Stars",
         "artist": "OneRepublic",
@@ -5520,6 +5632,14 @@
         "year": 2011
       },
       {
+        "id": 72544948,
+        "title": "Best Song Ever",
+        "artist": "One Direction",
+        "artistId": 1007876,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/620bcd9a3310b1bfaba639b060b54abf/250x250-000000-80-0-0.jpg",
+        "year": 2013
+      },
+      {
         "id": 420355352,
         "title": "Wolves",
         "artist": "Selena Gomez",
@@ -5566,6 +5686,22 @@
         "artistId": 4448485,
         "cover": "https://cdn-images.dzcdn.net/images/cover/7bb0b356418fbb275c0c3db7259128d7/250x250-000000-80-0-0.jpg",
         "year": 2013
+      },
+      {
+        "id": 371625771,
+        "title": "Green Light",
+        "artist": "Lorde",
+        "artistId": 4448485,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0c424dbe627530cd06a6fd408baba3f3/250x250-000000-80-0-0.jpg",
+        "year": 2017
+      },
+      {
+        "id": 371625851,
+        "title": "Supercut",
+        "artist": "Lorde",
+        "artistId": 4448485,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0c424dbe627530cd06a6fd408baba3f3/250x250-000000-80-0-0.jpg",
+        "year": 2017
       },
       {
         "id": 92739396,
@@ -5640,6 +5776,22 @@
         "artistId": 12178,
         "cover": "https://cdn-images.dzcdn.net/images/cover/b8af7ff13a47e2775307299843da9b36/250x250-000000-80-0-0.jpg",
         "year": 2016
+      },
+      {
+        "id": 88936747,
+        "title": "Summer",
+        "artist": "Calvin Harris",
+        "artistId": 12178,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/a72e5db10e9168cd6f5065fbe750cdbb/250x250-000000-80-0-0.jpg",
+        "year": 2014
+      },
+      {
+        "id": 88936743,
+        "title": "Outside",
+        "artist": "Calvin Harris",
+        "artistId": 12178,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/a72e5db10e9168cd6f5065fbe750cdbb/250x250-000000-80-0-0.jpg",
+        "year": 2014
       },
       {
         "id": 70266756,
@@ -5736,6 +5888,14 @@
         "artistId": 1424821,
         "cover": "https://cdn-images.dzcdn.net/images/cover/5b00b6bf2a353dc0bfd6ff6846708d0e/250x250-000000-80-0-0.jpg",
         "year": 2011
+      },
+      {
+        "id": 739421482,
+        "title": "Doin' Time",
+        "artist": "Lana Del Rey",
+        "artistId": 1424821,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c0f4f022fa51f13e877aae2e758e241d/250x250-000000-80-0-0.jpg",
+        "year": 2019
       },
       {
         "id": 1088873812,
@@ -6066,6 +6226,14 @@
         "year": 2011
       },
       {
+        "id": 111482314,
+        "title": "Adventure of a Lifetime",
+        "artist": "Coldplay",
+        "artistId": 892,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6c217fb56f7f7961c634d6e9bca9ddae/250x250-000000-80-0-0.jpg",
+        "year": 2015
+      },
+      {
         "id": 84791735,
         "title": "Take Me to Church",
         "artist": "Hozier",
@@ -6250,14 +6418,6 @@
         "year": 2018
       },
       {
-        "id": 111482314,
-        "title": "Adventure of a Lifetime",
-        "artist": "Coldplay",
-        "artistId": 892,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/6c217fb56f7f7961c634d6e9bca9ddae/250x250-000000-80-0-0.jpg",
-        "year": 2015
-      },
-      {
         "id": 90326361,
         "title": "Shut Up and Dance",
         "artist": "Walk The Moon",
@@ -6354,36 +6514,12 @@
         "year": 2012
       },
       {
-        "id": 371625771,
-        "title": "Green Light",
-        "artist": "Lorde",
-        "artistId": 4448485,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/0c424dbe627530cd06a6fd408baba3f3/250x250-000000-80-0-0.jpg",
-        "year": 2017
-      },
-      {
         "id": 76535358,
         "title": "Classic",
         "artist": "MKTO",
         "artistId": 4214491,
         "cover": "https://cdn-images.dzcdn.net/images/cover/e7d43c6f40dba782928beeae7f478da8/250x250-000000-80-0-0.jpg",
         "year": 2013
-      },
-      {
-        "id": 739421482,
-        "title": "Doin' Time",
-        "artist": "Lana Del Rey",
-        "artistId": 1424821,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/c0f4f022fa51f13e877aae2e758e241d/250x250-000000-80-0-0.jpg",
-        "year": 2019
-      },
-      {
-        "id": 17135108,
-        "title": "Teenage Dream",
-        "artist": "Katy Perry",
-        "artistId": 144227,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/99578b0bb8c838383c414a5b62b5e15d/250x250-000000-80-0-0.jpg",
-        "year": 2010
       },
       {
         "id": 14348462,
@@ -6418,14 +6554,6 @@
         "year": 2015
       },
       {
-        "id": 12724819,
-        "title": "Moves Like Jagger",
-        "artist": "Maroon 5",
-        "artistId": 1188,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/86fb42ca017f0266d0885c1bede988bf/250x250-000000-80-0-0.jpg",
-        "year": 2010
-      },
-      {
         "id": 126884459,
         "title": "Heathens",
         "artist": "Twenty One Pilots",
@@ -6440,22 +6568,6 @@
         "artistId": 5584622,
         "cover": "https://cdn-images.dzcdn.net/images/cover/99833422baf64dac8e0d561a1f7e02d0/250x250-000000-80-0-0.jpg",
         "year": 2014
-      },
-      {
-        "id": 17135110,
-        "title": "California Gurls",
-        "artist": "Katy Perry",
-        "artistId": 144227,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/99578b0bb8c838383c414a5b62b5e15d/250x250-000000-80-0-0.jpg",
-        "year": 2010
-      },
-      {
-        "id": 371625851,
-        "title": "Supercut",
-        "artist": "Lorde",
-        "artistId": 4448485,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/0c424dbe627530cd06a6fd408baba3f3/250x250-000000-80-0-0.jpg",
-        "year": 2017
       },
       {
         "id": 1645426722,
@@ -6482,14 +6594,6 @@
         "year": 2015
       },
       {
-        "id": 136336110,
-        "title": "24K Magic",
-        "artist": "Bruno Mars",
-        "artistId": 429675,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/012b27906b430a37ec1d8f793d5c4fa6/250x250-000000-80-0-0.jpg",
-        "year": 2016
-      },
-      {
         "id": 14405198,
         "title": "Domino",
         "artist": "Jessie J",
@@ -6504,14 +6608,6 @@
         "artistId": 1709730,
         "cover": "https://cdn-images.dzcdn.net/images/cover/7663599d3a24513178261fcbe91f94c0/250x250-000000-80-0-0.jpg",
         "year": 2014
-      },
-      {
-        "id": 106506516,
-        "title": "Can't Feel My Face",
-        "artist": "The Weeknd",
-        "artistId": 4050205,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/eea9f7fc913300e40307a0ff70dc73cf/250x250-000000-80-0-0.jpg",
-        "year": 2015
       },
       {
         "id": 7667349,
@@ -6630,14 +6726,6 @@
         "year": 2012
       },
       {
-        "id": 435491472,
-        "title": "Don’t Blame Me",
-        "artist": "Taylor Swift",
-        "artistId": 12246,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/e6f3afd8a5c3d8ea797f458694166e47/250x250-000000-80-0-0.jpg",
-        "year": 2017
-      },
-      {
         "itunesId": 1207120448,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/64/7f/96/647f9601-aa94-3599-6c73-0143510b8b92/mzaf_13538528720942742126.plus.aac.p.m4a",
         "link": "https://music.apple.com/us/album/something-just-like-this/1207120422?i=1207120448",
@@ -6645,22 +6733,6 @@
         "artist": "The Chainsmokers",
         "artistId": 4104927,
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/9d/56/6f/9d566f55-5253-bed6-5c31-df952dae649d/886446379289.jpg/250x250bb.jpg",
-        "year": 2017
-      },
-      {
-        "id": 1375215242,
-        "title": "Into You",
-        "artist": "Ariana Grande",
-        "artistId": 1562681,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/1a8f399e9ddbb8ec2530232c0dfd953f/250x250-000000-80-0-0.jpg",
-        "year": 2016
-      },
-      {
-        "id": 435491492,
-        "title": "Look What You Made Me Do",
-        "artist": "Taylor Swift",
-        "artistId": 12246,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/e6f3afd8a5c3d8ea797f458694166e47/250x250-000000-80-0-0.jpg",
         "year": 2017
       },
       {
@@ -6712,14 +6784,6 @@
         "year": 2015
       },
       {
-        "id": 3892384211,
-        "title": "Firework",
-        "artist": "Katy Perry",
-        "artistId": 144227,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/74572e68ba0588c0c1a7cc7fdecb4b7b/250x250-000000-80-0-0.jpg",
-        "year": 2010
-      },
-      {
         "id": 61424044,
         "title": "Can't Hold Us",
         "artist": "Macklemore",
@@ -6742,14 +6806,6 @@
         "artistId": 74309,
         "cover": "https://cdn-images.dzcdn.net/images/cover/552f4b953a02ecb92268b1c7a80d9b2d/250x250-000000-80-0-0.jpg",
         "year": 2016
-      },
-      {
-        "id": 72544948,
-        "title": "Best Song Ever",
-        "artist": "One Direction",
-        "artistId": 1007876,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/620bcd9a3310b1bfaba639b060b54abf/250x250-000000-80-0-0.jpg",
-        "year": 2013
       },
       {
         "id": 28852751,
@@ -6800,36 +6856,12 @@
         "year": 2013
       },
       {
-        "id": 113418500,
-        "title": "Stitches",
-        "artist": "Shawn Mendes",
-        "artistId": 5962948,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/46fab8006e0da286831fe157ccc4f31c/250x250-000000-80-0-0.jpg",
-        "year": 2015
-      },
-      {
-        "id": 89077555,
-        "title": "Shake It Off",
-        "artist": "Taylor Swift",
-        "artistId": 12246,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/68b4e986958b17f05b062ffa8d7ae114/250x250-000000-80-0-0.jpg",
-        "year": 2014
-      },
-      {
         "id": 77349246,
         "title": "Fancy",
         "artist": "Iggy Azalea",
         "artistId": 2454271,
         "cover": "https://cdn-images.dzcdn.net/images/cover/e2d85012dcf46070934d394bb35be64d/250x250-000000-80-0-0.jpg",
         "year": 2014
-      },
-      {
-        "id": 136889434,
-        "title": "I Feel It Coming",
-        "artist": "The Weeknd",
-        "artistId": 4050205,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/134778e4c4f19ea71c82408300925a9a/250x250-000000-80-0-0.jpg",
-        "year": 2016
       },
       {
         "id": 11747946,
@@ -6856,14 +6888,6 @@
         "year": 2018
       },
       {
-        "id": 88936743,
-        "title": "Outside",
-        "artist": "Calvin Harris",
-        "artistId": 12178,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/a72e5db10e9168cd6f5065fbe750cdbb/250x250-000000-80-0-0.jpg",
-        "year": 2014
-      },
-      {
         "id": 71403230,
         "title": "Timber",
         "artist": "Pitbull",
@@ -6888,14 +6912,6 @@
         "year": 2015
       },
       {
-        "id": 511062522,
-        "title": "What Lovers Do",
-        "artist": "Maroon 5",
-        "artistId": 1188,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/768d869cc8b4ca2990c76e742f6d4f8e/250x250-000000-80-0-0.jpg",
-        "year": 2017
-      },
-      {
         "id": 129310248,
         "title": "Closer",
         "artist": "The Chainsmokers",
@@ -6904,47 +6920,15 @@
         "year": 2016
       },
       {
-        "id": 136337268,
-        "title": "ocean eyes",
-        "artist": "Billie Eilish",
-        "artistId": 9635624,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/d85200712419ae036b277deffeea5181/250x250-000000-80-0-0.jpg",
-        "year": 2015
-      },
-      {
         "id": 61085536,
         "title": "Ready or Not",
         "artist": "Bridgit Mendler",
         "artistId": 1219583,
         "cover": "https://cdn-images.dzcdn.net/images/cover/ef49b625477d042d2e0b1f0c21b3e6bc/250x250-000000-80-0-0.jpg",
         "year": 2012
-      },
-      {
-        "id": 8011849,
-        "title": "Grenade",
-        "artist": "Bruno Mars",
-        "artistId": 429675,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/5b59dc18e109515420f8237719bd2186/250x250-000000-80-0-0.jpg",
-        "year": 2010
-      },
-      {
-        "id": 88936747,
-        "title": "Summer",
-        "artist": "Calvin Harris",
-        "artistId": 12178,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/a72e5db10e9168cd6f5065fbe750cdbb/250x250-000000-80-0-0.jpg",
-        "year": 2014
       }
     ],
     "2020": [
-      {
-        "id": 6061331,
-        "title": "Mama Said (Rerecorded)",
-        "artist": "The Shirelles",
-        "artistId": 90451,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/028454b12e7579e22a9df088adeca735/250x250-000000-80-0-0.jpg",
-        "year": 2022
-      },
       {
         "id": 3750645202,
         "title": "INVISIBLE",
@@ -7082,6 +7066,14 @@
         "year": 2020
       },
       {
+        "id": 3579685431,
+        "title": "The Fate of Ophelia",
+        "artist": "Taylor Swift",
+        "artistId": 12246,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/d0bed55a0efb3c5c3ddb3dacda67d9b3/250x250-000000-80-0-0.jpg",
+        "year": 2025
+      },
+      {
         "id": 2105158337,
         "title": "Flowers",
         "artist": "Miley Cyrus",
@@ -7186,6 +7178,14 @@
         "year": 2020
       },
       {
+        "id": 3454558661,
+        "title": "DAISIES",
+        "artist": "Justin Bieber",
+        "artistId": 288166,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/d0f4411377c5b6a81cdf18d9587a7641/250x250-000000-80-0-0.jpg",
+        "year": 2025
+      },
+      {
         "id": 1124841682,
         "title": "Levitating",
         "artist": "Dua Lipa",
@@ -7232,6 +7232,14 @@
         "artistId": 9635624,
         "cover": "https://cdn-images.dzcdn.net/images/cover/bb2880548dd3bc71fb97def2eedec130/250x250-000000-80-0-0.jpg",
         "year": 2021
+      },
+      {
+        "id": 2366043655,
+        "title": "What Was I Made For?",
+        "artist": "Billie Eilish",
+        "artistId": 9635624,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/2562b8d68b75635bb2d4b92dc7ed9ab5/250x250-000000-80-0-0.jpg",
+        "year": 2023
       },
       {
         "id": 2338371075,
@@ -7476,6 +7484,22 @@
         "year": 2021
       },
       {
+        "id": 1378342612,
+        "title": "deja vu",
+        "artist": "Olivia Rodrigo",
+        "artistId": 11152580,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/e68da86fd7976135c2d2d1715afaef7c/250x250-000000-80-0-0.jpg",
+        "year": 2021
+      },
+      {
+        "id": 2440763155,
+        "title": "vampire",
+        "artist": "Olivia Rodrigo",
+        "artistId": 11152580,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4bb79214365c0049e031f5e2caae4752/250x250-000000-80-0-0.jpg",
+        "year": 2023
+      },
+      {
         "id": 2743578151,
         "title": "Espresso",
         "artist": "Sabrina Carpenter",
@@ -7498,6 +7522,14 @@
         "artistId": 1176900,
         "cover": "https://cdn-images.dzcdn.net/images/cover/ae372ba023cac79e74c1e3e8b6f7a50b/250x250-000000-80-0-0.jpg",
         "year": 2022
+      },
+      {
+        "id": 3400077541,
+        "title": "Manchild",
+        "artist": "Sabrina Carpenter",
+        "artistId": 1176900,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/272cc67ce5d91682cc7281f171241f6c/250x250-000000-80-0-0.jpg",
+        "year": 2025
       },
       {
         "id": 1410738172,
@@ -7570,6 +7602,14 @@
         "artistId": 146543992,
         "cover": "https://cdn-images.dzcdn.net/images/cover/e8947b2a3e00fde8763011ebee2a02fd/250x250-000000-80-0-0.jpg",
         "year": 2024
+      },
+      {
+        "id": 3333720471,
+        "title": "Mystical Magical",
+        "artist": "Benson Boone",
+        "artistId": 146543992,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6c868cb8dcbb7066f2f224707cef59f2/250x250-000000-80-0-0.jpg",
+        "year": 2025
       },
       {
         "id": 2444176345,
@@ -7772,27 +7812,11 @@
         "year": 2022
       },
       {
-        "id": 3333720471,
-        "title": "Mystical Magical",
-        "artist": "Benson Boone",
-        "artistId": 146543992,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/6c868cb8dcbb7066f2f224707cef59f2/250x250-000000-80-0-0.jpg",
-        "year": 2025
-      },
-      {
         "id": 2181330357,
         "title": "Back On 74",
         "artist": "Jungle",
         "artistId": 436163,
         "cover": "https://cdn-images.dzcdn.net/images/cover/ee90f459f8d2adfbb871212793328eb2/250x250-000000-80-0-0.jpg",
-        "year": 2023
-      },
-      {
-        "id": 2440763155,
-        "title": "vampire",
-        "artist": "Olivia Rodrigo",
-        "artistId": 11152580,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/4bb79214365c0049e031f5e2caae4752/250x250-000000-80-0-0.jpg",
         "year": 2023
       },
       {
@@ -7868,14 +7892,6 @@
         "year": 2020
       },
       {
-        "id": 3400077541,
-        "title": "Manchild",
-        "artist": "Sabrina Carpenter",
-        "artistId": 1176900,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/272cc67ce5d91682cc7281f171241f6c/250x250-000000-80-0-0.jpg",
-        "year": 2025
-      },
-      {
         "id": 3471224101,
         "title": "12 to 12",
         "artist": "sombr",
@@ -7938,14 +7954,6 @@
         "artistId": 50633812,
         "cover": "https://cdn-images.dzcdn.net/images/cover/0a5209aec8e37012eb07eb6ef01fa7e6/250x250-000000-80-0-0.jpg",
         "year": 2020
-      },
-      {
-        "id": 1378342612,
-        "title": "deja vu",
-        "artist": "Olivia Rodrigo",
-        "artistId": 11152580,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/e68da86fd7976135c2d2d1715afaef7c/250x250-000000-80-0-0.jpg",
-        "year": 2021
       },
       {
         "id": 3548216281,
@@ -8164,14 +8172,6 @@
         "year": 2020
       },
       {
-        "id": 3454558661,
-        "title": "DAISIES",
-        "artist": "Justin Bieber",
-        "artistId": 288166,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/d0f4411377c5b6a81cdf18d9587a7641/250x250-000000-80-0-0.jpg",
-        "year": 2025
-      },
-      {
         "id": 1875447247,
         "title": "ceilings",
         "artist": "Lizzy McAlpine",
@@ -8194,14 +8194,6 @@
         "artistId": 12246,
         "cover": "https://cdn-images.dzcdn.net/images/cover/73bee9f48378d4c95139e693fd997569/250x250-000000-80-0-0.jpg",
         "year": 2024
-      },
-      {
-        "id": 2366043655,
-        "title": "What Was I Made For?",
-        "artist": "Billie Eilish",
-        "artistId": 9635624,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/2562b8d68b75635bb2d4b92dc7ed9ab5/250x250-000000-80-0-0.jpg",
-        "year": 2023
       },
       {
         "id": 3231101771,
@@ -8234,14 +8226,6 @@
         "artistId": 9266850,
         "cover": "https://cdn-images.dzcdn.net/images/cover/41b98b2c9cf64689c4c77569610e3cf1/250x250-000000-80-0-0.jpg",
         "year": 2024
-      },
-      {
-        "id": 3579685431,
-        "title": "The Fate of Ophelia",
-        "artist": "Taylor Swift",
-        "artistId": 12246,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/d0bed55a0efb3c5c3ddb3dacda67d9b3/250x250-000000-80-0-0.jpg",
-        "year": 2025
       },
       {
         "id": 1925023707,
@@ -8504,6 +8488,14 @@
         "year": 1965
       },
       {
+        "id": 116348598,
+        "title": "I Want To Hold Your Hand",
+        "artist": "The Beatles",
+        "artistId": 1,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c65b3bd84e81056e060be144381c06c8/250x250-000000-80-0-0.jpg",
+        "year": 1963
+      },
+      {
         "id": 3614150,
         "title": "People Are Strange",
         "artist": "The Doors",
@@ -8552,13 +8544,13 @@
         "year": 1963
       },
       {
-        "itunesId": 1622186657,
-        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/50/cb/c7/50cbc7fa-818d-6434-f20f-831235e797a8/mzaf_7885210366125674203.plus.aac.p.m4a",
-        "link": "https://music.apple.com/us/album/you-really-got-me-mono-version-with-reverb/1622186650?i=1622186657",
-        "title": "You Really Got Me (Mono Version With Reverb)",
+        "itunesId": 1436281753,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fb/c1/e7/fbc1e7ac-2336-092a-8df9-08e27162894f/mzaf_4505609599697887179.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/you-really-got-me/1436281532?i=1436281753",
+        "title": "You Really Got Me",
         "artist": "The Kinks",
         "artistId": 1415,
-        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/37/45/9a/37459a96-81ef-b10d-2d54-7b377e8bb171/5414939496776.jpg/250x250bb.jpg",
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/f1/49/7f/f1497f9d-b925-fa25-0834-195616a19be3/5414939541971.jpg/250x250bb.jpg",
         "year": 1964
       },
       {
@@ -8850,6 +8842,14 @@
         "year": 1969
       },
       {
+        "id": 16702525,
+        "title": "Honky Tonk Women",
+        "artist": "The Rolling Stones",
+        "artistId": 11,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/eae6c5d63a8bb21228925ae8fbd9d1e0/250x250-000000-80-0-0.jpg",
+        "year": 1969
+      },
+      {
         "id": 883644,
         "title": "Have You Ever Seen The Rain",
         "artist": "Creedence Clearwater Revival",
@@ -8898,38 +8898,12 @@
         "year": 1969
       },
       {
-        "itunesId": 1436281753,
-        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/fb/c1/e7/fbc1e7ac-2336-092a-8df9-08e27162894f/mzaf_4505609599697887179.plus.aac.p.m4a",
-        "link": "https://music.apple.com/us/album/you-really-got-me/1436281532?i=1436281753",
-        "title": "You Really Got Me",
-        "artist": "The Kinks",
-        "artistId": 1415,
-        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/f1/49/7f/f1497f9d-b925-fa25-0834-195616a19be3/5414939541971.jpg/250x250bb.jpg",
-        "year": 1964
-      },
-      {
         "id": 3161471,
         "title": "Long Cool Woman (In a Black Dress)",
         "artist": "The Hollies",
         "artistId": 4189,
         "cover": "https://cdn-images.dzcdn.net/images/cover/2337874e3d8d2e86802c8393630f8e05/250x250-000000-80-0-0.jpg",
         "year": 1969
-      },
-      {
-        "id": 16702525,
-        "title": "Honky Tonk Women",
-        "artist": "The Rolling Stones",
-        "artistId": 11,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/eae6c5d63a8bb21228925ae8fbd9d1e0/250x250-000000-80-0-0.jpg",
-        "year": 1969
-      },
-      {
-        "id": 116348598,
-        "title": "I Want To Hold Your Hand",
-        "artist": "The Beatles",
-        "artistId": 1,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/c65b3bd84e81056e060be144381c06c8/250x250-000000-80-0-0.jpg",
-        "year": 1963
       },
       {
         "id": 3586842,
@@ -9078,6 +9052,22 @@
         "year": 1977
       },
       {
+        "id": 4091936611,
+        "title": "Somebody To Love",
+        "artist": "Queen",
+        "artistId": 412,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5bbfab8ae2def08b9d58932b5e6121a4/250x250-000000-80-0-0.jpg",
+        "year": 1976
+      },
+      {
+        "id": 4092339021,
+        "title": "We Are the Champions",
+        "artist": "Queen",
+        "artistId": 412,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/3856be3ba91c7009c6e469d9e57c7ea9/250x250-000000-80-0-0.jpg",
+        "year": 1977
+      },
+      {
         "id": 111628786,
         "title": "Stairway to Heaven",
         "artist": "Led Zeppelin",
@@ -9100,6 +9090,14 @@
         "artistId": 848,
         "cover": "https://cdn-images.dzcdn.net/images/cover/460a0edd96f743be03b7405eac38c633/250x250-000000-80-0-0.jpg",
         "year": 1971
+      },
+      {
+        "id": 111628800,
+        "title": "Over the Hills and Far Away",
+        "artist": "Led Zeppelin",
+        "artistId": 848,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/87df66f7805c5bd5fdf353def5c3425f/250x250-000000-80-0-0.jpg",
+        "year": 1973
       },
       {
         "id": 92719900,
@@ -9174,6 +9172,14 @@
         "year": 1979
       },
       {
+        "id": 116914026,
+        "title": "Money",
+        "artist": "Pink Floyd",
+        "artistId": 860,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/e635a8510c1a74bc089b3566ebbb9cb8/250x250-000000-80-0-0.jpg",
+        "year": 1973
+      },
+      {
         "id": 426703682,
         "title": "Hotel California",
         "artist": "Eagles",
@@ -9198,6 +9204,14 @@
         "year": 1975
       },
       {
+        "id": 426703702,
+        "title": "Life in the Fast Lane",
+        "artist": "Eagles",
+        "artistId": 210,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/7a6c7b49cfdaf4ee233f66c3070d2f40/250x250-000000-80-0-0.jpg",
+        "year": 1976
+      },
+      {
         "id": 63480987,
         "title": "Dreams",
         "artist": "Fleetwood Mac",
@@ -9220,6 +9234,14 @@
         "artistId": 169,
         "cover": "https://cdn-images.dzcdn.net/images/cover/9732751ce91d786dcf30069853697078/250x250-000000-80-0-0.jpg",
         "year": 1976
+      },
+      {
+        "id": 63480989,
+        "title": "Don't Stop",
+        "artist": "Fleetwood Mac",
+        "artistId": 169,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/9732751ce91d786dcf30069853697078/250x250-000000-80-0-0.jpg",
+        "year": 1977
       },
       {
         "id": 60840057,
@@ -9396,6 +9418,22 @@
         "artistId": 997,
         "cover": "https://cdn-images.dzcdn.net/images/cover/141c9639bd95e780ac26e4a0a527e768/250x250-000000-80-0-0.jpg",
         "year": 1974
+      },
+      {
+        "id": 3155539,
+        "title": "Life on Mars?",
+        "artist": "David Bowie",
+        "artistId": 997,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/141c9639bd95e780ac26e4a0a527e768/250x250-000000-80-0-0.jpg",
+        "year": 1971
+      },
+      {
+        "id": 107474516,
+        "title": "Changes",
+        "artist": "David Bowie",
+        "artistId": 997,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/d10ad234d6a298ef06cb0ed338700918/250x250-000000-80-0-0.jpg",
+        "year": 1971
       },
       {
         "id": 2121805,
@@ -9654,14 +9692,6 @@
         "year": 1976
       },
       {
-        "id": 4091936611,
-        "title": "Somebody To Love",
-        "artist": "Queen",
-        "artistId": 412,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/5bbfab8ae2def08b9d58932b5e6121a4/250x250-000000-80-0-0.jpg",
-        "year": 1976
-      },
-      {
         "id": 747527,
         "title": "Psycho Killer",
         "artist": "Talking Heads",
@@ -9718,14 +9748,6 @@
         "year": 1974
       },
       {
-        "id": 107474516,
-        "title": "Changes",
-        "artist": "David Bowie",
-        "artistId": 997,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/d10ad234d6a298ef06cb0ed338700918/250x250-000000-80-0-0.jpg",
-        "year": 1971
-      },
-      {
         "id": 69924599,
         "title": "London Calling",
         "artist": "The Clash",
@@ -9740,22 +9762,6 @@
         "artistId": 149013,
         "cover": "https://cdn-images.dzcdn.net/images/cover/196eaf4d3f7437f744a71d867a543dbb/250x250-000000-80-0-0.jpg",
         "year": 1970
-      },
-      {
-        "id": 3155539,
-        "title": "Life on Mars?",
-        "artist": "David Bowie",
-        "artistId": 997,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/141c9639bd95e780ac26e4a0a527e768/250x250-000000-80-0-0.jpg",
-        "year": 1971
-      },
-      {
-        "id": 4092339021,
-        "title": "We Are the Champions",
-        "artist": "Queen",
-        "artistId": 412,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/3856be3ba91c7009c6e469d9e57c7ea9/250x250-000000-80-0-0.jpg",
-        "year": 1977
       },
       {
         "id": 13816433,
@@ -9852,14 +9858,6 @@
         "artistId": 1446,
         "cover": "https://cdn-images.dzcdn.net/images/cover/d3d46f426c75362741fff61a238abcc9/250x250-000000-80-0-0.jpg",
         "year": 1973
-      },
-      {
-        "id": 63480989,
-        "title": "Don't Stop",
-        "artist": "Fleetwood Mac",
-        "artistId": 169,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/9732751ce91d786dcf30069853697078/250x250-000000-80-0-0.jpg",
-        "year": 1977
       },
       {
         "id": 4136793741,
@@ -10110,14 +10108,6 @@
         "year": 1970
       },
       {
-        "id": 426703702,
-        "title": "Life in the Fast Lane",
-        "artist": "Eagles",
-        "artistId": 210,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/7a6c7b49cfdaf4ee233f66c3070d2f40/250x250-000000-80-0-0.jpg",
-        "year": 1976
-      },
-      {
         "id": 2258092517,
         "title": "Slow Ride",
         "artist": "Foghat",
@@ -10132,14 +10122,6 @@
         "artistId": 207,
         "cover": "https://cdn-images.dzcdn.net/images/cover/d15748b1fc7a32baae595e4c9748a393/250x250-000000-80-0-0.jpg",
         "year": 1977
-      },
-      {
-        "id": 116914026,
-        "title": "Money",
-        "artist": "Pink Floyd",
-        "artistId": 860,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/e635a8510c1a74bc089b3566ebbb9cb8/250x250-000000-80-0-0.jpg",
-        "year": 1973
       },
       {
         "id": 97081744,
@@ -10182,14 +10164,6 @@
         "artistId": 7359,
         "cover": "https://cdn-images.dzcdn.net/images/cover/341b84af36fd6e2d3abe35161ec27cd8/250x250-000000-80-0-0.jpg",
         "year": 1975
-      },
-      {
-        "id": 111628800,
-        "title": "Over the Hills and Far Away",
-        "artist": "Led Zeppelin",
-        "artistId": 848,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/87df66f7805c5bd5fdf353def5c3425f/250x250-000000-80-0-0.jpg",
-        "year": 1973
       },
       {
         "id": 75859746,
@@ -10594,6 +10568,22 @@
         "year": 1986
       },
       {
+        "id": 74628075,
+        "title": "Runaway",
+        "artist": "Bon Jovi",
+        "artistId": 637,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/b7667d1cc5f1b97af32c8160f2198547/250x250-000000-80-0-0.jpg",
+        "year": 1984
+      },
+      {
+        "id": 79795678,
+        "title": "Bad Medicine",
+        "artist": "Bon Jovi",
+        "artistId": 637,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ae062209da6c897f5670963ae99985f3/250x250-000000-80-0-0.jpg",
+        "year": 1988
+      },
+      {
         "id": 518458172,
         "title": "Sweet Child O' Mine",
         "artist": "Guns N' Roses",
@@ -10728,6 +10718,14 @@
         "artistId": 163,
         "cover": "https://cdn-images.dzcdn.net/images/cover/c66b126bb3afe75c7fedd62f9df4956b/250x250-000000-80-0-0.jpg",
         "year": 1983
+      },
+      {
+        "id": 347363351,
+        "title": "Where The Streets Have No Name",
+        "artist": "U2",
+        "artistId": 163,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/76c4322b0ea4ab5ed1e3a9f7d3208e28/250x250-000000-80-0-0.jpg",
+        "year": 1987
       },
       {
         "id": 1143636,
@@ -11046,14 +11044,6 @@
         "year": 1987
       },
       {
-        "id": 347363351,
-        "title": "Where The Streets Have No Name",
-        "artist": "U2",
-        "artistId": 163,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/76c4322b0ea4ab5ed1e3a9f7d3208e28/250x250-000000-80-0-0.jpg",
-        "year": 1987
-      },
-      {
         "id": 10303625,
         "title": "Tom Sawyer",
         "artist": "Rush",
@@ -11068,14 +11058,6 @@
         "artistId": 5229,
         "cover": "https://cdn-images.dzcdn.net/images/cover/6e9c12e4095a8642b8d5ccfa25087e4b/250x250-000000-80-0-0.jpg",
         "year": 1989
-      },
-      {
-        "id": 74628075,
-        "title": "Runaway",
-        "artist": "Bon Jovi",
-        "artistId": 637,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/b7667d1cc5f1b97af32c8160f2198547/250x250-000000-80-0-0.jpg",
-        "year": 1984
       },
       {
         "id": 136338506,
@@ -11126,14 +11108,6 @@
         "artistId": 2255,
         "cover": "https://cdn-images.dzcdn.net/images/cover/05dfc86a038cbc672be585784d0a0e76/250x250-000000-80-0-0.jpg",
         "year": 1989
-      },
-      {
-        "id": 79795678,
-        "title": "Bad Medicine",
-        "artist": "Bon Jovi",
-        "artistId": 637,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/ae062209da6c897f5670963ae99985f3/250x250-000000-80-0-0.jpg",
-        "year": 1988
       },
       {
         "id": 3158433,
@@ -11556,6 +11530,14 @@
         "year": 1993
       },
       {
+        "id": 13791941,
+        "title": "Something In The Way",
+        "artist": "Nirvana",
+        "artistId": 415,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f0282817b697279e56df13909962a54a/250x250-000000-80-0-0.jpg",
+        "year": 1991
+      },
+      {
         "id": 7675129,
         "title": "Even Flow",
         "artist": "Pearl Jam",
@@ -11604,6 +11586,14 @@
         "year": 1999
       },
       {
+        "id": 725837,
+        "title": "Give It Away",
+        "artist": "Red Hot Chili Peppers",
+        "artistId": 182,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5d7af03204d679ef877b9033d279d8bd/250x250-000000-80-0-0.jpg",
+        "year": 1991
+      },
+      {
         "id": 84572613,
         "title": "Wonderwall",
         "artist": "Oasis",
@@ -11628,6 +11618,14 @@
         "year": 1995
       },
       {
+        "id": 532744,
+        "title": "Supersonic",
+        "artist": "Oasis",
+        "artistId": 927,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/a0c7d98073d95a3e84406616e623df27/250x250-000000-80-0-0.jpg",
+        "year": 1994
+      },
+      {
         "id": 138547415,
         "title": "Creep",
         "artist": "Radiohead",
@@ -11650,6 +11648,22 @@
         "artistId": 399,
         "cover": "https://cdn-images.dzcdn.net/images/cover/05a186e0a859a36f9cd51cdae2158fe1/250x250-000000-80-0-0.jpg",
         "year": 1997
+      },
+      {
+        "id": 138539981,
+        "title": "Karma Police",
+        "artist": "Radiohead",
+        "artistId": 399,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/05a186e0a859a36f9cd51cdae2158fe1/250x250-000000-80-0-0.jpg",
+        "year": 1997
+      },
+      {
+        "id": 138544261,
+        "title": "High and Dry",
+        "artist": "Radiohead",
+        "artistId": 399,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0d2ccaf5f7b35af57f3d9c8f4504a6e6/250x250-000000-80-0-0.jpg",
+        "year": 1995
       },
       {
         "id": 678044,
@@ -11698,6 +11712,14 @@
         "artistId": 882,
         "cover": "https://cdn-images.dzcdn.net/images/cover/f7d8a61b8c4b118e642acfb3db0a45a1/250x250-000000-80-0-0.jpg",
         "year": 1998
+      },
+      {
+        "id": 378299591,
+        "title": "Come Out and Play",
+        "artist": "The Offspring",
+        "artistId": 882,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/7199697566542a1b1d7918e3cb381899/250x250-000000-80-0-0.jpg",
+        "year": 1994
       },
       {
         "id": 4762041,
@@ -12118,14 +12140,6 @@
         "year": 1995
       },
       {
-        "id": 378299591,
-        "title": "Come Out and Play",
-        "artist": "The Offspring",
-        "artistId": 882,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/7199697566542a1b1d7918e3cb381899/250x250-000000-80-0-0.jpg",
-        "year": 1994
-      },
-      {
         "id": 3359652,
         "title": "No Rain",
         "artist": "Blind Melon",
@@ -12166,28 +12180,12 @@
         "year": 1993
       },
       {
-        "id": 138544261,
-        "title": "High and Dry",
-        "artist": "Radiohead",
-        "artistId": 399,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/0d2ccaf5f7b35af57f3d9c8f4504a6e6/250x250-000000-80-0-0.jpg",
-        "year": 1995
-      },
-      {
         "id": 3719301132,
         "title": "Lump",
         "artist": "The Presidents of the United States of America",
         "artistId": 2096,
         "cover": "https://cdn-images.dzcdn.net/images/cover/ea5f8847430e700bbc9579e8cc8ddb8c/250x250-000000-80-0-0.jpg",
         "year": 1995
-      },
-      {
-        "id": 532744,
-        "title": "Supersonic",
-        "artist": "Oasis",
-        "artistId": 927,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/a0c7d98073d95a3e84406616e623df27/250x250-000000-80-0-0.jpg",
-        "year": 1994
       },
       {
         "itunesId": 1890580963,
@@ -12198,14 +12196,6 @@
         "artistId": 418,
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/98/f8/ab/98f8ab48-2bb6-ef63-4061-404459b02202/16UMGIM52971.rgb.jpg/250x250bb.jpg",
         "year": 1994
-      },
-      {
-        "id": 725837,
-        "title": "Give It Away",
-        "artist": "Red Hot Chili Peppers",
-        "artistId": 182,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/5d7af03204d679ef877b9033d279d8bd/250x250-000000-80-0-0.jpg",
-        "year": 1991
       },
       {
         "id": 917717,
@@ -12278,14 +12268,6 @@
         "artistId": 2168,
         "cover": "https://cdn-images.dzcdn.net/images/cover/c65663ee0da0969bff96566e9aa7a56e/250x250-000000-80-0-0.jpg",
         "year": 1990
-      },
-      {
-        "id": 138539981,
-        "title": "Karma Police",
-        "artist": "Radiohead",
-        "artistId": 399,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/05a186e0a859a36f9cd51cdae2158fe1/250x250-000000-80-0-0.jpg",
-        "year": 1997
       },
       {
         "id": 4292887,
@@ -12502,22 +12484,6 @@
         "artistId": 189,
         "cover": "https://cdn-images.dzcdn.net/images/cover/fed66f13aac9058bffaf25e677eb858d/250x250-000000-80-0-0.jpg",
         "year": 1998
-      },
-      {
-        "id": 1169677,
-        "title": "Don't Cry (Original)",
-        "artist": "Guns N' Roses",
-        "artistId": 663,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/546fe1eca5d3bf48c6a48fb3c0ddac63/250x250-000000-80-0-0.jpg",
-        "year": 1991
-      },
-      {
-        "id": 13791941,
-        "title": "Something In The Way",
-        "artist": "Nirvana",
-        "artistId": 415,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/f0282817b697279e56df13909962a54a/250x250-000000-80-0-0.jpg",
-        "year": 1991
       }
     ],
     "2000": [
@@ -12671,6 +12637,14 @@
         "artist": "Green Day",
         "artistId": 52,
         "cover": "https://cdn-images.dzcdn.net/images/cover/9e17c202b5ab081171f31c81eb32dc5d/250x250-000000-80-0-0.jpg",
+        "year": 2004
+      },
+      {
+        "id": 715954,
+        "title": "Holiday",
+        "artist": "Green Day",
+        "artistId": 52,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/cee32dee76dea2c67a13764457fbac48/250x250-000000-80-0-0.jpg",
         "year": 2004
       },
       {
@@ -12938,6 +12912,14 @@
         "year": 2006
       },
       {
+        "id": 2538019231,
+        "title": "Hysteria",
+        "artist": "Muse",
+        "artistId": 705,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f74cfffd21139f5c536d39e3ef2206ac/250x250-000000-80-0-0.jpg",
+        "year": 2003
+      },
+      {
         "id": 15531170,
         "title": "Sex on Fire",
         "artist": "Kings of Leon",
@@ -13106,6 +13088,14 @@
         "year": 2009
       },
       {
+        "id": 2723257,
+        "title": "Decode",
+        "artist": "Paramore",
+        "artistId": 10977,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/7f8a4d742317d145cb1495e5940bd562/250x250-000000-80-0-0.jpg",
+        "year": 2008
+      },
+      {
         "id": 127673047,
         "title": "I Miss You",
         "artist": "blink-182",
@@ -13128,6 +13118,14 @@
         "artistId": 409,
         "cover": "https://cdn-images.dzcdn.net/images/cover/4f57b6d9f1e1d3a063b3beb0b3577eb5/250x250-000000-80-0-0.jpg",
         "year": 2001
+      },
+      {
+        "id": 127673043,
+        "title": "Feeling This",
+        "artist": "blink-182",
+        "artistId": 409,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/1eb33a9229dc458e5c45a84f10d3a215/250x250-000000-80-0-0.jpg",
+        "year": 2003
       },
       {
         "id": 851057,
@@ -13176,6 +13174,14 @@
         "artistId": 1177,
         "cover": "https://cdn-images.dzcdn.net/images/cover/66f88fc9b5aba33cae55bdefe540151b/250x250-000000-80-0-0.jpg",
         "year": 2007
+      },
+      {
+        "id": 953747,
+        "title": "Little Sister",
+        "artist": "Queens of the Stone Age",
+        "artistId": 1177,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5bce72bf9537a679f1c576d396f19c85/250x250-000000-80-0-0.jpg",
+        "year": 2005
       },
       {
         "id": 80274648,
@@ -13578,14 +13584,6 @@
         "year": 2000
       },
       {
-        "id": 715954,
-        "title": "Holiday",
-        "artist": "Green Day",
-        "artistId": 52,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/cee32dee76dea2c67a13764457fbac48/250x250-000000-80-0-0.jpg",
-        "year": 2004
-      },
-      {
         "id": 15523793,
         "title": "Toxicity",
         "artist": "System of a Down",
@@ -13722,14 +13720,6 @@
         "year": 2002
       },
       {
-        "id": 2723257,
-        "title": "Decode",
-        "artist": "Paramore",
-        "artistId": 10977,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/7f8a4d742317d145cb1495e5940bd562/250x250-000000-80-0-0.jpg",
-        "year": 2008
-      },
-      {
         "id": 80275000,
         "title": "Paralyzer",
         "artist": "Finger Eleven",
@@ -13802,14 +13792,6 @@
         "year": 2000
       },
       {
-        "id": 2538019231,
-        "title": "Hysteria",
-        "artist": "Muse",
-        "artistId": 705,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/f74cfffd21139f5c536d39e3ef2206ac/250x250-000000-80-0-0.jpg",
-        "year": 2003
-      },
-      {
         "id": 1238177942,
         "title": "Steady, As She Goes",
         "artist": "The Raconteurs",
@@ -13839,14 +13821,6 @@
         "artist": "Bloc Party",
         "artistId": 382,
         "cover": "https://cdn-images.dzcdn.net/images/cover/e1d76bd44d2693cc023e2565d0d8813c/250x250-000000-80-0-0.jpg",
-        "year": 2005
-      },
-      {
-        "id": 953747,
-        "title": "Little Sister",
-        "artist": "Queens of the Stone Age",
-        "artistId": 1177,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/5bce72bf9537a679f1c576d396f19c85/250x250-000000-80-0-0.jpg",
         "year": 2005
       },
       {
@@ -13920,14 +13894,6 @@
         "artistId": 535,
         "cover": "https://cdn-images.dzcdn.net/images/cover/c2942294fe29f749ca9ed2d1b25bb247/250x250-000000-80-0-0.jpg",
         "year": 2000
-      },
-      {
-        "id": 127673043,
-        "title": "Feeling This",
-        "artist": "blink-182",
-        "artistId": 409,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/1eb33a9229dc458e5c45a84f10d3a215/250x250-000000-80-0-0.jpg",
-        "year": 2003
       },
       {
         "id": 1112816,
@@ -14938,6 +14904,14 @@
         "year": 1975
       },
       {
+        "id": 1161568,
+        "title": "Stargazer",
+        "artist": "Rainbow",
+        "artistId": 1324,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/29d1d50c97a41e425eade32edab41abb/250x250-000000-80-0-0.jpg",
+        "year": 1976
+      },
+      {
         "id": 1761381527,
         "title": "Always Somewhere",
         "artist": "Scorpions",
@@ -15114,14 +15088,6 @@
         "year": 1979
       },
       {
-        "id": 1161568,
-        "title": "Stargazer",
-        "artist": "Rainbow",
-        "artistId": 1324,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/29d1d50c97a41e425eade32edab41abb/250x250-000000-80-0-0.jpg",
-        "year": 1976
-      },
-      {
         "id": 3803547512,
         "title": "Easy Livin'",
         "artist": "Uriah Heep",
@@ -15236,6 +15202,14 @@
         "year": 1984
       },
       {
+        "id": 136332702,
+        "title": "Seek & Destroy",
+        "artist": "Metallica",
+        "artistId": 119,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f6d4ff72804ee17684a9b7b79a906898/250x250-000000-80-0-0.jpg",
+        "year": 1983
+      },
+      {
         "id": 3155089,
         "title": "The Trooper",
         "artist": "Iron Maiden",
@@ -15258,6 +15232,14 @@
         "artistId": 931,
         "cover": "https://cdn-images.dzcdn.net/images/cover/7ed7d6130119c3a0afa60499ae8e9599/250x250-000000-80-0-0.jpg",
         "year": 1982
+      },
+      {
+        "id": 585594602,
+        "title": "2 Minutes to Midnight",
+        "artist": "Iron Maiden",
+        "artistId": 931,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/dc4e2bcc61acc3c1bb834de9a241bf7a/250x250-000000-80-0-0.jpg",
+        "year": 1984
       },
       {
         "id": 3783164742,
@@ -15378,6 +15360,14 @@
         "artistId": 531,
         "cover": "https://cdn-images.dzcdn.net/images/cover/232b435cc6e78be9c8e4feedb1fd44fa/250x250-000000-80-0-0.jpg",
         "year": 1985
+      },
+      {
+        "id": 3786101942,
+        "title": "Shout at the Devil",
+        "artist": "Mötley Crüe",
+        "artistId": 531,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/1385390bb0df1f06e3c21322c777936e/250x250-000000-80-0-0.jpg",
+        "year": 1983
       },
       {
         "id": 1145260,
@@ -15628,14 +15618,6 @@
         "year": 1989
       },
       {
-        "id": 3786101942,
-        "title": "Shout at the Devil",
-        "artist": "Mötley Crüe",
-        "artistId": 531,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/1385390bb0df1f06e3c21322c777936e/250x250-000000-80-0-0.jpg",
-        "year": 1983
-      },
-      {
         "id": 447552662,
         "title": "Let It Go",
         "artist": "Def Leppard",
@@ -15658,22 +15640,6 @@
         "artistId": 5110,
         "cover": "https://cdn-images.dzcdn.net/images/cover/d3fc851f1158631a5a7108798c1390d2/250x250-000000-80-0-0.jpg",
         "year": 1987
-      },
-      {
-        "id": 136332702,
-        "title": "Seek & Destroy",
-        "artist": "Metallica",
-        "artistId": 119,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/f6d4ff72804ee17684a9b7b79a906898/250x250-000000-80-0-0.jpg",
-        "year": 1983
-      },
-      {
-        "id": 585594602,
-        "title": "2 Minutes to Midnight",
-        "artist": "Iron Maiden",
-        "artistId": 931,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/dc4e2bcc61acc3c1bb834de9a241bf7a/250x250-000000-80-0-0.jpg",
-        "year": 1984
       },
       {
         "id": 3994552781,
@@ -16070,6 +16036,16 @@
         "year": 1998
       },
       {
+        "itunesId": 423045744,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/8e/11/d6/8e11d658-a045-6a72-ebb8-da95a2cc3d22/mzaf_9626341967385658074.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/blind/423045626?i=423045744",
+        "title": "Blind",
+        "artist": "Korn",
+        "artistId": 240940521,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/09/2b/e7/092be7d0-7697-220d-c000-97f366e723e4/mzi.anacpwuj.jpg/250x250bb.jpg",
+        "year": 1994
+      },
+      {
         "id": 122119738,
         "title": "My Own Summer (Shove It)",
         "artist": "Deftones",
@@ -16444,26 +16420,6 @@
         "artistId": 7270,
         "cover": "https://cdn-images.dzcdn.net/images/cover/376f61d6be73608c474e290b43d6b812/250x250-000000-80-0-0.jpg",
         "year": 1997
-      },
-      {
-        "itunesId": 423045744,
-        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/8e/11/d6/8e11d658-a045-6a72-ebb8-da95a2cc3d22/mzaf_9626341967385658074.plus.aac.p.m4a",
-        "link": "https://music.apple.com/us/album/blind/423045626?i=423045744",
-        "title": "Blind",
-        "artist": "Korn",
-        "artistId": 240940521,
-        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/09/2b/e7/092be7d0-7697-220d-c000-97f366e723e4/mzi.anacpwuj.jpg/250x250bb.jpg",
-        "year": 1994
-      },
-      {
-        "itunesId": 1831584743,
-        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/c8/20/ff/c820ff8c-0564-8fb6-6e92-70f795a69aad/mzaf_16129259738892587094.plus.aac.p.m4a",
-        "link": "https://music.apple.com/us/album/freak-on-a-leash/1831584251?i=1831584743",
-        "title": "Freak On a Leash",
-        "artist": "Korn",
-        "artistId": 240940521,
-        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/c7/03/a2/c703a2c4-97d1-106d-4e25-10322d7063ea/196873486703.jpg/250x250bb.jpg",
-        "year": 1998
       },
       {
         "id": 846026,
@@ -17814,6 +17770,14 @@
         "year": 2018
       },
       {
+        "id": 688891852,
+        "title": "Ritual",
+        "artist": "Ghost",
+        "artistId": 8506054,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/88759caa2db95bdbcbd9aeb1c853b463/250x250-000000-80-0-0.jpg",
+        "year": 2010
+      },
+      {
         "id": 126338367,
         "title": "Stranded",
         "artist": "Gojira",
@@ -17908,6 +17872,14 @@
         "artistId": 158710,
         "cover": "https://cdn-images.dzcdn.net/images/cover/32a0814af4089652ad0a618caef78b06/250x250-000000-80-0-0.jpg",
         "year": 2015
+      },
+      {
+        "id": 422334692,
+        "title": "Under and Over It",
+        "artist": "Five Finger Death Punch",
+        "artistId": 158710,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/b9da48ab22a493d068db807b4c736942/250x250-000000-80-0-0.jpg",
+        "year": 2011
       },
       {
         "id": 3431342921,
@@ -18094,6 +18066,14 @@
         "year": 2018
       },
       {
+        "id": 378364121,
+        "title": "Wild Eyes",
+        "artist": "Parkway Drive",
+        "artistId": 16410,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4fc46f130b6c330039be62a78575bad3/250x250-000000-80-0-0.jpg",
+        "year": 2012
+      },
+      {
         "id": 3389613481,
         "title": "Alone In A Room",
         "artist": "Asking Alexandria",
@@ -18238,14 +18218,6 @@
         "year": 2019
       },
       {
-        "id": 378364121,
-        "title": "Wild Eyes",
-        "artist": "Parkway Drive",
-        "artistId": 16410,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/4fc46f130b6c330039be62a78575bad3/250x250-000000-80-0-0.jpg",
-        "year": 2012
-      },
-      {
         "id": 1004565382,
         "title": "The Fairies Dance",
         "artist": "Tungsten",
@@ -18292,22 +18264,6 @@
         "artistId": 4754,
         "cover": "https://cdn-images.dzcdn.net/images/cover/b20cc7c98cef994dbdb8acd33e0e0a67/250x250-000000-80-0-0.jpg",
         "year": 2018
-      },
-      {
-        "id": 422334692,
-        "title": "Under and Over It",
-        "artist": "Five Finger Death Punch",
-        "artistId": 158710,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/b9da48ab22a493d068db807b4c736942/250x250-000000-80-0-0.jpg",
-        "year": 2011
-      },
-      {
-        "id": 688891852,
-        "title": "Ritual",
-        "artist": "Ghost",
-        "artistId": 8506054,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/88759caa2db95bdbcbd9aeb1c853b463/250x250-000000-80-0-0.jpg",
-        "year": 2010
       },
       {
         "id": 1056760,
@@ -18590,6 +18546,14 @@
         "artistId": 13321745,
         "cover": "https://cdn-images.dzcdn.net/images/cover/7fe0b4e95d456346e9e56c182c30d34f/250x250-000000-80-0-0.jpg",
         "year": 2026
+      },
+      {
+        "id": 3803438982,
+        "title": "Soft Spine",
+        "artist": "Spiritbox",
+        "artistId": 13321745,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/79b3861a2c8d18ba6b705c66a9373f0c/250x250-000000-80-0-0.jpg",
+        "year": 2024
       },
       {
         "id": 1090538082,
@@ -18985,14 +18949,6 @@
         "artist": "Gojira",
         "artistId": 2993,
         "cover": "https://cdn-images.dzcdn.net/images/cover/240ea1db8d2525aa5a2b0c16a969b535/250x250-000000-80-0-0.jpg",
-        "year": 2024
-      },
-      {
-        "id": 3803438982,
-        "title": "Soft Spine",
-        "artist": "Spiritbox",
-        "artistId": 13321745,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/79b3861a2c8d18ba6b705c66a9373f0c/250x250-000000-80-0-0.jpg",
         "year": 2024
       },
       {
@@ -20569,8 +20525,8 @@
         "year": 2016
       },
       {
-        "id": 1767402317,
-        "title": "All I Wanna Do",
+        "id": 1767402307,
+        "title": "Me Like Yuh",
         "artist": "Jay Park",
         "artistId": 650215,
         "cover": "https://cdn-images.dzcdn.net/images/cover/2f0582d34e6414f938e1efff52174ae4/250x250-000000-80-0-0.jpg",
@@ -21592,6 +21548,34 @@
         "artistId": 14728175,
         "cover": "https://cdn-images.dzcdn.net/images/cover/8578b88f65056e222a04aac95a7ec8ec/250x250-000000-80-0-0.jpg",
         "year": 2016
+      },
+      {
+        "itunesId": 1378887591,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/f8/d7/6b/f8d76b75-9834-36ec-1d3e-9aa5c07ce3d5/mzaf_6677797370679761097.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/latata/1378887583?i=1378887591",
+        "title": "LATATA",
+        "artist": "(G)I-DLE",
+        "artistId": 14853187,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/78/32/0e/78320ee9-3f98-aa6f-8efc-9bf598eabd5b/cover-.jpg/250x250bb.jpg",
+        "year": 2018
+      },
+      {
+        "itunesId": 1426297999,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/cd/8d/ca/cd8dcae5-9d68-8961-b9aa-9cad56af2070/mzaf_10700261983286126154.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/hann-alone/1426297548?i=1426297999",
+        "title": "HANN (Alone)",
+        "artist": "(G)I-DLE",
+        "artistId": 14853187,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/ef/02/33/ef0233f1-2a15-5af4-1634-2ab68fc64dd9/cover-_DS.jpg/250x250bb.jpg",
+        "year": 2018
+      },
+      {
+        "id": 1762124287,
+        "title": "LOVE BOMB",
+        "artist": "fromis_9",
+        "artistId": 14981411,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/533341f39e68c52ba2efad3aed25ad04/250x250-000000-80-0-0.jpg",
+        "year": 2018
       }
     ],
     "2020": [
@@ -21690,6 +21674,22 @@
         "artistId": 14981411,
         "cover": "https://cdn-images.dzcdn.net/images/cover/4dbf2a1eb7056fc015d6ce88b03626f5/250x250-000000-80-0-0.jpg",
         "year": 2025
+      },
+      {
+        "id": 2311014665,
+        "title": "#menow",
+        "artist": "fromis_9",
+        "artistId": 14981411,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/3139f4e7381b4337a92a86985bc75f7a/250x250-000000-80-0-0.jpg",
+        "year": 2023
+      },
+      {
+        "id": 1623884382,
+        "title": "DM",
+        "artist": "fromis_9",
+        "artistId": 14981411,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/aa370a4a67fafee17e176a29a2dd1c35/250x250-000000-80-0-0.jpg",
+        "year": 2022
       },
       {
         "id": 3561429971,
@@ -22708,6 +22708,22 @@
         "year": 2023
       },
       {
+        "id": 1572136282,
+        "title": "ELEVEN",
+        "artist": "IVE",
+        "artistId": 153042292,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4b89cd385817f7519af259b2c32170f0/250x250-000000-80-0-0.jpg",
+        "year": 2021
+      },
+      {
+        "id": 2192220267,
+        "title": "Kitsch",
+        "artist": "IVE",
+        "artistId": 153042292,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ce9699011503cdb4da5533ed79357abe/250x250-000000-80-0-0.jpg",
+        "year": 2023
+      },
+      {
         "id": 1962896187,
         "title": "ANTIFRAGILE",
         "artist": "LE SSERAFIM",
@@ -23316,6 +23332,22 @@
         "year": 2025
       },
       {
+        "id": 4197249182,
+        "title": "ICONIC HEART",
+        "artist": "Hearts2Hearts",
+        "artistId": 303043121,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/339242b9287fd4cb84886891ab079750/250x250-000000-80-0-0.jpg",
+        "year": 2026
+      },
+      {
+        "id": 3407280351,
+        "title": "STYLE",
+        "artist": "Hearts2Hearts",
+        "artistId": 303043121,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/a903e666dfaf6012d43e453330dd19b0/250x250-000000-80-0-0.jpg",
+        "year": 2025
+      },
+      {
         "id": 4016273191,
         "title": "BUMPA",
         "artist": "BIBI",
@@ -23338,6 +23370,46 @@
         "artistId": 11467,
         "cover": "https://cdn-images.dzcdn.net/images/cover/e7586bee574b51292fbc1d2b8cba670a/250x250-000000-80-0-0.jpg",
         "year": 2025
+      },
+      {
+        "itunesId": 1504618354,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/0c/bd/cb/0cbdcb7e-61cb-1029-9533-24ef67ecbc51/mzaf_5900181685814602254.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/oh-my-god/1504618353?i=1504618354",
+        "title": "Oh my god",
+        "artist": "(G)I-DLE",
+        "artistId": 14853187,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/3f/da/3e/3fda3e46-be20-c065-1ae7-341b306b7af3/20UMGIM22107.rgb.jpg/250x250bb.jpg",
+        "year": 2020
+      },
+      {
+        "itunesId": 1802621240,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/da/37/14/da3714a4-b9cd-78ea-590e-bae5af9f3856/mzaf_9300426931010299319.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/tomboy/1802620780?i=1802621240",
+        "title": "TOMBOY",
+        "artist": "(G)I-DLE",
+        "artistId": 14853187,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/4c/da/91/4cda91b0-6fa2-805e-fd1a-e89bf87bb969/8804775250422.jpg/250x250bb.jpg",
+        "year": 2022
+      },
+      {
+        "itunesId": 1802482389,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/6e/0e/2d/6e0e2d82-0d88-d64a-0896-a9a256987ede/mzaf_14643312620799506490.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/nxde/1802482388?i=1802482389",
+        "title": "Nxde",
+        "artist": "(G)I-DLE",
+        "artistId": 14853187,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/1b/d6/16/1bd61685-ddd6-e982-c686-61f669354dad/196922202544.jpg/250x250bb.jpg",
+        "year": 2022
+      },
+      {
+        "itunesId": 1802620989,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/45/40/a5/4540a5a8-906d-718e-6681-86c8b4c0c019/mzaf_1989940222119268016.plus.aac.p.m4a",
+        "link": "https://music.apple.com/us/album/queencard/1802620982?i=1802620989",
+        "title": "Queencard",
+        "artist": "(G)I-DLE",
+        "artistId": 14853187,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/7b/59/56/7b59565a-c6bd-a615-9cc2-955cb8481dfb/8804775254703.jpg/250x250bb.jpg",
+        "year": 2023
       }
     ]
   },
@@ -23560,6 +23632,82 @@
         "artistId": 117872612,
         "cover": "https://cdn-images.dzcdn.net/images/cover/326459d3bdc56149aca1f85f1513db03/250x250-000000-80-0-0.jpg",
         "year": 1985
+      },
+      {
+        "itunesId": 1629791077,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview122/v4/51/7b/66/517b6637-9e48-e634-8858-6907bb33a656/mzaf_10682239355458642882.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/mad-machine-remastered-2022/1629790803?i=1629791077",
+        "title": "Mad Machine",
+        "artist": "Kinuko Oomori",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/38/63/70/386370de-3bd7-e265-c03a-87c0c66547da/22UMGIM21144.rgb.jpg/250x250bb.jpg",
+        "year": 1987,
+        "work": "Bubblegum Crisis",
+        "theme": "OP2"
+      },
+      {
+        "itunesId": 1629793962,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/c9/66/2d/c9662d82-5e37-9f0a-5fa5-b8ee6b0571a8/mzaf_8104771584366976139.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/mr-dandy-remastered-2022/1629792875?i=1629793962",
+        "title": "Mr. Dandy",
+        "artist": "Bluew",
+        "artistId": 13767373,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/43/15/a1/4315a16e-aca6-1fd5-7a19-cfe72538704d/22UMGIM21139.rgb.jpg/250x250bb.jpg",
+        "year": 1987,
+        "work": "Bubblegum Crisis",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1629793431,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview112/v4/9d/63/89/9d6389aa-a45b-c6da-17e3-b04513451b61/mzaf_2636462326079153506.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/twilight-remastered-2022/1629793057?i=1629793431",
+        "title": "Twilight",
+        "artist": "Tsubokura Yuiko",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/02/a5/26/02a52633-d9ff-3f95-74f5-8a33501883f8/22UMGIM21146.rgb.jpg/250x250bb.jpg",
+        "year": 1988,
+        "work": "Bubblegum Crisis",
+        "theme": "ED4"
+      },
+      {
+        "id": 1831654707,
+        "title": "Rock Me",
+        "artist": "Yuiko Tsubokura",
+        "artistId": 4953601,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/313348d1ef9cf76c6087cab173ed144b/250x250-000000-80-0-0.jpg",
+        "year": 1989,
+        "work": "Bubblegum Crisis",
+        "theme": "ED6"
+      },
+      {
+        "id": 442193312,
+        "title": "Dance in the Memories",
+        "artist": "Meiko Nakahara",
+        "artistId": 12014724,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f462f8d84f3cfe1664964dddcebb976d/250x250-000000-80-0-0.jpg",
+        "year": 1988,
+        "work": "Kimagure Orange Road",
+        "theme": "ED3"
+      },
+      {
+        "id": 1123674672,
+        "title": "Sara",
+        "artist": "Fence Of Defense",
+        "artistId": 13691287,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/37bf24738fe8ea85d9b9e0bf1bfea6d7/250x250-000000-80-0-0.jpg",
+        "year": 1987,
+        "work": "City Hunter 2",
+        "theme": "OP2"
+      },
+      {
+        "id": 976605852,
+        "title": "Super Girl",
+        "artist": "Yasuyuki Okamura",
+        "artistId": 5494618,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/456426f935662b8b1e92bfa6a9b28d7f/250x250-000000-80-0-0.jpg",
+        "year": 1987,
+        "work": "City Hunter 2",
+        "theme": "ED1"
       }
     ],
     "1990": [
@@ -23578,7 +23726,9 @@
         "artist": "Yoko Takahashi",
         "artistId": 7951446,
         "cover": "https://cdn-images.dzcdn.net/images/cover/fc49aa787e01b715e081dca2a0187473/250x250-000000-80-0-0.jpg",
-        "year": 1995
+        "year": 1995,
+        "work": "Neon Genesis Evangelion",
+        "theme": "OP1"
       },
       {
         "id": 2232381537,
@@ -23665,7 +23815,9 @@
         "artist": "TWO-MIX",
         "artistId": 5495,
         "cover": "https://cdn-images.dzcdn.net/images/cover/70fb7e6baeb2e0d01b59dff2628f5bdd/250x250-000000-80-0-0.jpg",
-        "year": 1995
+        "year": 1995,
+        "work": "Mobile Suit Gundam Wing",
+        "theme": "OP1"
       },
       {
         "id": 2232504507,
@@ -23673,7 +23825,9 @@
         "artist": "TWO-MIX",
         "artistId": 5495,
         "cover": "https://cdn-images.dzcdn.net/images/cover/27c110008d6a7b4e0c6dbdeeaa2f510e/250x250-000000-80-0-0.jpg",
-        "year": 1991
+        "year": 1991,
+        "work": "Mobile Suit Gundam Wing",
+        "theme": "OP2"
       },
       {
         "id": 1006888182,
@@ -23682,16 +23836,6 @@
         "artistId": 14444749,
         "cover": "https://cdn-images.dzcdn.net/images/cover/23bda74c6dfc6697340f56936f237858/250x250-000000-80-0-0.jpg",
         "year": 1998
-      },
-      {
-        "itunesId": 1581726961,
-        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/27/e6/b2/27e6b2f8-9688-8e60-4c7f-84016694c04b/mzaf_12800168112291696519.plus.aac.p.m4a",
-        "link": "https://music.apple.com/jp/album/dan-dan-%E5%BF%83%E9%AD%85%E3%81%8B%E3%82%8C%E3%81%A6%E3%81%8F/1581726945?i=1581726961",
-        "title": "DAN DAN 心魅かれてく",
-        "artist": "ZARD",
-        "artistId": 11339,
-        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/65/9a/71/659a7113-b36b-95d1-19aa-966ff22a3441/JBCJ-9075.jpg/250x250bb.jpg",
-        "year": 1996
       },
       {
         "id": 3957280371,
@@ -23735,7 +23879,9 @@
         "artist": "Makoto Kawamoto",
         "artistId": 1271246,
         "cover": "https://cdn-images.dzcdn.net/images/cover/05a7bc6595afa4df6becacaab2dd1aa3/250x250-000000-80-0-0.jpg",
-        "year": 1997
+        "year": 1997,
+        "work": "Rurouni Kenshin",
+        "theme": "OP2"
       },
       {
         "id": 2116022227,
@@ -23769,7 +23915,9 @@
         "artist": "m.o.v.e",
         "artistId": 4049,
         "cover": "https://cdn-images.dzcdn.net/images/cover/fb40b9b4974d7f0d5f45dcc8f8911940/250x250-000000-80-0-0.jpg",
-        "year": 1998
+        "year": 1998,
+        "work": "Initial D 1st Stage",
+        "theme": "OP1"
       },
       {
         "itunesId": 1581044578,
@@ -23855,7 +24003,9 @@
         "artist": "Romantic Mode",
         "artistId": 9486,
         "cover": "https://cdn-images.dzcdn.net/images/cover/0d730c53d195668815ee6090bd62b1f2/250x250-000000-80-0-0.jpg",
-        "year": 1996
+        "year": 1996,
+        "work": "After War Gundam X",
+        "theme": "OP2"
       },
       {
         "itunesId": 1560086224,
@@ -23873,7 +24023,9 @@
         "artist": "Romantic Mode",
         "artistId": 9486,
         "cover": "https://cdn-images.dzcdn.net/images/cover/f3dd6913febc94ca83cae2248b1bf91c/250x250-000000-80-0-0.jpg",
-        "year": 1996
+        "year": 1996,
+        "work": "After War Gundam X",
+        "theme": "OP1"
       },
       {
         "itunesId": 1536884614,
@@ -23941,6 +24093,455 @@
         "artistId": 339522381,
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/b4/4b/db/b44bdb87-de45-34d0-1285-122c49735c19/4580555284194_cover.jpg/250x250bb.jpg",
         "year": 1993
+      },
+      {
+        "itunesId": 409988213,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview71/v4/c4/51/08/c451089a-3199-f5ea-b0b4-6f4929ab61fa/mzaf_1027876504644969629.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/you-are-the-one/409988154?i=409988213",
+        "title": "YOU ARE THE ONE",
+        "artist": "DAIZO",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/de/ba/98/mzi.fzrxxhoi.jpg/250x250bb.jpg",
+        "year": 1993,
+        "work": "Mobile Police Patlabor: The New Files",
+        "theme": "OP3"
+      },
+      {
+        "itunesId": 409988223,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music/v4/f8/44/2e/f8442ebe-fbcc-01be-760e-181a890c8908/mzaf_5055437700401468200.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/long-silence/409988154?i=409988223",
+        "title": "LONG SILENCE",
+        "artist": "Dynamite Shige",
+        "artistId": 254715802,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/de/ba/98/mzi.fzrxxhoi.jpg/250x250bb.jpg",
+        "year": 1993,
+        "work": "Mobile Police Patlabor: The New Files",
+        "theme": "ED4"
+      },
+      {
+        "itunesId": 1463915933,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview113/v4/e4/91/6c/e4916c26-1d67-8be9-120b-b3ef4304489a/mzaf_9102713923897207938.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/be-a-good-boy-i-aint-gonna-be-good/1463915932?i=1463915933",
+        "title": "BE A GOOD BOY (I AIN'T GONNA BE GOOD)",
+        "artist": "COOLS",
+        "artistId": 6621266,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/f4/90/20/f49020d7-c961-4c0f-e8ce-40cd2588d10e/CDSOL-1838.jpg/250x250bb.jpg",
+        "year": 1994,
+        "work": "Be-Bop High School",
+        "theme": "OP1"
+      },
+      {
+        "itunesId": 1042242012,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/71/9c/0f/719c0fcf-3428-5abc-da7d-776404a4b4ed/mzaf_16396670297969907295.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/that-is-my-desire/1042241584?i=1042242012",
+        "title": "THAT IS MY DESIRE",
+        "artist": "COOLS",
+        "artistId": 6621266,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music3/v4/56/03/a9/5603a93d-331a-01bf-2f6a-f618e5c787f8/CDSOL-1681.jpg/250x250bb.jpg",
+        "year": 1994,
+        "work": "Be-Bop High School",
+        "theme": "ED1"
+      },
+      {
+        "id": 73709334,
+        "title": "We Can Make It",
+        "artist": "Maizurah",
+        "artistId": 5427789,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/75e31f4281afbd04bff2454d1d662a89/250x250-000000-80-0-0.jpg",
+        "year": 1991,
+        "work": "Mad Bull 34",
+        "theme": "ED2"
+      },
+      {
+        "id": 73709335,
+        "title": "Living in the City",
+        "artist": "Maizurah",
+        "artistId": 5427789,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/75e31f4281afbd04bff2454d1d662a89/250x250-000000-80-0-0.jpg",
+        "year": 1991,
+        "work": "Mad Bull 34",
+        "theme": "ED3"
+      },
+      {
+        "id": 73709338,
+        "title": "Believe in Love Again",
+        "artist": "Maizurah",
+        "artistId": 5427789,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/75e31f4281afbd04bff2454d1d662a89/250x250-000000-80-0-0.jpg",
+        "year": 1991,
+        "work": "Mad Bull 34",
+        "theme": "ED4"
+      },
+      {
+        "id": 2295843985,
+        "title": "The Winner",
+        "artist": "Miki Matsubara",
+        "artistId": 222475975,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f90affc41e23b6d6c03d0960f8e6befc/250x250-000000-80-0-0.jpg",
+        "year": 1991,
+        "work": "Mobile Suit Gundam 0083: Stardust Memory",
+        "theme": "OP1"
+      },
+      {
+        "id": 2295844015,
+        "title": "Men of Destiny",
+        "artist": "Mio",
+        "artistId": 114487792,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f90affc41e23b6d6c03d0960f8e6befc/250x250-000000-80-0-0.jpg",
+        "year": 1992,
+        "work": "Mobile Suit Gundam 0083: Stardust Memory",
+        "theme": "OP2"
+      },
+      {
+        "id": 2295843965,
+        "title": "Magic",
+        "artist": "Jacob Wheeler",
+        "artistId": 13580,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f90affc41e23b6d6c03d0960f8e6befc/250x250-000000-80-0-0.jpg",
+        "year": 1991,
+        "work": "Mobile Suit Gundam 0083: Stardust Memory",
+        "theme": "ED1"
+      },
+      {
+        "id": 2295844005,
+        "title": "Evergreen",
+        "artist": "Mio",
+        "artistId": 114487792,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f90affc41e23b6d6c03d0960f8e6befc/250x250-000000-80-0-0.jpg",
+        "year": 1992,
+        "work": "Mobile Suit Gundam 0083: Stardust Memory",
+        "theme": "ED2"
+      },
+      {
+        "id": 1061394292,
+        "title": "Flying In The Sky",
+        "artist": "Yoshifumi Ushima",
+        "artistId": 4663532,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/00db51acad56d9ac40a62c8f249b20c2/250x250-000000-80-0-0.jpg",
+        "year": 1994,
+        "work": "Mobile Fighter G Gundam",
+        "theme": "OP1"
+      },
+      {
+        "id": 1061448722,
+        "title": "Trust You Forever",
+        "artist": "Yoshifumi Ushima",
+        "artistId": 4663532,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/85966b950e10eb9321b2d61781e7700d/250x250-000000-80-0-0.jpg",
+        "year": 1994,
+        "work": "Mobile Fighter G Gundam",
+        "theme": "OP2"
+      },
+      {
+        "id": 2116058907,
+        "title": "Pulse",
+        "artist": "Wu Yun Ta Na",
+        "artistId": 6904,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5f7810a41063342dd91fb29caaac370a/250x250-000000-80-0-0.jpg",
+        "year": 1995,
+        "work": "Macross Plus",
+        "theme": "OP3"
+      },
+      {
+        "id": 2116063357,
+        "title": "Voices",
+        "artist": "Akino Arai",
+        "artistId": 4866375,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8dff71f061a70c03f1a46f945f03969c/250x250-000000-80-0-0.jpg",
+        "year": 1994,
+        "work": "Macross Plus",
+        "theme": "ED2"
+      },
+      {
+        "id": 2116016767,
+        "title": "My Friends",
+        "artist": "Fire Bomber featuring MYLENE JENIUS",
+        "artistId": 197900897,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/33ec71eb1edf603fabc5b210a5690b6a/250x250-000000-80-0-0.jpg",
+        "year": 1995,
+        "work": "Macross 7",
+        "theme": "ED1"
+      },
+      {
+        "id": 75234232,
+        "title": "Fly Me to the Moon",
+        "artist": "Claire Colton",
+        "artistId": 5544022,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f2e397c450fe74d9755c6f404e55aa29/250x250-000000-80-0-0.jpg",
+        "year": 1995,
+        "work": "Neon Genesis Evangelion",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 75713851,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/5c/fe/77/5cfe7766-70c3-c1df-249f-22550e833d0a/mzaf_4896966289329420424.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/dont-you-see/75713982?i=75713851",
+        "title": "Don't you see!",
+        "artist": "Zard",
+        "artistId": 11339,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/ee/8e/fb/ee8efbdf-395a-c3fd-9745-a2b99f6e5fa0/JBCJ-1013.jpg/250x250bb.jpg",
+        "year": 1997,
+        "work": "Dragon Ball GT",
+        "theme": "ED2"
+      },
+      {
+        "id": 402239472,
+        "title": "Blue Velvet",
+        "artist": "Shizuka Kudo",
+        "artistId": 8184780,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/7374e99440f8c196cd93b6658a40647e/250x250-000000-80-0-0.jpg",
+        "year": 1997,
+        "work": "Dragon Ball GT",
+        "theme": "ED3"
+      },
+      {
+        "id": 581265182,
+        "title": "Tactics",
+        "artist": "THE YELLOW MONKEY",
+        "artistId": 3290,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/50f88c38de074d8274013fa390ab0c98/250x250-000000-80-0-0.jpg",
+        "year": 1996,
+        "work": "Rurouni Kenshin",
+        "theme": "ED1"
+      },
+      {
+        "id": 1124688622,
+        "title": "the Fourth Avenue Café",
+        "artist": "L'Arc-en-Ciel",
+        "artistId": 133611,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ae9c00f61670f7f8ff457a054a3c2508/250x250-000000-80-0-0.jpg",
+        "year": 1996,
+        "work": "Rurouni Kenshin",
+        "theme": "ED4"
+      },
+      {
+        "id": 1193268742,
+        "title": "It's gonna rain!",
+        "artist": "BONNIE PINK",
+        "artistId": 4045,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/d857014fc4467a24d1ea32ec4197440b/250x250-000000-80-0-0.jpg",
+        "year": 1997,
+        "work": "Rurouni Kenshin",
+        "theme": "ED5"
+      },
+      {
+        "itunesId": 1562658464,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/06/27/fb/0627fbb6-1b28-f43d-8332-ad93ae90fdc1/mzaf_4537083775697041344.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/truth-a-great-detective-of-love/1562658463?i=1562658464",
+        "title": "Truth",
+        "artist": "Two-Mix",
+        "artistId": 5495,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/65/d8/f4/65d8f438-8505-531e-09ec-4970f331a6ff/NOPA-2542.jpg/250x250bb.jpg",
+        "year": 1998,
+        "work": "Detective Conan",
+        "theme": "OP5"
+      },
+      {
+        "itunesId": 1583211459,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/ea/75/56/ea75566d-53f0-44a9-c055-b859f55b5eef/mzaf_15915271348911229588.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/still-for-your-love-%E3%82%AB%E3%83%A9%E3%82%AA%E3%82%B1-%E5%8E%9F%E6%9B%B2%E6%AD%8C%E6%89%8B-rumania-montevideo/1583211458?i=1583211459",
+        "title": "Still for Your Love",
+        "artist": "Rumania Montevideo",
+        "artistId": 288615041,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/d3/08/d3/d308d352-e3fd-b9f0-db1b-d436d814cb30/4570063084355.jpg/250x250bb.jpg",
+        "year": 1999,
+        "work": "Detective Conan",
+        "theme": "ED7"
+      },
+      {
+        "id": 1511601852,
+        "title": "Pinch ~Love Me Deeper~",
+        "artist": "Rina Chinen",
+        "artistId": 131170802,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/1769f46667a5ac85f56c05cdd363cc82/250x250-000000-80-0-0.jpg",
+        "year": 1997,
+        "work": "Kodocha",
+        "theme": "ED3"
+      },
+      {
+        "id": 2310919135,
+        "title": "Human Touch",
+        "artist": "Warren Wiebe",
+        "artistId": 295941,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/7715fa69e197ac8b3c167940bcfeb3c7/250x250-000000-80-0-0.jpg",
+        "year": 1996,
+        "work": "After War Gundam X",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1638089361,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/62/e8/68/62e86898-563d-161d-7f4d-a06b0e5ecdaf/mzaf_15081802345608053796.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/kanon-d-dur-quartet/1638088437?i=1638089361",
+        "title": "Kanon D-dur (Death ending)",
+        "artist": "Shiro Sagisu",
+        "artistId": 4663521,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/87/06/84/87068424-5143-f6ac-37cc-09357bbb1897/KICA-2576.jpg/250x250bb.jpg",
+        "year": 1997,
+        "work": "Neon Genesis Evangelion: Death & Rebirth",
+        "theme": "ED1"
+      },
+      {
+        "id": 472309452,
+        "title": "Love is Changing",
+        "artist": "Hikaru Nishida",
+        "artistId": 14310117,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5def0f4181c1805e1707ff8f07011df6/250x250-000000-80-0-0.jpg",
+        "year": 1997,
+        "work": "Flame of Recca",
+        "theme": "ED1"
+      },
+      {
+        "id": 2232367717,
+        "title": "Don't be Discouraged",
+        "artist": "Megumi Hayashibara",
+        "artistId": 9160146,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/451d52a9e78278002de89fe9f4a03b40/250x250-000000-80-0-0.jpg",
+        "year": 1997,
+        "work": "The Slayers Try",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1835863555,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/0f/7e/82/0f7e82c1-980f-2ace-7f3e-d015d20f8584/mzaf_17154866124706456111.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/somewhere/1835863318?i=1835863555",
+        "title": "Somewhere",
+        "artist": "Houko Kuwashima",
+        "artistId": 103809652,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/7a/97/e8/7a97e887-ed0f-17dd-b0aa-1ecd18e8cfad/NOPA-7888.jpg/250x250bb.jpg",
+        "year": 1997,
+        "work": "The Slayers Try",
+        "theme": "ED2"
+      },
+      {
+        "id": 3707398652,
+        "title": "KIMI GA IRU KARA",
+        "original": "君がいるから‥ (Kimi ga iru kara..)",
+        "artist": "Yui Nishiwaki",
+        "artistId": 4533891,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/dbde9749f6b831d5eb89be4ce6155c4f/250x250-000000-80-0-0.jpg",
+        "year": 1998,
+        "work": "Kindaichi Shounen no Jikenbo (TV)",
+        "theme": "OP3"
+      },
+      {
+        "itunesId": 1701782322,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview126/v4/ed/20/a3/ed20a322-0af5-f7b3-a485-fd3f19161ac1/mzaf_4381275673306508801.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/why-funky-version/1701782233?i=1701782322",
+        "title": "Why? (Funky Version)",
+        "artist": "Color",
+        "artistId": 71971,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/74/81/0a/74810a61-69d8-33c0-dc8b-6ba57d650ef4/5054197776960.jpg/250x250bb.jpg",
+        "year": 1999,
+        "work": "Kindaichi Shounen no Jikenbo (TV)",
+        "theme": "OP6"
+      },
+      {
+        "itunesId": 724067644,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/bf/8e/28/bf8e287e-5397-418e-b438-efad81d11850/mzaf_17109870352189713346.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/2%E4%BA%BA/724067498?i=724067644",
+        "title": "2人 (Futari)",
+        "artist": "Rie Tomosaka",
+        "artistId": 240835,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music4/v4/bd/64/88/bd648830-80c5-5bae-8065-caba621d7b61/00094631419454.jpg/250x250bb.jpg",
+        "year": 1999,
+        "work": "Kindaichi Shounen no Jikenbo (TV)",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 715917382,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/52/a8/b5/52a8b5ec-3464-e2cc-3b3a-c518d11de793/mzaf_16802821373543573717.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/boo-bee-magic/715916977?i=715917382",
+        "title": "Boo Bee Magic",
+        "artist": "Sarina Suzuki",
+        "artistId": 13776497,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music4/v4/3e/63/93/3e63938e-f563-fe76-3c1d-bb36765680d3/00094631319556.jpg/250x250bb.jpg",
+        "year": 1998,
+        "work": "Kindaichi Shounen no Jikenbo (TV)",
+        "theme": "ED2"
+      },
+      {
+        "id": 438090732,
+        "title": "Jeans",
+        "original": "ジーンズ (Jeans)",
+        "artist": "Ryoko Hirosue",
+        "artistId": 13696611,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/b71e7106f405f2ad57ec7c551765a410/250x250-000000-80-0-0.jpg",
+        "year": 1998,
+        "work": "Kindaichi Shounen no Jikenbo (TV)",
+        "theme": "ED5"
+      },
+      {
+        "id": 3707398022,
+        "title": "HATESHINAKU AOI SORA O MITA",
+        "original": "はてしなく青い空を見た (Hateshinaku Aoi Sora wo Mita)",
+        "artist": "Yui Nishiwaki",
+        "artistId": 4533891,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/adc2057a50e7c3f939ed7b8d0830ada0/250x250-000000-80-0-0.jpg",
+        "year": 1999,
+        "work": "Kindaichi Shounen no Jikenbo (TV)",
+        "theme": "ED6"
+      },
+      {
+        "id": 3714441782,
+        "title": "Break in 2 the Nite",
+        "artist": "m.o.v.e",
+        "artistId": 4049,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f32527aace7c40d41eba191f579b3a33/250x250-000000-80-0-0.jpg",
+        "year": 1998,
+        "work": "Initial D 1st Stage",
+        "theme": "OP2"
+      },
+      {
+        "id": 3714441622,
+        "title": "Rage Your Dream",
+        "artist": "m.o.v.e",
+        "artistId": 4049,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/fb40b9b4974d7f0d5f45dcc8f8911940/250x250-000000-80-0-0.jpg",
+        "year": 1998,
+        "work": "Initial D 1st Stage",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1318186267,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/2c/57/d7/2c57d719-b02f-03d3-4807-a2ac8f898141/mzaf_12836475115984165260.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/groovy/1318185294?i=1318186267",
+        "title": "Groovy!",
+        "artist": "Koumi Hirose",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/ab/62/73/ab62738c-48bb-8d63-11f4-7278e56b4ba6/VEATP-34875.jpg/250x250bb.jpg",
+        "year": 1998,
+        "work": "Cardcaptor Sakura",
+        "theme": "ED1"
+      },
+      {
+        "id": 1680922447,
+        "title": "Big-O!",
+        "artist": "Rui Nagai",
+        "artistId": 4870253,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f10b665417ad35541caf2ce1defc150e/250x250-000000-80-0-0.jpg",
+        "year": 1999,
+        "work": "The Big O",
+        "theme": "OP1"
+      },
+      {
+        "id": 2305719535,
+        "title": "Century Color",
+        "artist": "RAY-GUNS",
+        "artistId": 215883335,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/1dfcf6a188500de6ed54e24d8ddcb1e3/250x250-000000-80-0-0.jpg",
+        "year": 1991,
+        "work": "Turn A Gundam",
+        "theme": "OP2"
+      },
+      {
+        "id": 742352262,
+        "title": "AURA",
+        "artist": "Shinji Tanimura",
+        "artistId": 1678755,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/846f2f3ea66b4a47ea0710d98a5ee9f4/250x250-000000-80-0-0.jpg",
+        "year": 1999,
+        "work": "Turn A Gundam",
+        "theme": "ED1"
       }
     ],
     "2000": [
@@ -23950,7 +24551,9 @@
         "artist": "FLOW",
         "artistId": 4407,
         "cover": "https://cdn-images.dzcdn.net/images/cover/3d16dc3a1f030e0303c8f1d965012e3c/250x250-000000-80-0-0.jpg",
-        "year": 2004
+        "year": 2004,
+        "work": "Naruto",
+        "theme": "OP4"
       },
       {
         "id": 976202432,
@@ -23958,7 +24561,9 @@
         "artist": "FLOW",
         "artistId": 4407,
         "cover": "https://cdn-images.dzcdn.net/images/cover/4121aa99a053f9f594299a2c96340a05/250x250-000000-80-0-0.jpg",
-        "year": 2006
+        "year": 2006,
+        "work": "Code Geass: Lelouch of the Rebellion",
+        "theme": "OP1"
       },
       {
         "id": 976054382,
@@ -24043,7 +24648,9 @@
         "artist": "L'Arc~en~Ciel",
         "artistId": 133611,
         "cover": "https://cdn-images.dzcdn.net/images/cover/5147fca110d257fd944b3a12ec58b512/250x250-000000-80-0-0.jpg",
-        "year": 2004
+        "year": 2004,
+        "work": "Fullmetal Alchemist",
+        "theme": "OP2"
       },
       {
         "id": 976104602,
@@ -24157,16 +24764,6 @@
         "year": 2008
       },
       {
-        "itunesId": 1536364740,
-        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/24/ca/a6/24caa66d-f519-4df2-dee9-9e183e98a01b/mzaf_17363304177456029514.plus.aac.p.m4a",
-        "link": "https://music.apple.com/jp/album/go/1536364739?i=1536364740",
-        "title": "GO!!!",
-        "artist": "フロウ",
-        "artistId": null,
-        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/3d/c2/a1/3dc2a115-122a-d1bd-8cbc-7cfbdc3dee66/jacket_KSCL00779B00Z_550.jpg/250x250bb.jpg",
-        "year": 2004
-      },
-      {
         "itunesId": 1880591395,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/50/4e/d7/504ed7f5-664e-73d9-fa04-229f752a6233/mzaf_5200352635369671079.plus.aac.p.m4a",
         "link": "https://music.apple.com/jp/album/god-knows/1880591394?i=1880591395",
@@ -24219,7 +24816,9 @@
         "artist": "Folder 5",
         "artistId": 4294,
         "cover": "https://cdn-images.dzcdn.net/images/cover/6722a48932728ebd369e7d5f566e447d/250x250-000000-80-0-0.jpg",
-        "year": 2000
+        "year": 2000,
+        "work": "ONE PIECE",
+        "theme": "OP2"
       },
       {
         "itunesId": 209167662,
@@ -24229,7 +24828,9 @@
         "artist": "Dream",
         "artistId": 10827,
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/00/bf/50/00bf5024-457b-e624-dd40-8737f576ec1b/mzi.lifedrdg.jpg/250x250bb.jpg",
-        "year": 2007
+        "year": 2007,
+        "work": "Hikaru no Go",
+        "theme": "OP1"
       },
       {
         "id": 975999612,
@@ -24248,7 +24849,9 @@
         "artist": "V6",
         "artistId": 6949,
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/9d/3a/6f/9d3a6f65-e1ad-606d-7eed-8ca0faecc73b/ANTCD-A0000018265.jpg/250x250bb.jpg",
-        "year": 2000
+        "year": 2000,
+        "work": "InuYasha",
+        "theme": "OP1"
       },
       {
         "itunesId": 1144913246,
@@ -24258,7 +24861,9 @@
         "artist": "Ayumi Hamasaki",
         "artistId": 5250597,
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music22/v4/e6/70/40/e670403e-80d9-a24b-8bb1-ea3e667a3634/ANTCD-18716.jpg/250x250bb.jpg",
-        "year": 2001
+        "year": 2001,
+        "work": "InuYasha",
+        "theme": "ED3"
       },
       {
         "itunesId": 1560120756,
@@ -24278,7 +24883,9 @@
         "artist": "GARNET CROW",
         "artistId": null,
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/41/8e/f8/418ef8e3-f339-1304-3b98-b258686ffe4a/GZCA-1061.jpg/250x250bb.jpg",
-        "year": 2000
+        "year": 2000,
+        "work": "Detective Conan",
+        "theme": "OP7"
       },
       {
         "itunesId": 73795313,
@@ -24288,7 +24895,9 @@
         "artist": "Mai Kuraki",
         "artistId": null,
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/45/5c/a9/455ca9d1-a61b-0b02-600a-01d5c040e943/GZCA-1039A.jpg/250x250bb.jpg",
-        "year": 2000
+        "year": 2000,
+        "work": "Detective Conan",
+        "theme": "ED9"
       },
       {
         "id": 864542692,
@@ -24347,7 +24956,9 @@
         "artist": "Hitomi",
         "artistId": 248860292,
         "cover": "https://cdn-images.dzcdn.net/images/cover/884974ac88ec5512b9b3298d9ea165fe/250x250-000000-80-0-0.jpg",
-        "year": 2001
+        "year": 2001,
+        "work": "InuYasha",
+        "theme": "OP2"
       },
       {
         "id": 976461352,
@@ -24375,7 +24986,9 @@
         "artist": "Megumi Hayashibara",
         "artistId": 9160146,
         "cover": "https://cdn-images.dzcdn.net/images/cover/d4210f5cb92dede1c054bd91304bc45b/250x250-000000-80-0-0.jpg",
-        "year": 2001
+        "year": 2001,
+        "work": "Shaman King",
+        "theme": "OP1"
       },
       {
         "itunesId": 1581084724,
@@ -24607,6 +25220,656 @@
         "year": 2001
       },
       {
+        "itunesId": 1081349612,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/af/56/06/af560680-881b-7193-1201-ae707d078922/mzaf_6173808212049171723.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/grip/1081349287?i=1081349612",
+        "title": "Grip!",
+        "artist": "Every Little Thing",
+        "artistId": 2143,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music49/v4/08/7a/ce/087acec8-e397-dd7c-d890-eee876c3520f/ANTCD-16958.jpg/250x250bb.jpg",
+        "year": 2003,
+        "work": "InuYasha",
+        "theme": "OP4"
+      },
+      {
+        "itunesId": 1599256746,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/4e/05/4e/4e054e86-40b0-1e20-cb8d-e4311abf373b/mzaf_8507119532265375152.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/my-will/1599256437?i=1599256746",
+        "title": "My Will",
+        "artist": "Dream",
+        "artistId": 10827,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/7d/32/43/7d324350-a471-3124-3eb7-c22ffbb50bca/ANTCD-A0000005749.jpg/250x250bb.jpg",
+        "year": 2000,
+        "work": "InuYasha",
+        "theme": "ED1"
+      },
+      {
+        "id": 728688132,
+        "title": "Every Heart",
+        "artist": "BoA",
+        "artistId": 792,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/7bb56bdb5693b26f864468da335eb6ea/250x250-000000-80-0-0.jpg",
+        "year": 2002
+      },
+      {
+        "itunesId": 1599256445,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/55/9f/b0/559fb021-b5cd-3397-d266-c7e0ce019e73/mzaf_9019390965756587050.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/come/1599256437?i=1599256445",
+        "title": "Come",
+        "artist": "Namie Amuro",
+        "artistId": 2966411,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/7d/32/43/7d324350-a471-3124-3eb7-c22ffbb50bca/ANTCD-A0000005749.jpg/250x250bb.jpg",
+        "year": 2003,
+        "work": "InuYasha",
+        "theme": "ED7"
+      },
+      {
+        "itunesId": 1846749565,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/69/c4/d9/69c4d9c9-9e2f-c3ea-a062-784baf5f94d5/mzaf_10662916643112779734.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/brand-new-world/1846749562?i=1846749565",
+        "title": "Brand-New World",
+        "artist": "V6",
+        "artistId": 6949,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/12/d2/9c/12d29c32-7d46-91cc-924d-7e1f3ae89e96/ANTCD-A0000018291.jpg/250x250bb.jpg",
+        "year": 2004,
+        "work": "InuYasha",
+        "theme": "ED8"
+      },
+      {
+        "itunesId": 6810160607,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/ce/4d/61/ce4d615e-eb8c-db52-17c2-9ba22b95ed7c/mzaf_162348056814404794.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/voice/6810160606?i=6810160607",
+        "title": "Voice",
+        "artist": "CLOUD",
+        "artistId": 75964522,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/80/fc/1b/80fc1b8a-c968-98a5-85f4-d963619aee49/NOPA-9139.jpg/250x250bb.jpg",
+        "year": 2000,
+        "work": "Yu-Gi-Oh!",
+        "theme": "OP1"
+      },
+      {
+        "id": 2234565637,
+        "title": "Shuffle",
+        "artist": "Masami Okui",
+        "artistId": 4929099,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/a1ee4968948398733c5f31482537e787/250x250-000000-80-0-0.jpg",
+        "year": 2001,
+        "work": "Yu-Gi-Oh!",
+        "theme": "OP2"
+      },
+      {
+        "id": 2232367647,
+        "title": "Northern Lights",
+        "artist": "Megumi Hayashibara",
+        "artistId": 9160146,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/537620dc5bc70f9ec049c283d7b43e58/250x250-000000-80-0-0.jpg",
+        "year": 2002,
+        "work": "Shaman King",
+        "theme": "OP2"
+      },
+      {
+        "id": 2232367317,
+        "title": "Trust You",
+        "artist": "Megumi Hayashibara",
+        "artistId": 9160146,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/d4210f5cb92dede1c054bd91304bc45b/250x250-000000-80-0-0.jpg",
+        "year": 2001,
+        "work": "Shaman King",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1003601577,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/1c/7e/96/1c7e965b-d84d-9ccd-1ca0-aa04e8d17106/mzaf_8094095582727839141.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/future-%E7%AC%AC1-26%E8%A9%B1op/1003601136?i=1003601577",
+        "title": "Future",
+        "artist": "Hiro-X",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music7/v4/66/e6/57/66e65756-dd41-ab43-d425-821ce0a04bc8/tenipuri_1.jpg/250x250bb.jpg",
+        "year": 2009,
+        "work": "The Prince of Tennis",
+        "theme": "OP1"
+      },
+      {
+        "itunesId": 565890011,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music/b7/37/5b/mzi.jntdejfk.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/driving-myself/565889928?i=565890011",
+        "title": "Driving Myself",
+        "artist": "Hiro-X",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/e7/f6/db/e7f6dbbe-38a5-09e5-a622-fa75945de132/driving_mayself.jpg/250x250bb.jpg",
+        "year": 2002,
+        "work": "The Prince of Tennis",
+        "theme": "OP2"
+      },
+      {
+        "id": 2616362382,
+        "title": "Long Way",
+        "artist": "Ikuo",
+        "artistId": 4121786,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8ed0ca1ad91b9b86f3dda4be8a4f5516/250x250-000000-80-0-0.jpg",
+        "year": 2003,
+        "work": "The Prince of Tennis",
+        "theme": "OP4"
+      },
+      {
+        "id": 1579915822,
+        "title": "You Got Game",
+        "artist": "Kimeru",
+        "artistId": 1312417,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/eb6f6cf573007f0ecd07b315ed31f357/250x250-000000-80-0-0.jpg",
+        "year": 2001,
+        "work": "The Prince of Tennis",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 565888951,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music/22/43/c0/mzi.idysmcou.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/keep-your-style/565888503?i=565888951",
+        "title": "Keep Your Style",
+        "artist": "Masataka Fujishige",
+        "artistId": 13766467,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/e4/9b/c7/e49bc749-8261-ef2b-68dd-c7da4e1ead7a/keep_your_style.jpg/250x250bb.jpg",
+        "year": 2002,
+        "work": "The Prince of Tennis",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 565888957,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music/a9/f2/cb/mzi.dtmhjaue.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/walk-on/565888503?i=565888957",
+        "title": "Walk On",
+        "artist": "Masataka Fujishige",
+        "artistId": 13766467,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/e4/9b/c7/e49bc749-8261-ef2b-68dd-c7da4e1ead7a/keep_your_style.jpg/250x250bb.jpg",
+        "year": 2002,
+        "work": "The Prince of Tennis",
+        "theme": "ED3"
+      },
+      {
+        "itunesId": 565893528,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music/8a/84/13/mzi.efpfkoco.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/little-sky/565893515?i=565893528",
+        "title": "Little Sky",
+        "artist": "Kentaro Fukushi",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/b0/89/09/b0890908-7f50-1b6c-4041-936b5b792f1d/Jacket_NECA30288.jpg/250x250bb.jpg",
+        "year": 2005,
+        "work": "The Prince of Tennis",
+        "theme": "ED8"
+      },
+      {
+        "itunesId": 169962189,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ae/25/a4/ae25a4a8-dae0-c339-19ad-a4b1a3481911/mzaf_18294055442106974648.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/fantasy/169962059?i=169962189",
+        "title": "Fantasy",
+        "artist": "Nana Katase",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/01/c7/07/01c70785-7c45-a82b-7d9a-49f521e4d373/074646670026.jpg/250x250bb.jpg",
+        "year": 2003,
+        "work": "Hikaru no Go",
+        "theme": "OP3"
+      },
+      {
+        "itunesId": 209167813,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/5e/6b/f9/5e6bf9c5-edd3-6b9e-7bdb-f035700ed4b8/mzaf_6312065743356898306.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/sincerely-ever-dream/209164447?i=209167813",
+        "title": "Sincerely ~ever dream~",
+        "artist": "dream",
+        "artistId": 10827,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/00/bf/50/00bf5024-457b-e624-dd40-8737f576ec1b/mzi.lifedrdg.jpg/250x250bb.jpg",
+        "year": 2007,
+        "work": "Hikaru no Go",
+        "theme": "ED3"
+      },
+      {
+        "itunesId": 209165070,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/17/c0/06/17c006d3-1986-7457-ebeb-2c0ac95bb024/mzaf_11701006295725373289.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/music-is-my-thing/209164447?i=209165070",
+        "title": "Music is My Thing",
+        "artist": "Dream",
+        "artistId": 10827,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/00/bf/50/00bf5024-457b-e624-dd40-8737f576ec1b/mzi.lifedrdg.jpg/250x250bb.jpg",
+        "year": 2007,
+        "work": "Hikaru no Go",
+        "theme": "ED5"
+      },
+      {
+        "itunesId": 313460543,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/3a/2d/d1/3a2dd1c4-dc02-f954-98c2-7d0c4d3c009c/mzaf_16063106162190707707.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/r-o-c-k-s-naruto-%E3%83%8A%E3%83%AB%E3%83%88/313460520?i=313460543",
+        "title": "R★O★C★K★S",
+        "artist": "Hound Dog",
+        "artistId": 4879,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/43/6c/aa/mzi.dhzuxwwh.jpg/250x250bb.jpg",
+        "year": 2009,
+        "work": "Naruto",
+        "theme": "OP1"
+      },
+      {
+        "id": 2114769747,
+        "title": "Raison d'Être",
+        "artist": "Rië Tanaka",
+        "artistId": 7096891,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f67ab21fe919171885d34c36110acb96/250x250-000000-80-0-0.jpg",
+        "year": 2002,
+        "work": "Chobits",
+        "theme": "ED1"
+      },
+      {
+        "id": 2116029137,
+        "title": "Inner Universe",
+        "artist": "ORIGA",
+        "artistId": 1842,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/502fbaf31511fde5a9763e08fce587e7/250x250-000000-80-0-0.jpg",
+        "year": 2004,
+        "work": "Ghost in the Shell: Stand Alone Complex",
+        "theme": "OP1"
+      },
+      {
+        "id": 2116030807,
+        "title": "GET9",
+        "artist": "Jillmax",
+        "artistId": 10888,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/386415bbd0a4cff52acc6046ab566fe8/250x250-000000-80-0-0.jpg",
+        "year": 2004,
+        "work": "Ghost in the Shell: Stand Alone Complex",
+        "theme": "OP2"
+      },
+      {
+        "id": 2116029097,
+        "title": "Lithium Flower",
+        "artist": "Scott Matthew",
+        "artistId": 2242,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/502fbaf31511fde5a9763e08fce587e7/250x250-000000-80-0-0.jpg",
+        "year": 2004,
+        "work": "Ghost in the Shell: Stand Alone Complex",
+        "theme": "ED1"
+      },
+      {
+        "id": 2114756837,
+        "title": "I Do",
+        "artist": "Ilaria Graziano",
+        "artistId": 6993,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/a62a3e84e3de909c37961ba16ac5b213/250x250-000000-80-0-0.jpg",
+        "year": 2004,
+        "work": "Ghost in the Shell: Stand Alone Complex",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 1536746075,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/ac/97/89/ac978927-241a-efe6-6827-25045e7d620e/mzaf_3713229649118729938.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/undo/1536746058?i=1536746075",
+        "title": "UNDO",
+        "artist": "Cool Joke",
+        "artistId": 877,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/74/00/26/74002625-c621-bd75-7808-89c8f48e7761/jacket_MHCL02602B00Z_550.jpg/250x250bb.jpg",
+        "year": 2005,
+        "work": "Fullmetal Alchemist",
+        "theme": "OP3"
+      },
+      {
+        "id": 1124207362,
+        "title": "Motherland",
+        "artist": "Crystal Kay",
+        "artistId": 874,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/64e5bc9237fce98218e2f56ff1dc54e0/250x250-000000-80-0-0.jpg",
+        "year": 2004,
+        "work": "Fullmetal Alchemist",
+        "theme": "ED4"
+      },
+      {
+        "id": 976086542,
+        "title": "I Will",
+        "artist": "Sowelu",
+        "artistId": 875,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/b6b83883d8a2fdef369cb54c78d97582/250x250-000000-80-0-0.jpg",
+        "year": 2004,
+        "work": "Fullmetal Alchemist",
+        "theme": "ED5"
+      },
+      {
+        "itunesId": 1804678673,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/80/83/7e/80837e83-9b12-444a-1be0-7b417b067dfa/mzaf_9411974554768336790.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/walking-through-the-empty-age/1804678588?i=1804678673",
+        "title": "Walking Through the Empty Age",
+        "artist": "Yoko Ishida",
+        "artistId": 49834952,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/b5/26/c0/b526c0b3-ca29-853e-4a6d-c0a3248775f1/5021732651099.jpg/250x250bb.jpg",
+        "year": 2005,
+        "work": "Texhnolyze",
+        "theme": "ED2"
+      },
+      {
+        "id": 1645308632,
+        "title": "Wonderful Life",
+        "artist": "Mikio Sakai",
+        "artistId": 4663470,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6783a2ee5c98a72e62184899dcf1971b/250x250-000000-80-0-0.jpg",
+        "year": 2003,
+        "work": "Planetes",
+        "theme": "ED1"
+      },
+      {
+        "id": 2116053617,
+        "title": "gravity",
+        "artist": "Maaya Sakamoto",
+        "artistId": 4892953,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/15bdb2bcc17253853dfd2c7de64890b9/250x250-000000-80-0-0.jpg",
+        "year": 2003,
+        "work": "Wolf's Rain",
+        "theme": "ED1"
+      },
+      {
+        "id": 2116577797,
+        "title": "Tell Me What the Rain Knows",
+        "artist": "Maaya Sakamoto",
+        "artistId": 4892953,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/b9d43fcc25d1c49a5e669d60fa86310f/250x250-000000-80-0-0.jpg",
+        "year": 2004,
+        "work": "Wolf's Rain",
+        "theme": "ED2"
+      },
+      {
+        "id": 554722872,
+        "title": "Happy People",
+        "artist": "Skoop On Somebody",
+        "artistId": 5887,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/486b7bca90924fb2556aaf5ee9e04638/250x250-000000-80-0-0.jpg",
+        "year": 2005,
+        "work": "Bleach",
+        "theme": "ED4"
+      },
+      {
+        "id": 1881742217,
+        "title": "Mad Surfer",
+        "artist": "Kenichi Asai",
+        "artistId": 4896530,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0daecfbdf19fbab755654423b5c6d443/250x250-000000-80-0-0.jpg",
+        "year": 2009,
+        "work": "Bleach",
+        "theme": "ED20"
+      },
+      {
+        "id": 2593430302,
+        "title": "Who's Theme",
+        "artist": "MINMI",
+        "artistId": 250499422,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ee310b2c50073c02a62bc4755d2b764a/250x250-000000-80-0-0.jpg",
+        "year": 2004,
+        "work": "Samurai Champloo",
+        "theme": "ED2"
+      },
+      {
+        "id": 2160481517,
+        "title": "San Francisco",
+        "artist": "MIDICRONICA",
+        "artistId": 148708,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/e7e40bad6febc0861843d2ea54715de5/250x250-000000-80-0-0.jpg",
+        "year": 2005,
+        "work": "Samurai Champloo",
+        "theme": "ED5"
+      },
+      {
+        "id": 976468152,
+        "title": "My World Down",
+        "artist": "Meister",
+        "artistId": 312745021,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/a48a2e4d49d9d24f08274dd7dd385e37/250x250-000000-80-0-0.jpg",
+        "year": 2004,
+        "work": "Beck: Mongolian Chop Squad",
+        "theme": "ED1"
+      },
+      {
+        "id": 976090982,
+        "title": "Moon on the Water",
+        "artist": "Sowelu",
+        "artistId": 875,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5cbac791bd392399269e0fcdde5196a7/250x250-000000-80-0-0.jpg",
+        "year": 2005,
+        "work": "Beck: Mongolian Chop Squad",
+        "theme": "ED2"
+      },
+      {
+        "id": 3714442162,
+        "title": "Dogfight",
+        "artist": "m.o.v.e",
+        "artistId": 4049,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6dcd65aaeacb59c5c97aacbb76ad6cfd/250x250-000000-80-0-0.jpg",
+        "year": 2004,
+        "work": "Initial D 4th Stage",
+        "theme": "OP1"
+      },
+      {
+        "id": 3714442222,
+        "title": "Noizy Tribe",
+        "artist": "m.o.v.e",
+        "artistId": 4049,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6dcd65aaeacb59c5c97aacbb76ad6cfd/250x250-000000-80-0-0.jpg",
+        "year": 2005,
+        "work": "Initial D 4th Stage",
+        "theme": "OP2"
+      },
+      {
+        "id": 3714441542,
+        "title": "Blast My Desire",
+        "artist": "m.o.v.e",
+        "artistId": 4049,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5a1d2ffc3b808bfee6414c863c22bcff/250x250-000000-80-0-0.jpg",
+        "year": 2004,
+        "work": "Initial D 4th Stage",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 291961188,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music2/v4/79/14/18/791418c6-bcbb-4a23-fd4d-ecde51264ea3/mzaf_7559384676609499449.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/99/291961176?i=291961188",
+        "title": "99%",
+        "artist": "BOWL",
+        "artistId": 411004,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/b3/21/0a/mzi.bhnugwed.jpg/250x250bb.jpg",
+        "year": 2008,
+        "work": "Yu-Gi-Oh! GX",
+        "theme": "OP2"
+      },
+      {
+        "id": 2116030747,
+        "title": "Rise",
+        "artist": "ORIGA",
+        "artistId": 1842,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/386415bbd0a4cff52acc6046ab566fe8/250x250-000000-80-0-0.jpg",
+        "year": 2004,
+        "work": "Ghost in the Shell: Stand Alone Complex 2nd GIG",
+        "theme": "OP1"
+      },
+      {
+        "id": 2116027557,
+        "title": "Christmas in the Silent Forest",
+        "artist": "Ilaria Graziano",
+        "artistId": 6993,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/82c87955d374b82a0463d28b55161f5b/250x250-000000-80-0-0.jpg",
+        "year": 2004,
+        "work": "Ghost in the Shell: Stand Alone Complex 2nd GIG",
+        "theme": "OP2"
+      },
+      {
+        "id": 2116030847,
+        "title": "Living Inside the Shell",
+        "artist": "steve conte/shanti snyder[reading]",
+        "artistId": 198044387,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/386415bbd0a4cff52acc6046ab566fe8/250x250-000000-80-0-0.jpg",
+        "year": 2004,
+        "work": "Ghost in the Shell: Stand Alone Complex 2nd GIG",
+        "theme": "ED1"
+      },
+      {
+        "id": 2114752987,
+        "title": "Innocent Days",
+        "artist": "hitomi",
+        "artistId": 8010,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c4227c47007d468c1d2401888a6cd2ec/250x250-000000-80-0-0.jpg",
+        "year": 2007,
+        "work": "Code Geass: Lelouch of the Rebellion",
+        "theme": "ED4"
+      },
+      {
+        "itunesId": 216250653,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/6c/fb/9d/6cfb9dca-e439-cb5c-a768-e1d286cae9ee/mzaf_17976191096125213676.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/wish/216250410?i=216250653",
+        "title": "Wish",
+        "artist": "Olivia inspi' Reira ~Trapnest~",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/19/10/51/191051d2-5731-4421-8769-348ea11002f1/mzi.digmvckk.jpg/250x250bb.jpg",
+        "year": 2006,
+        "work": "NANA",
+        "theme": "OP2"
+      },
+      {
+        "itunesId": 216250412,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/33/94/c0/3394c0fc-8a9a-1201-eb1e-6a15e3382ce9/mzaf_450928417572564903.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/a-little-pain/216250410?i=216250412",
+        "title": "A Little Pain",
+        "artist": "Olivia inspi' Reira ~Trapnest~",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/19/10/51/191051d2-5731-4421-8769-348ea11002f1/mzi.digmvckk.jpg/250x250bb.jpg",
+        "year": 2006,
+        "work": "NANA",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 216251015,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/0d/3b/12/0d3b12ae-e516-375b-7f87-5d4a64022d87/mzaf_12648739307575968650.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/starless-night/216250410?i=216251015",
+        "title": "Starless Night",
+        "artist": "Olivia inspi' Reira ~Trapnest~",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/19/10/51/191051d2-5731-4421-8769-348ea11002f1/mzi.digmvckk.jpg/250x250bb.jpg",
+        "year": 2007,
+        "work": "NANA",
+        "theme": "ED3"
+      },
+      {
+        "itunesId": 216251523,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/a1/0d/27/a10d27e5-697c-4d97-5380-ddd322b03ff4/mzaf_17700453550286954497.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/winter-sleep/216250410?i=216251523",
+        "title": "Winter Sleep",
+        "artist": "Olivia inspi' Reira ~Trapnest~",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/19/10/51/191051d2-5731-4421-8769-348ea11002f1/mzi.digmvckk.jpg/250x250bb.jpg",
+        "year": 2007,
+        "work": "NANA",
+        "theme": "ED5"
+      },
+      {
+        "itunesId": 345287319,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music/v4/b6/04/63/b60463b8-07f1-04e3-58ba-79032cbdfcad/mzaf_1943585224157604203.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/magnolia/345287260?i=345287319",
+        "title": "Magnolia",
+        "artist": "Suilen",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/f6/2a/34/mzi.ewdssthf.jpg/250x250bb.jpg",
+        "year": 2009,
+        "work": "Hellsing Ultimate",
+        "theme": "ED6"
+      },
+      {
+        "itunesId": 1725088842,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/4c/09/0e/4c090e17-e670-b277-3fed-6c40326ba6b3/mzaf_2133038642757436451.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/monkey-magic/1725088834?i=1725088842",
+        "title": "Monkey Magic",
+        "artist": "Aya Hirano",
+        "artistId": 2440161,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/6f/36/ca/6f36ca33-2b64-7ce3-3a6e-007a3d90bace/4540774506583.jpg/250x250bb.jpg",
+        "year": 2007,
+        "work": "Lucky☆Star",
+        "theme": "ED8"
+      },
+      {
+        "itunesId": 1725088844,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/3f/2a/74/3f2a7429-6710-e6cf-a4a2-6e849d373013/mzaf_2219028400634492172.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/im-proud/1725088834?i=1725088844",
+        "title": "I'm Proud",
+        "artist": "Emiri Kato",
+        "artistId": 14311009,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/6f/36/ca/6f36ca33-2b64-7ce3-3a6e-007a3d90bace/4540774506583.jpg/250x250bb.jpg",
+        "year": 2007,
+        "work": "Lucky☆Star",
+        "theme": "ED10"
+      },
+      {
+        "id": 3081164701,
+        "title": "Hey! Say!",
+        "artist": "Hey! Say! 7",
+        "artistId": 120678142,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/77dfaa6610dd8ef5611a5af454bd7f8e/250x250-000000-80-0-0.jpg",
+        "year": 2007,
+        "work": "Lovely Complex",
+        "theme": "OP2"
+      },
+      {
+        "id": 3081164711,
+        "title": "BON BON",
+        "artist": "Hey! Say! 7",
+        "artistId": 120678142,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/77dfaa6610dd8ef5611a5af454bd7f8e/250x250-000000-80-0-0.jpg",
+        "year": 2007,
+        "work": "Lovely Complex",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 271464852,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music2/v4/d1/4b/12/d14b12c4-13d3-aae0-354c-5612f2c34fb4/mzaf_3952558655437179014.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/look-at-me/271464825?i=271464852",
+        "title": "Look at Me",
+        "artist": "YURIA",
+        "artistId": 6100,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/07/05/31/mzi.hhodspvy.jpg/250x250bb.jpg",
+        "year": 2007,
+        "work": "School Days (TV)",
+        "theme": "ED5"
+      },
+      {
+        "id": 1124776662,
+        "title": "WORLD END",
+        "artist": "FLOW",
+        "artistId": 4407,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/3d16dc3a1f030e0303c8f1d965012e3c/250x250-000000-80-0-0.jpg",
+        "year": 2008,
+        "work": "Code Geass: Lelouch of the Rebellion R2",
+        "theme": "OP2"
+      },
+      {
+        "id": 3337823371,
+        "title": "TORCH",
+        "artist": "LIA",
+        "artistId": 13699737,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/be04019cf75e51d5d7f7270ca3a02f79/250x250-000000-80-0-0.jpg",
+        "year": 2008,
+        "work": "Clannad: After Story",
+        "theme": "ED1"
+      },
+      {
+        "id": 2230715487,
+        "title": "Dancing in the velvet moon",
+        "artist": "Nana Mizuki",
+        "artistId": 4897191,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5f2e6befbd9c916f8590fccc33afaaff/250x250-000000-80-0-0.jpg",
+        "year": 2008,
+        "work": "Rosario + Vampire",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 339700127,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music2/v4/ab/bf/1b/abbf1bab-7187-22ba-c692-a9526ec9b5ba/mzaf_2896905708059441284.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/ring-my-bell-main-vocal-hitomi/339700087?i=339700127",
+        "title": "Ring My Bell (Main Vocal Hitomi)",
+        "artist": "Blue Drops",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/be/18/3a/mzi.ampaujgl.jpg/250x250bb.jpg",
+        "year": 2009,
+        "work": "Heaven's Lost Property",
+        "theme": "OP1"
+      },
+      {
         "id": 975991072,
         "title": "Uso",
         "original": "嘘",
@@ -24624,7 +25887,9 @@
         "artist": "LiSA",
         "artistId": 11446160,
         "cover": "https://cdn-images.dzcdn.net/images/cover/1f52bcd67ac5393123b3a272ceec5a5c/250x250-000000-80-0-0.jpg",
-        "year": 2019
+        "year": 2019,
+        "work": "Demon Slayer",
+        "theme": "OP1"
       },
       {
         "id": 976378422,
@@ -24699,7 +25964,8 @@
         "artist": "RADWIMPS",
         "artistId": 211087,
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ad/4b/b8/ad4bb84d-85f9-8902-6876-c7dd2f93c24a/25UM1IM78298.rgb.jpg/250x250bb.jpg",
-        "year": 2016
+        "year": 2016,
+        "work": "Your Name"
       },
       {
         "id": 545599502,
@@ -24834,7 +26100,9 @@
         "artist": "TK from Ling tosite sigure",
         "artistId": 9973848,
         "cover": "https://cdn-images.dzcdn.net/images/cover/61405c13e00050dd0aed08aa92199d98/250x250-000000-80-0-0.jpg",
-        "year": 2014
+        "year": 2014,
+        "work": "Tokyo Ghoul",
+        "theme": "OP1"
       },
       {
         "id": 1837567907,
@@ -24898,7 +26166,9 @@
         "artist": "Lia",
         "artistId": 13699737,
         "cover": "https://cdn-images.dzcdn.net/images/cover/0e6d628fa4834b30c8845f5d0a53a7eb/250x250-000000-80-0-0.jpg",
-        "year": 2010
+        "year": 2010,
+        "work": "Angel Beats!",
+        "theme": "OP1"
       },
       {
         "itunesId": 797287161,
@@ -25413,7 +26683,9 @@
         "artist": "V6",
         "artistId": 6949,
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/99/29/85/992985e4-0428-2dd0-980c-902d495694fd/ANTCD-A0000018343.jpg/250x250bb.jpg",
-        "year": 2019
+        "year": 2019,
+        "work": "ONE PIECE",
+        "theme": "OP21"
       },
       {
         "itunesId": 1784239437,
@@ -25436,21 +26708,361 @@
         "year": 2015
       },
       {
+        "id": 3134319511,
+        "title": "Brave Song",
+        "artist": "Aoi Tada",
+        "artistId": 5411403,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/42c472fec3867299468db374008ce6d0/250x250-000000-80-0-0.jpg",
+        "year": 2010,
+        "work": "Angel Beats!",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1537786309,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview114/v4/b3/d2/c8/b3d2c8a7-9361-0627-1967-0208d5719daf/mzaf_8354744488980812048.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/trailblazer/1537786308?i=1537786309",
+        "title": "Trailblazer",
+        "artist": "Rin Okumura",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/f1/68/80/f168800b-034c-b100-350c-7c03a1c9b7a3/jacket_SVWC07913B00Z_550.jpg/250x250bb.jpg",
+        "year": 2012,
+        "work": "Blue Exorcist",
+        "theme": "OP3"
+      },
+      {
+        "itunesId": 1537786310,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview114/v4/ce/60/8b/ce608b74-028f-b664-4621-2b3550a478ed/mzaf_11448919635523569525.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/dedicate/1537786308?i=1537786310",
+        "title": "dedicate",
+        "artist": "Yukio Okumura",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/f1/68/80/f168800b-034c-b100-350c-7c03a1c9b7a3/jacket_SVWC07913B00Z_550.jpg/250x250bb.jpg",
+        "year": 2012,
+        "work": "Blue Exorcist",
+        "theme": "ED3"
+      },
+      {
+        "id": 2728423311,
+        "title": "Dead END",
+        "artist": "faylan",
+        "artistId": 7980258,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/06ad3b79dd8c9d9f24b9e00e19f7cc45/250x250-000000-80-0-0.jpg",
+        "year": 2012,
+        "work": "The Future Diary",
+        "theme": "OP2"
+      },
+      {
+        "id": 2731585311,
+        "title": "Blood Teller",
+        "artist": "faylan",
+        "artistId": 7980258,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6cacb28b348724b7ef7a855d82190eed/250x250-000000-80-0-0.jpg",
+        "year": 2011,
+        "work": "The Future Diary",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 437467901,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music2/v4/de/77/b1/de77b10b-1f2c-5c95-4f30-9e104977986a/mzaf_6767785507695861909.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/unity/437467896?i=437467901",
+        "title": "unity",
+        "artist": "Lisa Komine",
+        "artistId": 6100240,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/de/52/69/mzi.tkdlcqat.jpg/250x250bb.jpg",
+        "year": 2011,
+        "work": "Gosick",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 499519188,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music2/v4/b7/f4/00/b7f4002a-d2d9-e4ac-94a3-d751ab2efb1a/mzaf_6379262579419463340.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/trip-innocent-of-d/499519187?i=499519188",
+        "title": "Trip -innocent of D-",
+        "artist": "Larval Stage Planning",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/03/e5/ac/mzi.rzdeyvct.jpg/250x250bb.jpg",
+        "year": 2012,
+        "work": "High School DxD",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 576677368,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/38/95/7c/38957c85-3b71-c84f-eef9-c64f41df3367/mzaf_9890199187568070092.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/days-of-dash/576677364?i=576677368",
+        "title": "DAYS of DASH",
+        "artist": "Konomi Suzuki",
+        "artistId": 7501576,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/55/1c/4c/551c4c9d-58ce-d8d9-9084-24c0471343e3/sakurasou_CD-ED_book_H1.jpg/250x250bb.jpg",
+        "year": 2012,
+        "work": "The Pet Girl of Sakurasou",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 820036801,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music4/v4/86/69/75/86697529-8d46-a609-eff8-d55fd6594eff/mzaf_3455093718690043800.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/shiny-tale/820036719?i=820036801",
+        "title": "Shiny tale",
+        "artist": "Mix Speaker's,Inc",
+        "artistId": 6681883,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music4/v4/55/a6/ea/55a6ea6d-59d7-6188-cffd-355b3e12bbea/HMCH1132_JK.jpg/250x250bb.jpg",
+        "year": 2012,
+        "work": "Daily Lives of High School Boys",
+        "theme": "OP1"
+      },
+      {
+        "itunesId": 1535603409,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/4c/88/f8/4c88f844-04a5-a260-b9e5-2766437b497a/mzaf_4603998200749949222.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/hatsukoi-winding-road/1535603408?i=1535603409",
+        "title": "Hatsukoi Winding Road",
+        "artist": "Kayoko Tsumita, Risako Murai, Midori Tsukimiya",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/07/49/0d/07490d4a-cea5-00ce-9945-3d21775dfd33/COCX-41246.jpg/250x250bb.jpg",
+        "year": 2013,
+        "work": "Date A Live",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1349570852,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview118/v4/cd/c6/96/cdc69686-08e5-8361-730c-b59a13613c89/mzaf_1673347415978129199.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/fantastic-tune/1349570832?i=1349570852",
+        "title": "FANTASTIC TUNE",
+        "artist": "Kensho Ono",
+        "artistId": 78507262,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/f3/ed/df/f3eddf5f-acf9-d505-47c5-1ded3dda0d75/LACA-15697.jpg/250x250bb.jpg",
+        "year": 2014,
+        "work": "Kuroko's Basketball 2",
+        "theme": "ED2"
+      },
+      {
+        "id": 3547283791,
+        "title": "SPLASH FREE",
+        "artist": "STYLE FIVE",
+        "artistId": 223427715,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c2b3ea719d38727b8ed9c9f11f6df000/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "Free! -Iwatobi Swim Club-",
+        "theme": "ED1"
+      },
+      {
+        "id": 3547283871,
+        "title": "EVER BLUE",
+        "artist": "STYLE FIVE",
+        "artistId": 223427715,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c2b3ea719d38727b8ed9c9f11f6df000/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "Free! -Iwatobi Swim Club-",
+        "theme": "ED2"
+      },
+      {
+        "id": 2809886802,
+        "title": "This game",
+        "artist": "Konomi Suzuki",
+        "artistId": 7501576,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/e329ed71d502662d49e7c936345e1ce7/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "No Game, No Life",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1535788478,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview114/v4/8c/e0/a7/8ce0a796-2a44-a119-2272-5d062cd2972d/mzaf_15401283622000258480.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/heart-pattern/1535788477?i=1535788478",
+        "title": "Heart Pattern",
+        "artist": "Chitoge Kirisaki",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/b0/de/81/b0de81de-feb3-d44a-fe8f-49af3944f7a4/jacket_ANXX00543B00Z_550.jpg/250x250bb.jpg",
+        "year": 2014,
+        "work": "Nisekoi",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 1535789467,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview124/v4/dc/74/97/dc749771-3772-9b58-fb18-efd3b22628b3/mzaf_10374303613806749225.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/trick-box/1535789044?i=1535789467",
+        "title": "TRICK BOX",
+        "artist": "Seishirou Tsugumi",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/75/88/b5/7588b511-c7de-f7a5-df8b-f73f6f32ad70/jacket_ANXX00598B00Z_550.jpg/250x250bb.jpg",
+        "year": 2014,
+        "work": "Nisekoi",
+        "theme": "ED5"
+      },
+      {
+        "itunesId": 989675152,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/81/71/af/8171af03-8033-2aa1-defd-79ecb6cf7822/mzaf_14032070731543224401.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/hey-world/989675151?i=989675152",
+        "title": "Hey World",
+        "artist": "Yuka Iguchi",
+        "artistId": 67123132,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music7/v4/c4/58/ee/c458ee0c-a3fe-19ef-8401-23e48e55d0fb/1000563969_IguchiYuka_HeyWorld_normal_JKT.jpg/250x250bb.jpg",
+        "year": 2015,
+        "work": "Is It Wrong to Try to Pick Up Girls in a Dungeon?",
+        "theme": "ED1"
+      },
+      {
+        "id": 2157451917,
+        "title": "Paradisus-Paradoxum",
+        "artist": "Myth & Roid",
+        "artistId": 14434339,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/302b053b3ea7c91eef405cd55c2a05f5/250x250-000000-80-0-0.jpg",
+        "year": 2016,
+        "work": "Re:ZERO -Starting Life in Another World-",
+        "theme": "OP2"
+      },
+      {
+        "id": 2157451447,
+        "title": "STYX HELIX",
+        "artist": "Myth & Roid",
+        "artistId": 14434339,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/332f024603fcc93125f4705d243228c1/250x250-000000-80-0-0.jpg",
+        "year": 2016,
+        "work": "Re:ZERO -Starting Life in Another World-",
+        "theme": "ED1"
+      },
+      {
+        "id": 2157451907,
+        "title": "STRAIGHT BET",
+        "artist": "Myth & Roid",
+        "artistId": 14434339,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/302b053b3ea7c91eef405cd55c2a05f5/250x250-000000-80-0-0.jpg",
+        "year": 2016,
+        "work": "Re:ZERO -Starting Life in Another World-",
+        "theme": "ED3"
+      },
+      {
+        "id": 2157451347,
+        "title": "theater D",
+        "artist": "Myth & Roid",
+        "artistId": 14434339,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/21956425f814fc511274c6d6d1bd93df/250x250-000000-80-0-0.jpg",
+        "year": 2016,
+        "work": "Re:ZERO -Starting Life in Another World-",
+        "theme": "ED4"
+      },
+      {
+        "itunesId": 1181795395,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview62/v4/04/b6/05/04b60570-5d4c-959a-6d00-60870cce3862/mzaf_670756053979648089.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/great-days-units-ver/1181795164?i=1181795395",
+        "title": "Great Days -Units Ver.-",
+        "artist": "JO☆UNITED",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music71/v4/21/20/26/2120262e-a163-0525-624f-a2e8d852f174/JOJO_DU_OP3_JKT_for_DL.jpg/250x250bb.jpg",
+        "year": 2016,
+        "work": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
+        "theme": "ED2"
+      },
+      {
+        "id": 2157451947,
+        "title": "JINGO JUNGLE",
+        "artist": "Myth & Roid",
+        "artistId": 14434339,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/302b053b3ea7c91eef405cd55c2a05f5/250x250-000000-80-0-0.jpg",
+        "year": 2017,
+        "work": "Saga of Tanya the Evil",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1201588269,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview111/v4/49/2b/68/492b68ad-6889-8221-7445-787913e99e88/mzaf_2503264440288340270.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/los-los-los/1201588262?i=1201588269",
+        "title": "Los! Los! Los!",
+        "artist": "Tanya Degurechaff",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music111/v4/09/f2/1b/09f21b4e-40b4-8fd5-c942-e20dde08ee0a/JK_ZMCZ-10929.jpg/250x250bb.jpg",
+        "year": 2017,
+        "work": "Saga of Tanya the Evil",
+        "theme": "ED2"
+      },
+      {
+        "id": 468050032,
+        "title": "OVER",
+        "artist": "Little Glee Monster",
+        "artistId": 8002186,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/b0fe7cd722f1bc7426309a748e403c9b/250x250-000000-80-0-0.jpg",
+        "year": 2017,
+        "work": "Boruto: Naruto Next Generations",
+        "theme": "OP2"
+      },
+      {
+        "id": 976028632,
+        "title": "It's all in the game",
+        "artist": "Qyoto",
+        "artistId": 15137151,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6c7ed587d5bceace310cbb5ac73f564a/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "Boruto: Naruto Next Generations",
+        "theme": "OP3"
+      },
+      {
+        "id": 1124208342,
+        "title": "Lonely Go!",
+        "artist": "Brian the Sun",
+        "artistId": 1432870,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f08c66456b7470236ae3d33d1afbe965/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Boruto: Naruto Next Generations",
+        "theme": "OP4"
+      },
+      {
+        "id": 975893662,
+        "title": "Ride or Die",
+        "artist": "Skypeace",
+        "artistId": 15082995,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f247577f2586f01aff0b1a4debe10dab/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Boruto: Naruto Next Generations",
+        "theme": "ED9"
+      },
+      {
+        "id": 1127117592,
+        "title": "Wish on",
+        "artist": "LONGMAN",
+        "artistId": 470935,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/231ee98199f6f0c4cc4628cfa1887a22/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Boruto: Naruto Next Generations",
+        "theme": "ED11"
+      },
+      {
+        "itunesId": 1443959303,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/e5/1f/3e/e51f3ecb-f082-e1b6-04f3-e3bd884bbdb1/mzaf_15759300546268314314.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/fukashigi-no-carte-from-seishun-buta-yarou-wa-bunny/1443959302?i=1443959303",
+        "title": "Fukashigi No Carte",
+        "original": "Fukashigi no Carte (不可思議のカルテ)",
+        "artist": "Mai Sakurajima",
+        "artistId": 53696822,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/7a/ba/d6/7abad6d5-5a3b-7cab-4b45-b4ee9fed2b3d/2a612b1c-f986-4aa1-81a9-035a0ab04ddc.jpg/250x250bb.jpg",
+        "year": 2018,
+        "work": "Rascal Does Not Dream of Bunny Girl Senpai",
+        "theme": "ED2"
+      },
+      {
+        "id": 695234522,
+        "title": "T-KT",
+        "artist": "Hiroyuki Sawano",
+        "artistId": 1315147,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4ad1d4f616037ed6a592a2bedeb13898/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Attack on Titan Season 3 Part 2",
+        "theme": "ED2"
+      },
+      {
+        "id": 975929972,
+        "title": "Good Morning World!",
+        "artist": "BURNOUT SYNDROMES",
+        "artistId": 9962448,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/2903e383e299341b1550fef53ae2fcb7/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Dr. STONE",
+        "theme": "ED1"
+      },
+      {
         "id": 4381159811,
         "title": "BLOODY STREAM",
         "artist": "Coda",
         "artistId": 3213,
         "cover": "https://cdn-images.dzcdn.net/images/cover/d0e4b34e735f75f520bd5743b5aeb876/250x250-000000-80-0-0.jpg",
         "year": 2013
-      },
-      {
-        "id": 2618011022,
-        "title": "Kawakiwoameku",
-        "original": "カワキヲアメク",
-        "artist": "美波",
-        "artistId": 99539532,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/79c7fbdb0c06eeb8e14b08cd8bab1ede/250x250-000000-80-0-0.jpg",
-        "year": 2019
       },
       {
         "id": 560321032,
@@ -25556,7 +27168,9 @@
         "artist": "Aimer",
         "artistId": 8623006,
         "cover": "https://cdn-images.dzcdn.net/images/cover/fe2830a3220f92056d5ee6cf31de73d2/250x250-000000-80-0-0.jpg",
-        "year": 2021
+        "year": 2021,
+        "work": "Demon Slayer",
+        "theme": "OP2"
       },
       {
         "id": 1581982382,
@@ -25574,7 +27188,9 @@
         "artist": "YOASOBI",
         "artistId": 108153772,
         "cover": "https://cdn-images.dzcdn.net/images/cover/c028acc15f911c6ca3ff821abbb64aa3/250x250-000000-80-0-0.jpg",
-        "year": 2023
+        "year": 2023,
+        "work": "Oshi no Ko",
+        "theme": "OP1"
       },
       {
         "id": 2449469235,
@@ -25609,7 +27225,9 @@
         "artist": "Kenshi Yonezu",
         "artistId": 5289039,
         "cover": "https://cdn-images.dzcdn.net/images/cover/219b98615e49c9df44727bc3d9d57c8e/250x250-000000-80-0-0.jpg",
-        "year": 2022
+        "year": 2022,
+        "work": "Chainsaw Man",
+        "theme": "OP1"
       },
       {
         "id": 3540533651,
@@ -25634,7 +27252,9 @@
         "artist": "King Gnu",
         "artistId": 12944623,
         "cover": "https://cdn-images.dzcdn.net/images/cover/b51d07c77bfda2e5f1bc965e5e9ab36f/250x250-000000-80-0-0.jpg",
-        "year": 2023
+        "year": 2023,
+        "work": "JUJUTSU KAISEN Season 2",
+        "theme": "OP2"
       },
       {
         "id": 1566225852,
@@ -25691,7 +27311,9 @@
         "artist": "Linked Horizon",
         "artistId": 7174384,
         "cover": "https://cdn-images.dzcdn.net/images/cover/ee6fc9ce4cbe0ba36c922b3b31bff9f0/250x250-000000-80-0-0.jpg",
-        "year": 2024
+        "year": 2024,
+        "work": "Attack on Titan",
+        "theme": "OP1"
       },
       {
         "id": 2122215167,
@@ -25806,7 +27428,9 @@
         "artist": "Creepy Nuts",
         "artistId": 13046819,
         "cover": "https://cdn-images.dzcdn.net/images/cover/d19f1ef87690fdceea113cc47140b360/250x250-000000-80-0-0.jpg",
-        "year": 2024
+        "year": 2024,
+        "work": "Mashle: Magic and Muscles",
+        "theme": "OP2"
       },
       {
         "id": 3024903811,
@@ -25929,18 +27553,9 @@
         "artist": "milet",
         "artistId": 5879939,
         "cover": "https://cdn-images.dzcdn.net/images/cover/1f9fa9f37b06246e4864d869c1aee4f6/250x250-000000-80-0-0.jpg",
-        "year": 2023
-      },
-      {
-        "itunesId": 1678949889,
-        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/66/c3/c8/66c3c8a9-846c-e4b5-9a5d-c1d961f14644/mzaf_7312965873766517511.plus.aac.p.m4a",
-        "link": "https://music.apple.com/jp/album/%E7%B5%86%E3%83%8E%E5%A5%87%E8%B7%A1/1678949877?i=1678949889",
-        "title": "Kizuna No Kiseki",
-        "original": "絆ノ奇跡",
-        "artist": "milet",
-        "artistId": 5879939,
-        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/ea/50/a1/ea50a147-5c73-a762-0650-d2a285d6fabd/4547366615807.jpg/250x250bb.jpg",
-        "year": 2023
+        "year": 2023,
+        "work": "Frieren: Beyond Journey’s End",
+        "theme": "ED1"
       },
       {
         "id": 3531242851,
@@ -26187,7 +27802,9 @@
         "artist": "Hitsujibungaku",
         "artistId": 13290779,
         "cover": "https://cdn-images.dzcdn.net/images/cover/160004db742f5ecf6388156224dc8b7b/250x250-000000-80-0-0.jpg",
-        "year": 2023
+        "year": 2023,
+        "work": "JUJUTSU KAISEN Season 2",
+        "theme": "ED2"
       },
       {
         "id": 3784514552,
@@ -26203,7 +27820,9 @@
         "artist": "SiM",
         "artistId": 73204762,
         "cover": "https://cdn-images.dzcdn.net/images/cover/014164549bbb3ca4730877fc85716b96/250x250-000000-80-0-0.jpg",
-        "year": 2023
+        "year": 2023,
+        "work": "Attack on Titan Final Season THE FINAL CHAPTERS Special 1",
+        "theme": "ED1"
       },
       {
         "id": 2345664365,
@@ -26230,6 +27849,297 @@
         "artistId": 69128312,
         "cover": "https://cdn-images.dzcdn.net/images/cover/0bf48d4f94bb904f3ddb3484b43ba8c3/250x250-000000-80-0-0.jpg",
         "year": 2025
+      },
+      {
+        "id": 2358579665,
+        "title": "Long shot",
+        "artist": "Mayu Maeshima",
+        "artistId": 64051152,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c0cd26daf18fb9f4f86731cb39aa67f6/250x250-000000-80-0-0.jpg",
+        "year": 2021,
+        "work": "Re:ZERO -Starting Life in Another World- Season 2 Part 2",
+        "theme": "ED5"
+      },
+      {
+        "itunesId": 1796118624,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/73/90/ef/7390ef39-46b9-e1fc-149c-c66e6dbe66fe/mzaf_14991873764308732757.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/winner/1796118623?i=1796118624",
+        "title": "WINNER",
+        "artist": "Shuugo Nakamura",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/2b/25/b4/2b25b4b3-2d3d-e1c9-0e4c-435a491c07a7/4540774243198.png/250x250bb.jpg",
+        "year": 2022,
+        "work": "BLUE LOCK",
+        "theme": "ED2"
+      },
+      {
+        "id": 3039780301,
+        "title": "Judgement",
+        "artist": "ASH DA HERO",
+        "artistId": 7848926,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/9284b1fd4337933dc4f56a82d7902b9f/250x250-000000-80-0-0.jpg",
+        "year": 2023,
+        "work": "BLUE LOCK",
+        "theme": "ED3"
+      },
+      {
+        "id": 2214403097,
+        "title": "Numbness like a ginger",
+        "artist": "UNISON SQUARE GARDEN",
+        "artistId": 14002467,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5f67367e0205a133bc48ebe6523896b0/250x250-000000-80-0-0.jpg",
+        "year": 2023,
+        "work": "BLUE LOCK",
+        "theme": "ED4"
+      },
+      {
+        "itunesId": 1731046228,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview112/v4/68/b0/5d/68b05d33-d7c3-41f5-5aad-9f1c6baafaba/mzaf_6970733701115383740.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/hana-ni-natte/1731046227?i=1731046228",
+        "title": "Hana ni Natte",
+        "original": "Hana ni Natte (花になって)",
+        "artist": "Ryokuoushoku Shakai",
+        "artistId": 72120942,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/57/7a/3c/577a3c5a-9930-ccd3-0b7c-acc73ea2c11f/5063473276834_cover.jpg/250x250bb.jpg",
+        "year": 2024,
+        "work": "The Apothecary Diaries",
+        "theme": "OP1"
+      },
+      {
+        "id": 2336123045,
+        "title": "spiral",
+        "artist": "LONGMAN",
+        "artistId": 470935,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/fac688f46796cfda2b843d37c12743e0/250x250-000000-80-0-0.jpg",
+        "year": 2023,
+        "work": "Mushoku Tensei: Jobless Reincarnation Season 2",
+        "theme": "ED1"
+      },
+      {
+        "id": 2588892792,
+        "title": "LEveL",
+        "artist": "SawanoHiroyuki[nZk]",
+        "artistId": 51708732,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4f754ded7e6ef6309d8136c01ede7a7c/250x250-000000-80-0-0.jpg",
+        "year": 2024,
+        "work": "Solo Leveling",
+        "theme": "ED1"
+      },
+      {
+        "id": 2585702882,
+        "title": "request",
+        "artist": "krage",
+        "artistId": 163234327,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/63e1438c524e1d6a7b0194f2c7bcc3ce/250x250-000000-80-0-0.jpg",
+        "year": 2024,
+        "work": "Solo Leveling",
+        "theme": "ED2"
+      },
+      {
+        "id": 2566053082,
+        "title": "Sleep Walking Orchestra",
+        "artist": "BUMP OF CHICKEN",
+        "artistId": 6847,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/e85f79beaeae4115873e99808c34774c/250x250-000000-80-0-0.jpg",
+        "year": 2023,
+        "work": "Delicious in Dungeon",
+        "theme": "OP1"
+      },
+      {
+        "id": 2617174892,
+        "title": "Party!!",
+        "artist": "Ryokuoushoku Shakai",
+        "artistId": 72120942,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4168711a51e11afb912fb6f15c46df69/250x250-000000-80-0-0.jpg",
+        "year": 2024,
+        "work": "Delicious in Dungeon",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 1761621669,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/ea/c6/75/eac675cb-e4a7-def8-f700-6c4a51174fcb/mzaf_7221921401608111530.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/chiisana-koi-no-uta-from-roshidere-alya-sometimes-hides/1761621668?i=1761621669",
+        "title": "Chiisana Koi No Uta",
+        "original": "Chiisana Koi no Uta (小さな恋のうた)",
+        "artist": "Alya",
+        "artistId": 113577612,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/e3/a4/55/e3a455aa-9e0b-0eb6-5d87-1e4b7fae8129/198009831142.png/250x250bb.jpg",
+        "year": 2024,
+        "work": "Alya Sometimes Hides Her Feelings in Russian",
+        "theme": "ED5"
+      },
+      {
+        "id": 2987136591,
+        "title": "Reweave",
+        "artist": "Konomi Suzuki",
+        "artistId": 7501576,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6d801e70fd64e2931b32f4298fbcaa1a/250x250-000000-80-0-0.jpg",
+        "year": 2024,
+        "work": "Re:ZERO -Starting Life in Another World- Season 3",
+        "theme": "ED1"
+      },
+      {
+        "id": 2999935831,
+        "title": "NOX LUX",
+        "artist": "Myth & Roid",
+        "artistId": 14434339,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/71731b9eec4a1d2e62af2923c883fc1a/250x250-000000-80-0-0.jpg",
+        "year": 2024,
+        "work": "Re:ZERO -Starting Life in Another World- Season 3",
+        "theme": "ED2"
+      },
+      {
+        "id": 3063909101,
+        "title": "I Trust You",
+        "artist": "EMILIA(CV:RIE TAKAHASHI)",
+        "artistId": 220661065,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/2c193a9c72ab9ad7946eff903adea8d2/250x250-000000-80-0-0.jpg",
+        "year": 2024,
+        "work": "Re:ZERO -Starting Life in Another World- Season 3",
+        "theme": "ED3"
+      },
+      {
+        "id": 2692676832,
+        "title": "PEACEKEEPER",
+        "artist": "STEREO DIVE FOUNDATION",
+        "artistId": 50290152,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/07493836e59e4c45a4a68563053c2445/250x250-000000-80-0-0.jpg",
+        "year": 2024,
+        "work": "That Time I Got Reincarnated as a Slime Season 3",
+        "theme": "OP1"
+      },
+      {
+        "id": 2692679872,
+        "title": "Believer",
+        "artist": "Rin Kurusu",
+        "artistId": 69968002,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f27b11b5e8815679541b0800e183827e/250x250-000000-80-0-0.jpg",
+        "year": 2024,
+        "work": "That Time I Got Reincarnated as a Slime Season 3",
+        "theme": "ED1"
+      },
+      {
+        "id": 2815065612,
+        "title": "Miracle soup",
+        "artist": "Mindaryn",
+        "artistId": 14418337,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/d401208fd05b59960838d7c43602ece5/250x250-000000-80-0-0.jpg",
+        "year": 2024,
+        "work": "That Time I Got Reincarnated as a Slime Season 3",
+        "theme": "ED2"
+      },
+      {
+        "id": 2599496982,
+        "title": "Fixer",
+        "artist": "Yui Ninomiya",
+        "artistId": 82262482,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/7001cd4999b2d1d43b7bdb7174eaef05/250x250-000000-80-0-0.jpg",
+        "year": 2024,
+        "work": "Classroom of the Elite Season 3",
+        "theme": "ED3"
+      },
+      {
+        "id": 2720858632,
+        "title": "Growing Up",
+        "artist": "Machico",
+        "artistId": 14107475,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/2390fa714e5ef525defd2de559caf5f2/250x250-000000-80-0-0.jpg",
+        "year": 2024,
+        "work": "KONOSUBA -God's blessing on this wonderful world! 3",
+        "theme": "ED1"
+      },
+      {
+        "id": 2854196392,
+        "title": "Fire and Fear",
+        "artist": "PENGUIN RESEARCH",
+        "artistId": 9717256,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c27ab2bdeb053b7ab663522b0b1fd0ac/250x250-000000-80-0-0.jpg",
+        "year": 2024,
+        "work": "Wistoria: Wand and Sword",
+        "theme": "ED1"
+      },
+      {
+        "id": 3138924591,
+        "title": "UN-APEX",
+        "artist": "TK from Ling tosite sigure",
+        "artistId": 9973848,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ab6897afb8257c939d376f06be2eec2c/250x250-000000-80-0-0.jpg",
+        "year": 2025,
+        "work": "Solo Leveling Season 2 -Arise from the Shadow-",
+        "theme": "ED1"
+      },
+      {
+        "id": 3434329711,
+        "title": "HUGs",
+        "artist": "Paledusk",
+        "artistId": 11335164,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/11e2c4b66d897d0ad9c960fd9740f6c2/250x250-000000-80-0-0.jpg",
+        "year": 2025,
+        "work": "Gachiakuta",
+        "theme": "OP1"
+      },
+      {
+        "id": 3621768152,
+        "title": "LET'S JUST CRASH",
+        "artist": "Mori Calliope",
+        "artistId": 119362592,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6a173de407c9230efe5471d8bec9b327/250x250-000000-80-0-0.jpg",
+        "year": 2026,
+        "work": "Gachiakuta",
+        "theme": "OP2"
+      },
+      {
+        "id": 3208000241,
+        "title": "Somebody help us",
+        "artist": "Vaundy",
+        "artistId": 78505502,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/e2a9ee30f3884aa4c7edaba360b6ea8f/250x250-000000-80-0-0.jpg",
+        "year": 2025,
+        "work": "SAKAMOTO DAYS",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 1809854281,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/61/cd/a6/61cda692-26db-a203-e2f7-a8a87a26d7b5/mzaf_4471084144446399076.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/hyakka-ryouran-mandolin-ver-from-the-apothecary/1809854279?i=1809854281",
+        "title": "Hyakka Ryouran",
+        "original": "Hyakka Ryouran (百花繚乱)",
+        "artist": "Lilas Ikuta",
+        "artistId": 106606492,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/6c/24/3b/6c243b48-44dc-25d7-04f7-bc08de1ada05/199999238720.png/250x250bb.jpg",
+        "year": 2025,
+        "work": "The Apothecary Diaries Season 2",
+        "theme": "OP1"
+      },
+      {
+        "id": 3454556691,
+        "title": "You Can't Run From Yourself",
+        "artist": "AURORA",
+        "artistId": 7699874,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0aeea8129cbf144483040604b42549fd/250x250-000000-80-0-0.jpg",
+        "year": 2025,
+        "work": "Kaiju No. 8 Season 2",
+        "theme": "ED1"
+      },
+      {
+        "id": 3853598131,
+        "title": "Beautiful Colors",
+        "artist": "OneRepublic",
+        "artistId": 74398,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/2eef68ba8f19df2a06b8fc74ee1cae1d/250x250-000000-80-0-0.jpg",
+        "year": 2025,
+        "work": "Kaiju No. 8 Season 2",
+        "theme": "ED2"
+      },
+      {
+        "id": 3553060011,
+        "title": "Actor",
+        "artist": "Lilas Ikuta",
+        "artistId": 106606492,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/fb039d3ed85b73ffdbea792320551332/250x250-000000-80-0-0.jpg",
+        "year": 2025,
+        "work": "SPY x FAMILY Season 3",
+        "theme": "ED2"
       },
       {
         "id": 3323685371,
@@ -26415,14 +28325,6 @@
         "artistId": 14475725,
         "cover": "https://cdn-images.dzcdn.net/images/cover/c51700af73c9c6c0690333b57c090d28/250x250-000000-80-0-0.jpg",
         "year": 2021
-      },
-      {
-        "id": 3434329711,
-        "title": "HUGs",
-        "artist": "Paledusk",
-        "artistId": 11335164,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/11e2c4b66d897d0ad9c960fd9740f6c2/250x250-000000-80-0-0.jpg",
-        "year": 2025
       }
     ]
   },
@@ -28163,10 +30065,26 @@
       {
         "id": 130533140,
         "title": "Los Globos del Cielo",
-        "artist": "Pedro Suarez-Vertiz",
+        "artist": "Pedro Suárez-Vértiz",
         "artistId": 266282,
         "cover": "https://cdn-images.dzcdn.net/images/cover/1949720a380d8701a402eaeb941c6bb0/250x250-000000-80-0-0.jpg",
         "year": 1996
+      },
+      {
+        "id": 130533146,
+        "title": "Me Estoy Enamorando",
+        "artist": "Pedro Suárez-Vértiz",
+        "artistId": 266282,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/1949720a380d8701a402eaeb941c6bb0/250x250-000000-80-0-0.jpg",
+        "year": 1996
+      },
+      {
+        "id": 3538070,
+        "title": "Igual Que Ayer",
+        "artist": "Los Enanitos Verdes",
+        "artistId": 133049,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ead1c2c48568faad177c85e59a511780/250x250-000000-80-0-0.jpg",
+        "year": 1992
       },
       {
         "id": 3538928,
@@ -40396,14 +42314,6 @@
         "year": 1998
       },
       {
-        "id": 7481039,
-        "title": "La Danza de los Mirlos",
-        "artist": "Los Mirlos",
-        "artistId": 83786,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/b70d038f015d5deb12c2f7041470bbf3/250x250-000000-80-0-0.jpg",
-        "year": 1994
-      },
-      {
         "id": 123123262,
         "title": "La Novia",
         "artist": "Los Shapis",
@@ -46852,12 +48762,12 @@
         "year": 2020
       },
       {
-        "id": 3023936951,
-        "title": "We Might Even Be Falling In Love (Duet)",
+        "id": 1036664362,
+        "title": "Experience",
         "artist": "Victoria Monét",
         "artistId": 5000503,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/e7ac1e0497a25017f1ca49115bc05f41/250x250-000000-80-0-0.jpg",
-        "year": 2024
+        "cover": "https://cdn-images.dzcdn.net/images/cover/cf725b00422d19512a78fd5febe8cb16/250x250-000000-80-0-0.jpg",
+        "year": 2020
       },
       {
         "id": 2481308251,
@@ -47816,13 +49726,11 @@
     ],
     "2010": [
       {
-        "itunesId": 617154366,
-        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/57/a5/85/57a585aa-f1bc-7619-881b-f8a04a5541d5/mzaf_6906185026678279401.plus.aac.p.m4a",
-        "link": "https://music.apple.com/us/album/get-lucky/617154241?i=617154366",
-        "title": "Get Lucky (Radio Edit)",
+        "id": 66609426,
+        "title": "Get Lucky",
         "artist": "Daft Punk",
         "artistId": 27,
-        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/e8/43/5f/e8435ffa-b6b9-b171-40ab-4ff3959ab661/886443919266.jpg/250x250bb.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/bc49adb87758e0c8c4e508a9c5cce85d/250x250-000000-80-0-0.jpg",
         "year": 2013
       },
       {
@@ -47834,11 +49742,11 @@
         "year": 2013
       },
       {
-        "id": 66609426,
-        "title": "Get Lucky",
+        "id": 67238733,
+        "title": "Lose Yourself to Dance",
         "artist": "Daft Punk",
         "artistId": 27,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/bc49adb87758e0c8c4e508a9c5cce85d/250x250-000000-80-0-0.jpg",
+        "cover": "https://cdn-images.dzcdn.net/images/cover/311bba0fc112d15f72c8b5a65f0456c1/250x250-000000-80-0-0.jpg",
         "year": 2013
       },
       {
@@ -49875,7 +51783,8 @@
         "artist": "Bee Gees",
         "artistId": 1450,
         "cover": "https://cdn-images.dzcdn.net/images/cover/315772aec36013c1c0653d9dee37cffd/250x250-000000-80-0-0.jpg",
-        "year": 1977
+        "year": 1977,
+        "work": "Saturday Night Fever"
       },
       {
         "id": 139138751,
@@ -49907,7 +51816,8 @@
         "artist": "Bill Conti",
         "artistId": 4645,
         "cover": "https://cdn-images.dzcdn.net/images/cover/a91857b1f8f6c4719f06613f2b08b1a1/250x250-000000-80-0-0.jpg",
-        "year": 1979
+        "year": 1979,
+        "work": "Rocky"
       },
       {
         "id": 4639913,
@@ -49915,7 +51825,8 @@
         "artist": "Isaac Hayes",
         "artistId": 2197,
         "cover": "https://cdn-images.dzcdn.net/images/cover/11f77df358a67e0b36afc566468dfd69/250x250-000000-80-0-0.jpg",
-        "year": 1971
+        "year": 1971,
+        "work": "Shaft"
       },
       {
         "id": 626294,
@@ -49941,7 +51852,8 @@
         "artist": "John Williams",
         "artistId": 805,
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/29/1c/17/291c1798-5d54-9b64-4b89-a19805cec0f8/18UMGIM22119.rgb.jpg/250x250bb.jpg",
-        "year": 1977
+        "year": 1977,
+        "work": "Star Wars"
       },
       {
         "id": 487042522,
@@ -50055,7 +51967,8 @@
         "artist": "Harold Faltermeyer",
         "artistId": 8631,
         "cover": "https://cdn-images.dzcdn.net/images/cover/659600e8054e5ad3c5594a18cffc9bc8/250x250-000000-80-0-0.jpg",
-        "year": 1984
+        "year": 1984,
+        "work": "Beverly Hills Cop"
       },
       {
         "id": 38988191,
@@ -50071,7 +51984,8 @@
         "artist": "Survivor",
         "artistId": 39,
         "cover": "https://cdn-images.dzcdn.net/images/cover/e66b5d3a40f69690c1633afb73cc590c/250x250-000000-80-0-0.jpg",
-        "year": 1982
+        "year": 1982,
+        "work": "Rocky III"
       },
       {
         "id": 72004656,
@@ -50079,7 +51993,8 @@
         "artist": "Kenny Loggins",
         "artistId": 3855,
         "cover": "https://cdn-images.dzcdn.net/images/cover/56ccdb1345c53f922276f4822b2d7905/250x250-000000-80-0-0.jpg",
-        "year": 1984
+        "year": 1984,
+        "work": "Footloose"
       },
       {
         "id": 7675051,
@@ -50095,7 +52010,8 @@
         "artist": "Berlin",
         "artistId": 171,
         "cover": "https://cdn-images.dzcdn.net/images/cover/021a1143e9f19493379b8cf01fa1c7c5/250x250-000000-80-0-0.jpg",
-        "year": 1986
+        "year": 1986,
+        "work": "Top Gun"
       },
       {
         "id": 62419007,
@@ -50127,7 +52043,8 @@
         "artist": "Simple Minds",
         "artistId": 2454,
         "cover": "https://cdn-images.dzcdn.net/images/cover/ceef18218a8d3e16eccd3ce195752cd8/250x250-000000-80-0-0.jpg",
-        "year": 1985
+        "year": 1985,
+        "work": "The Breakfast Club"
       },
       {
         "id": 2847445,
@@ -50307,7 +52224,8 @@
         "artist": "Céline Dion",
         "artistId": 198,
         "cover": "https://cdn-images.dzcdn.net/images/cover/177346106112348e15ec4f9add0c1ef4/250x250-000000-80-0-0.jpg",
-        "year": 1997
+        "year": 1997,
+        "work": "Titanic"
       },
       {
         "id": 1182159,
@@ -50331,7 +52249,8 @@
         "artist": "Coolio",
         "artistId": 99,
         "cover": "https://cdn-images.dzcdn.net/images/cover/a123b2c32996a8c8664a82cb4219ce0c/250x250-000000-80-0-0.jpg",
-        "year": 1995
+        "year": 1995,
+        "work": "Dangerous Minds"
       },
       {
         "id": 626417,
@@ -50541,7 +52460,8 @@
         "artist": "Eminem",
         "artistId": 13,
         "cover": "https://cdn-images.dzcdn.net/images/cover/e2b36a9fda865cb2e9ed1476b6291a7d/250x250-000000-80-0-0.jpg",
-        "year": 2002
+        "year": 2002,
+        "work": "8 Mile"
       },
       {
         "id": 2438245,
@@ -50785,7 +52705,8 @@
         "artist": "Adele",
         "artistId": 75798,
         "cover": "https://cdn-images.dzcdn.net/images/cover/81e6d7baa7f47b804704922412e7a014/250x250-000000-80-0-0.jpg",
-        "year": 2012
+        "year": 2012,
+        "work": "Skyfall"
       },
       {
         "id": 72371930,
@@ -50793,7 +52714,8 @@
         "artist": "Idina Menzel",
         "artistId": 7023,
         "cover": "https://cdn-images.dzcdn.net/images/cover/f669aa7623ad8af5fbeb5a196346013a/250x250-000000-80-0-0.jpg",
-        "year": 2013
+        "year": 2013,
+        "work": "Frozen"
       },
       {
         "id": 701326562,
@@ -50817,7 +52739,8 @@
         "artist": "Lady Gaga",
         "artistId": 75491,
         "cover": "https://cdn-images.dzcdn.net/images/cover/88a8288e14f61ffa39c14ac2ef9210d8/250x250-000000-80-0-0.jpg",
-        "year": 2018
+        "year": 2018,
+        "work": "A Star Is Born"
       },
       {
         "id": 107900036,
@@ -50946,14 +52869,6 @@
         "year": 2010
       },
       {
-        "id": 117729426,
-        "title": "Main Title",
-        "artist": "Ramin Djawadi",
-        "artistId": 67835,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/4ce4670f1bfa1773cb2f068c43d2a7d1/250x250-000000-80-0-0.jpg",
-        "year": 2013
-      },
-      {
         "id": 72371923,
         "title": "Do You Want to Build a Snowman?",
         "artist": "Kristen Bell",
@@ -50980,16 +52895,6 @@
     ],
     "2020": [
       {
-        "itunesId": 6808504912,
-        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/d0/3c/b1/d03cb1d2-7c4b-79ba-09f4-8e896d00a72a/mzaf_13731772018943299339.plus.aac.p.m4a",
-        "link": "https://music.apple.com/us/album/jaws-main-title/6808504529?i=6808504912",
-        "title": "Jaws: Main Title",
-        "artist": "John Williams",
-        "artistId": 805,
-        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/d6/e6/0c/d6e60cca-7f29-640f-b24a-f9744236d6e0/cover.jpg/250x250bb.jpg",
-        "year": 2026
-      },
-      {
         "id": 99930576,
         "title": "Tubular Bells",
         "artist": "Mike Oldfield",
@@ -51011,7 +52916,8 @@
         "artist": "Billie Eilish",
         "artistId": 9635624,
         "cover": "https://cdn-images.dzcdn.net/images/cover/2562b8d68b75635bb2d4b92dc7ed9ab5/250x250-000000-80-0-0.jpg",
-        "year": 2023
+        "year": 2023,
+        "work": "Barbie"
       },
       {
         "id": 877873612,
@@ -51027,7 +52933,8 @@
         "artist": "Ryan Gosling",
         "artistId": 8656514,
         "cover": "https://cdn-images.dzcdn.net/images/cover/bf65337238582a19ee63f35de819ac78/250x250-000000-80-0-0.jpg",
-        "year": 2023
+        "year": 2023,
+        "work": "Barbie"
       },
       {
         "id": 2299840635,
@@ -51115,7 +53022,8 @@
         "artist": "HUNTR/X",
         "artistId": 330311461,
         "cover": "https://cdn-images.dzcdn.net/images/cover/e54bda0628749119f7a9a05b71b40283/250x250-000000-80-0-0.jpg",
-        "year": 2025
+        "year": 2025,
+        "work": "KPop Demon Hunters"
       },
       {
         "id": 3531066331,
@@ -51147,7 +53055,8 @@
         "artist": "Doja Cat",
         "artistId": 5578942,
         "cover": "https://cdn-images.dzcdn.net/images/cover/ad53860ee3ef4e28aa48bbe4132a54e5/250x250-000000-80-0-0.jpg",
-        "year": 2022
+        "year": 2022,
+        "work": "Elvis"
       },
       {
         "id": 1535046792,

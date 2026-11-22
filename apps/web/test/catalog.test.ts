@@ -8,6 +8,7 @@ import { catalogPool, poolEras, byDecade } from "../src/play/pool";
 import { catalog, warmChartCache } from "../src/play/catalog";
 import { refreshCatalog, refreshSource } from "../src/play/refresh";
 import curated from "../src/play/curated.json";
+import { answerKey } from "../src/play/quiz";
 import { mergeAnonOutcomes } from "../src/play/outcomes";
 
 const origin = "https://earshot.rising.sh";
@@ -285,6 +286,27 @@ describe("round outcomes", () => {
 });
 
 describe("curated sources", () => {
+  it("lists each song once per category, whatever cut it came as", () => {
+    const repeats: string[] = [];
+    for (const [slug, decades] of Object.entries(curated)) {
+      const seen = new Map<string, string>();
+      const tracks: { artist: string; title: string; work?: string }[] =
+        Object.values(decades).flat();
+      // Songs from works come credited to covers and romanized names, so
+      // there the title alone names the song.
+      const byTitle = tracks.some((track) => track.work);
+      for (const track of tracks) {
+        const title = answerKey(track.title);
+        const key = byTitle ? title : `${track.artist}|${title}`;
+        const held = seen.get(key);
+        if (held !== undefined)
+          repeats.push(`${slug}: ${held} / ${track.title}`);
+        else seen.set(key, track.title);
+      }
+    }
+    expect(repeats).toEqual([]);
+  });
+
   it(
     "fills every curated source from the bundle without a request",
     {

@@ -1005,8 +1005,14 @@ stops when the next round loads or the game ends.
     seed may pin its Deezer, iTunes or kworb id, or set `kworb: false` when
     kworb's accent-folded name match finds another act. A song Deezer cannot
     preview falls back to the artist's iTunes track, stored with its preview URL
-    and Apple Music link. Two cuts of one song (same artist, same folded title)
-    keep the first.
+    and Apple Music link.
+  - A list holds one cut of each song. Two cuts share the folded title outside
+    its brackets and the artist's name. In Anime and Soundtracks, whose seeds
+    name works, the title alone is the key, because one theme comes credited to
+    its singer, a cover, a duet partner or a romanized name. The song keeps its
+    first cut's place in popularity order, and a plain cut wins over one marked
+    `Version`, `Ver.`, `Radio Edit` or `Rerecorded`. When that cut misses its
+    decade or the artist's cap, the next cut is tried.
   - A title in Han, kana or hangul is anchored on the iTunes track first, and
     the US store's name for it (`lookup?id=&country=US`) is its Latin name.
     Deezer romanizes some titles (紅蓮華 is "Gurenge") and translates others, so
@@ -1017,8 +1023,9 @@ stops when the next round loads or the game ends.
     as `original`. The run prints how each such track matched for review. Anime
     sets `itunesStore: "JP"`: the US store lacks most 1980s themes.
   - Run `node scripts/curate.ts [CATEGORY...]` from `apps/web`, review the
-    printed lists, and commit the JSON; `--list "ARTIST"` prints one artist's
-    ranked songs with their years.
+    printed lists, run `mise run fix` (the script writes JSON that
+    `oxfmt --check` rejects), and commit the JSON; `--list "ARTIST"` prints one
+    artist's ranked songs with their years.
 - **Eras.** A track's decade comes from its year, the answer-year override
   first. A category with at least 20 playable tracks in a decade offers that
   decade as a chip under its hub tile; the tile itself starts a game on the

@@ -19,6 +19,7 @@ import { join } from "node:path";
 
 interface ArtistSeed {
   name: string;
+  canonical?: string;
   // An artist name that matches the wrong account somewhere pins its id. false
   // skips kworb, whose name match folds accents: "BoA" finds the band bôa.
   kworb?: string | false;
@@ -47,6 +48,13 @@ interface CategorySeed {
   // keyed by the decade the playlist covers or "any". They are the hits an
   // artist seed misses, and a decade key bounds the year a lookup may give.
   songs?: Record<string, string[]>;
+  work?: Record<string, string>;
+  themes?: Record<string, string>;
+}
+
+interface TrackMetadata {
+  works: Map<string, string>;
+  themes: Map<string, string>;
 }
 
 interface Song {
@@ -70,6 +78,8 @@ export interface CuratedTrack {
   artistId: number | null;
   cover: string | null;
   year: number;
+  work?: string;
+  theme?: string;
 }
 
 const root = new URL("..", import.meta.url).pathname;
@@ -139,7 +149,7 @@ export function fold(text: string) {
 }
 
 const versionWords =
-  /\b(live|remix|mix|demo|instrumental|karaoke|acoustic|acústic[oa]|en vivo|unplugged|mtv|session|rehearsal|commentary|interview|sped up|slowed|remake|cover|tv size|tv version|first take|off vocal)\b/i;
+  /\b(live|remix|mix|demo|instrumental|karaoke|acoustic|acústic[oa]|en vivo|unplugged|mtv|session|rehearsal|commentary|interview|sped up|slowed|remake|cover|tv size|tv version|first take|off[ -]vocal)\b/i;
 
 // Strips what a service appends to the song's own name: " - Remastered 2011",
 // "(feat. X)", "[2015 Remaster]".
@@ -595,6 +605,45 @@ async function artistSongs(seed: ArtistSeed) {
   );
 }
 
+// Two cuts of one song share the title outside its brackets: "Fly Me to the
+// Moon (Rei #5 Version)" is "Fly Me to the Moon". Elsewhere they also share
+// the artist's name, since an iTunes-only cut has no Deezer artist id. In a
+// category of songs from works (anime, soundtracks) one song comes credited
+// to its singer, a cover, a duet partner or a romanized name, so the title
+// alone is the key; two songs that share a title would share the answer.
+type Cut = { artist: string; title: string };
+
+const cutKey = (byTitle: boolean) => (track: Cut) =>
+  byTitle
+    ? fold(coreTitle(track.title))
+    : `${fold(track.artist)}|${fold(coreTitle(track.title))}`;
+
+// A bracketed "Version" is not dropped outright, since "(Taylor's Version)"
+// may be the only cut, but it loses to a plain cut of the same song.
+const versionCut = (title: string) =>
+  isVersion(title) ||
+  /[([][^)\]]*\b(?:version|ver\.?|radio edit|re-?recorded)[)\]\s]/i.test(title);
+
+// Every cut of a song moves to the place of its first cut, so popularity
+// order holds, with plain cuts ahead of versions. The pick loop takes the
+// first cut that fits a decade and a cap; the others are its fallbacks.
+function plainFirst<T extends Cut>(
+  tracks: T[],
+  songKey: (track: Cut) => string,
+): T[] {
+  const cuts = new Map<string, T[]>();
+  for (const track of tracks) {
+    const key = songKey(track);
+    const group = cuts.get(key);
+    if (group) group.push(track);
+    else cuts.set(key, [track]);
+  }
+  return [...cuts.values()].flatMap((group) => [
+    ...group.filter((track) => !versionCut(track.title)),
+    ...group.filter((track) => versionCut(track.title)),
+  ]);
+}
+
 interface Picked extends CuratedTrack {
   streams: number | null;
   rank: number;
@@ -641,6 +690,7 @@ async function listedSongs(
   drop: Set<string>,
   years: Map<string, number>,
   misses: string[],
+  metadata: TrackMetadata,
 ) {
   const picked: Picked[] = [];
   for (const [key, entries] of Object.entries(seed.songs ?? {})) {
@@ -667,10 +717,16 @@ async function listedSongs(
       picked.push({
         ...(await trackFields(
           resolved,
-          resolved.deezer?.artist.name ?? artist,
+          canonicalArtist(seed, artist, resolved.deezer?.artist.name),
           null,
         )),
         year,
+        ...(metadata.works.get(songKey)
+          ? { work: metadata.works.get(songKey) }
+          : {}),
+        ...(metadata.themes.get(songKey)
+          ? { theme: metadata.themes.get(songKey) }
+          : {}),
         streams: null,
         rank,
         yearFrom: years.has(songKey) ? "seed" : `playlist ${key}`,
@@ -681,6 +737,31 @@ async function listedSongs(
   return picked;
 }
 
+function trackMetadata(seed: CategorySeed): TrackMetadata {
+  return {
+    works: new Map(
+      Object.entries(seed.work ?? {}).map(([key, value]) => [fold(key), value]),
+    ),
+    themes: new Map(
+      Object.entries(seed.themes ?? {}).map(([key, value]) => [
+        fold(key),
+        value,
+      ]),
+    ),
+  };
+}
+
+function canonicalArtist(
+  seed: CategorySeed,
+  name: string,
+  resolvedName?: string,
+) {
+  const artist = seed.artists
+    .map((raw) => (typeof raw === "string" ? { name: raw } : raw))
+    .find((entry) => sameArtist(entry.name, name));
+  return artist?.canonical ?? resolvedName ?? name;
+}
+
 async function curateCategory(slug: string, seed: CategorySeed) {
   const drop = new Set((seed.drop ?? []).map((key) => fold(key)));
   const years = new Map(
@@ -688,6 +769,7 @@ async function curateCategory(slug: string, seed: CategorySeed) {
   );
   const picked: Picked[] = [];
   const misses: string[] = [];
+  const metadata = trackMetadata(seed);
   for (const raw of seed.artists) {
     const artist: ArtistSeed = typeof raw === "string" ? { name: raw } : raw;
     const songs = await artistSongs(artist);
@@ -726,7 +808,15 @@ async function curateCategory(slug: string, seed: CategorySeed) {
         continue;
       }
       picked.push({
-        ...(await trackFields(resolved, artist.name, deezerId)),
+        ...(await trackFields(
+          resolved,
+          artist.canonical ?? artist.name,
+          deezerId,
+        )),
+        ...(metadata.works.get(key) ? { work: metadata.works.get(key) } : {}),
+        ...(metadata.themes.get(key)
+          ? { theme: metadata.themes.get(key) }
+          : {}),
         year,
         streams: song.streams,
         rank: song.rank,
@@ -735,7 +825,7 @@ async function curateCategory(slug: string, seed: CategorySeed) {
       });
     }
   }
-  picked.push(...(await listedSongs(seed, drop, years, misses)));
+  picked.push(...(await listedSongs(seed, drop, years, misses, metadata)));
   const byDecade = new Map<number, Picked[]>();
   for (const decade of seed.decades) byDecade.set(decade, []);
   const perArtist = new Map<string, number>();
@@ -748,14 +838,14 @@ async function curateCategory(slug: string, seed: CategorySeed) {
     ) as ArtistSeed | undefined;
     return raw?.cap ?? seed.perArtist;
   };
-  // Two cuts of one song share an artist id and a folded title.
   const seenSongs = new Set<string>();
-  for (const track of picked) {
+  const songKey = cutKey(seed.work !== undefined);
+  for (const track of plainFirst(picked, songKey)) {
     const decade = Math.floor(track.year / 10) * 10;
     const list = byDecade.get(decade);
     const who = track.artistId ?? fold(track.artist);
     const id = track.id ? `dz:${track.id}` : `it:${track.itunesId}`;
-    const song = `${who}|${fold(track.title)}`;
+    const song = songKey(track);
     if (!list || seenIds.has(id) || seenSongs.has(song)) continue;
     const used = perArtist.get(`${decade}|${who}`) ?? 0;
     if (!track.listed && used >= capOf(track.artist)) continue;
