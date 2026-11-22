@@ -5197,6 +5197,16 @@ input.room-link:focus-visible {
   font-size: 14px;
   min-height: 44px;
 }
+/* button:hover outranks a bare class, so each hover is restated here. */
+button:is(.up-next-vote, .up-next-chip):hover {
+  background: var(--neutral-2);
+}
+button.up-next-vote.is-voted:hover {
+  background: color-mix(in oklch, var(--accent-tint) 80%, var(--accent));
+}
+button.up-next-play:hover {
+  background: color-mix(in oklch, var(--accent) 90%, var(--ink));
+}
 :is(.up-next-vote, .up-next-play, .up-next-chip):active {
   box-shadow: none;
   transform: translateY(2px);
@@ -5330,17 +5340,24 @@ input.room-link:focus-visible {
   stroke-width: 2;
   width: 18px;
 }
-.pick-search input {
+/* The label draws the field and its focus ring, so the input inside drops
+   the base field's box, padding and ring. */
+.pick-search input,
+.pick-search input:focus-visible {
   appearance: none;
   background: none;
   border: 0;
+  box-shadow: none;
   color: var(--ink);
   flex: 1;
   font: inherit;
   font-size: 17px;
   font-weight: 500;
+  min-height: 0;
   min-width: 0;
   outline: 0;
+  padding: 0;
+  width: auto;
 }
 .pick-search input::-webkit-search-cancel-button {
   display: none;
