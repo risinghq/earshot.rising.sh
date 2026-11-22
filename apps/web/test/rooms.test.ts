@@ -1136,8 +1136,33 @@ describe("rooms", () => {
     };
     expect(state.players[0]).toMatchObject({ name: "ann", user: true });
     expect(state.seats).toBeGreaterThan(1);
+    await waitFor(phone, isType("moved"));
     phone.close();
     laptop.close();
+  });
+
+  it("moves a guest's seat to the device that opens its link", async () => {
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    const { code } = await createRoom();
+    const phone = await connect(code);
+    const { token } = (await join(phone, "Ann")) as { token: string };
+    const laptop = await connect(code);
+    const joined = (await join(laptop, undefined, token)) as { name: string };
+    expect(joined.name).toBe("Ann");
+    await waitFor(phone, isType("moved"));
+    const players = (await stored(code)).players as { name: string }[];
+    expect(players.map((p) => p.name)).toEqual(["Ann"]);
+    const state = (await waitFor(laptop, inPhase("lobby"))) as {
+      players: { name: string; connected: boolean }[];
+    };
+    expect(state.players[0]).toMatchObject({ name: "Ann", connected: true });
+    // Taking the seat back moves it again, the other way.
+    const back = await connect(code);
+    await join(back, undefined, token);
+    await waitFor(laptop, isType("moved"));
+    phone.close();
+    laptop.close();
+    back.close();
   });
 
   it("previews the room to a guest who has not picked a name", async () => {
@@ -1199,7 +1224,7 @@ describe("rooms", () => {
     reload.close();
   });
 
-  it("announces the sheet verdict in a live region", async () => {
+  it("announces the round's verdict in a live region", async () => {
     await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const { code } = await createRoom();
     let response = await app.fetch(
@@ -1216,6 +1241,26 @@ describe("rooms", () => {
     }
     expect(response.status).toBe(200);
     const html = await response.text();
-    expect(html).toContain('id="sheet-verdict" aria-live="polite"');
+    expect(html).toContain('id="room-verdict" aria-live="polite"');
+  });
+
+  it("draws a seat link's QR code and refuses a malformed key", async () => {
+    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    const { code } = await createRoom();
+    // The legacy test origin redirects page GETs; the sheet loads the canonical host.
+    const canonical = "https://earshot.rising.sh";
+    const seat = await app.fetch(
+      new Request(`${canonical}/play/room/${code}/seat.svg?k=abcdefgh12345678`),
+      testEnv() as never,
+    );
+    expect(seat.status).toBe(200);
+    expect(seat.headers.get("content-type")).toBe("image/svg+xml");
+    expect(seat.headers.get("cache-control")).toBe("private, no-store");
+    expect(await seat.text()).toMatch(/^<svg [^>]*viewBox="-4 -4 \d+ \d+"/);
+    const bad = await app.fetch(
+      new Request(`${canonical}/play/room/${code}/seat.svg?k=a/b`),
+      testEnv() as never,
+    );
+    expect(bad.status).toBe(404);
   });
 });

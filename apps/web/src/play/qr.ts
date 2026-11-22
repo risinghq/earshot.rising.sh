@@ -1,7 +1,33 @@
-// A QR encoder for the room's join link: byte mode, error correction level
-// M, versions 1 to 6, which covers any join URL the app builds (up to 106
-// bytes). qrMatrix returns the symbol without the quiet zone; true is a
-// dark module.
+// A QR encoder for the room's join and seat links: byte mode, error
+// correction level M, versions 1 to 6, which covers any link the app builds
+// (up to 106 bytes). qrMatrix returns the symbol without the quiet zone;
+// true is a dark module.
+
+// The symbol as one SVG path of row runs, with the viewBox that adds a
+// four-module quiet zone.
+export function qrPath(text: string) {
+  const matrix = qrMatrix(text);
+  const quiet = 4;
+  const size = matrix.length + quiet * 2;
+  const parts: string[] = [];
+  matrix.forEach((row, r) => {
+    for (let c = 0; c < matrix.length;) {
+      if (!row[c]) {
+        c += 1;
+        continue;
+      }
+      let end = c + 1;
+      while (end < matrix.length && row[end]) end += 1;
+      parts.push(`M${c} ${r}h${end - c}v1H${c}z`);
+      c = end;
+    }
+  });
+  return {
+    viewBox: `${-quiet} ${-quiet} ${size} ${size}`,
+    d: parts.join(""),
+  };
+}
+
 export function qrMatrix(text: string): boolean[][] {
   const bytes = new TextEncoder().encode(text);
   const version =

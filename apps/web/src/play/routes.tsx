@@ -43,6 +43,7 @@ import { deezerSearchArtists } from "./sources";
 import { byDecade } from "./pool";
 import { eraName } from "./eras";
 import { anonKey, anonOf, playerKeyOf } from "./outcomes";
+import { qrPath } from "./qr";
 import { isRoomCode, newRoomCode, newRoomSecret } from "./room";
 import { roomPage } from "./room-page";
 import { screenPage } from "./screen-page";
@@ -286,6 +287,28 @@ playApp.get("/room/:code/screen", async (context) => {
   if (!exists.ok) return context.html(notFoundPage(user), 404);
   const joinUrl = `${new URL(context.req.url).origin}/play/room/${code}`;
   return context.html(screenPage(code, joinUrl));
+});
+
+// The QR code of a seat's own link, which moves the seat to the device that
+// opens it. Only the seat's device holds the key, so the server just draws
+// the link it is given; the Devices sheet shows it.
+playApp.get("/room/:code/seat.svg", (context) => {
+  const code = context.req.param("code");
+  const key = context.req.query("k") ?? "";
+  if (!isRoomCode(code) || !/^[\w-]{8,64}$/.test(key))
+    return context.text("not found", 404);
+  const { viewBox, d } = qrPath(
+    `${new URL(context.req.url).origin}/play/room/${code}?k=${key}`,
+  );
+  return context.body(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}"><path d="${d}"/></svg>`,
+    200,
+    {
+      "content-type": "image/svg+xml",
+      "cache-control": "private, no-store",
+      "referrer-policy": "no-referrer",
+    },
+  );
 });
 
 playApp.get("/room/:code", async (context) => {

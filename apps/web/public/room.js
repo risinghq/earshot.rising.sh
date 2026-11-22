@@ -83,7 +83,6 @@ let typedJoin = false; // the last join carried a nickname the player typed
 let offset = 0; // server time minus local time
 let tickTimer = null;
 let playTimer = null;
-let untilTimer = null;
 let shownRound = 0; // the round number the stage was last set up for
 let openedRound = 0; // the round whose answers are open
 let revealedRound = 0;
@@ -252,6 +251,7 @@ function connect() {
   ws.onmessage = (event) => handle(JSON.parse(event.data));
   ws.onclose = (event) => {
     if (event.code === 1001) closed();
+    if (event.code === 4001) away();
     if (!gone) setTimeout(connect, 1000);
   };
 }
@@ -289,7 +289,27 @@ function closed(full = false) {
   fadeOut();
 }
 
+// The seat moved to another device, which opened its link or signed in to
+// the same account. This one stops reconnecting until it takes the seat
+// back, which moves it here again.
+function away() {
+  gone = true;
+  clearTimers();
+  fadeOut();
+  $("devices-sheet").close?.();
+  setPhase("away");
+}
+$("take-back").onclick = () => {
+  gone = false;
+  setPhase("connecting");
+  connect();
+};
+
 function handle(message) {
+  if (message.type === "moved") {
+    away();
+    return;
+  }
   if (message.type === "joined") {
     localStorage.setItem(tokenKey, message.token);
     if (typedJoin) localStorage.setItem(nicknameKey, message.name);
@@ -337,8 +357,8 @@ function error(text) {
   show(box, text !== "");
 }
 
-// The page shows one view: join, lobby, round, done or closed. CSS keys the
-// bar and header off it.
+// The page shows one view: join, lobby, round, done, closed or away. CSS
+// keys the bar and header off it.
 function setPhase(view) {
   root.dataset.phase = view;
   show($("join-panel"), view === "join");
@@ -346,6 +366,7 @@ function setPhase(view) {
   show($("round"), view === "round");
   show($("done-panel"), view === "done");
   show($("closed-panel"), view === "closed");
+  show($("away-panel"), view === "away");
 }
 
 // What every panel shows of the room itself: its category, mosaic and mode.
@@ -379,11 +400,15 @@ function render(s) {
   if (!s.you.name) return; // not seated yet; the join answer decides
   error("");
   $("room-name").textContent = `${s.category} · Room ${s.code}`;
+  for (const button of document.querySelectorAll("[data-devices]"))
+    button.toggleAttribute("data-tv", Boolean(s.screen));
   const view =
     s.phase === "lobby" ? "lobby" : s.phase === "done" ? "done" : "round";
   // The last song plays on under the final standings.
   if (view !== "round") clearTimers();
   if (view === "lobby") fadeOut();
+  // A finished game opens on its results, not on the step left open last.
+  if (view !== "done") delete $("done-panel").dataset.step;
   setPhase(view);
   renderBar(s);
   if (view === "lobby") renderLobby(s);
@@ -395,19 +420,32 @@ function render(s) {
 function clearTimers() {
   clearInterval(tickTimer);
   clearTimeout(playTimer);
-  clearInterval(untilTimer);
 }
 
 const host = (s) => s.players.find((p) => p.creator)?.name;
 const me = (s) => s.players.find((p) => p.name === s.you.name);
 
 // Segments fill with your right and wrong answers; the current round is
-// the accent one.
+// the accent one. On the reveal the round's segment is the countdown to the
+// next round: it fills in your verdict's colour until the room moves on.
 function renderBar(s) {
   const marks = s.you.marks ?? [];
   const live = s.phase === "loading" || s.phase === "playing";
   const current = live ? (s.round ?? 1) - 1 : -1;
+  const revealed = s.phase === "reveal" ? s.reveal.number - 1 : -1;
   root.querySelectorAll(".game-progress .seg").forEach((seg, i) => {
+    if (i === revealed) {
+      const mine = s.reveal.results.find((r) => r.name === s.you.name);
+      const verdict = mine?.correct ? "right" : "wrong";
+      // Restarting the fill on every state message would make it jump.
+      if (seg.dataset.reveal === verdict) return;
+      seg.className = "seg";
+      seg.dataset.reveal = verdict;
+      const ms = Math.max(0, s.reveal.until - offset - Date.now());
+      seg.style.setProperty("--next-ms", `${ms}ms`);
+      return;
+    }
+    delete seg.dataset.reveal;
     seg.className = "seg";
     if (i < marks.length)
       seg.classList.add("is-done", marks[i] ? "is-right" : "is-wrong");
@@ -482,32 +520,37 @@ function hostText(s, what) {
 
 const kindOf = (slug) => (slug.startsWith("artist-") ? "Artist" : "Genre");
 
-// Up next lists the suggestions, most votes first. Returns the top one when
-// it holds a vote, which the host's main button plays.
+// "3 suggestions · 2 of 4 voted". A player holds one vote, so the votes
+// are the voters.
+function suggestionCount(s) {
+  const list = s.suggestions ?? [];
+  if (list.length === 0) return "No suggestions yet";
+  const voters = list.reduce((sum, x) => sum + x.votes, 0);
+  const n = `${list.length} ${list.length === 1 ? "suggestion" : "suggestions"}`;
+  return `${n} · ${voters} of ${s.players.length} voted`;
+}
+
+// The Next game step lists the suggestions, most votes first. Returns the
+// top one when it holds a vote, which the host's main button plays.
 function renderUpNext(s) {
   const list = s.suggestions ?? [];
-  const voters = list.reduce((sum, x) => sum + x.votes, 0);
-  $("up-next-live").textContent = voters
-    ? `${voters} ${voters === 1 ? "vote" : "votes"}`
-    : "";
+  const top = list[0]?.votes > 0 ? list[0] : undefined;
+  $("up-next-live").textContent = suggestionCount(s);
   show($("up-next-empty"), list.length === 0);
   $("up-next-list").replaceChildren(
     ...list.map((x) => {
-      const li = el("li", "up-next-row");
-      const text = el("span", "up-next-text");
+      const li = el("li", "room-sug");
+      if (x === top) li.dataset.top = "";
+      const text = el("span", "room-sug-text");
       text.append(
         el("b", "", x.name),
         el(
           "small",
           "",
-          `${kindOf(x.slug)} · ${modeNames[x.mode]}${x.by ? ` · ${x.by}` : ""}`,
+          `${kindOf(x.slug)} · ${modeNames[x.mode]}${x.by ? ` · ${x.mine ? "you" : x.by}` : ""}`,
         ),
       );
-      const vote = el(
-        "button",
-        x.voted ? "up-next-vote is-voted" : "up-next-vote",
-        x.voted ? `Voted · ${x.votes}` : `+1 · ${x.votes}`,
-      );
+      const vote = el("button", "btn-vote", `▲ ${x.votes}`);
       vote.type = "button";
       vote.setAttribute("aria-pressed", String(x.voted));
       vote.setAttribute(
@@ -515,9 +558,9 @@ function renderUpNext(s) {
         `Vote for ${x.name}, ${x.votes} ${x.votes === 1 ? "vote" : "votes"}`,
       );
       vote.onclick = () => send({ type: "vote", id: x.id });
-      li.append(el("span", "up-next-tile", [...x.name][0] ?? "?"), text, vote);
+      li.append(el("span", "room-sug-tile", [...x.name][0] ?? "?"), text, vote);
       if (s.you.creator) {
-        const play = el("button", "up-next-play", "Play this");
+        const play = el("button", "btn-play-this", "Play this");
         play.type = "button";
         play.onclick = () => switchTo(x.slug, x.mode, true);
         li.append(play);
@@ -525,8 +568,27 @@ function renderUpNext(s) {
       return li;
     }),
   );
-  return list[0]?.votes > 0 ? list[0] : undefined;
+  // A player's own suggestion sits in its card; picking again replaces it.
+  const mine = list.find((x) => x.mine);
+  show($("mine-card"), mine !== undefined && !s.you.creator);
+  show($("mine-add"), mine === undefined || s.you.creator);
+  if (mine) $("mine-name").textContent = mine.name;
+  return top;
 }
+
+// The Next game step is a view inside the results, so the room's state
+// keeps rendering into it while it is open.
+function openNext(open, focus = true) {
+  $("done-panel").dataset.step = open ? "next" : "results";
+  show($("next-panel"), open);
+  if (focus) (open ? $("next-title") : $("next-open")).focus();
+}
+$("next-open").onclick = () => openNext(true);
+$("next-back").onclick = () => openNext(false);
+$("mine-change").onclick = () => {
+  const mine = state?.suggestions?.find((x) => x.mine);
+  openPicker("suggest", mine?.slug.startsWith("artist-") ? "artist" : "genre");
+};
 
 // The host's pick goes through the same switch the hub posts; with start,
 // the next game begins without a stop in the lobby.
@@ -768,14 +830,15 @@ function setUpRound(s) {
   revealedRound = 0;
   answered = false;
   clearTimers();
-  const label = `Round ${s.round} of ${s.rounds}`;
-  $("round-count").textContent = label;
-  player.querySelector(".player-round").textContent = label;
+  player.querySelector(".player-round").textContent =
+    `Round ${s.round} of ${s.rounds}`;
   player.classList.remove("is-reveal");
   player.querySelector(".now")?.remove();
-  show($("sheet"), false);
   show($("typed-verdict"), false);
-  $("room-slot").classList.remove("is-covered");
+  $("room-slot").removeAttribute("data-v");
+  $("slot-title").textContent = "Answered";
+  $("slot-note").textContent =
+    "The round ends early once everyone has answered.";
   $("round").dataset.phase = "question";
   const box = $("choices");
   box.className = "choices";
@@ -798,9 +861,37 @@ function setUpRound(s) {
   $("count-bar").style.setProperty("--left", "1");
 }
 
-function setWaiting(text) {
+// Before the clip starts the ring holds the round number and what to do:
+// "Round 7 of 10 · Get ready". From 900px it reads large inside the ring; a
+// phone keeps "7 of 10" in the ring and puts the words beside it, in the
+// stage's heading.
+function setWaiting(text, s) {
   player.classList.toggle("is-loading", text !== null);
-  if (text !== null) player.querySelector(".player-loading").textContent = text;
+  const ask = player.querySelector(".player-ask");
+  player.querySelector(".player-sub")?.remove();
+  if (text === null) {
+    ask.textContent = "Which song is this?";
+    return;
+  }
+  ask.after(
+    el(
+      "p",
+      "player-sub",
+      s.screen
+        ? "The clip plays on the TV."
+        : "The clip starts on every phone at once.",
+    ),
+  );
+  const ring = player.querySelector(".player-loading");
+  const number = el("b", "r-num");
+  number.append(el("span", "r-word", "Round "), String(s.round));
+  ring.replaceChildren(
+    el("small", "r-kick", "Round"),
+    number,
+    el("span", "r-of", `of ${s.rounds}`),
+    el("span", "r-go", text),
+  );
+  ask.textContent = text;
 }
 
 function renderQuestion(s) {
@@ -808,7 +899,7 @@ function renderQuestion(s) {
     setUpRound(s);
   renderChips(s);
   if (s.phase === "loading" || !s.endsAt) {
-    setWaiting("Next song");
+    setWaiting("Get ready", s);
     return;
   }
   // The clip goes to every phone at once; on a screened room it plays on
@@ -839,7 +930,7 @@ function renderQuestion(s) {
   clearTimeout(playTimer);
   if (openedRound === s.round) return;
   if (delay > 0) {
-    setWaiting(s.screen ? "Watch the TV" : "Get ready");
+    setWaiting(s.screen ? "Watch the TV" : "Get ready", s);
     playTimer = setTimeout(() => openRound(s), delay);
   } else openRound(s);
 }
@@ -906,38 +997,91 @@ function pick(button) {
   });
 }
 
-// Who has answered, never what: a chip per player under the choices.
+// The round's card: a chip per player that keeps its cell from the question
+// to the reveal. During the round it says who has answered, never what;
+// at the reveal it shows what each player scored.
+function chip(p, s, state, line) {
+  const li = el("li", "room-chip");
+  li.dataset.s = state;
+  if (p.name === s.you.name) li.classList.add("is-you");
+  const text = el("span", "c-text");
+  text.append(
+    el("b", "", p.name === s.you.name ? "You" : p.name),
+    el("small", "c-pts", line),
+  );
+  li.append(mono(p.name), text);
+  return li;
+}
+
 function renderChips(s) {
   const done = s.players.filter((p) => p.answered).length;
   $("answered-count").textContent = `${done} of ${s.players.length}`;
   $("round-chips").replaceChildren(
+    ...s.players.map((p) =>
+      p.answered
+        ? chip(p, s, "answered", "Answered")
+        : chip(p, s, "waiting", "Thinking…"),
+    ),
+  );
+}
+
+function renderResults(s, r) {
+  const results = new Map(r.results.map((result) => [result.name, result]));
+  const got = r.results.filter((result) => result.correct).length;
+  $("slot-title").textContent = "This round";
+  $("answered-count").textContent = `${got} of ${s.players.length} got it`;
+  $("round-chips").replaceChildren(
     ...s.players.map((p) => {
-      const li = el("li", "room-chip");
-      if (p.answered) li.dataset.answered = "";
-      li.append(mono(p.name, 26), p.name === s.you.name ? "You" : p.name);
-      return li;
+      const result = results.get(p.name);
+      if (result?.correct) return chip(p, s, "right", `+${result.score}`);
+      if (result?.answer) return chip(p, s, "wrong", "× +0");
+      return chip(p, s, "none", "— +0");
     }),
   );
 }
 
-// What each player scored this round, on the sheet.
-function renderPoints(s, r) {
-  const results = new Map(r.results.map((result) => [result.name, result]));
-  $("sheet-chips").replaceChildren(
-    ...s.players.map((p) => {
-      const result = results.get(p.name);
-      const li = el("li", "room-point");
-      if (p.name === s.you.name) li.classList.add("is-you");
-      if (result?.correct) li.classList.add("is-right");
-      const who = el("span", "room-point-who");
-      who.append(
-        mono(p.name, 16),
-        el("span", "", p.name === s.you.name ? "You" : p.name),
-      );
-      li.append(who, el("b", "", `+${result?.score ?? 0}`));
-      return li;
-    }),
-  );
+// "Nailed it! +782 · 2nd of 4 overall": the verdict heads the round's card.
+function fillVerdict(s, r, mine) {
+  const verdict = mine?.correct ? "right" : mine?.answer ? "wrong" : "late";
+  $("room-slot").dataset.v = verdict;
+  $("verdict-word").textContent = {
+    right: "Nailed it!",
+    wrong: "Not quite",
+    late: "Time ran out",
+  }[verdict];
+  const points = $("verdict-points");
+  const score = mine?.score ?? 0;
+  points.textContent = `+${score}`;
+  if (score > 0 && !reducedMotion) {
+    const t0 = performance.now();
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / 500);
+      points.textContent = `+${Math.round(score * k)}`;
+      if (k < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }
+  const ranked = [...s.players].sort((a, b) => b.score - a.score);
+  const place = 1 + ranked.filter((p) => p.score > (me(s)?.score ?? 0)).length;
+  $("verdict-place").textContent =
+    s.players.length > 1
+      ? `${ordinal(place)} of ${s.players.length} overall`
+      : "";
+  // A right answer's score falls with time, so the order of the right
+  // answers' scores is the order they came in.
+  const right = r.results.filter((result) => result.correct);
+  const speed =
+    mine?.correct && right.length > 1
+      ? 1 + right.filter((result) => result.score > mine.score).length
+      : 0;
+  const fastest =
+    speed === 1
+      ? "You were the fastest. "
+      : speed > 1
+        ? `You were ${ordinal(speed)} fastest. `
+        : "";
+  const next = r.number >= s.rounds ? "The results come" : "Next round";
+  $("slot-note").textContent = `${fastest}${next} when the bar above fills.`;
 }
 
 function renderReveal(s) {
@@ -953,34 +1097,10 @@ function renderReveal(s) {
     round.dataset.phase = "reveal";
     morphChoices(s, r, mine);
     fillNow(s, r);
-    fillSheet(r, mine);
     if (mine?.correct && "vibrate" in navigator) navigator.vibrate(25);
   }
-  $("room-slot").classList.add("is-covered");
-  renderPoints(s, r);
-  // Where you stand and how long until the next round. The bar empties
-  // over the reveal; the room moves on by itself.
-  const ranked = [...s.players].sort((a, b) => b.score - a.score);
-  const place = ranked.findIndex((p) => p.name === s.you.name) + 1;
-  const last = r.number >= s.rounds;
-  const total = Math.max(1, r.until - offset - Date.now());
-  const sub = () => {
-    const ms = Math.max(0, r.until - offset - Date.now());
-    const left = Math.ceil(ms / 1000);
-    const next = last ? `results in ${left} s` : `next round in ${left} s`;
-    const line = $("sheet-sub");
-    line.replaceChildren();
-    if (s.players.length > 1)
-      line.append(
-        el("strong", "", `${ordinal(place)} of ${s.players.length}`),
-        ` · ${next}`,
-      );
-    else line.append(next[0].toUpperCase() + next.slice(1));
-    $("sheet-until").style.transform = `scaleX(${Math.min(1, ms / total)})`;
-  };
-  sub();
-  clearInterval(untilTimer);
-  untilTimer = setInterval(sub, 250);
+  fillVerdict(s, r, mine);
+  renderResults(s, r);
 }
 
 function morphChoices(s, r, mine) {
@@ -1058,30 +1178,6 @@ function fillNow(s, r) {
   player.classList.add("is-reveal");
 }
 
-function fillSheet(r, mine) {
-  const sheet = $("sheet");
-  sheet.className = `sheet ${mine?.correct ? "is-good" : "is-bad"}`;
-  $("sheet-verdict").textContent = mine?.correct
-    ? "Nailed it!"
-    : mine?.answer
-      ? "Not quite"
-      : "Time ran out";
-  const points = $("sheet-points");
-  const score = mine?.score ?? 0;
-  points.classList.toggle("is-none", score === 0);
-  points.textContent = `+${score}`;
-  if (score > 0 && !reducedMotion) {
-    const t0 = performance.now();
-    const step = (t) => {
-      const k = Math.min(1, (t - t0) / 500);
-      points.textContent = `+${Math.round(score * k)}`;
-      if (k < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }
-  show(sheet, true);
-}
-
 // The final screen: your score and place, the standings (people), the
 // rounds (songs, with who got each one) and the category's board. Neither
 // list repeats the other.
@@ -1131,13 +1227,22 @@ function renderDone(s) {
   );
   const creator = s.you.creator;
   const top = renderUpNext(s);
+  // The results offer the same game again or the step that picks another;
+  // a guest sees the host's choice coming.
   show($("rematch-button"), creator);
-  // With a voted pick, playing it is the main action and Rematch steps back.
-  $("rematch-button").classList.toggle("primary", !top);
+  show($("next-rematch"), creator);
+  $("rematch-sub").textContent = `${s.category} · ${modeNames[s.mode]}`;
+  $("next-open-sub").textContent = suggestionCount(s);
+  $("next-sub").textContent = creator
+    ? "Everyone suggests and votes. You play the pick."
+    : "Suggest a genre or an artist, and vote. The host plays the pick.";
   show($("play-top"), creator && top !== undefined);
-  if (top) $("play-top").textContent = `Play ${top.name} · top vote`;
-  show($("done-wait"), !creator);
-  waitRow($("done-wait"), hostText(s, "pick the next game"), host(s));
+  if (top) $("play-top").firstChild.textContent = `Play ${top.name} `;
+  for (const id of ["done-wait", "next-wait"]) {
+    show($(id), !creator);
+    waitRow($(id), hostText(s, "pick the next game"), host(s));
+  }
+  if (!$("done-panel").dataset.step) openNext(false, false);
 
   const creators = new Set(
     s.players.filter((p) => p.creator).map((p) => p.name),
@@ -1276,6 +1381,7 @@ $("nickname").oninput = () => {
 };
 $("start-button").onclick = () => send({ type: "start" });
 $("rematch-button").onclick = () => send({ type: "start" });
+$("next-rematch").onclick = () => send({ type: "start" });
 $("play-top").onclick = () => {
   const top = state?.suggestions?.[0];
   if (top) switchTo(top.slug, top.mode, true);
@@ -1292,9 +1398,9 @@ $("typed-form").onsubmit = (event) => {
   show($("typed-form"), false);
 };
 
-// Copy and share the room's link.
-$("copy-link").onclick = () => {
-  const label = $("copy-link").querySelector("span");
+// Copy a link field's value; where the clipboard is refused, select it.
+function copyFrom(button, input) {
+  const label = button.querySelector("span");
   const done = () => {
     label.textContent = "Copied";
     setTimeout(() => {
@@ -1302,12 +1408,36 @@ $("copy-link").onclick = () => {
     }, 2000);
   };
   if (navigator.clipboard?.writeText)
-    navigator.clipboard.writeText(roomUrl).then(done, () => {
-      $("room-link").select();
-    });
-  else $("room-link").select();
+    navigator.clipboard.writeText(input.value).then(done, () => input.select());
+  else input.select();
+}
+$("copy-link").onclick = () => copyFrom($("copy-link"), $("room-link"));
+for (const button of document.querySelectorAll("[data-copy]"))
+  button.onclick = () => copyFrom(button, $(button.dataset.copy));
+for (const input of document.querySelectorAll(".room-link"))
+  input.onfocus = (event) => event.target.select();
+
+// The Devices sheet. The seat link carries this device's key; the QR code
+// comes from the server, which never stores it.
+const devices = $("devices-sheet");
+for (const button of document.querySelectorAll("[data-devices]"))
+  button.onclick = () => {
+    const key = localStorage.getItem(tokenKey) || "";
+    const seat = new URL(`/play/room/${code}`, location.origin);
+    seat.searchParams.set("k", key);
+    $("seat-link").value = seat.href;
+    $("seat-qr").src =
+      `/play/room/${code}/seat.svg?k=${encodeURIComponent(key)}`;
+    $("tv-link").value = new URL(
+      `/play/room/${code}/screen`,
+      location.origin,
+    ).href;
+    devices.showModal();
+  };
+$("devices-close").onclick = () => devices.close();
+devices.onclick = (event) => {
+  if (event.target === devices) devices.close();
 };
-$("room-link").onfocus = (event) => event.target.select();
 if (navigator.share) {
   show($("share-link"), true);
   $("share-link").onclick = () =>
@@ -1356,9 +1486,11 @@ document.addEventListener("keydown", (event) => {
     const button =
       phase === "lobby"
         ? $("start-button")
-        : phase === "done"
-          ? $("rematch-button")
-          : null;
+        : phase !== "done"
+          ? null
+          : $("done-panel").dataset.step === "next"
+            ? $("play-top")
+            : $("rematch-button");
     if (button && !button.hidden) {
       event.preventDefault();
       button.click();

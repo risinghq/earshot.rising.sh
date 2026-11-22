@@ -45,6 +45,107 @@ const chevronIcon = (
   </svg>
 );
 
+const backIcon = (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M15 6l-6 6 6 6" />
+  </svg>
+);
+const devicesIcon = (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <rect x="2" y="4" width="14" height="10" rx="2" />
+    <path d="M6 18h6" />
+    <rect x="16" y="9" width="6" height="11" rx="1.5" />
+  </svg>
+);
+const lockIcon = (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <rect x="5" y="11" width="14" height="10" rx="2" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+  </svg>
+);
+
+const devicesButton = (
+  <button
+    class="room-devices"
+    type="button"
+    data-devices
+    aria-haspopup="dialog"
+  >
+    {devicesIcon}
+    Devices
+  </button>
+);
+
+// A field holding a link, with its copy button; room.js wires [data-copy].
+function linkField(id: string, label: string, value = "") {
+  return (
+    <div class="room-share">
+      <label class="sr-only" for={id}>
+        {label}
+      </label>
+      <input class="room-link" id={id} type="text" readonly value={value} />
+      <button class="room-copy" type="button" data-copy={id}>
+        {copyIcon}
+        <span>Copy</span>
+      </button>
+    </div>
+  );
+}
+
+// The Devices sheet: put the room on a TV, or move this seat to another
+// device. The seat link carries the seat's key, which only this device
+// holds, so room.js fills it and its QR code.
+function devicesSheet(code: string) {
+  const screen = `/play/room/${code}/screen`;
+  return (
+    <dialog
+      class="pick-sheet room-sheet"
+      id="devices-sheet"
+      aria-labelledby="devices-title"
+    >
+      <span class="pick-grab" aria-hidden="true" />
+      <div class="pick-head">
+        <h2 id="devices-title">Devices</h2>
+        <button
+          class="pick-close"
+          id="devices-close"
+          type="button"
+          aria-label="Close"
+        >
+          {closeIcon}
+        </button>
+      </div>
+      <section class="room-dev-item" aria-labelledby="dev-tv">
+        <h3 id="dev-tv">Show on a TV</h3>
+        <p id="dev-tv-note">
+          Open this link in the TV’s browser. While it is open, the clips play
+          there and phones only answer.
+        </p>
+        {linkField("tv-link", "TV link", screen)}
+        <a class="btn is-block" href={screen} target="_blank" rel="noopener">
+          {tvIcon}
+          Open the TV screen here
+        </a>
+      </section>
+      <section class="room-dev-item is-move" aria-labelledby="dev-move">
+        <img class="room-dev-qr" id="seat-qr" alt="" width={112} height={112} />
+        <div class="room-dev-text">
+          <h3 id="dev-move">Move to another device</h3>
+          <p>
+            Scan the code or open the link there. Your seat moves with your
+            score and streak.
+          </p>
+        </div>
+        {linkField("seat-link", "Your seat link")}
+        <p class="room-seat-warn">
+          {lockIcon}
+          This link is your seat. Don’t share it: whoever opens it plays as you.
+        </p>
+      </section>
+    </dialog>
+  );
+}
+
 const closeIcon = (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M6 6l12 12M18 6L6 18" />
@@ -146,12 +247,14 @@ export function roomPage(code: string, user: SignedInUser | null) {
           score: 0,
           streak: 0,
           mode: "",
+          tools: devicesButton,
         })}
         <div class="results-head">
           <a class="results-quit" href="/" aria-label="Leave the room">
             {quitIcon}
           </a>
           <b id="room-name">Room {code}</b>
+          {devicesButton}
         </div>
         <noscript>
           <p class="meta">
@@ -296,7 +399,6 @@ export function roomPage(code: string, user: SignedInUser | null) {
         </section>
 
         <div id="round" data-phase="question" hidden>
-          <p class="label round-count" id="round-count" />
           <ClipPlayer
             audioId="clip"
             toggleId="clip-toggle"
@@ -330,31 +432,25 @@ export function roomPage(code: string, user: SignedInUser | null) {
               <dd id="typed-given" />
             </div>
           </dl>
+          {/* One card follows the round: who answered, then at the reveal
+              what each player scored, under your verdict. From 900px the
+              verdict takes the question's slot; on a phone the card turns
+              into the bottom sheet with the verdict as its header. */}
           <div class="room-slot" id="room-slot">
-            <p class="room-slot-head">
-              <span>Answered</span>
-              <b id="answered-count" />
+            <p class="room-verdict" id="room-verdict" aria-live="polite">
+              <b class="v-word" id="verdict-word" />
+              <b class="v-pts" id="verdict-points" />
+              <span class="v-place" id="verdict-place" />
             </p>
-            <ul class="room-chips" id="round-chips" aria-label="Players" />
-            <p class="room-note">
-              The round ends early once everyone has answered.
-            </p>
-          </div>
-          <div class="sheet" id="sheet" hidden>
-            <div class="sheet-in">
-              <b class="sheet-heading" id="sheet-verdict" aria-live="polite" />
-              <span class="sheet-points" id="sheet-points" />
-              <p class="sheet-sub">
-                <span id="sheet-sub" />
-                <span class="room-until" aria-hidden="true">
-                  <i id="sheet-until" />
-                </span>
+            <div class="room-slot-card">
+              <p class="room-slot-head">
+                <span id="slot-title">Answered</span>
+                <b id="answered-count" />
               </p>
-              <ul
-                class="room-points"
-                id="sheet-chips"
-                aria-label="This round"
-              />
+              <ul class="room-chips" id="round-chips" aria-label="Players" />
+              <p class="room-note" id="slot-note">
+                The round ends early once everyone has answered.
+              </p>
             </div>
           </div>
         </div>
@@ -373,45 +469,84 @@ export function roomPage(code: string, user: SignedInUser | null) {
               <ol class="score-pips" id="score-pips" />
             </section>
             <dl class="results-stats" id="done-stats" />
-            <section
-              class="up-next"
-              id="up-next"
-              aria-labelledby="up-next-title"
-            >
-              <div class="up-next-head">
-                <h2 id="up-next-title">Up next</h2>
-                <small class="up-next-live" id="up-next-live" />
-              </div>
-              <p class="up-next-empty" id="up-next-empty">
-                Suggest a genre or an artist. Everyone votes, and the host plays
-                the pick.
-              </p>
-              <ol class="up-next-list" id="up-next-list" />
-              <div class="up-next-add">
-                <button class="up-next-chip" type="button" data-pick="genre">
-                  + Genre
-                </button>
-                <button class="up-next-chip" type="button" data-pick="artist">
-                  + Artist
-                </button>
-              </div>
-            </section>
-            <SaveScoreCard id="done-save" title="" next={back} hidden />
-            <div class="results-actions room-actions">
-              <PillButton
-                variant="primary"
-                large
+            <div class="results-actions room-actions room-done-actions">
+              <button
+                class="btn is-primary is-lg room-two-line"
                 id="rematch-button"
                 type="button"
               >
-                Rematch <kbd class="room-kbd">Enter</kbd>
-              </PillButton>
-              <PillButton variant="primary" large id="play-top" type="button">
-                Play the top vote
-              </PillButton>
+                <span>
+                  Rematch <kbd class="room-kbd">Enter</kbd>
+                </span>
+                <small id="rematch-sub" />
+              </button>
+              <button
+                class="btn is-lg room-two-line"
+                id="next-open"
+                type="button"
+              >
+                <span>Next game →</span>
+                <small id="next-open-sub" />
+              </button>
               <p class="room-wait" id="done-wait" />
             </div>
+            <SaveScoreCard id="done-save" title="" next={back} hidden />
           </div>
+          {/* Next game is a step of the results, not a sheet: choosing
+              takes the room a minute, and everyone sees the same list. */}
+          <section
+            class="room-next"
+            id="next-panel"
+            aria-labelledby="next-title"
+            hidden
+          >
+            <button class="room-back" id="next-back" type="button">
+              {backIcon}
+              Results
+            </button>
+            <div class="room-next-head">
+              <h1 id="next-title" tabindex={-1}>
+                Next game
+              </h1>
+              <p id="next-sub" />
+            </div>
+            <section class="room-sugs" aria-labelledby="sugs-title">
+              <div class="room-sugs-head">
+                <h2 id="sugs-title">Suggestions</h2>
+                <small id="up-next-live" />
+              </div>
+              <p class="room-sug-empty" id="up-next-empty">
+                Nothing yet. Suggest a genre or an artist, and everyone votes.
+              </p>
+              <ol class="room-sug-list" id="up-next-list" />
+            </section>
+            <div class="room-mine" id="mine-card" hidden>
+              <p>
+                <small>Your suggestion</small>
+                <b id="mine-name" />
+              </p>
+              <button class="room-mine-change" id="mine-change" type="button">
+                Change
+              </button>
+            </div>
+            <div class="room-mine-add" id="mine-add">
+              <button class="btn" type="button" data-pick="genre">
+                + Genre
+              </button>
+              <button class="btn" type="button" data-pick="artist">
+                + Artist
+              </button>
+            </div>
+            <div class="results-actions room-actions room-next-actions">
+              <button class="btn is-lg" id="next-rematch" type="button">
+                Rematch
+              </button>
+              <button class="btn is-primary is-lg" id="play-top" type="button">
+                Play the top vote <kbd class="room-kbd">Enter</kbd>
+              </button>
+              <p class="room-wait" id="next-wait" />
+            </div>
+          </section>
           <section class="results-card room-standings">
             <h2>
               Standings <small>this room</small>
@@ -467,6 +602,26 @@ export function roomPage(code: string, user: SignedInUser | null) {
           </div>
         </section>
 
+        <section class="room-away" id="away-panel" hidden>
+          <div class="room-away-card">
+            <span class="room-away-icon">{devicesIcon}</span>
+            <h1>Playing on your other device</h1>
+            <p id="away-text">
+              Your seat moved to another device, with your score and streak.
+            </p>
+            <button
+              class="btn is-primary is-lg is-block"
+              id="take-back"
+              type="button"
+            >
+              Take the seat back here
+            </button>
+            <p class="room-away-note">
+              The other device will show this screen instead.
+            </p>
+          </div>
+        </section>
+
         <template id="now-template">
           {nowPlaying(
             {
@@ -484,6 +639,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
         <template id="cross-template">{crossIcon}</template>
         {quitDialog()}
         {pickSheet(code)}
+        {devicesSheet(code)}
         <script src="/wave.js" defer />
         <script src="/room.js" defer />
       </div>

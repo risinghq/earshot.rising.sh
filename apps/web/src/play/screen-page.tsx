@@ -1,36 +1,21 @@
 import { Mosaic } from "../ui/person";
 import { waveBars } from "../ui/player";
 import { soundMark } from "../ui/shell";
-import { qrMatrix } from "./qr";
+import { qrPath } from "./qr";
 import { roundsPerGame } from "./quiz";
 
 // The join link's QR code is rendered on the server: the screen needs it
 // before the socket connects, and a static SVG needs no client library.
 function qrSvg(text: string) {
-  const matrix = qrMatrix(text);
-  const quiet = 4;
-  const size = matrix.length + quiet * 2;
-  const parts: string[] = [];
-  matrix.forEach((row, r) => {
-    for (let c = 0; c < matrix.length;) {
-      if (!row[c]) {
-        c += 1;
-        continue;
-      }
-      let end = c + 1;
-      while (end < matrix.length && row[end]) end += 1;
-      parts.push(`M${c} ${r}h${end - c}v1H${c}z`);
-      c = end;
-    }
-  });
+  const { viewBox, d } = qrPath(text);
   return (
     <svg
       class="tv-qr"
-      viewBox={`${-quiet} ${-quiet} ${size} ${size}`}
+      viewBox={viewBox}
       role="img"
       aria-label={`QR code for ${text}`}
     >
-      <path d={parts.join("")} />
+      <path d={d} />
     </svg>
   );
 }
