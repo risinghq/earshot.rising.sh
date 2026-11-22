@@ -16,6 +16,7 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fold, sameArtist } from "./artist-names.ts";
 
 interface ArtistSeed {
   name: string;
@@ -52,6 +53,10 @@ interface CategorySeed {
   themes?: Record<string, string>;
   // Two cuts of one song share their title alone, whoever is credited.
   titleKey?: boolean;
+  // The acts of each generation, keyed by its first year (src/play/eras.ts).
+  // A category with generations files a song under its act's generation,
+  // not its release decade; decades then only bound the year lookups.
+  generations?: Record<string, string[]>;
 }
 
 interface TrackMetadata {
@@ -143,13 +148,6 @@ async function fetchText(url: string): Promise<string> {
 const fetchJson = async <T>(url: string) =>
   JSON.parse(await fetchText(url)) as T;
 
-export function fold(text: string) {
-  return text
-    .normalize("NFKD")
-    .replace(/[^\p{L}\p{N}]/gu, "")
-    .toLowerCase();
-}
-
 const versionWords =
   /\b(live|remix|mix|demo|instrumental|karaoke|acoustic|acústic[oa]|en vivo|unplugged|mtv|session|rehearsal|commentary|interview|sped up|slowed|remake|cover|tv size|tv version|first take|off[ -]vocal)\b/i;
 
@@ -157,7 +155,7 @@ const versionWords =
 // "(feat. X)", "[2015 Remaster]".
 export function baseTitle(title: string) {
   return title
-    .replace(/\s+-\s+.*$/, "")
+    .replace(/\s+[-–—]\s+.*$/, "")
     .replace(/\s*[([](?:feat|ft|with|from|remaster|\d{4}).*?[)\]]/gi, "")
     .replace(/\s*[([][^)\]]*remaster[^)\]]*[)\]]/gi, "")
     .trim();
@@ -264,12 +262,6 @@ async function deezerTopSongs(seed: ArtistSeed): Promise<Song[]> {
   }
   return songs;
 }
-
-const sameArtist = (a: string, b: string) => {
-  const x = fold(a);
-  const y = fold(b);
-  return x === y || x.startsWith(y) || y.startsWith(x);
-};
 
 const deezerSearch = async (query: string) =>
   (
@@ -624,7 +616,12 @@ const cutKey = (byTitle: boolean) => (track: Cut) =>
 // may be the only cut, but it loses to a plain cut of the same song.
 const versionCut = (title: string) =>
   isVersion(title) ||
-  /[([][^)\]]*\b(?:version|ver\.?|radio edit|re-?recorded)[)\]\s]/i.test(title);
+  /[([][^)\]]*\b(?:version|ver\.?|radio edit|re-?recorded)[)\]\s]/i.test(
+    title,
+  ) ||
+  /\s[-–—]\s.*\b(?:version|ver\.?|radio edit|re-?recorded)(?:\s|$)/i.test(
+    title,
+  );
 
 // Every cut of a song moves to the place of its first cut, so popularity
 // order holds, with plain cuts ahead of versions. The pick loop takes the
@@ -828,8 +825,21 @@ async function curateCategory(slug: string, seed: CategorySeed) {
     }
   }
   picked.push(...(await listedSongs(seed, drop, years, misses, metadata)));
+  const generationOf = new Map(
+    Object.entries(seed.generations ?? {}).flatMap(([start, acts]) =>
+      acts.map((act) => [fold(act), Number(start)] as const),
+    ),
+  );
+  const eraOf = (track: Picked) =>
+    seed.generations === undefined
+      ? Math.floor(track.year / 10) * 10
+      : generationOf.get(fold(track.artist));
   const byDecade = new Map<number, Picked[]>();
-  for (const decade of seed.decades) byDecade.set(decade, []);
+  const eras = seed.generations
+    ? Object.keys(seed.generations).map(Number)
+    : seed.decades;
+  for (const era of eras) byDecade.set(era, []);
+  const noGeneration = new Set<string>();
   const perArtist = new Map<string, number>();
   const seenIds = new Set<string>();
   // Songs keep their artist's popularity order, so the cap keeps each
@@ -843,8 +853,9 @@ async function curateCategory(slug: string, seed: CategorySeed) {
   const seenSongs = new Set<string>();
   const songKey = cutKey(seed.titleKey === true);
   for (const track of plainFirst(picked, songKey)) {
-    const decade = Math.floor(track.year / 10) * 10;
-    const list = byDecade.get(decade);
+    const decade = eraOf(track);
+    if (decade === undefined) noGeneration.add(track.artist);
+    const list = decade === undefined ? undefined : byDecade.get(decade);
     const who = track.artistId ?? fold(track.artist);
     const id = track.id ? `dz:${track.id}` : `it:${track.itunesId}`;
     const song = songKey(track);
@@ -856,6 +867,7 @@ async function curateCategory(slug: string, seed: CategorySeed) {
     seenSongs.add(song);
     list.push(track);
   }
+  for (const act of noGeneration) misses.push(`${act}: no generation`);
   return { byDecade, misses };
 }
 
