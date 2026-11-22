@@ -71,7 +71,8 @@ async function request(url: string, init?: RequestInit) {
       await writeFile(cachePath, body);
       return body;
     }
-    if (response.status !== 429 && response.status < 500)
+    // A 429 means the host has blocked us; more requests extend the block.
+    if (response.status < 500)
       throw new Error(`${response.status} from ${url}`);
     if (attempt === 4) throw new Error(`${response.status} from ${url}`);
     await sleep(1000 * 2 ** attempt);
@@ -124,11 +125,18 @@ function parseMalThemes(html: string) {
     /<h2>(Opening|Ending) Theme<\/h2>([\s\S]*?)(?=<h2>|$)/g,
   )) {
     const kind = heading === "Opening" ? "OP" : "ED";
+    // A row with music links wraps the title in an <a> whose
+    // javascript: href quotes the title too, so the title is read from the
+    // row's text with the tags removed.
     for (const match of section.matchAll(
-      /<span class="theme-song-index">\s*(\d+):<\/span>[\s\S]*?(?:&quot;|")([^"<]+)(?:&quot;|")[\s\S]*?<span class="theme-song-artist">\s*by\s+([^<]+)<\/span>/g,
+      /<span class="theme-song-index">\s*(\d+):<\/span>([\s\S]*?)<span class="theme-song-artist">\s*by\s+([^<]+)<\/span>/g,
     )) {
+      const title = decode(match[2].replace(/<[^>]*>/g, "")).match(
+        /"([^"]+)"/,
+      )?.[1];
+      if (title === undefined) continue;
       const parsed = parseTheme(
-        `${match[1]}: "${decode(match[2])}" by ${decode(match[3])}`,
+        `${match[1]}: "${title}" by ${decode(match[3])}`,
         kind,
         Number(match[1]),
       );
@@ -145,9 +153,18 @@ async function main() {
   >;
   const seed = seedFile.anime;
   if (!seed) throw new Error("anime seed missing");
-  const songs = seed.songs ?? {};
-  const work = seed.work ?? {};
-  const themes = seed.themes ?? {};
+  // The crawl owns `work`, `themes` and the songs it listed, each of which has
+  // a theme; a run replaces them, so a parser fix also removes what the old
+  // parser wrote. Editorial songs have no theme and stay.
+  const crawled = new Set(Object.keys(seed.themes ?? {}));
+  const songs: Record<string, string[]> = Object.fromEntries(
+    Object.entries(seed.songs ?? {}).map(([decade, list]) => [
+      decade,
+      list.filter((key) => !crawled.has(key)),
+    ]),
+  );
+  const work: Record<string, string> = {};
+  const themes: Record<string, string> = {};
   const shows: Record<string, string[]> = {};
   let found = 0;
   const accepted: Array<{

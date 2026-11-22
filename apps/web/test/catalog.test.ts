@@ -308,6 +308,20 @@ describe("curated sources", () => {
     expect(repeats).toEqual([]);
   });
 
+  it("names the show and the theme slot of anime songs", () => {
+    const tracks: { title: string; work?: string; theme?: string }[] =
+      Object.values(curated).flatMap((decades) =>
+        Object.values(decades).flat(),
+      );
+    const badThemes = tracks
+      .filter((track) => track.theme !== undefined)
+      .filter((track) => !/^(OP|ED)\d+$/.test(track.theme!))
+      .map((track) => `${track.title}: ${track.theme}`);
+    expect(badThemes).toEqual([]);
+    const anime: { work?: string }[] = Object.values(curated.anime).flat();
+    expect(anime.filter((track) => track.work).length).toBeGreaterThan(100);
+  });
+
   it(
     "fills every curated source from the bundle without a request",
     {

@@ -23717,7 +23717,9 @@
         "artist": "L'Arc~en~Ciel",
         "artistId": 133611,
         "cover": "https://cdn-images.dzcdn.net/images/cover/4a7a3a48dcac393c9a04540e99589eb2/250x250-000000-80-0-0.jpg",
-        "year": 1999
+        "year": 1999,
+        "work": "GTO: Great Teacher Onizuka",
+        "theme": "OP1"
       },
       {
         "id": 2229412677,
@@ -23726,9 +23728,7 @@
         "artist": "Yoko Takahashi",
         "artistId": 7951446,
         "cover": "https://cdn-images.dzcdn.net/images/cover/fc49aa787e01b715e081dca2a0187473/250x250-000000-80-0-0.jpg",
-        "year": 1995,
-        "work": "Neon Genesis Evangelion",
-        "theme": "OP1"
+        "year": 1995
       },
       {
         "id": 2232381537,
@@ -24482,6 +24482,18 @@
         "theme": "ED6"
       },
       {
+        "itunesId": 489780220,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/cf/84/77/cf847759-a1af-be67-7bb6-b33ef374f076/mzaf_704055062478630758.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/space-lion/489780131?i=489780220",
+        "title": "Space Lion",
+        "artist": "The Seatbelts",
+        "artistId": 5508314,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/f5/7d/25/mzi.oiohfuij.jpg/250x250bb.jpg",
+        "year": 1998,
+        "work": "Cowboy Bebop",
+        "theme": "ED2"
+      },
+      {
         "id": 3714441782,
         "title": "Break in 2 the Nite",
         "artist": "m.o.v.e",
@@ -24511,6 +24523,16 @@
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/ab/62/73/ab62738c-48bb-8d63-11f4-7278e56b4ba6/VEATP-34875.jpg/250x250bb.jpg",
         "year": 1998,
         "work": "Cardcaptor Sakura",
+        "theme": "ED1"
+      },
+      {
+        "id": 1994972527,
+        "title": "Last Piece",
+        "artist": "Kirari",
+        "artistId": 5084,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/2846b818daeebd349c99610e1b1d5ddf/250x250-000000-80-0-0.jpg",
+        "year": 1999,
+        "work": "GTO: Great Teacher Onizuka",
         "theme": "ED1"
       },
       {
@@ -24571,7 +24593,9 @@
         "artist": "FLOW",
         "artistId": 4407,
         "cover": "https://cdn-images.dzcdn.net/images/cover/c1548d1911c8f94a8c00ffb9f121de56/250x250-000000-80-0-0.jpg",
-        "year": 2005
+        "year": 2005,
+        "work": "Eureka Seven",
+        "theme": "OP1"
       },
       {
         "id": 1100592452,
@@ -24606,7 +24630,9 @@
         "artist": "YUI",
         "artistId": 4771,
         "cover": "https://cdn-images.dzcdn.net/images/cover/80306b5b01aa8590462233004add3ca1/250x250-000000-80-0-0.jpg",
-        "year": 2009
+        "year": 2009,
+        "work": "Fullmetal Alchemist: Brotherhood",
+        "theme": "OP1"
       },
       {
         "id": 975971522,
@@ -24614,7 +24640,9 @@
         "artist": "YUI",
         "artistId": 4771,
         "cover": "https://cdn-images.dzcdn.net/images/cover/d18fe2308393a38a6c03e742aacf9b6a/250x250-000000-80-0-0.jpg",
-        "year": 2007
+        "year": 2007,
+        "work": "Bleach",
+        "theme": "OP5"
       },
       {
         "id": 976022802,
@@ -24675,7 +24703,9 @@
         "artist": "UVERworld",
         "artistId": 2503,
         "cover": "https://cdn-images.dzcdn.net/images/cover/3db533b7e5973c7a63a009fec9fdecde/250x250-000000-80-0-0.jpg",
-        "year": 2005
+        "year": 2005,
+        "work": "Bleach",
+        "theme": "OP2"
       },
       {
         "id": 598884752,
@@ -24710,7 +24740,9 @@
         "artist": "Aqua Timez",
         "artistId": 4230111,
         "cover": "https://cdn-images.dzcdn.net/images/cover/00f28715eae2856364dd26c4ec36cbb4/250x250-000000-80-0-0.jpg",
-        "year": 2007
+        "year": 2007,
+        "work": "Bleach",
+        "theme": "OP6"
       },
       {
         "id": 976763972,
@@ -24727,7 +24759,9 @@
         "artist": "Akeboshi",
         "artistId": 4918539,
         "cover": "https://cdn-images.dzcdn.net/images/cover/9de951b266a85cc0e8b38dc95ffcd1b8/250x250-000000-80-0-0.jpg",
-        "year": 2005
+        "year": 2005,
+        "work": "Naruto",
+        "theme": "ED1"
       },
       {
         "id": 569782042,
@@ -24753,7 +24787,9 @@
         "artist": "Nightmare",
         "artistId": 254820662,
         "cover": "https://cdn-images.dzcdn.net/images/cover/6ed643e9e6f25a7a7323bb0200ebc507/250x250-000000-80-0-0.jpg",
-        "year": 2006
+        "year": 2006,
+        "work": "Death Note",
+        "theme": "OP1"
       },
       {
         "id": 976349922,
@@ -24854,18 +24890,6 @@
         "theme": "OP1"
       },
       {
-        "itunesId": 1144913246,
-        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/4f/5b/6b/4f5b6b36-10d0-9910-37d8-4e40f8f1b4b2/mzaf_7713160528449476052.plus.aac.p.m4a",
-        "link": "https://music.apple.com/jp/album/dearest/1144913122?i=1144913246",
-        "title": "Dearest",
-        "artist": "Ayumi Hamasaki",
-        "artistId": 5250597,
-        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music22/v4/e6/70/40/e670403e-80d9-a24b-8bb1-ea3e667a3634/ANTCD-18716.jpg/250x250bb.jpg",
-        "year": 2001,
-        "work": "InuYasha",
-        "theme": "ED3"
-      },
-      {
         "itunesId": 1560120756,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview124/v4/4c/ff/34/4cff3400-a4bd-4b8d-7c62-d9328ba04189/mzaf_941036329983833731.plus.aac.p.m4a",
         "link": "https://music.apple.com/jp/album/%E8%A1%9D%E5%8B%95/1560120543?i=1560120756",
@@ -24886,18 +24910,6 @@
         "year": 2000,
         "work": "Detective Conan",
         "theme": "OP7"
-      },
-      {
-        "itunesId": 73795313,
-        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/e3/46/c5/e346c5d7-7cb9-6c6f-749d-e1e77bb23a6e/mzaf_8227710193589800618.plus.aac.p.m4a",
-        "link": "https://music.apple.com/jp/album/secret-of-my-heart/73796049?i=73795313",
-        "title": "Secret of my heart",
-        "artist": "Mai Kuraki",
-        "artistId": null,
-        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/45/5c/a9/455ca9d1-a61b-0b02-600a-01d5c040e943/GZCA-1039A.jpg/250x250bb.jpg",
-        "year": 2000,
-        "work": "Detective Conan",
-        "theme": "ED9"
       },
       {
         "id": 864542692,
@@ -25144,7 +25156,9 @@
         "artist": "Fripside",
         "artistId": 5058009,
         "cover": "https://cdn-images.dzcdn.net/images/cover/8ea40d1fb972793589dde7a8b9736d43/250x250-000000-80-0-0.jpg",
-        "year": 2009
+        "year": 2009,
+        "work": "A Certain Scientific Railgun",
+        "theme": "OP1"
       },
       {
         "itunesId": 1804671150,
@@ -25157,14 +25171,16 @@
         "year": 2007
       },
       {
-        "itunesId": 1536374889,
-        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/14/08/c5/1408c582-e104-b4e2-bc21-92a231a3af86/mzaf_1131149356787833489.plus.aac.p.m4a",
-        "link": "https://music.apple.com/jp/album/closer-royal-ver/1536374888?i=1536374889",
-        "title": "CLOSER (Royal Ver.)",
-        "artist": "Joe Inoue",
-        "artistId": 4907477,
-        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/6a/75/6b/6a756bda-5fa9-ad2c-7616-6231d3303457/jacket_KSCL01374B00Z_550.jpg/250x250bb.jpg",
-        "year": 2008
+        "itunesId": 1536372805,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/fa/c0/a2/fac0a202-d1b7-3b09-e4d5-8dd2473ea710/mzaf_15973015905785777738.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/closer/1536372804?i=1536372805",
+        "title": "CLOSER",
+        "artist": "Inoue Joe",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/d6/f8/07/d6f807cb-41e0-45a4-2406-e93ebac63d26/jacket_KSCL01322B00Z_550.jpg/250x250bb.jpg",
+        "year": 2008,
+        "work": "Naruto: Shippuden",
+        "theme": "OP4"
       },
       {
         "id": 2230713897,
@@ -25244,6 +25260,18 @@
         "theme": "ED1"
       },
       {
+        "itunesId": 1144913246,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/4f/5b/6b/4f5b6b36-10d0-9910-37d8-4e40f8f1b4b2/mzaf_7713160528449476052.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/dearest/1144913122?i=1144913246",
+        "title": "Dearest",
+        "artist": "Ayumi Hamasaki",
+        "artistId": 5250597,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music22/v4/e6/70/40/e670403e-80d9-a24b-8bb1-ea3e667a3634/ANTCD-18716.jpg/250x250bb.jpg",
+        "year": 2001,
+        "work": "InuYasha",
+        "theme": "ED3"
+      },
+      {
         "id": 728688132,
         "title": "Every Heart",
         "artist": "BoA",
@@ -25274,6 +25302,56 @@
         "year": 2004,
         "work": "InuYasha",
         "theme": "ED8"
+      },
+      {
+        "id": 2665373642,
+        "title": "Under Star",
+        "artist": "Shocking Lemon",
+        "artistId": 49834962,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/bb8a6a7fa734df0788c20d913610d7a9/250x250-000000-80-0-0.jpg",
+        "year": 2000,
+        "work": "Hajime no Ippo: The Fighting!",
+        "theme": "OP1"
+      },
+      {
+        "id": 3038788111,
+        "title": "Inner Light",
+        "artist": "Shocking Lemon",
+        "artistId": 49834962,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/40a2700096d931a3585b2863f2f30da3/250x250-000000-80-0-0.jpg",
+        "year": 2001,
+        "work": "Hajime no Ippo: The Fighting!",
+        "theme": "OP2"
+      },
+      {
+        "id": 2665371632,
+        "title": "Tumbling Dice",
+        "artist": "Tsuneo Imahori",
+        "artistId": 11976226,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/680949702558ce7cee6bd355723d7eae/250x250-000000-80-0-0.jpg",
+        "year": 2001,
+        "work": "Hajime no Ippo: The Fighting!",
+        "theme": "OP3"
+      },
+      {
+        "id": 2998564941,
+        "title": "360°",
+        "artist": "Naoya Mori",
+        "artistId": 137907152,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/167253abf4c4b0a1100718a9fed2739f/250x250-000000-80-0-0.jpg",
+        "year": 2001,
+        "work": "Hajime no Ippo: The Fighting!",
+        "theme": "ED2"
+      },
+      {
+        "id": 3713208282,
+        "title": "Eternal Loop",
+        "artist": "Saber Tiger",
+        "artistId": 8791388,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/9c8926a41af0849557e9321707ee40c5/250x250-000000-80-0-0.jpg",
+        "year": 2001,
+        "work": "Hajime no Ippo: The Fighting!",
+        "theme": "ED3"
       },
       {
         "itunesId": 6810160607,
@@ -25446,6 +25524,50 @@
         "theme": "OP1"
       },
       {
+        "id": 976282242,
+        "title": "Re:member",
+        "artist": "FLOW",
+        "artistId": 4407,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4031f9cf0101bfa6a505391d2fd7d345/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Naruto",
+        "theme": "OP8"
+      },
+      {
+        "itunesId": 1535485838,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/b1/72/14/b1721483-c374-7126-ee2c-0b8d20ca2b09/mzaf_10281310657788322826.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/alive/1535485837?i=1535485838",
+        "title": "ALIVE",
+        "artist": "Raiko",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/c0/cc/c3/c0ccc361-b9c1-40d7-6d3f-aaee34e3dba3/jacket_AICL01603B00Z_550.jpg/250x250bb.jpg",
+        "year": 2005,
+        "work": "Naruto",
+        "theme": "ED4"
+      },
+      {
+        "id": 976036802,
+        "title": "Yellow Moon",
+        "artist": "Akeboshi",
+        "artistId": 4918539,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/febb92024e2d9bf55be757cfeb8c1976/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Naruto",
+        "theme": "ED13"
+      },
+      {
+        "itunesId": 217011709,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/f2/d3/79/f2d379ec-1808-910c-f338-a78fb5cba6e3/mzaf_15880605700761505355.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/pinocchio/217011687?i=217011709",
+        "title": "Pinocchio",
+        "artist": "Ore Ska Band",
+        "artistId": 1563329,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/89/ed/da/mzi.cgcfdkgb.jpg/250x250bb.jpg",
+        "year": 2006,
+        "work": "Naruto",
+        "theme": "ED14"
+      },
+      {
         "id": 2114769747,
         "title": "Raison d'Être",
         "artist": "Rië Tanaka",
@@ -25570,6 +25692,46 @@
         "theme": "ED2"
       },
       {
+        "id": 976718342,
+        "title": "Tonight, Tonight, Tonight",
+        "artist": "BEAT CRUSADERS",
+        "artistId": 829,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5b81192c6f2aed3a6214f385a2d835c6/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Bleach",
+        "theme": "OP4"
+      },
+      {
+        "id": 976730262,
+        "title": "CHU-BURA",
+        "artist": "KELUN",
+        "artistId": 7816068,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/b5cdcf7344a1106f10fb1f8e2bc123eb/250x250-000000-80-0-0.jpg",
+        "year": 2008,
+        "work": "Bleach",
+        "theme": "OP8"
+      },
+      {
+        "id": 975940552,
+        "title": "Velonica",
+        "artist": "Aqua Timez",
+        "artistId": 4230111,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5469954b233bdebe8512e7a7ddd721b8/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Bleach",
+        "theme": "OP9"
+      },
+      {
+        "id": 976414142,
+        "title": "Life is Like a Boat",
+        "artist": "Rie fu",
+        "artistId": 889,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/42cab5f83b4314bf4b365588602fba9f/250x250-000000-80-0-0.jpg",
+        "year": 2005,
+        "work": "Bleach",
+        "theme": "ED1"
+      },
+      {
         "id": 554722872,
         "title": "Happy People",
         "artist": "Skoop On Somebody",
@@ -25578,6 +25740,46 @@
         "year": 2005,
         "work": "Bleach",
         "theme": "ED4"
+      },
+      {
+        "id": 976015012,
+        "title": "Life",
+        "artist": "YUI",
+        "artistId": 4771,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/93110d830c69a0d343e9ca0d30e28842/250x250-000000-80-0-0.jpg",
+        "year": 2005,
+        "work": "Bleach",
+        "theme": "ED5"
+      },
+      {
+        "id": 976278122,
+        "title": "Hanabi",
+        "artist": "Ikimonogakari",
+        "artistId": 5960768,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/1e86fbcbb4ea80613718effdaae9e091/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Bleach",
+        "theme": "ED7"
+      },
+      {
+        "id": 976133892,
+        "title": "MOVIN!!",
+        "artist": "Takacha",
+        "artistId": 9612,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4cca99aae31e748360ec203afd5094b4/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Bleach",
+        "theme": "ED8"
+      },
+      {
+        "id": 1282511252,
+        "title": "Baby It's You",
+        "artist": "June",
+        "artistId": 403945312,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f0f72ed3b70f4962eda0b38c04536ec2/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Bleach",
+        "theme": "ED9"
       },
       {
         "id": 1881742217,
@@ -25702,6 +25904,118 @@
         "theme": "ED1"
       },
       {
+        "id": 3296130101,
+        "title": "being",
+        "artist": "Kotoko",
+        "artistId": 282724391,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c24902c5dab00da8bb6216013fedd7bb/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Shakugan no Shana",
+        "theme": "OP2"
+      },
+      {
+        "id": 975959212,
+        "title": "Sakura",
+        "artist": "Nirgilis",
+        "artistId": 78780292,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/04de60e001de16b9d0c195b2e20c22f9/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Eureka Seven",
+        "theme": "OP4"
+      },
+      {
+        "itunesId": 1537234519,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/54/e6/f8/54e6f8e6-3b90-0e52-737c-08bb74f83c28/mzaf_15530910197070069189.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/fly-away/1537234507?i=1537234519",
+        "title": "Fly Away",
+        "artist": "Izawa Asami",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/fc/7f/d6/fc7fd658-89e2-bb48-3b4a-0addbff810a3/jacket_SECL00441B00Z_550.jpg/250x250bb.jpg",
+        "year": 2007,
+        "work": "Eureka Seven",
+        "theme": "ED2"
+      },
+      {
+        "id": 1651093452,
+        "title": "Tip Taps Tip",
+        "artist": "HALCALI",
+        "artistId": 1836,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/7863e6fd809f17d500df258b7296268c/250x250-000000-80-0-0.jpg",
+        "year": 2005,
+        "work": "Eureka Seven",
+        "theme": "ED3"
+      },
+      {
+        "id": 976001942,
+        "title": "SEASON’S CALL",
+        "artist": "HYDE",
+        "artistId": 915,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/756280c98484856cf29d6bde70b5069e/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Blood+",
+        "theme": "OP2"
+      },
+      {
+        "id": 976506562,
+        "title": "Colors of the Heart",
+        "artist": "UVERworld",
+        "artistId": 2503,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/974040d228ebb54e2f1fae9f32e67f53/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Blood+",
+        "theme": "OP3"
+      },
+      {
+        "id": 976645372,
+        "title": "CRY NO MORE",
+        "artist": "Mika Nakashima",
+        "artistId": 4018276,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f29d454cd2d50062e85a1283c1a1b233/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Blood+",
+        "theme": "ED2"
+      },
+      {
+        "id": 976081422,
+        "title": "This Love",
+        "artist": "Angela Aki",
+        "artistId": 4870780,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/9c1dc00a269d11c7b4cab9a9834ab40e/250x250-000000-80-0-0.jpg",
+        "year": 2005,
+        "work": "Blood+",
+        "theme": "ED3"
+      },
+      {
+        "id": 976775982,
+        "title": "Brand New Map",
+        "artist": "K",
+        "artistId": 78529122,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/36538a1de1940a95bdce28939bd68fc0/250x250-000000-80-0-0.jpg",
+        "year": 2005,
+        "work": "Blood+",
+        "theme": "ED4"
+      },
+      {
+        "id": 976190002,
+        "title": "Mistake",
+        "artist": "THE BAND HAS NO NAME",
+        "artistId": 4897508,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/e6288b29a73a66d92c227f484e676d61/250x250-000000-80-0-0.jpg",
+        "year": 2005,
+        "work": "Honey and Clover",
+        "theme": "ED2"
+      },
+      {
+        "id": 2665294072,
+        "title": "Coda ~ Death Note",
+        "artist": "Yoshihisa Hirano",
+        "artistId": 6055318,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/61a497b921f2be9e8de5f07e66cf0b30/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Death Note",
+        "theme": "ED3"
+      },
+      {
         "id": 2114752987,
         "title": "Innocent Days",
         "artist": "hitomi",
@@ -25710,6 +26024,76 @@
         "year": 2007,
         "work": "Code Geass: Lelouch of the Rebellion",
         "theme": "ED4"
+      },
+      {
+        "id": 975969322,
+        "title": "Pray",
+        "artist": "Tommy heavenly6",
+        "artistId": 5584425,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/58d6d3972e83f3b3b7f8ecd83c47e471/250x250-000000-80-0-0.jpg",
+        "year": 2007,
+        "work": "Gintama",
+        "theme": "OP1"
+      },
+      {
+        "id": 14065644,
+        "title": "Stairway Generation",
+        "artist": "Base Ball Bear",
+        "artistId": 242611,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/eb61c206cb8143b8aa04c93ae4d1938b/250x250-000000-80-0-0.jpg",
+        "year": 2009,
+        "work": "Gintama",
+        "theme": "OP7"
+      },
+      {
+        "id": 976028782,
+        "title": "Light Infection",
+        "artist": "Prague",
+        "artistId": 114639,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0e4af8cf50ae432689b50dc5e1e56194/250x250-000000-80-0-0.jpg",
+        "year": 2009,
+        "work": "Gintama",
+        "theme": "OP8"
+      },
+      {
+        "id": 1177079432,
+        "title": "MR.RAINDROP",
+        "artist": "Amplified",
+        "artistId": 994653,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/172e3c36fba839cb66a142bf96ec6a0d/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Gintama",
+        "theme": "ED2"
+      },
+      {
+        "id": 976647902,
+        "title": "Sanagi",
+        "artist": "Possibility",
+        "artistId": 812889,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6bc52fb345337373e01da41309cae7d7/250x250-000000-80-0-0.jpg",
+        "year": 2008,
+        "work": "Gintama",
+        "theme": "ED9"
+      },
+      {
+        "id": 976392842,
+        "title": "This World is yours",
+        "artist": "Plingmin",
+        "artistId": 96442402,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/3430a722baab6b919536366de18e9c33/250x250-000000-80-0-0.jpg",
+        "year": 2009,
+        "work": "Gintama",
+        "theme": "ED10"
+      },
+      {
+        "id": 2367782785,
+        "title": "Rose",
+        "artist": "ANNA inspi' NANA(BLACK STONES)",
+        "artistId": 221605055,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ad843121c6f7ba7d0a645728a7d8dbe4/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "NANA",
+        "theme": "OP1"
       },
       {
         "itunesId": 216250653,
@@ -25722,6 +26106,18 @@
         "year": 2006,
         "work": "NANA",
         "theme": "OP2"
+      },
+      {
+        "itunesId": 218732594,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/f6/4d/10/f64d10c8-7df7-9156-57f4-98ee6693c363/mzaf_13196708536435023097.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/lucy/218731266?i=218732594",
+        "title": "Lucy",
+        "artist": "Tsuchiya, Anna inspi' Nana ~Black Stones~",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/6e/ab/fb/6eabfb5f-34ac-7aaa-c409-29f19486df15/mzi.uppilzos.jpg/250x250bb.jpg",
+        "year": 2007,
+        "work": "NANA",
+        "theme": "OP3"
       },
       {
         "itunesId": 216250412,
@@ -25760,6 +26156,16 @@
         "theme": "ED5"
       },
       {
+        "id": 3296293161,
+        "title": "disillusion",
+        "artist": "TAINAKA SACHI",
+        "artistId": 1327417,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/b0deaa592929c5a6470c0d7f18c4f104/250x250-000000-80-0-0.jpg",
+        "year": 2006,
+        "work": "Fate/stay night",
+        "theme": "OP1"
+      },
+      {
         "itunesId": 345287319,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music/v4/b6/04/63/b60463b8-07f1-04e3-58ba-79032cbdfcad/mzaf_1943585224157604203.plus.aac.p.m4a",
         "link": "https://music.apple.com/jp/album/magnolia/345287260?i=345287319",
@@ -25770,6 +26176,76 @@
         "year": 2009,
         "work": "Hellsing Ultimate",
         "theme": "ED6"
+      },
+      {
+        "id": 976651752,
+        "title": "Hero's Come Back",
+        "artist": "nobodyknows+",
+        "artistId": 2117,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/33472c79446fd723cb7c96c438cb3e31/250x250-000000-80-0-0.jpg",
+        "year": 2007,
+        "work": "Naruto: Shippuden",
+        "theme": "OP1"
+      },
+      {
+        "id": 1124689012,
+        "title": "BROKEN YOUTH",
+        "artist": "NICO Touches the Walls",
+        "artistId": 50291192,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/dcefef2d25c8ec9b37805823346f55d2/250x250-000000-80-0-0.jpg",
+        "year": 2008,
+        "work": "Naruto: Shippuden",
+        "theme": "ED6"
+      },
+      {
+        "id": 1642400802,
+        "title": "Long Kiss Goodbye",
+        "artist": "HALCALI",
+        "artistId": 1836,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/7d07c9d4324575b0ae2be6984b523cc0/250x250-000000-80-0-0.jpg",
+        "year": 2008,
+        "work": "Naruto: Shippuden",
+        "theme": "ED7"
+      },
+      {
+        "id": 896224942,
+        "title": "My ANSWER",
+        "artist": "Seamo",
+        "artistId": 2836211,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f13f650890768c67f1609330ee395b6d/250x250-000000-80-0-0.jpg",
+        "year": 2005,
+        "work": "Naruto: Shippuden",
+        "theme": "ED10"
+      },
+      {
+        "id": 3259412611,
+        "title": "UNDERGROUND",
+        "artist": "High Voltage",
+        "artistId": 391345,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4cc4d6a2e616e985778e19baf3973967/250x250-000000-80-0-0.jpg",
+        "year": 2007,
+        "work": "Gurren Lagann",
+        "theme": "ED1"
+      },
+      {
+        "id": 975986462,
+        "title": "happily ever after",
+        "artist": "Shoko Nakagawa",
+        "artistId": 5503316,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0a387c70e9901b4b2ca956401c3435d1/250x250-000000-80-0-0.jpg",
+        "year": 2007,
+        "work": "Gurren Lagann",
+        "theme": "ED2"
+      },
+      {
+        "id": 1282477012,
+        "title": "Howling",
+        "artist": "abingdon boys school",
+        "artistId": 14345,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/92b1bb1c4e9708e079a396f86e4d4b22/250x250-000000-80-0-0.jpg",
+        "year": 2007,
+        "work": "Darker than Black",
+        "theme": "OP1"
       },
       {
         "itunesId": 1725088842,
@@ -25828,6 +26304,56 @@
         "theme": "ED5"
       },
       {
+        "id": 2227141377,
+        "title": "silky heart",
+        "artist": "Yui Horie",
+        "artistId": 2930561,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ea9cf741a126d8e57ae03a7420b4ebe9/250x250-000000-80-0-0.jpg",
+        "year": 2009,
+        "work": "Toradora!",
+        "theme": "OP2"
+      },
+      {
+        "id": 1100606902,
+        "title": "Resonance",
+        "artist": "T.M.Revolution",
+        "artistId": 922,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ebf36fb3851edc2633df225dd5789ecf/250x250-000000-80-0-0.jpg",
+        "year": 2008,
+        "work": "Soul Eater",
+        "theme": "OP1"
+      },
+      {
+        "id": 975978682,
+        "title": "PAPERMOON",
+        "artist": "Tommy heavenly6",
+        "artistId": 5584425,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5241bd32fd91dce0103d9c14f5d8dd73/250x250-000000-80-0-0.jpg",
+        "year": 2008,
+        "work": "Soul Eater",
+        "theme": "OP2"
+      },
+      {
+        "id": 1355287332,
+        "title": "Style",
+        "artist": "Kana Nishino",
+        "artistId": 4898333,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5391051988f148add0c5978371d60760/250x250-000000-80-0-0.jpg",
+        "year": 2008,
+        "work": "Soul Eater",
+        "theme": "ED2"
+      },
+      {
+        "id": 976354392,
+        "title": "Strength",
+        "artist": "abingdon boys school",
+        "artistId": 14345,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8c170cdba591c8c93e11f93fbbdf2eb3/250x250-000000-80-0-0.jpg",
+        "year": 2009,
+        "work": "Soul Eater",
+        "theme": "ED4"
+      },
+      {
         "id": 1124776662,
         "title": "WORLD END",
         "artist": "FLOW",
@@ -25836,6 +26362,16 @@
         "year": 2008,
         "work": "Code Geass: Lelouch of the Rebellion R2",
         "theme": "OP2"
+      },
+      {
+        "id": 976777002,
+        "title": "Lacrimosa",
+        "artist": "Kalafina",
+        "artistId": 1575953,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/fbe6243f511d81d62e518e638f85afd5/250x250-000000-80-0-0.jpg",
+        "year": 2009,
+        "work": "Black Butler",
+        "theme": "ED2"
       },
       {
         "id": 3337823371,
@@ -25848,6 +26384,36 @@
         "theme": "ED1"
       },
       {
+        "id": 3295926171,
+        "title": "PSI-missing",
+        "artist": "Mami Kawada",
+        "artistId": 11963223,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c9c0527ddf75a3ec570276171d8ec533/250x250-000000-80-0-0.jpg",
+        "year": 2008,
+        "work": "A Certain Magical Index",
+        "theme": "OP1"
+      },
+      {
+        "id": 3296247111,
+        "title": "masterpiece",
+        "artist": "Mami Kawada",
+        "artistId": 11963223,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5e6af082bb9da0b0e1c16cf88ea44e86/250x250-000000-80-0-0.jpg",
+        "year": 2009,
+        "work": "A Certain Magical Index",
+        "theme": "OP2"
+      },
+      {
+        "id": 2230713887,
+        "title": "COSMIC LOVE",
+        "artist": "Nana Mizuki",
+        "artistId": 4897191,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/43492b349e2d39f955b8b292a136889a/250x250-000000-80-0-0.jpg",
+        "year": 2008,
+        "work": "Rosario + Vampire",
+        "theme": "ED1"
+      },
+      {
         "id": 2230715487,
         "title": "Dancing in the velvet moon",
         "artist": "Nana Mizuki",
@@ -25856,6 +26422,36 @@
         "year": 2008,
         "work": "Rosario + Vampire",
         "theme": "ED2"
+      },
+      {
+        "id": 976346542,
+        "title": "LET IT OUT",
+        "artist": "Miho Fukuhara",
+        "artistId": 5142764,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6a4a2239b357d7dfbb964472ae27fa7c/250x250-000000-80-0-0.jpg",
+        "year": 2008,
+        "work": "Fullmetal Alchemist: Brotherhood",
+        "theme": "ED2"
+      },
+      {
+        "id": 369864211,
+        "title": "Snow fairy",
+        "artist": "FUNKIST",
+        "artistId": 8184760,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/e4ce3657e42ae7a22cdee2687566305b/250x250-000000-80-0-0.jpg",
+        "year": 2009,
+        "work": "Fairy Tail",
+        "theme": "OP1"
+      },
+      {
+        "id": 15596522,
+        "title": "FALLING DOWN",
+        "artist": "Oasis",
+        "artistId": 927,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/807022475dba6041ce009ac3d906f4e4/250x250-000000-80-0-0.jpg",
+        "year": 2008,
+        "work": "Eden of the East",
+        "theme": "OP1"
       },
       {
         "itunesId": 339700127,
@@ -25887,9 +26483,7 @@
         "artist": "LiSA",
         "artistId": 11446160,
         "cover": "https://cdn-images.dzcdn.net/images/cover/1f52bcd67ac5393123b3a272ceec5a5c/250x250-000000-80-0-0.jpg",
-        "year": 2019,
-        "work": "Demon Slayer",
-        "theme": "OP1"
+        "year": 2019
       },
       {
         "id": 976378422,
@@ -25897,7 +26491,9 @@
         "artist": "LiSA",
         "artistId": 11446160,
         "cover": "https://cdn-images.dzcdn.net/images/cover/072fdab9f696f68a62bd271c113e0169/250x250-000000-80-0-0.jpg",
-        "year": 2012
+        "year": 2012,
+        "work": "Sword Art Online",
+        "theme": "OP1"
       },
       {
         "id": 975919532,
@@ -25905,7 +26501,9 @@
         "artist": "LiSA",
         "artistId": 11446160,
         "cover": "https://cdn-images.dzcdn.net/images/cover/2d0c250a1fedd60cc17849f653e5d5d9/250x250-000000-80-0-0.jpg",
-        "year": 2018
+        "year": 2018,
+        "work": "Sword Art Online: Alicization",
+        "theme": "OP1"
       },
       {
         "id": 1093334562,
@@ -25937,7 +26535,9 @@
         "artist": "Aimer",
         "artistId": 8623006,
         "cover": "https://cdn-images.dzcdn.net/images/cover/747fdb27c2948e27b111d3abea779599/250x250-000000-80-0-0.jpg",
-        "year": 2019
+        "year": 2019,
+        "work": "Vinland Saga",
+        "theme": "ED1"
       },
       {
         "id": 1355416752,
@@ -25964,8 +26564,7 @@
         "artist": "RADWIMPS",
         "artistId": 211087,
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/ad/4b/b8/ad4bb84d-85f9-8902-6876-c7dd2f93c24a/25UM1IM78298.rgb.jpg/250x250bb.jpg",
-        "year": 2016,
-        "work": "Your Name"
+        "year": 2016
       },
       {
         "id": 545599502,
@@ -26009,7 +26608,9 @@
         "artist": "FLOW",
         "artistId": 4407,
         "cover": "https://cdn-images.dzcdn.net/images/cover/fb855c0177889b88d052440c681eb5f5/250x250-000000-80-0-0.jpg",
-        "year": 2013
+        "year": 2013,
+        "work": "Naruto: Shippuden",
+        "theme": "OP6"
       },
       {
         "itunesId": 1536444312,
@@ -26072,7 +26673,9 @@
         "artist": "UVERworld",
         "artistId": 2503,
         "cover": "https://cdn-images.dzcdn.net/images/cover/9a70417741621fa8acd25df15ba0343c/250x250-000000-80-0-0.jpg",
-        "year": 2011
+        "year": 2011,
+        "work": "Blue Exorcist",
+        "theme": "OP1"
       },
       {
         "id": 975906392,
@@ -26102,7 +26705,7 @@
         "cover": "https://cdn-images.dzcdn.net/images/cover/61405c13e00050dd0aed08aa92199d98/250x250-000000-80-0-0.jpg",
         "year": 2014,
         "work": "Tokyo Ghoul",
-        "theme": "OP1"
+        "theme": "ED1"
       },
       {
         "id": 1837567907,
@@ -26203,7 +26806,9 @@
         "artist": "Eir Aoi",
         "artistId": 8002046,
         "cover": "https://cdn-images.dzcdn.net/images/cover/b849065b96d68dc9634b6a9ca838b752/250x250-000000-80-0-0.jpg",
-        "year": 2014
+        "year": 2014,
+        "work": "Sword Art Online II",
+        "theme": "OP1"
       },
       {
         "id": 975935712,
@@ -26229,7 +26834,9 @@
         "artist": "Burnout Syndromes",
         "artistId": 9962448,
         "cover": "https://cdn-images.dzcdn.net/images/cover/3f4db1564abb79e5a4a4bba37e3ac0ba/250x250-000000-80-0-0.jpg",
-        "year": 2016
+        "year": 2016,
+        "work": "HAIKYU!! 2nd Season",
+        "theme": "OP2"
       },
       {
         "id": 975907272,
@@ -26246,7 +26853,9 @@
         "artist": "Kalafina",
         "artistId": 1575953,
         "cover": "https://cdn-images.dzcdn.net/images/cover/e6882d28a3dfe36f618a09f4e7185de1/250x250-000000-80-0-0.jpg",
-        "year": 2012
+        "year": 2012,
+        "work": "Fate/Zero Season 2",
+        "theme": "ED3"
       },
       {
         "id": 121134224,
@@ -26611,7 +27220,9 @@
         "artist": "GRANRODEO",
         "artistId": 14108227,
         "cover": "https://cdn-images.dzcdn.net/images/cover/5edb4a98c8d38f439afca830caa6c456/250x250-000000-80-0-0.jpg",
-        "year": 2013
+        "year": 2013,
+        "work": "Kuroko's Basketball",
+        "theme": "OP1"
       },
       {
         "id": 2121510947,
@@ -26676,18 +27287,6 @@
         "year": 2014
       },
       {
-        "itunesId": 1847217826,
-        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/f9/64/72/f96472f4-5715-d9cc-50fa-4c9220be5c69/mzaf_9630431361709626499.plus.aac.p.m4a",
-        "link": "https://music.apple.com/jp/album/super-powers/1847217825?i=1847217826",
-        "title": "Super Powers",
-        "artist": "V6",
-        "artistId": 6949,
-        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/99/29/85/992985e4-0428-2dd0-980c-902d495694fd/ANTCD-A0000018343.jpg/250x250bb.jpg",
-        "year": 2019,
-        "work": "ONE PIECE",
-        "theme": "OP21"
-      },
-      {
         "itunesId": 1784239437,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/66/12/df/6612df3a-6828-934c-15f6-8cafbda88de3/mzaf_14335189204624708879.plus.aac.p.m4a",
         "link": "https://music.apple.com/jp/album/crow-song/1784239367?i=1784239437",
@@ -26718,6 +27317,238 @@
         "theme": "ED1"
       },
       {
+        "itunesId": 1536260326,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/f1/ed/79/f1ed7928-2639-c5ba-b572-9d72f5489a9b/mzaf_1517116564267541326.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/trust-me/1536260325?i=1536260326",
+        "title": "Trust Me",
+        "artist": "Yuya Matsushita",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/3a/f9/ea/3af9ea7a-de13-d038-7e1b-9f9bbde6a47a/jacket_ESCL03364B00Z_550.jpg/250x250bb.jpg",
+        "year": 2010,
+        "work": "Durarara!!",
+        "theme": "ED1"
+      },
+      {
+        "id": 3296291281,
+        "title": "Color Me Dark",
+        "artist": "Maon Kurosaki",
+        "artistId": 6471029,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/63311f75144488091c0e308a397f9138/250x250-000000-80-0-0.jpg",
+        "year": 2010,
+        "work": "High School of the Dead",
+        "theme": "ED2"
+      },
+      {
+        "id": 3296291291,
+        "title": "Return to Destiny",
+        "artist": "Maon Kurosaki",
+        "artistId": 6471029,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/63311f75144488091c0e308a397f9138/250x250-000000-80-0-0.jpg",
+        "year": 2010,
+        "work": "High School of the Dead",
+        "theme": "ED3"
+      },
+      {
+        "id": 3296291301,
+        "title": "Cold Bullet Blues",
+        "artist": "Maon Kurosaki",
+        "artistId": 6471029,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/63311f75144488091c0e308a397f9138/250x250-000000-80-0-0.jpg",
+        "year": 2010,
+        "work": "High School of the Dead",
+        "theme": "ED4"
+      },
+      {
+        "id": 3296291311,
+        "title": "Memories of Days Gone By",
+        "artist": "Maon Kurosaki",
+        "artistId": 6471029,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/63311f75144488091c0e308a397f9138/250x250-000000-80-0-0.jpg",
+        "year": 2010,
+        "work": "High School of the Dead",
+        "theme": "ED5"
+      },
+      {
+        "id": 3296291331,
+        "title": "Under The Honey Shine",
+        "artist": "Maon Kurosaki",
+        "artistId": 6471029,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/63311f75144488091c0e308a397f9138/250x250-000000-80-0-0.jpg",
+        "year": 2010,
+        "work": "High School of the Dead",
+        "theme": "ED6"
+      },
+      {
+        "id": 3296291341,
+        "title": "fuss fuzz",
+        "artist": "Maon Kurosaki",
+        "artistId": 6471029,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/63311f75144488091c0e308a397f9138/250x250-000000-80-0-0.jpg",
+        "year": 2010,
+        "work": "High School of the Dead",
+        "theme": "ED7"
+      },
+      {
+        "id": 3296291351,
+        "title": "The place of hope",
+        "artist": "Maon Kurosaki",
+        "artistId": 6471029,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/63311f75144488091c0e308a397f9138/250x250-000000-80-0-0.jpg",
+        "year": 2010,
+        "work": "High School of the Dead",
+        "theme": "ED8"
+      },
+      {
+        "id": 3296291371,
+        "title": "THE last pain",
+        "artist": "Maon Kurosaki",
+        "artistId": 6471029,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/63311f75144488091c0e308a397f9138/250x250-000000-80-0-0.jpg",
+        "year": 2010,
+        "work": "High School of the Dead",
+        "theme": "ED10"
+      },
+      {
+        "id": 3296291381,
+        "title": "Hollow Men",
+        "artist": "Maon Kurosaki",
+        "artistId": 6471029,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/63311f75144488091c0e308a397f9138/250x250-000000-80-0-0.jpg",
+        "year": 2010,
+        "work": "High School of the Dead",
+        "theme": "ED11"
+      },
+      {
+        "id": 3296346301,
+        "title": "The Eternal Song",
+        "artist": "Maon Kurosaki",
+        "artistId": 6471029,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f15c643663f641be1a572262dc0915a1/250x250-000000-80-0-0.jpg",
+        "year": 2010,
+        "work": "High School of the Dead",
+        "theme": "ED12"
+      },
+      {
+        "itunesId": 383274145,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/38/8f/07/388f0716-ff0c-68dd-1c07-c09112bf67f2/mzaf_4246744297959010318.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/utauyo-miracle/383274144?i=383274145",
+        "title": "Utauyo!! MIRACLE",
+        "artist": "HTT",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/d2/7b/30/d27b3088-a9e1-b356-3992-685df02e119b/mzi.tuvkuimo.png/250x250bb.jpg",
+        "year": 2010,
+        "work": "K-ON! Season 2",
+        "theme": "OP2"
+      },
+      {
+        "itunesId": 367317047,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/92/09/69/92096903-2883-584b-f61f-58ec8966d1b8/mzaf_4834315033261895149.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/listen/367316939?i=367317047",
+        "title": "Listen!!",
+        "artist": "HTT",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/c4/03/25/c4032554-a7be-5d81-f3fd-09bb17fafd60/mzi.vxaqcooo.png/250x250bb.jpg",
+        "year": 2010,
+        "work": "K-ON! Season 2",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 383274168,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/4d/83/42/4d834287-0fc9-811c-d048-870c49bae335/mzaf_10227895509733788681.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/no-thank-you/383274167?i=383274168",
+        "title": "NO,Thank You!",
+        "artist": "HTT",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/a8/67/f0/a867f010-05f3-8696-92f8-6c5485093e7e/mzi.zuoclxbp.png/250x250bb.jpg",
+        "year": 2010,
+        "work": "K-ON! Season 2",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 672112045,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/f7/15/15/f7151549-5f9b-8980-322d-9e3301ce426a/mzaf_10097946383387204439.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/departure-second-version-tv%E3%82%B5%E3%82%A4%E3%82%BA/672111934?i=672112045",
+        "title": "departure! -second version-",
+        "artist": "Ono Masatoshi",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/da/06/6a/da066a73-2da8-35a7-9352-7b09ace43e95/4988021849418.png/250x250bb.jpg",
+        "year": 2012,
+        "work": "Hunter x Hunter (2011)",
+        "theme": "OP2"
+      },
+      {
+        "id": 2665265862,
+        "title": "Just Awake",
+        "artist": "Fear, and Loathing in Las Vegas",
+        "artistId": 12607433,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/46170d53ee7d3fb3f79da5c1efae670e/250x250-000000-80-0-0.jpg",
+        "year": 2012,
+        "work": "Hunter x Hunter (2011)",
+        "theme": "ED1"
+      },
+      {
+        "id": 2665264642,
+        "title": "HUNTING FOR YOUR DREAM",
+        "artist": "GALNERYUS",
+        "artistId": 13248389,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/67529c1c19b0bbcedfc24ab8e3c0165d/250x250-000000-80-0-0.jpg",
+        "year": 2012,
+        "work": "Hunter x Hunter (2011)",
+        "theme": "ED2"
+      },
+      {
+        "id": 2665365332,
+        "title": "Riot",
+        "artist": "Yoshihisa Hirano",
+        "artistId": 6055318,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/462ad4043afbfc8074a713ca3a72ff56/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "Hunter x Hunter (2011)",
+        "theme": "ED3"
+      },
+      {
+        "id": 1724378337,
+        "title": "REASON",
+        "artist": "Yuzu",
+        "artistId": 1506815,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8ea956be47e9d413fb22a24146057eff/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "Hunter x Hunter (2011)",
+        "theme": "ED4"
+      },
+      {
+        "id": 2665365492,
+        "title": "Understanding",
+        "artist": "Yoshihisa Hirano",
+        "artistId": 6055318,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/462ad4043afbfc8074a713ca3a72ff56/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "Hunter x Hunter (2011)",
+        "theme": "ED7"
+      },
+      {
+        "itunesId": 6791060389,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/d7/c4/a7/d7c4a746-68ce-717d-48ca-603babc4eddc/mzaf_4226145509873291749.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/fake-verthandi/6791059726?i=6791060389",
+        "title": "Fake Verthandi",
+        "artist": "Takeshi Abo",
+        "artistId": 5471588,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/a0/99/1d/a0991df8-1039-ae0e-fa15-19cf11fac9e5/4560248019074_Cover.jpg/250x250bb.jpg",
+        "year": 2010,
+        "work": "Steins;Gate",
+        "theme": "ED2"
+      },
+      {
+        "id": 976067962,
+        "title": "IN MY WORLD",
+        "artist": "ROOKIEZ IS PUNK'D",
+        "artistId": 7816082,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/b6c4bea05ff02cbe2484abfb88009303/250x250-000000-80-0-0.jpg",
+        "year": 2011,
+        "work": "Blue Exorcist",
+        "theme": "OP2"
+      },
+      {
         "itunesId": 1537786309,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview114/v4/b3/d2/c8/b3d2c8a7-9361-0627-1967-0208d5719daf/mzaf_8354744488980812048.plus.aac.p.m4a",
         "link": "https://music.apple.com/jp/album/trailblazer/1537786308?i=1537786309",
@@ -26728,6 +27559,26 @@
         "year": 2012,
         "work": "Blue Exorcist",
         "theme": "OP3"
+      },
+      {
+        "id": 976341072,
+        "title": "Take off",
+        "artist": "2PM",
+        "artistId": 9530,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8d4dd23ec9488753b9146aa74c07ca40/250x250-000000-80-0-0.jpg",
+        "year": 2011,
+        "work": "Blue Exorcist",
+        "theme": "ED1"
+      },
+      {
+        "id": 975962652,
+        "title": "Wired Life",
+        "artist": "Meisa Kuroki",
+        "artistId": 5101077,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0d644ee429ccdeedcb3acd6fa2fe3244/250x250-000000-80-0-0.jpg",
+        "year": 2011,
+        "work": "Blue Exorcist",
+        "theme": "ED2"
       },
       {
         "itunesId": 1537786310,
@@ -26762,6 +27613,68 @@
         "theme": "ED1"
       },
       {
+        "id": 1271986902,
+        "title": "Dear Love",
+        "artist": "Remedios",
+        "artistId": 4065660,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/9a25332ed3ff83625c0d48d374201b5b/250x250-000000-80-0-0.jpg",
+        "year": 2011,
+        "work": "Anohana: The Flower We Saw That Day",
+        "theme": "ED1"
+      },
+      {
+        "id": 976512132,
+        "title": "oath sign",
+        "artist": "LiSA",
+        "artistId": 11446160,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/9ca1354fd10dfe095c1af1daf86bbfaa/250x250-000000-80-0-0.jpg",
+        "year": 2011,
+        "work": "Fate/Zero",
+        "theme": "ED1"
+      },
+      {
+        "id": 975921672,
+        "title": "MEMORIA",
+        "artist": "Eir Aoi",
+        "artistId": 8002046,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0e046c594799f0fae2e79adcf3a723e5/250x250-000000-80-0-0.jpg",
+        "year": 2011,
+        "work": "Fate/Zero",
+        "theme": "ED2"
+      },
+      {
+        "id": 976823362,
+        "title": "Magia",
+        "artist": "Kalafina",
+        "artistId": 1575953,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/a051acaae0ce1ecef513ace038d25e25/250x250-000000-80-0-0.jpg",
+        "year": 2011,
+        "work": "Puella Magi Madoka Magica",
+        "theme": "ED2"
+      },
+      {
+        "id": 4293126822,
+        "title": "Zzz",
+        "artist": "Sayaka Sasaki",
+        "artistId": 98005422,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/992fb038def06a9c7046fbe909803303/250x250-000000-80-0-0.jpg",
+        "year": 2011,
+        "work": "Nichijou - My Ordinary Life",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1537786096,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/48/76/03/48760324-5609-a38b-7a36-4dcca2b33b53/mzaf_17163427157021564590.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/the-everlasting-guilty-crown/1537786095?i=1537786096",
+        "title": "The Everlasting Guilty Crown",
+        "artist": "EGOIST; produced by supercell; performed by Chelly",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/bc/ce/eb/bcceeb53-99a0-9948-9201-1f25f1269f83/jacket_SVWC07834B00Z_550.jpg/250x250bb.jpg",
+        "year": 2012,
+        "work": "Guilty Crown",
+        "theme": "OP3"
+      },
+      {
         "itunesId": 437467901,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/Music2/v4/de/77/b1/de77b10b-1f2c-5c95-4f30-9e104977986a/mzaf_6767785507695861909.plus.aac.p.m4a",
         "link": "https://music.apple.com/jp/album/unity/437467896?i=437467901",
@@ -26771,6 +27684,66 @@
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/de/52/69/mzi.tkdlcqat.jpg/250x250bb.jpg",
         "year": 2011,
         "work": "Gosick",
+        "theme": "ED2"
+      },
+      {
+        "id": 976176062,
+        "title": "Overfly",
+        "artist": "Luna Haruna",
+        "artistId": 8002084,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/e75d3647a52dd82a179828cb34242516/250x250-000000-80-0-0.jpg",
+        "year": 2012,
+        "work": "Sword Art Online",
+        "theme": "ED2"
+      },
+      {
+        "id": 4381159811,
+        "title": "BLOODY STREAM",
+        "artist": "Coda",
+        "artistId": 3213,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/d0e4b34e735f75f520bd5743b5aeb876/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "JoJo's Bizarre Adventure (TV)",
+        "theme": "OP2"
+      },
+      {
+        "id": 2868964622,
+        "title": "Roundabout",
+        "artist": "Yes",
+        "artistId": 2711,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/3a90e983b5d8e620b6e00fee2f0fb712/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "JoJo's Bizarre Adventure (TV)",
+        "theme": "ED1"
+      },
+      {
+        "id": 976078922,
+        "title": "abnormalize",
+        "artist": "Ling tosite sigure",
+        "artistId": 8002136,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/95eb4d81035d893454b822992dcf712a/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "PSYCHO-PASS",
+        "theme": "OP1"
+      },
+      {
+        "id": 976029802,
+        "title": "Out of Control",
+        "artist": "Nothing's Carved In Stone",
+        "artistId": 795967,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ce0a5ff7360fb3da3991a44b2361e18a/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "PSYCHO-PASS",
+        "theme": "OP2"
+      },
+      {
+        "id": 976140012,
+        "title": "All Alone With You",
+        "artist": "EGOIST",
+        "artistId": 325381,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/79385bc8ad68bc039dd2d6656a9e3eb3/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "PSYCHO-PASS",
         "theme": "ED2"
       },
       {
@@ -26786,6 +27759,28 @@
         "theme": "ED1"
       },
       {
+        "id": 4293135122,
+        "title": "RIMFIRE",
+        "artist": "GRANRODEO",
+        "artistId": 14108227,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5c3e6a82266aab5d1b785db186cc082b/250x250-000000-80-0-0.jpg",
+        "year": 2012,
+        "work": "Kuroko's Basketball",
+        "theme": "OP2"
+      },
+      {
+        "itunesId": 732717215,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/ba/f6/eb/baf6eb25-5b99-2e89-a505-4f0a56a872d1/mzaf_575870551697974061.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/start-it-right-away-originally-performed-by-%E3%83%92%E3%83%A3%E3%83%80%E3%82%A4%E3%83%B3-%E9%BB%92%E5%AD%90%E3%81%AE%E3%83%90%E3%82%B9%E3%82%B1-%E3%82%88%E3%82%8A/732716728?i=732717215",
+        "title": "Start it right away",
+        "artist": "Hyadain",
+        "artistId": 13627061,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music6/v4/70/75/e3/7075e357-5c73-60db-55df-731681df4324/D000000002109.jpg/250x250bb.jpg",
+        "year": 2013,
+        "work": "Kuroko's Basketball",
+        "theme": "ED1"
+      },
+      {
         "itunesId": 576677368,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/38/95/7c/38957c85-3b71-c84f-eef9-c64f41df3367/mzaf_9890199187568070092.plus.aac.p.m4a",
         "link": "https://music.apple.com/jp/album/days-of-dash/576677364?i=576677368",
@@ -26796,6 +27791,26 @@
         "year": 2012,
         "work": "The Pet Girl of Sakurasou",
         "theme": "ED1"
+      },
+      {
+        "id": 975922932,
+        "title": "V.I.P",
+        "artist": "SID",
+        "artistId": 7936428,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4bb4d96b836209410072ba45eeb3f4d1/250x250-000000-80-0-0.jpg",
+        "year": 2012,
+        "work": "Magi: The Labyrinth of Magic",
+        "theme": "OP1"
+      },
+      {
+        "id": 976139462,
+        "title": "The Bravery",
+        "artist": "Supercell",
+        "artistId": 184460,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/d62798611d72481902306eb93d89e3ff/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "Magi: The Labyrinth of Magic",
+        "theme": "ED2"
       },
       {
         "itunesId": 820036801,
@@ -26810,6 +27825,116 @@
         "theme": "OP1"
       },
       {
+        "itunesId": 562152898,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/b2/14/18/b21418e7-39d9-9c3f-c973-cee2352397a2/mzaf_3803314851834425192.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/salvage/562152895?i=562152898",
+        "title": "Salvage",
+        "artist": "Team.Nekokan [Neko] featuring. Rekka Katakiri",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music/v4/9c/5a/ba/9c5aba77-2e2d-902e-ad8e-f1d5527eaf46/NOPA-205.jpg/250x250bb.jpg",
+        "year": 2012,
+        "work": "Kokoro Connect",
+        "theme": "ED3"
+      },
+      {
+        "id": 1096526702,
+        "title": "great escape",
+        "artist": "Cinema Staff",
+        "artistId": 5971130,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/dca0c07fc76c2bd56fbb3fb7d4bed3f8/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "Attack on Titan",
+        "theme": "ED2"
+      },
+      {
+        "id": 976570432,
+        "title": "ambiguous",
+        "artist": "GARNiDELiA",
+        "artistId": 4034905,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4873a31382c1dab9d41371e92ee3c9cb/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "Kill la Kill",
+        "theme": "OP2"
+      },
+      {
+        "itunesId": 1439166226,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview118/v4/0a/bc/f9/0abcf980-158d-5cf6-a98c-3f83adf2ff06/mzaf_2309009585643938199.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/zero/1439166170?i=1439166226",
+        "title": "ZERO!!",
+        "artist": "Minami Kuribayashi",
+        "artistId": 4867656,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/bf/61/b2/bf61b227-1f81-e26d-9089-fc04f34dc9f7/LACA-9655.jpg/250x250bb.jpg",
+        "year": 2013,
+        "work": "The Devil is a Part-Timer!",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 1804635884,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/e9/96/77/e9967739-5d99-c7b9-3fb0-5916fb6b9005/mzaf_5023725383942422568.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/hello-alone/1804635882?i=1804635884",
+        "title": "Hello Alone",
+        "artist": "Yukino Yukinoshita (Saori Hayami) & Yui Yuigahama",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/11/f0/9e/11f09eb1-3308-aad4-1f59-b27441c95553/5021732645678.jpg/250x250bb.jpg",
+        "year": 2013,
+        "work": "My Teen Romantic Comedy SNAFU",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1804635885,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/1f/41/c9/1f41c972-db83-8c71-cc1a-a711e51b92d4/mzaf_1025819941097484682.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/hello-alone-yui-ballade/1804635882?i=1804635885",
+        "title": "Hello Alone -Yui Ballade-",
+        "artist": "Yui Yuigahama",
+        "artistId": 252732352,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/11/f0/9e/11f09eb1-3308-aad4-1f59-b27441c95553/5021732645678.jpg/250x250bb.jpg",
+        "year": 2013,
+        "work": "My Teen Romantic Comedy SNAFU",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 1804650321,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/41/96/42/4196421a-b686-565e-245b-7409c0f118f4/mzaf_10684828840845809715.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/hello-alone-band-arrange/1804650066?i=1804650321",
+        "title": "Hello Alone -Band arrange-",
+        "artist": "Yukino Yukinoshita (Saori Hayami) & Yui Yuigahama",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/00/14/06/001406c7-3a09-cbb7-36ef-2212c1895ba7/5021732645821.jpg/250x250bb.jpg",
+        "year": 2013,
+        "work": "My Teen Romantic Comedy SNAFU",
+        "theme": "ED3"
+      },
+      {
+        "id": 2227143467,
+        "title": "Golden Time",
+        "artist": "Yui Horie",
+        "artistId": 2930561,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c60decba69addd5d09fd438d477e4d71/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "Golden Time",
+        "theme": "OP1"
+      },
+      {
+        "id": 2227140447,
+        "title": "The♡World's♡End",
+        "artist": "Yui Horie",
+        "artistId": 2930561,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/e40af066e610766db850b234c41fcbdc/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "Golden Time",
+        "theme": "OP2"
+      },
+      {
+        "id": 2227143477,
+        "title": "Sweet & Sweet CHERRY",
+        "artist": "Yui Horie",
+        "artistId": 2930561,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c60decba69addd5d09fd438d477e4d71/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "Golden Time",
+        "theme": "ED1"
+      },
+      {
         "itunesId": 1535603409,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview115/v4/4c/88/f8/4c88f844-04a5-a260-b9e5-2766437b497a/mzaf_4603998200749949222.plus.aac.p.m4a",
         "link": "https://music.apple.com/jp/album/hatsukoi-winding-road/1535603408?i=1535603409",
@@ -26819,6 +27944,58 @@
         "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/07/49/0d/07490d4a-cea5-00ce-9945-3d21775dfd33/COCX-41246.jpg/250x250bb.jpg",
         "year": 2013,
         "work": "Date A Live",
+        "theme": "ED1"
+      },
+      {
+        "id": 2116029607,
+        "title": "SAVE THE WORLD",
+        "artist": "Iori Nomizu",
+        "artistId": 4644654,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/b1736beca61f30a5fb197ebefafe933b/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "Date A Live",
+        "theme": "ED2"
+      },
+      {
+        "id": 2116029537,
+        "title": "SAVE MY HEART",
+        "artist": "Iori Nomizu",
+        "artistId": 4644654,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/b1736beca61f30a5fb197ebefafe933b/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "Date A Live",
+        "theme": "ED3"
+      },
+      {
+        "id": 461023762,
+        "title": "DANGANRONPA",
+        "artist": "Masafumi Takada",
+        "artistId": 6846943,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/e99adca7751d8cf3422f3be9e84e8e1d/250x250-000000-80-0-0.jpg",
+        "year": 2011,
+        "work": "Danganronpa: The Animation",
+        "theme": "OP1"
+      },
+      {
+        "itunesId": 1801641450,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/4c/43/b5/4c43b5bb-bca4-3ab1-0cec-bae08dc96a73/mzaf_8028898236431259289.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/never-say-never-the-animation/1801641345?i=1801641450",
+        "title": "Never Say Never",
+        "artist": "TKDz2b",
+        "artistId": 251712092,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/49/2f/4e/492f4e57-6483-86bf-d5b2-4c1e3c68a585/5021732646170.jpg/250x250bb.jpg",
+        "year": 2013,
+        "work": "Danganronpa: The Animation",
+        "theme": "OP2"
+      },
+      {
+        "id": 4293135362,
+        "title": "WALK",
+        "artist": "OLDCODEX",
+        "artistId": 15085759,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/7b1d1f29def0f61c8cf307d84be795e0/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "Kuroko's Basketball 2",
         "theme": "ED1"
       },
       {
@@ -26854,6 +28031,77 @@
         "theme": "ED2"
       },
       {
+        "id": 976770452,
+        "title": "ANNIVERSARY",
+        "artist": "SID",
+        "artistId": 7936428,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/68c906a625c0f48cc5bf6dae037b5b66/250x250-000000-80-0-0.jpg",
+        "year": 2013,
+        "work": "Magi: The Kingdom of Magic",
+        "theme": "OP1"
+      },
+      {
+        "id": 976046292,
+        "title": "Hikari",
+        "original": "Hikari (光-HIKARI-)",
+        "artist": "Vivid",
+        "artistId": 118802022,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/bc5285a8be548a791679f0752676c41d/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Magi: The Kingdom of Magic",
+        "theme": "OP2"
+      },
+      {
+        "id": 976763782,
+        "title": "With You/With Me",
+        "artist": "9Nine",
+        "artistId": 13024307,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/98456f6575470cfc0fb91f7381018335/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "Magi: The Kingdom of Magic",
+        "theme": "ED2"
+      },
+      {
+        "id": 442409122,
+        "title": "Ah Yeah!!",
+        "artist": "Sukimaswitch",
+        "artistId": 13259173,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/a72f5beafae408fd69b7e7cbb685a72e/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "HAIKYU!!",
+        "theme": "OP2"
+      },
+      {
+        "id": 975922892,
+        "title": "LEO",
+        "artist": "Tacica",
+        "artistId": 50619052,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/69c13b4f13ca6d9f3abf1527506a2e25/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "HAIKYU!!",
+        "theme": "ED3"
+      },
+      {
+        "id": 976523372,
+        "title": "Skyreach",
+        "artist": "Sora Amamiya",
+        "artistId": 11073602,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ddc5538f77b0927edf6036ca0a782042/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "Akame ga Kill!",
+        "theme": "OP1"
+      },
+      {
+        "id": 975972472,
+        "title": "LIAR MASK",
+        "artist": "Rika Mayama",
+        "artistId": 50289572,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/2883ed55a6233cc15be01e461f91032d/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "Akame ga Kill!",
+        "theme": "OP2"
+      },
+      {
         "id": 2809886802,
         "title": "This game",
         "artist": "Konomi Suzuki",
@@ -26861,7 +28109,89 @@
         "cover": "https://cdn-images.dzcdn.net/images/cover/e329ed71d502662d49e7c936345e1ce7/250x250-000000-80-0-0.jpg",
         "year": 2014,
         "work": "No Game, No Life",
-        "theme": "ED1"
+        "theme": "OP1"
+      },
+      {
+        "id": 975977712,
+        "title": "Seven Deadly Sins",
+        "artist": "MAN WITH A MISSION",
+        "artistId": 5797990,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f4fa704dd72f5668a4cabe56de5f4cfd/250x250-000000-80-0-0.jpg",
+        "year": 2015,
+        "work": "The Seven Deadly Sins",
+        "theme": "OP2"
+      },
+      {
+        "id": 136449322,
+        "title": "Season",
+        "artist": "ALISA TAKIGAWA",
+        "artistId": 11391706,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/a43c045c0fa3e879227c397d1f943a1d/250x250-000000-80-0-0.jpg",
+        "year": 2015,
+        "work": "The Seven Deadly Sins",
+        "theme": "ED3"
+      },
+      {
+        "id": 976080232,
+        "title": "courage",
+        "artist": "Haruka Tomatsu",
+        "artistId": 12145758,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/bce4780377f6804b63d709434ea54537/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "Sword Art Online II",
+        "theme": "OP2"
+      },
+      {
+        "id": 976777892,
+        "title": "Startear",
+        "artist": "Luna Haruna",
+        "artistId": 8002084,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/d7f97cf0e652a8ebb2fe95fa0a4d3277/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "Sword Art Online II",
+        "theme": "ED2"
+      },
+      {
+        "id": 1355599212,
+        "title": "No More Time Machine",
+        "artist": "LiSA",
+        "artistId": 11446160,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c0463b58597a73583ff7df9eb73e1262/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "Sword Art Online II",
+        "theme": "ED3"
+      },
+      {
+        "itunesId": 1537789394,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/8c/81/ce/8c81ce68-6999-b5ad-0277-8ab10029cbce/mzaf_17274925738210281480.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/von-feat-arn%C3%B3r-dan/1537789392?i=1537789394",
+        "title": "Von",
+        "artist": "Arnor Dan",
+        "artistId": 4423239,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/b6/5c/ac/b65cac10-0db9-b1e8-cbda-2c207ed54f8e/jacket_SVWC70009B00Z_550.jpg/250x250bb.jpg",
+        "year": 2014,
+        "work": "Terror in Resonance",
+        "theme": "ED2"
+      },
+      {
+        "id": 976060172,
+        "title": "CLICK",
+        "artist": "ClariS",
+        "artistId": 4485144,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/02a98a6bac94f5f6cf9b2e5ced043673/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "Nisekoi",
+        "theme": "OP1"
+      },
+      {
+        "id": 976297942,
+        "title": "STEP",
+        "artist": "ClariS",
+        "artistId": 4485144,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/b73cdb7ac664fd41c5f2cd46fb0e3f90/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "Nisekoi",
+        "theme": "OP2"
       },
       {
         "itunesId": 1535788478,
@@ -26888,6 +28218,46 @@
         "theme": "ED5"
       },
       {
+        "id": 1355728712,
+        "title": "THIS ILLUSION",
+        "artist": "LiSA",
+        "artistId": 11446160,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/201386758cb1e3079af310c4acdf1016/250x250-000000-80-0-0.jpg",
+        "year": 2015,
+        "work": "Fate/stay night: Unlimited Blade Works",
+        "theme": "ED2"
+      },
+      {
+        "id": 976378412,
+        "title": "Rising Hope",
+        "artist": "LiSA",
+        "artistId": 11446160,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/072fdab9f696f68a62bd271c113e0169/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "The Irregular at Magic High School",
+        "theme": "OP1"
+      },
+      {
+        "id": 975962052,
+        "title": "grilletto",
+        "artist": "GARNiDELiA",
+        "artistId": 4034905,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/788083cb7b7b5adde5291c2633473543/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "The Irregular at Magic High School",
+        "theme": "OP2"
+      },
+      {
+        "id": 976001812,
+        "title": "Mirror",
+        "artist": "Rei Yasuda",
+        "artistId": 8002378,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/fdcdcf0eba99db24e5e13b3638e40137/250x250-000000-80-0-0.jpg",
+        "year": 2014,
+        "work": "The Irregular at Magic High School",
+        "theme": "ED3"
+      },
+      {
         "itunesId": 989675152,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/81/71/af/8171af03-8033-2aa1-defd-79ecb6cf7822/mzaf_14032070731543224401.plus.aac.p.m4a",
         "link": "https://music.apple.com/jp/album/hey-world/989675151?i=989675152",
@@ -26898,6 +28268,40 @@
         "year": 2015,
         "work": "Is It Wrong to Try to Pick Up Girls in a Dungeon?",
         "theme": "ED1"
+      },
+      {
+        "itunesId": 989674367,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/f4/90/0d/f4900d92-b4aa-1307-cccf-9f0b925d067b/mzaf_8051797848163503196.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/right-light-rise/989674362?i=989674367",
+        "title": "RIGHT LIGHT RISE",
+        "artist": "Kanon Wakeshima",
+        "artistId": 1447286,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music7/v4/ef/9e/fd/ef9efdc3-f890-13fa-914d-09dfa2b8d95a/1000563677_Wakeshima_RLR_Tsujo_JKT.jpg/250x250bb.jpg",
+        "year": 2015,
+        "work": "Is It Wrong to Try to Pick Up Girls in a Dungeon?",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 6776585152,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/3c/74/4d/3c744d7b-0aa2-d3ec-f0d3-0a49644bb50a/mzaf_11920330725698217990.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/ring-of-fortune/6776585151?i=6776585152",
+        "title": "Ring of Fortune",
+        "artist": "Eri Sasaki",
+        "artistId": 8185374,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/38/01/34/38013433-b922-4e4f-1530-883be8752d25/4534530084552_Cover.jpg/250x250bb.jpg",
+        "year": 2015,
+        "work": "Plastic Memories",
+        "theme": "ED3"
+      },
+      {
+        "id": 2358580505,
+        "title": "Redo",
+        "artist": "Konomi Suzuki",
+        "artistId": 7501576,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4d1ca72187df4b34dbce47e1c575e7b5/250x250-000000-80-0-0.jpg",
+        "year": 2016,
+        "work": "Re:ZERO -Starting Life in Another World-",
+        "theme": "OP1"
       },
       {
         "id": 2157451917,
@@ -26920,6 +28324,16 @@
         "theme": "ED1"
       },
       {
+        "id": 2358580145,
+        "title": "Stay Alive",
+        "artist": "EMILIA(CV:RIE TAKAHASHI)",
+        "artistId": 220661065,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/44e8c0024dd6728db0829d1cc794cba7/250x250-000000-80-0-0.jpg",
+        "year": 2016,
+        "work": "Re:ZERO -Starting Life in Another World-",
+        "theme": "ED2"
+      },
+      {
         "id": 2157451907,
         "title": "STRAIGHT BET",
         "artist": "Myth & Roid",
@@ -26940,6 +28354,66 @@
         "theme": "ED4"
       },
       {
+        "id": 1100590722,
+        "title": "Re:Re:",
+        "artist": "ASIAN KUNG-FU GENERATION",
+        "artistId": 831,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5b8d294ba72b50db78a4dea82db50438/250x250-000000-80-0-0.jpg",
+        "year": 2016,
+        "work": "ERASED",
+        "theme": "ED1"
+      },
+      {
+        "id": 2524728881,
+        "title": "fantastic dreamer",
+        "artist": "Machico",
+        "artistId": 14107475,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/514583d201500d8502c0475eba2639af/250x250-000000-80-0-0.jpg",
+        "year": 2016,
+        "work": "KONOSUBA -God's blessing on this wonderful world!",
+        "theme": "ED1"
+      },
+      {
+        "id": 4381162131,
+        "title": "Crazy Noisy Bizarre Town",
+        "artist": "THE DU",
+        "artistId": 14021881,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5b21e5256b2fc0ad0703fd8ae227c937/250x250-000000-80-0-0.jpg",
+        "year": 2016,
+        "work": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
+        "theme": "OP1"
+      },
+      {
+        "id": 4381162141,
+        "title": "Crazy Noisy Bizarre Town ~EDM Arrange Ver.~",
+        "artist": "THE DU",
+        "artistId": 14021881,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/5b21e5256b2fc0ad0703fd8ae227c937/250x250-000000-80-0-0.jpg",
+        "year": 2016,
+        "work": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
+        "theme": "OP2"
+      },
+      {
+        "id": 4381161801,
+        "title": "chase",
+        "artist": "batta",
+        "artistId": 13965445,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/dd72d5b9ed829b35c8474a748f169564/250x250-000000-80-0-0.jpg",
+        "year": 2016,
+        "work": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
+        "theme": "OP3"
+      },
+      {
+        "id": 4381161861,
+        "title": "Great Days",
+        "artist": "Karen Aoki / Daisuke Hasegawa",
+        "artistId": 425206331,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/30ac13e5281442defda12fb050789b6e/250x250-000000-80-0-0.jpg",
+        "year": 2016,
+        "work": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
+        "theme": "OP4"
+      },
+      {
         "itunesId": 1181795395,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview62/v4/04/b6/05/04b60570-5d4c-959a-6d00-60870cce3862/mzaf_670756053979648089.plus.aac.p.m4a",
         "link": "https://music.apple.com/jp/album/great-days-units-ver/1181795164?i=1181795395",
@@ -26950,6 +28424,182 @@
         "year": 2016,
         "work": "JoJo's Bizarre Adventure: Diamond is Unbreakable",
         "theme": "ED2"
+      },
+      {
+        "itunesId": 1133863797,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview18/v4/c4/c6/01/c4c6010d-5fcc-f293-12f1-a33d5c1f146e/mzaf_8180296067448698565.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/rough-diamonds/1133863796?i=1133863797",
+        "title": "ROUGH DIAMONDS",
+        "artist": "SCREEN mode",
+        "artistId": 50289222,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music60/v4/30/d3/0c/30d30c1a-cc08-8e3d-02bc-e720bbc85574/LACM-14524.jpg/250x250bb.jpg",
+        "year": 2016,
+        "work": "Food Wars! The Second Plate",
+        "theme": "ED1"
+      },
+      {
+        "id": 976227682,
+        "title": "Sora Ni Utaeba",
+        "original": "Sora ni Utaeba (空に歌えば)",
+        "artist": "amazarashi",
+        "artistId": 8002048,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0df90bd9c9d9c42aecba30e83315de24/250x250-000000-80-0-0.jpg",
+        "year": 2017,
+        "work": "My Hero Academia Season 2",
+        "theme": "OP2"
+      },
+      {
+        "id": 975968432,
+        "title": "Datte Atashino Hero",
+        "original": "Datte Atashi no Hero. (だってアタシのヒーロー。)",
+        "artist": "LiSA",
+        "artistId": 11446160,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/25ec9154345778e6c90807f0469c1f03/250x250-000000-80-0-0.jpg",
+        "year": 2017,
+        "work": "My Hero Academia Season 2",
+        "theme": "ED2"
+      },
+      {
+        "id": 1471722992,
+        "title": "Harukamirai",
+        "original": "Haruka Mirai (ハルカミライ)",
+        "artist": "kankakupiero",
+        "artistId": 89676742,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6cdefe3a8bd6d589ead746b8967a4589/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "Black Clover",
+        "theme": "OP1"
+      },
+      {
+        "id": 3111785161,
+        "title": "PAiNT it BLACK",
+        "artist": "Bishop Briggs",
+        "artistId": 10246324,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/370347f864c5895c4921f2fd3441951e/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "Black Clover",
+        "theme": "OP2"
+      },
+      {
+        "itunesId": 1420545183,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/58/ba/c1/58bac10a-c593-6f3b-6583-3a09d69fc5af/mzaf_18172628020714327255.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/guess-who-is-back/1420545163?i=1420545183",
+        "title": "Guess Who Is Back",
+        "artist": "Kumi Koda",
+        "artistId": 10494855,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/c4/e8/69/c4e869e2-6222-4ed5-6078-883a9a0576fb/RZCD-86629.jpg/250x250bb.jpg",
+        "year": 2018,
+        "work": "Black Clover",
+        "theme": "OP4"
+      },
+      {
+        "itunesId": 1827914062,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/11/de/d8/11ded8be-df59-49da-237d-ee553be9091c/mzaf_10696193470168584794.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/gamushara-black-clover-animation/1827914061?i=1827914062",
+        "title": "Gamushara",
+        "original": "Gamushara (ガムシャラ)",
+        "artist": "Miyuna",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/bf/32/38/bf32389d-71b1-b43d-3d37-73eda3dd7d4d/198704623455_Cover.jpg/250x250bb.jpg",
+        "year": 2018,
+        "work": "Black Clover",
+        "theme": "OP5"
+      },
+      {
+        "id": 2518227071,
+        "title": "JUSTadICE",
+        "artist": "Seiko Oomori",
+        "artistId": 9754358,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c8b1e6456e037a74aaee41b4e306565f/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Black Clover",
+        "theme": "OP7"
+      },
+      {
+        "id": 2355735925,
+        "title": "sky＆blue",
+        "artist": "Girlfriend",
+        "artistId": 381691751,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/81b50f39abfc7f1109b20ef209b96644/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Black Clover",
+        "theme": "OP8"
+      },
+      {
+        "id": 82395514,
+        "title": "RiGHT NOW",
+        "artist": "Empire Business",
+        "artistId": 6255062,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6cb51a5f1e99f0d34c790198ed192a54/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Black Clover",
+        "theme": "OP9"
+      },
+      {
+        "id": 2518232281,
+        "title": "Amazing Dreams",
+        "artist": "SWANKY DANK",
+        "artistId": 118100742,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/9960ccbf9fb30bd7c9f6e5917e2eb470/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "Black Clover",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 1358240811,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/28/7b/bf/287bbf66-a9b6-e605-1bde-b1137ef3f835/mzaf_1406681204450569865.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/black-to-the-dreamlight/1358240529?i=1358240811",
+        "title": "Black to the Dreamlight",
+        "artist": "EMPiRE",
+        "artistId": 186255977,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/05/8f/98/058f988c-7ca1-a199-c528-02f408c37868/ANTCD-27420.jpg/250x250bb.jpg",
+        "year": 2018,
+        "work": "Black Clover",
+        "theme": "ED3"
+      },
+      {
+        "id": 2516757061,
+        "title": "four",
+        "artist": "Faky",
+        "artistId": 8443716,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/3e42911aed4539fdc143b03286fbdf54/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "Black Clover",
+        "theme": "ED4"
+      },
+      {
+        "itunesId": 1269459149,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/5c/1b/4d/5c1b4dab-fb23-faa1-fcc0-2b8922ef56ac/mzaf_8923467822302375986.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/layon-theline/1269459148?i=1269459149",
+        "title": "LAYon-theLINE",
+        "artist": "D-selections",
+        "artistId": 238170951,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/0d/a1/23/0da123da-79ee-6182-c99b-65b4ff4df6b1/EYCA-11491.jpg/250x250bb.jpg",
+        "year": 2017,
+        "work": "Kakegurui",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1268504086,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview122/v4/ec/68/ad/ec68ad57-5ce8-387e-0c5c-4c0a80e42935/mzaf_2127369876982480318.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/beautiful-soldier/1268504084?i=1268504086",
+        "title": "Beautiful Soldier",
+        "artist": "Minami",
+        "artistId": 84543982,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music128/v4/ec/f6/0e/ecf60e95-8d9c-70e6-1c8a-0adb6bcc9a0a/LACM-14652.jpg/250x250bb.jpg",
+        "year": 2017,
+        "work": "Classroom of the Elite",
+        "theme": "ED2"
+      },
+      {
+        "id": 2524728961,
+        "title": "TOMORROW",
+        "artist": "Machico",
+        "artistId": 14107475,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/514583d201500d8502c0475eba2639af/250x250-000000-80-0-0.jpg",
+        "year": 2017,
+        "work": "KONOSUBA -God's blessing on this wonderful world! 2",
+        "theme": "ED1"
       },
       {
         "id": 2157451947,
@@ -26972,6 +28622,36 @@
         "year": 2017,
         "work": "Saga of Tanya the Evil",
         "theme": "ED2"
+      },
+      {
+        "id": 2116558327,
+        "title": "Here",
+        "artist": "Junna",
+        "artistId": 13626381,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/867113c96d85613fcef4a5dc4da8f656/250x250-000000-80-0-0.jpg",
+        "year": 2017,
+        "work": "The Ancient Magus' Bride",
+        "theme": "OP1"
+      },
+      {
+        "id": 2116555507,
+        "title": "You",
+        "artist": "May'n",
+        "artistId": 58282972,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/1e96600b2a1664b2d4db182d65febad1/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "The Ancient Magus' Bride",
+        "theme": "OP2"
+      },
+      {
+        "id": 4293136192,
+        "title": "Elemental World",
+        "artist": "Choucho",
+        "artistId": 4254091,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/68ef46a555d83b297a01c1c696e1b810/250x250-000000-80-0-0.jpg",
+        "year": 2017,
+        "work": "Masamune-kun's Revenge",
+        "theme": "ED1"
       },
       {
         "id": 468050032,
@@ -27024,6 +28704,38 @@
         "theme": "ED11"
       },
       {
+        "itunesId": 1235477105,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/2f/bc/f5/2fbcf5b4-544d-aa09-87bb-5f0c24844c0e/mzaf_4920372918278236529.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/blow-out/1235477103?i=1235477105",
+        "title": "Blow out",
+        "artist": "Konomi Suzuki",
+        "artistId": 7501576,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music117/v4/d4/00/ad/d400ad44-2be3-c2e5-9d47-316a4d7fef7c/JK_ZMCZ-11126.jpg/250x250bb.jpg",
+        "year": 2017,
+        "work": "Akashic Records of Bastard Magic Instructor",
+        "theme": "ED1"
+      },
+      {
+        "id": 526633962,
+        "title": "ODD FUTURE",
+        "artist": "UVERworld",
+        "artistId": 2503,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/2a30035c45fabd42651ef47ea5593c09/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "My Hero Academia Season 3",
+        "theme": "OP1"
+      },
+      {
+        "id": 537151152,
+        "title": "Make my story",
+        "artist": "Lenny Code Fiction",
+        "artistId": 15354775,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/ba85d5bf3233e37782e2ac4695ad8b27/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "My Hero Academia Season 3",
+        "theme": "OP2"
+      },
+      {
         "itunesId": 1443959303,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/e5/1f/3e/e51f3ecb-f082-e1b6-04f3-e3bd884bbdb1/mzaf_15759300546268314314.plus.aac.p.m4a",
         "link": "https://music.apple.com/jp/album/fukashigi-no-carte-from-seishun-buta-yarou-wa-bunny/1443959302?i=1443959303",
@@ -27035,6 +28747,181 @@
         "year": 2018,
         "work": "Rascal Does Not Dream of Bunny Girl Senpai",
         "theme": "ED2"
+      },
+      {
+        "id": 3458363181,
+        "title": "Believe in...",
+        "artist": "Aira Yuuki",
+        "artistId": 14395799,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f33556b3dd69c0c9db60339318bcc73d/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "Violet Evergarden",
+        "theme": "ED2"
+      },
+      {
+        "id": 3545810821,
+        "title": "Nameless story",
+        "artist": "Takuma Terashima",
+        "artistId": 9594396,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/708ad822785f51869d9d635d17fc9f51/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "That Time I Got Reincarnated as a Slime",
+        "theme": "OP1"
+      },
+      {
+        "id": 4293125092,
+        "title": "Another colony",
+        "artist": "True",
+        "artistId": 474970,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f795555b8cf5b04e20bb139a2d982a34/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "That Time I Got Reincarnated as a Slime",
+        "theme": "ED2"
+      },
+      {
+        "id": 975991842,
+        "title": "found & lost",
+        "artist": "Survive Said The Prophet",
+        "artistId": 12136902,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/254ff32a5478a9e9f5371b0bbc764e4a/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "BANANA FISH",
+        "theme": "OP1"
+      },
+      {
+        "id": 976030072,
+        "title": "FREEDOM",
+        "artist": "Blue Encount",
+        "artistId": 5482289,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/adb85a61a975c3c80a94c5143b9f1097/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "BANANA FISH",
+        "theme": "OP2"
+      },
+      {
+        "id": 975887152,
+        "title": "Prayer X",
+        "artist": "King Gnu",
+        "artistId": 12944623,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/66887ae079f5a4b1cad71d3e10faacdd/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "BANANA FISH",
+        "theme": "ED1"
+      },
+      {
+        "id": 975993912,
+        "title": "RED",
+        "artist": "Survive Said The Prophet",
+        "artistId": 12136902,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0711172666eab26fd520676b7ff86c00/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "BANANA FISH",
+        "theme": "ED2"
+      },
+      {
+        "id": 575915742,
+        "title": "Gin No Kisei",
+        "original": "Gin no Kisei (銀の祈誓)",
+        "artist": "soraru",
+        "artistId": 53295022,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0b8961275d499a4860573c60d489cba3/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "GOBLIN SLAYER",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1445260245,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/43/aa/06/43aa06a9-968e-fc62-5233-ae942071dcdf/mzaf_2506623850652260153.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/though-our-paths-may-diverge-tv%E3%82%A2%E3%83%8B%E3%83%A1%E3%82%B4%E3%83%96%E3%83%AA%E3%83%B3%E3%82%B9%E3%83%AC%E3%82%A4%E3%83%A4%E3%83%BC7%E8%A9%B1-%E6%8C%BF%E5%85%A5%E6%AD%8C/1445259929?i=1445260245",
+        "title": "Though Our Paths May Diverge",
+        "artist": "Mili",
+        "artistId": 322929,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music118/v4/5b/e5/2e/5be52ec5-5335-9a66-b60f-384a82353cd8/4562250641588_cover.jpg/250x250bb.jpg",
+        "year": 2018,
+        "work": "GOBLIN SLAYER",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 1447494320,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/e8/49/72/e8497293-0e40-0086-720d-3eb06425c51c/mzaf_12152506521785663316.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/within-tv%E3%82%A2%E3%83%8B%E3%83%A1%E3%82%B4%E3%83%96%E3%83%AA%E3%83%B3%E3%82%B9%E3%83%AC%E3%82%A4%E3%83%A4%E3%83%BC12%E8%A9%B1-%E6%8C%BF%E5%85%A5%E6%AD%8C/1447494319?i=1447494320",
+        "title": "Within",
+        "artist": "Mili",
+        "artistId": 322929,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/52/2a/11/522a118f-7648-c8f4-41cf-78ef6e29ef4f/859754641652_cover.jpg/250x250bb.jpg",
+        "year": 2018,
+        "work": "GOBLIN SLAYER",
+        "theme": "ED3"
+      },
+      {
+        "id": 2523761,
+        "title": "Freek'n You",
+        "artist": "Jodeci",
+        "artistId": 2386,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6b99bd86773b4a83d8f5d1d40ddad959/250x250-000000-80-0-0.jpg",
+        "year": 2015,
+        "work": "JoJo's Bizarre Adventure: Golden Wind",
+        "theme": "ED1"
+      },
+      {
+        "id": 1024950942,
+        "title": "RESISTER",
+        "artist": "ASCA",
+        "artistId": 6021454,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/3845485021779111b34c27783526e160/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Sword Art Online: Alicization",
+        "theme": "OP2"
+      },
+      {
+        "id": 976001732,
+        "title": "forget-me-not",
+        "artist": "ReoNa",
+        "artistId": 4918255,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/369b5e986ceb92589a2f75737c2907b3/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Sword Art Online: Alicization",
+        "theme": "ED2"
+      },
+      {
+        "id": 975887442,
+        "title": "Beautiful",
+        "artist": "Anly",
+        "artistId": 11233260,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/2b121ed9a737e17dd382594f0f735355/250x250-000000-80-0-0.jpg",
+        "year": 2018,
+        "work": "The Seven Deadly Sins: Revival of the Commandments",
+        "theme": "ED2"
+      },
+      {
+        "id": 1024949392,
+        "title": "from the edge",
+        "artist": "FictionJunction",
+        "artistId": 68976552,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/d7ddce644e76e223b9f73624b2f31ba6/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Demon Slayer: Kimetsu no Yaiba",
+        "theme": "ED2"
+      },
+      {
+        "id": 975867512,
+        "title": "Lamp",
+        "artist": "Cö Shu Nie",
+        "artistId": 14475725,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/bb653f395271ed3e02c50989938b50ca/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "The Promised Neverland",
+        "theme": "ED2"
+      },
+      {
+        "id": 1024962302,
+        "title": "Touch Off",
+        "artist": "UVERworld",
+        "artistId": 2503,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/408c2f642550107c0b44c693c9c9f461/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "The Promised Neverland",
+        "theme": "ED3"
       },
       {
         "id": 695234522,
@@ -27054,15 +28941,153 @@
         "cover": "https://cdn-images.dzcdn.net/images/cover/2903e383e299341b1550fef53ae2fcb7/250x250-000000-80-0-0.jpg",
         "year": 2019,
         "work": "Dr. STONE",
+        "theme": "OP1"
+      },
+      {
+        "id": 975899312,
+        "title": "MUKANJYO",
+        "artist": "Survive Said The Prophet",
+        "artistId": 12136902,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4d1cdf0153b4850cdce06e35156a9cbb/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Vinland Saga",
+        "theme": "OP1"
+      },
+      {
+        "id": 1127453882,
+        "title": "Dark Crow",
+        "artist": "MAN WITH A MISSION",
+        "artistId": 5797990,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4e8e5dcb90eb6104a2678c242ac78e4d/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Vinland Saga",
+        "theme": "OP2"
+      },
+      {
+        "id": 1100435192,
+        "title": "Drown",
+        "artist": "milet",
+        "artistId": 5879939,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c72f759a4654891161d56e53f1bd8130/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Vinland Saga",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 1817474947,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/8e/22/73/8e22730c-8f45-0391-3b6f-1006081a3306/mzaf_9835745276287388971.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/seijaku-no-apostle-one-punch-man/1817474946?i=1817474947",
+        "title": "Seijaku No Apostle",
+        "original": "Seijaku no Apostle (静寂のアポストル)",
+        "artist": "JAM Project",
+        "artistId": 6372,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/b9/66/d7/b966d7e7-84db-ba49-5b09-345a7b085704/193663065711.png/250x250bb.jpg",
+        "year": 2019,
+        "work": "One-Punch Man Season 2",
         "theme": "ED1"
       },
       {
-        "id": 4381159811,
-        "title": "BLOODY STREAM",
-        "artist": "Coda",
-        "artistId": 3213,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/d0e4b34e735f75f520bd5743b5aeb876/250x250-000000-80-0-0.jpg",
-        "year": 2013
+        "itunesId": 1493260838,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/be/e8/48/bee84850-9c02-d95d-cbca-73820445b2f1/mzaf_3019454402308135608.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/chizu-ga-nakutemo-modoru-kara-one-punch-man/1493260836?i=1493260838",
+        "title": "Chizu Ga Nakutemo Modoru Kara",
+        "original": "Chizu ga Nakutemo Modoru kara (地図が無くても戻るから)",
+        "artist": "Makoto Furukawa",
+        "artistId": 12971383,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/37/5f/93/375f93b3-4bf3-1a08-cef6-0fe627f7d343/artwork.jpg/250x250bb.jpg",
+        "year": 2019,
+        "work": "One-Punch Man Season 2",
+        "theme": "ED2"
+      },
+      {
+        "id": 2539822221,
+        "title": "FAITH",
+        "artist": "Madkid",
+        "artistId": 390549491,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8295255ca37a73bf3f5b41e218522eae/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "The Rising of the Shield Hero",
+        "theme": "OP2"
+      },
+      {
+        "id": 2539820641,
+        "title": "Kimino Namae",
+        "original": "Kimi no Namae (きみの名前)",
+        "artist": "Chiai Fujikawa",
+        "artistId": 55285462,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/d30d5eb2ef0736b6067ab3299d037d24/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "The Rising of the Shield Hero",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1455935321,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview125/v4/84/03/04/840304f8-6c2f-9b79-a46b-2918cd0c7270/mzaf_4915928550908330135.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/falling-through-starlight/1455935205?i=1455935321",
+        "title": "Falling Through Starlight",
+        "artist": "Asami Seto",
+        "artistId": 119665452,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/ac/cd/19/accd1944-681c-9ec1-20ae-47e7328bfc4e/COCX-40782.jpg/250x250bb.jpg",
+        "year": 2019,
+        "work": "The Rising of the Shield Hero",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 6831354919,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/27/80/99/278099fa-5045-da8b-dbc9-67c0f0cae8a5/mzaf_1560524124100648022.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/atashi-ga-tonari-ni-iru-uchi-ni-from-the-rising/6831354678?i=6831354919",
+        "title": "Atashi ga Tonari ni Iru Uchi ni",
+        "original": "Atashi ga Tonari ni Iru Uchi ni (あたしが隣にいるうちに)",
+        "artist": "Chiai Fujikawa",
+        "artistId": 55285462,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/b8/b4/ed/b8b4edca-0b02-af2b-9bbe-1f6172b80a47/9155.jpg/250x250bb.jpg",
+        "year": 2019,
+        "work": "The Rising of the Shield Hero",
+        "theme": "ED3"
+      },
+      {
+        "id": 976036942,
+        "title": "Dororo",
+        "artist": "ASIAN KUNG-FU GENERATION",
+        "artistId": 831,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/998585143a92fc3f750b0a195cff7743/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Dororo",
+        "theme": "OP2"
+      },
+      {
+        "itunesId": 1477217716,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/94/ee/97/94ee977d-6ca7-3671-af1c-b4af7c3f675c/mzaf_1648879468841191338.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/chime/1477217713?i=1477217716",
+        "title": "Chime",
+        "artist": "Ai Otsuka",
+        "artistId": 1493551,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/13/e1/f9/13e1f9ed-821a-9040-ec64-f7bf841d439f/ANTCD-A0000000158.jpg/250x250bb.jpg",
+        "year": 2019,
+        "work": "Fruits Basket (2019)",
+        "theme": "OP2"
+      },
+      {
+        "itunesId": 1458325138,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/f4/dd/dd/f4dddd64-7159-ad03-b030-bc89e00d09a1/mzaf_14973926121038780645.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/lucky-ending/1458325137?i=1458325138",
+        "title": "Lucky Ending",
+        "artist": "Vickeblanka",
+        "artistId": 11413564,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music123/v4/e9/b6/50/e9b65002-058e-6461-00cf-603ef2a3ceb2/ANTCD-31566.jpg/250x250bb.jpg",
+        "year": 2019,
+        "work": "Fruits Basket (2019)",
+        "theme": "ED1"
+      },
+      {
+        "id": 2509071241,
+        "title": "One Step Closer",
+        "artist": "Intersection",
+        "artistId": 1012750,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/a7cb41dfde49b189897f8c71887d3b4e/250x250-000000-80-0-0.jpg",
+        "year": 2019,
+        "work": "Fruits Basket (2019)",
+        "theme": "ED2"
       },
       {
         "id": 560321032,
@@ -27100,14 +29125,6 @@
         "year": 2019
       },
       {
-        "id": 2036814007,
-        "title": "FightSong",
-        "artist": "Eve",
-        "artistId": 69128312,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/75f928f746def824580a716e6ffc2c57/250x250-000000-80-0-0.jpg",
-        "year": 2015
-      },
-      {
         "id": 904161152,
         "title": "Polaris",
         "original": "ポラリス",
@@ -27132,14 +29149,6 @@
         "artistId": 187156157,
         "cover": "https://cdn-images.dzcdn.net/images/cover/71dac801c1d3f89ccae792ccf22ccc86/250x250-000000-80-0-0.jpg",
         "year": 2019
-      },
-      {
-        "id": 526633962,
-        "title": "ODD FUTURE",
-        "artist": "UVERworld",
-        "artistId": 2503,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/2a30035c45fabd42651ef47ea5593c09/250x250-000000-80-0-0.jpg",
-        "year": 2018
       }
     ],
     "2020": [
@@ -27168,9 +29177,7 @@
         "artist": "Aimer",
         "artistId": 8623006,
         "cover": "https://cdn-images.dzcdn.net/images/cover/fe2830a3220f92056d5ee6cf31de73d2/250x250-000000-80-0-0.jpg",
-        "year": 2021,
-        "work": "Demon Slayer",
-        "theme": "OP2"
+        "year": 2021
       },
       {
         "id": 1581982382,
@@ -27188,9 +29195,7 @@
         "artist": "YOASOBI",
         "artistId": 108153772,
         "cover": "https://cdn-images.dzcdn.net/images/cover/c028acc15f911c6ca3ff821abbb64aa3/250x250-000000-80-0-0.jpg",
-        "year": 2023,
-        "work": "Oshi no Ko",
-        "theme": "OP1"
+        "year": 2023
       },
       {
         "id": 2449469235,
@@ -27225,9 +29230,7 @@
         "artist": "Kenshi Yonezu",
         "artistId": 5289039,
         "cover": "https://cdn-images.dzcdn.net/images/cover/219b98615e49c9df44727bc3d9d57c8e/250x250-000000-80-0-0.jpg",
-        "year": 2022,
-        "work": "Chainsaw Man",
-        "theme": "OP1"
+        "year": 2022
       },
       {
         "id": 3540533651,
@@ -27311,9 +29314,7 @@
         "artist": "Linked Horizon",
         "artistId": 7174384,
         "cover": "https://cdn-images.dzcdn.net/images/cover/ee6fc9ce4cbe0ba36c922b3b31bff9f0/250x250-000000-80-0-0.jpg",
-        "year": 2024,
-        "work": "Attack on Titan",
-        "theme": "OP1"
+        "year": 2024
       },
       {
         "id": 2122215167,
@@ -27428,9 +29429,7 @@
         "artist": "Creepy Nuts",
         "artistId": 13046819,
         "cover": "https://cdn-images.dzcdn.net/images/cover/d19f1ef87690fdceea113cc47140b360/250x250-000000-80-0-0.jpg",
-        "year": 2024,
-        "work": "Mashle: Magic and Muscles",
-        "theme": "OP2"
+        "year": 2024
       },
       {
         "id": 3024903811,
@@ -27545,7 +29544,9 @@
         "artist": "Vaundy",
         "artistId": 78505502,
         "cover": "https://cdn-images.dzcdn.net/images/cover/15cc517d4aa38275bcd5722c1a0c1094/250x250-000000-80-0-0.jpg",
-        "year": 2022
+        "year": 2022,
+        "work": "Chainsaw Man",
+        "theme": "ED1"
       },
       {
         "id": 2464165695,
@@ -27797,32 +29798,12 @@
         "year": 2022
       },
       {
-        "id": 2411439855,
-        "title": "more than words",
-        "artist": "Hitsujibungaku",
-        "artistId": 13290779,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/160004db742f5ecf6388156224dc8b7b/250x250-000000-80-0-0.jpg",
-        "year": 2023,
-        "work": "JUJUTSU KAISEN Season 2",
-        "theme": "ED2"
-      },
-      {
         "id": 3784514552,
         "title": "Hero too",
         "artist": "KYOKA JIRO Starring Chrissy Costanza",
         "artistId": 91222732,
         "cover": "https://cdn-images.dzcdn.net/images/cover/058aead82b2216ec17d4af00181c6a6a/250x250-000000-80-0-0.jpg",
         "year": 2020
-      },
-      {
-        "id": 2152253197,
-        "title": "UNDER THE TREE",
-        "artist": "SiM",
-        "artistId": 73204762,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/014164549bbb3ca4730877fc85716b96/250x250-000000-80-0-0.jpg",
-        "year": 2023,
-        "work": "Attack on Titan Final Season THE FINAL CHAPTERS Special 1",
-        "theme": "ED1"
       },
       {
         "id": 2345664365,
@@ -27851,6 +29832,160 @@
         "year": 2025
       },
       {
+        "id": 1186939392,
+        "title": "VIVID VICE",
+        "artist": "Who-ya Extended",
+        "artistId": 78441442,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/655ab66e69f809727937d40f711dbe0d/250x250-000000-80-0-0.jpg",
+        "year": 2021,
+        "work": "JUJUTSU KAISEN",
+        "theme": "OP2"
+      },
+      {
+        "id": 1190728792,
+        "title": "give it back",
+        "artist": "Cö Shu Nie",
+        "artistId": 14475725,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c51700af73c9c6c0690333b57c090d28/250x250-000000-80-0-0.jpg",
+        "year": 2021,
+        "work": "JUJUTSU KAISEN",
+        "theme": "ED2"
+      },
+      {
+        "id": 2358578455,
+        "title": "Realize",
+        "artist": "Konomi Suzuki",
+        "artistId": 7501576,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/d98c0137fbd617e353a3d4f12c0fcc16/250x250-000000-80-0-0.jpg",
+        "year": 2020,
+        "work": "Re:ZERO -Starting Life in Another World- Season 2",
+        "theme": "ED1"
+      },
+      {
+        "id": 2358578505,
+        "title": "Memento",
+        "artist": "Nonoc",
+        "artistId": 102806952,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/0f7fddeb71bff49648ef389645e552b5/250x250-000000-80-0-0.jpg",
+        "year": 2020,
+        "work": "Re:ZERO -Starting Life in Another World- Season 2",
+        "theme": "ED2"
+      },
+      {
+        "itunesId": 1536185728,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview126/v4/64/6e/b8/646eb86e-7d7a-e08a-8677-92b94f32afce/mzaf_8526452396914966919.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/slump-tower-of-god-ed/1536185726?i=1536185728",
+        "title": "SLUMP",
+        "artist": "Stray Kids",
+        "artistId": 13923487,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/0f/12/c9/0f12c9e9-409d-441a-1c1d-51f05c727e40/jacket_EJXX00076B00Z_550.jpg/250x250bb.jpg",
+        "year": 2020,
+        "work": "Tower of God",
+        "theme": "ED1"
+      },
+      {
+        "itunesId": 1536185727,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview126/v4/c9/f0/48/c9f04815-7ce3-2e62-91b9-fddf039e4a9b/mzaf_17658765545084993224.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/top-tower-of-god-op/1536185726?i=1536185727",
+        "title": "TOP",
+        "artist": "Stray Kids",
+        "artistId": 13923487,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/0f/12/c9/0f12c9e9-409d-441a-1c1d-51f05c727e40/jacket_EJXX00076B00Z_550.jpg/250x250bb.jpg",
+        "year": 2020,
+        "work": "Tower of God",
+        "theme": "ED2"
+      },
+      {
+        "id": 2104321997,
+        "title": "First Drop",
+        "artist": "halca",
+        "artistId": 8313844,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4d910951088a26fa082c81ee4621c0b7/250x250-000000-80-0-0.jpg",
+        "year": 2020,
+        "work": "Rent-a-Girlfriend",
+        "theme": "ED3"
+      },
+      {
+        "id": 1063275082,
+        "title": "SPARK-AGAIN",
+        "artist": "Aimer",
+        "artistId": 8623006,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/6698309bd0e0aeb38b0397355bc22f68/250x250-000000-80-0-0.jpg",
+        "year": 2020,
+        "work": "Fire Force Season 2",
+        "theme": "OP1"
+      },
+      {
+        "id": 1095216802,
+        "title": "Torch of Liberty",
+        "artist": "KANA-BOON",
+        "artistId": 4726033,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4d2a3ce0afe98c3cac908d34bfc4f4e4/250x250-000000-80-0-0.jpg",
+        "year": 2020,
+        "work": "Fire Force Season 2",
+        "theme": "OP2"
+      },
+      {
+        "id": 1005684932,
+        "title": "ID",
+        "artist": "Cidergirl",
+        "artistId": 13082439,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/714e26c528537e576c85e33af32269f6/250x250-000000-80-0-0.jpg",
+        "year": 2020,
+        "work": "Fire Force Season 2",
+        "theme": "ED1"
+      },
+      {
+        "id": 1080285072,
+        "title": "One Day",
+        "artist": "Spyair",
+        "artistId": 5794305,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/128180b35bb019eb7ab23a2eaa8a118e/250x250-000000-80-0-0.jpg",
+        "year": 2020,
+        "work": "HAIKYU!! TO THE TOP Part 2",
+        "theme": "ED1"
+      },
+      {
+        "id": 1282581162,
+        "title": "No.1",
+        "artist": "DISH//",
+        "artistId": 15136237,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/7596c2c5f6662baade59d1e9b80e14eb/250x250-000000-80-0-0.jpg",
+        "year": 2021,
+        "work": "My Hero Academia Season 5",
+        "theme": "OP1"
+      },
+      {
+        "id": 1417259802,
+        "title": "Merry-Go-Round",
+        "artist": "MAN WITH A MISSION",
+        "artistId": 5797990,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/006642f1fc79097f5dc7707ba0d0c90f/250x250-000000-80-0-0.jpg",
+        "year": 2021,
+        "work": "My Hero Academia Season 5",
+        "theme": "OP2"
+      },
+      {
+        "id": 1381664012,
+        "title": "Avid",
+        "artist": "SawanoHiroyuki[nZk]",
+        "artistId": 51708732,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8c5096c408941df58c0cb831e98ede8f/250x250-000000-80-0-0.jpg",
+        "year": 2021,
+        "work": "86 EIGHTY-SIX",
+        "theme": "ED2"
+      },
+      {
+        "id": 1381664022,
+        "title": "Hands Up to the Sky",
+        "artist": "SawanoHiroyuki[nZk]",
+        "artistId": 51708732,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/8c5096c408941df58c0cb831e98ede8f/250x250-000000-80-0-0.jpg",
+        "year": 2021,
+        "work": "86 EIGHTY-SIX",
+        "theme": "ED3"
+      },
+      {
         "id": 2358579665,
         "title": "Long shot",
         "artist": "Mayu Maeshima",
@@ -27859,6 +29994,104 @@
         "year": 2021,
         "work": "Re:ZERO -Starting Life in Another World- Season 2 Part 2",
         "theme": "ED5"
+      },
+      {
+        "id": 2358580235,
+        "title": "Door",
+        "artist": "EMILIA(CV:RIE TAKAHASHI)",
+        "artistId": 220661065,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/44e8c0024dd6728db0829d1cc794cba7/250x250-000000-80-0-0.jpg",
+        "year": 2021,
+        "work": "Re:ZERO -Starting Life in Another World- Season 2 Part 2",
+        "theme": "ED2"
+      },
+      {
+        "id": 2358579885,
+        "title": "Believe in you",
+        "artist": "Nonoc",
+        "artistId": 102806952,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/fa9893551fb5d3da8532a90669f2b567/250x250-000000-80-0-0.jpg",
+        "year": 2021,
+        "work": "Re:ZERO -Starting Life in Another World- Season 2 Part 2",
+        "theme": "ED3"
+      },
+      {
+        "itunesId": 6769341946,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/e9/6d/b0/e96db07b-ee20-4895-1289-3bcffe7ebe97/mzaf_11098074178178914647.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/hawatari-2-oku-centi-chainsaw-man/6769341945?i=6769341946",
+        "title": "Hawatari 2-Oku-Centi",
+        "original": "Hawatari 2-oku Centi (刃渡り2億センチ)",
+        "artist": "Maximum the Hormone",
+        "artistId": 5284658,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/c7/29/0a/c7290a5a-51d9-e3eb-1b9c-dcfa7d196c78/823375181477_Cover.jpg/250x250bb.jpg",
+        "year": 2022,
+        "work": "Chainsaw Man",
+        "theme": "ED3"
+      },
+      {
+        "itunesId": 1852185079,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/90/93/56/90935637-765d-94f5-1ba9-7568c8f959df/mzaf_7364001005639384161.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/dainou-tekina-rendezvous-chainsaw-man/1852185078?i=1852185079",
+        "title": "Dainou Tekina Rendezvous",
+        "original": "Dainou-teki na Rendez-vous (大脳的なランデブー)",
+        "artist": "Kanaria",
+        "artistId": 15059527,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/bb/dc/0f/bbdc0f04-8b05-11c3-fd67-c600f9dbfea4/198704844201_Cover.jpg/250x250bb.jpg",
+        "year": 2022,
+        "work": "Chainsaw Man",
+        "theme": "ED6"
+      },
+      {
+        "id": 2015264567,
+        "title": "first death",
+        "artist": "TK from Ling tosite sigure",
+        "artistId": 9973848,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/9c27c19d9fe547d131a337a71b9407cd/250x250-000000-80-0-0.jpg",
+        "year": 2022,
+        "work": "Chainsaw Man",
+        "theme": "ED8"
+      },
+      {
+        "id": 2033390917,
+        "title": "Deep down",
+        "artist": "Aimer",
+        "artistId": 8623006,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/58c2518a5defc330bcb9e1bc58ea63d2/250x250-000000-80-0-0.jpg",
+        "year": 2022,
+        "work": "Chainsaw Man",
+        "theme": "ED9"
+      },
+      {
+        "id": 2043770547,
+        "title": "DOGLAND",
+        "artist": "PEOPLE 1",
+        "artistId": 81055882,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/4346bfd6f398cf62022e70449021a467/250x250-000000-80-0-0.jpg",
+        "year": 2022,
+        "work": "Chainsaw Man",
+        "theme": "ED10"
+      },
+      {
+        "id": 2036814007,
+        "title": "FightSong",
+        "original": "Fight Song (ファイトソング)",
+        "artist": "Eve",
+        "artistId": 69128312,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/75f928f746def824580a716e6ffc2c57/250x250-000000-80-0-0.jpg",
+        "year": 2020,
+        "work": "Chainsaw Man",
+        "theme": "ED12"
+      },
+      {
+        "id": 1597185922,
+        "title": "Akuma no Ko",
+        "original": "Akuma no Ko (悪魔の子)",
+        "artist": "Ai Higuchi",
+        "artistId": 74613812,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/48954a98ff90dc6bb2e2890edccfe000/250x250-000000-80-0-0.jpg",
+        "year": 2023,
+        "work": "Attack on Titan Final Season Part 2",
+        "theme": "ED1"
       },
       {
         "itunesId": 1796118624,
@@ -27893,6 +30126,71 @@
         "theme": "ED4"
       },
       {
+        "itunesId": 1653346375,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview112/v4/6e/4f/b2/6e4fb275-b0bf-b192-b522-dd3499abc1cf/mzaf_17998566732410921958.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/darling-in-the-night/1653346373?i=1653346375",
+        "title": "Darling in the Night",
+        "artist": "Alpha",
+        "artistId": 3778,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/21/42/4c/21424c83-b715-333a-6af1-b0c49e35b123/JK_ZMCZ-16042.jpg/250x250bb.jpg",
+        "year": 2022,
+        "work": "The Eminence in Shadow",
+        "theme": "ED1"
+      },
+      {
+        "id": 1910680627,
+        "title": "Hitamuki",
+        "original": "Hitamuki (ひたむき)",
+        "artist": "SUPER BEAVER",
+        "artistId": 1878991,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/c747a909678e8eae653b9ccdb90a308a/250x250-000000-80-0-0.jpg",
+        "year": 2022,
+        "work": "My Hero Academia Season 6",
+        "theme": "OP1"
+      },
+      {
+        "itunesId": 1646398286,
+        "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview221/v4/e4/8b/11/e48b11c2-9078-ad8b-1df4-1e06408e53f2/mzaf_1506825898909852855.plus.aac.p.m4a",
+        "link": "https://music.apple.com/jp/album/sketch/1646398284?i=1646398286",
+        "title": "SKETCH",
+        "artist": "Kiiro Akiyama",
+        "artistId": null,
+        "cover": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/06/82/bc/0682bc9a-6c44-9154-e3e7-2a2d3e0a7575/4547366587531.jpg/250x250bb.jpg",
+        "year": 2022,
+        "work": "My Hero Academia Season 6",
+        "theme": "ED1"
+      },
+      {
+        "id": 1922690117,
+        "title": "Distortion!!",
+        "artist": "kessoku band",
+        "artistId": 183953437,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/371194c0e7910f94c4da23316e12cf6d/250x250-000000-80-0-0.jpg",
+        "year": 2022,
+        "work": "BOCCHI THE ROCK!",
+        "theme": "ED1"
+      },
+      {
+        "id": 4381045041,
+        "title": "Exist",
+        "artist": "Mob Choir",
+        "artistId": 14978051,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/e63bdb62b7cbd1a0dfebb8d698e06ba4/250x250-000000-80-0-0.jpg",
+        "year": 2022,
+        "work": "Mob Psycho 100 III",
+        "theme": "ED2"
+      },
+      {
+        "id": 2411439855,
+        "title": "more than words",
+        "artist": "Hitsujibungaku",
+        "artistId": 13290779,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/160004db742f5ecf6388156224dc8b7b/250x250-000000-80-0-0.jpg",
+        "year": 2023,
+        "work": "JUJUTSU KAISEN Season 2",
+        "theme": "ED2"
+      },
+      {
         "itunesId": 1731046228,
         "preview": "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview112/v4/68/b0/5d/68b05d33-d7c3-41f5-5aad-9f1c6baafaba/mzaf_6970733701115383740.plus.aac.p.m4a",
         "link": "https://music.apple.com/jp/album/hana-ni-natte/1731046227?i=1731046228",
@@ -27906,6 +30204,46 @@
         "theme": "OP1"
       },
       {
+        "id": 2062243607,
+        "title": "River",
+        "artist": "Anonymouz",
+        "artistId": 1429011,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/61f3ea7065d94670d0e22ed4094b096f/250x250-000000-80-0-0.jpg",
+        "year": 2023,
+        "work": "Vinland Saga Season 2",
+        "theme": "OP1"
+      },
+      {
+        "id": 2190310167,
+        "title": "Paradox",
+        "artist": "Survive Said The Prophet",
+        "artistId": 12136902,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/585fa1b8d5d52daacf28b0bcde982ae4/250x250-000000-80-0-0.jpg",
+        "year": 2023,
+        "work": "Vinland Saga Season 2",
+        "theme": "OP2"
+      },
+      {
+        "id": 2102344607,
+        "title": "Without Love",
+        "artist": "LMYK",
+        "artistId": 110834962,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f674520d71db8282517e8e5516b48430/250x250-000000-80-0-0.jpg",
+        "year": 2023,
+        "work": "Vinland Saga Season 2",
+        "theme": "ED1"
+      },
+      {
+        "id": 2224263677,
+        "title": "Ember",
+        "artist": "haju:harmonics",
+        "artistId": 208425947,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/f4fa081fb8e2455a746ec5f822a3360f/250x250-000000-80-0-0.jpg",
+        "year": 2023,
+        "work": "Vinland Saga Season 2",
+        "theme": "ED2"
+      },
+      {
         "id": 2336123045,
         "title": "spiral",
         "artist": "LONGMAN",
@@ -27913,6 +30251,16 @@
         "cover": "https://cdn-images.dzcdn.net/images/cover/fac688f46796cfda2b843d37c12743e0/250x250-000000-80-0-0.jpg",
         "year": 2023,
         "work": "Mushoku Tensei: Jobless Reincarnation Season 2",
+        "theme": "ED1"
+      },
+      {
+        "id": 2152253197,
+        "title": "UNDER THE TREE",
+        "artist": "SiM",
+        "artistId": 73204762,
+        "cover": "https://cdn-images.dzcdn.net/images/cover/014164549bbb3ca4730877fc85716b96/250x250-000000-80-0-0.jpg",
+        "year": 2023,
+        "work": "Attack on Titan Final Season THE FINAL CHAPTERS Special 1",
         "theme": "ED1"
       },
       {
@@ -28278,14 +30626,6 @@
         "year": 2023
       },
       {
-        "id": 1186939392,
-        "title": "VIVID VICE",
-        "artist": "Who-ya Extended",
-        "artistId": 78441442,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/655ab66e69f809727937d40f711dbe0d/250x250-000000-80-0-0.jpg",
-        "year": 2021
-      },
-      {
         "id": 1509504982,
         "title": "Cinderella",
         "original": "シンデレラ",
@@ -28317,14 +30657,6 @@
         "artistId": 5289039,
         "cover": "https://cdn-images.dzcdn.net/images/cover/8bb62cdb1adfd485edee8d52dd304b5f/250x250-000000-80-0-0.jpg",
         "year": 2025
-      },
-      {
-        "id": 1190728792,
-        "title": "give it back",
-        "artist": "Cö Shu Nie",
-        "artistId": 14475725,
-        "cover": "https://cdn-images.dzcdn.net/images/cover/c51700af73c9c6c0690333b57c090d28/250x250-000000-80-0-0.jpg",
-        "year": 2021
       }
     ]
   },
