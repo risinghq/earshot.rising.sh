@@ -56,9 +56,14 @@ interface SourceTrack {
 
 // A curated source's ref is `<category>/<decade>`, a key into the bundled
 // list that scripts/curate.ts writes.
+// A deploy applies migrations before the new code is live, so for a minute
+// the old bundle can meet a source it has no list for. That is a failure to
+// retry, not an empty source to keep for a day.
 function curatedTracks(ref: string): SourceTrack[] {
   const [category, decade] = ref.split("/");
-  return (curated[category]?.[decade] ?? []).map((track) => ({
+  const list = curated[category]?.[decade];
+  if (list === undefined) throw new Error(`no curated list for ${ref}`);
+  return list.map((track) => ({
     key: track.id === undefined ? `it:${track.itunesId}` : `dz:${track.id}`,
     deezerId: track.id ?? null,
     title: track.title,
