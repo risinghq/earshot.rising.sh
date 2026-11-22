@@ -65,6 +65,28 @@ describe("catalog pool", () => {
     expect(pool.map((track) => track.deezerId).sort()).toEqual([1, 2, 5]);
   });
 
+  it("retries a curated source the bundle has no list for", async () => {
+    await env.DB.prepare(
+      `INSERT INTO category_sources (category, kind, ref, title, decade, position)
+       VALUES ('k-pop', 'curated', 'k-pop/1990', 'Curated 1990s', 1990, 9)`,
+    ).run();
+    const now = 1_000_000;
+    await env.DB.prepare(
+      "UPDATE category_sources SET refreshed_at = ?1 WHERE ref <> 'k-pop/1990'",
+    )
+      .bind(now)
+      .run();
+    await refreshCatalog(testEnv() as never, now);
+    const source = await env.DB.prepare(
+      `SELECT s.refreshed_at, COUNT(m.source_id) AS members
+       FROM category_sources s LEFT JOIN catalog_members m ON m.source_id = s.id
+       WHERE s.ref = 'k-pop/1990' GROUP BY s.id`,
+    ).first<{ refreshed_at: number; members: number }>();
+    expect(source!.members).toBe(0);
+    // Due again in an hour instead of a day.
+    expect(source!.refreshed_at).toBe(now + 3600 - 86400);
+  });
+
   it("keeps the answer and year overrides across a refetch", async () => {
     await seedCatalog(env.DB, "pop", [
       { id: 1, title: "Old Title", artist: "Artist", year: 1990 },
