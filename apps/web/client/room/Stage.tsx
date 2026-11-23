@@ -5,7 +5,7 @@
 import { For, Show, createEffect, onSettled } from "solid-js";
 import { roundsPerGame, scoreFor } from "../../src/play/rules";
 import { waveBars } from "../../src/ui/marks";
-import { clipWave } from "../wave.js";
+import { clipWave } from "../wave";
 import { MuteIcon } from "./icons";
 import { roundMs, type Room } from "./model";
 import { NowPlaying } from "./NowPlaying";

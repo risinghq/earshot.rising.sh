@@ -677,7 +677,7 @@ const outIcon = (
 );
 
 // The answered song, shown on the clip's own stage while the clip plays on.
-// solo.js moves this block into the question's player, so the
+// client/solo.ts moves this block into the question's player, so the
 // audio and its pause button survive the reveal.
 function nowPlaying(result: ShownSong, categorySlug: string, back: string) {
   return (
@@ -714,8 +714,7 @@ function nowPlaying(result: ShownSong, categorySlug: string, back: string) {
   );
 }
 
-// client/room/parts.tsx and screen.js build the same label for their
-// choices.
+// client/room/parts.tsx builds the same label for the room's choices.
 function choiceLabel({ title, artist }: Choice) {
   return (
     <span class="choice-label">

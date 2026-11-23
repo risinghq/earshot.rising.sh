@@ -8,7 +8,9 @@ import { byline, modeNames } from "../../src/play/rules";
 import { hueOf } from "../../src/ui/marks";
 import { BackIcon, CrossIcon } from "./icons";
 import type { Room } from "./model";
-import { Mono, MonoStack, Part, Tag, WaitRow } from "./parts";
+import { Mono } from "../ui/marks";
+import { Part } from "../ui/part";
+import { MonoStack, Tag, WaitRow } from "./parts";
 import {
   doneSummary,
   gotItLine,

@@ -43,7 +43,7 @@ export default defineConfig({
         test: {
           name: "client",
           environment: "happy-dom",
-          include: ["client/**/*.test.tsx"],
+          include: ["client/**/*.test.{ts,tsx}"],
         },
       },
     ],

@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import type { Env } from "../types";
 import { catalog, enoughTracks, getCategory } from "./catalog";
 import { byDecade } from "./pool";
+import type { MatchServerMessage } from "./protocol";
 import { newRoomCode, newRoomSecret, nicknameMaxLength } from "./room";
 import type { Candidate } from "./sources";
 
@@ -47,7 +48,7 @@ export class Matchmaker extends DurableObject<Env> {
     return ws.deserializeAttachment() as Seat | null;
   }
 
-  private send(ws: WebSocket, value: unknown) {
+  private send(ws: WebSocket, value: MatchServerMessage) {
     try {
       ws.send(JSON.stringify(value));
     } catch {
@@ -128,7 +129,7 @@ export class Matchmaker extends DurableObject<Env> {
       if (a.readyState === WebSocket.OPEN) await this.enqueue(a, seatA, false);
       if (b.readyState === WebSocket.OPEN) await this.enqueue(b, seatB, false);
     };
-    const fail = (code: string) => {
+    const fail = (code: "feed") => {
       this.send(a, { type: "error", code });
       this.send(b, { type: "error", code });
     };

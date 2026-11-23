@@ -2,7 +2,9 @@
 // guest the room could not seat on arrival.
 import { Show, createEffect, createSignal } from "solid-js";
 import type { Room } from "./model";
-import { MonoStack, Mosaic, Part } from "./parts";
+import { Mosaic } from "../ui/marks";
+import { Part } from "../ui/part";
+import { MonoStack } from "./parts";
 import { modeLabels, whoIsIn } from "./text";
 
 export function Join(props: { room: Room; hidden: boolean }) {

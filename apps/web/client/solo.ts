@@ -7,13 +7,16 @@
 // the form locks at once; the verdict that comes back is morphed into the
 // same buttons, so nothing reflows. Continue paints the next question from
 // the copy /prepare sent during the reveal, while /next serves that round.
-import { clipWave, prefetchWave } from "./wave.js";
+import { roundSeconds, scoreFor } from "../src/play/rules";
+import { clipWave, prefetchWave } from "./wave";
 
-let audio = document.getElementById("clip");
-const $ = (id) => document.getElementById(id);
-const show = (el, on) => {
+const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
+  document.getElementById(id) as T | null;
+const show = (el: HTMLElement, on: boolean) => {
   el.hidden = !on;
 };
+
+let audio = $<HTMLAudioElement>("clip");
 
 // The page can set clip volume everywhere except iOS, where setting it is
 // silently ignored; the slider stays hidden there.
@@ -25,12 +28,16 @@ const savedVolume = localStorage.getItem(volumeKey);
 const clipVolume = savedVolume === null ? 0.6 : Number(savedVolume) / 100;
 
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const roundMs = 15000;
+const roundMs = roundSeconds * 1000;
+
+// The fade each media element is running; a newer fade or a play bumps it,
+// and a frame of an older fade then stops.
+const fades = new WeakMap<HTMLMediaElement, number>();
 
 // A clip never cuts off: it fades out, then pauses; `discard` then removes
 // an element swap parked in the body. iOS ignores the volume, so there it
 // stops at once.
-function fadeOut(media, ms = 600, discard = false) {
+function fadeOut(media: HTMLMediaElement | null, ms = 600, discard = false) {
   if (!media || media.paused) return;
   if (!canSetVolume || reducedMotion) {
     media.pause();
@@ -38,10 +45,11 @@ function fadeOut(media, ms = 600, discard = false) {
     return;
   }
   const from = media.volume;
-  const id = (media.fadeId = (media.fadeId ?? 0) + 1);
+  const id = (fades.get(media) ?? 0) + 1;
+  fades.set(media, id);
   const t0 = performance.now();
-  const step = (t) => {
-    if (media.fadeId !== id) return;
+  const step = (t: number) => {
+    if (fades.get(media) !== id) return;
     // A frame's timestamp can precede t0, which would push k below 0.
     const k = Math.min(1, Math.max(0, (t - t0) / ms));
     media.volume = from * (1 - k);
@@ -55,28 +63,32 @@ function fadeOut(media, ms = 600, discard = false) {
   requestAnimationFrame(step);
 }
 // Playing again cancels a fade in progress.
-function playClip(media) {
-  if (media.fadeId !== undefined) media.fadeId += 1;
+function playClip(media: HTMLMediaElement) {
+  fades.set(media, (fades.get(media) ?? 0) + 1);
   return media.play();
 }
 
-let tickTimer = null;
+let tickTimer: ReturnType<typeof setInterval> | undefined;
 // One action per screen: a second tap, a key repeat or the timeout firing
 // while a submit is in flight is dropped here, and the server refuses a
 // second answer anyway.
 let busy = false;
 // The next round as /prepare described it: its question page and a media
 // element already loading its clip.
-let prepared = null;
+let prepared: {
+  url: string;
+  next: HTMLElement;
+  clip: HTMLAudioElement;
+} | null = null;
 // Settles once /next has served the round on screen. A prefetched round is
 // shown before the server has served it, and its clock may only be started
 // after that.
-let served = Promise.resolve();
+let served: Promise<unknown> = Promise.resolve();
 
-const parseGame = (html) =>
+const parseGame = (html: string) =>
   new DOMParser().parseFromString(html, "text/html").getElementById("game");
 
-async function post(url, body) {
+async function post(url: string, body: FormData) {
   const response = await fetch(url, {
     method: "POST",
     body,
@@ -92,16 +104,16 @@ function syncIcon() {
   const toggle = $("clip-toggle");
   if (!toggle || !audio) return;
   const playing = !audio.paused && !audio.ended;
-  toggle.querySelector(".i-play").toggleAttribute("hidden", playing);
-  toggle.querySelector(".i-pause").toggleAttribute("hidden", !playing);
+  toggle.querySelector(".i-play")?.toggleAttribute("hidden", playing);
+  toggle.querySelector(".i-pause")?.toggleAttribute("hidden", !playing);
   toggle.classList.toggle("needs-click", false);
   document.body.classList.toggle("clip-live", playing);
 }
 
 // Between asking for sound and hearing it the player says it is loading. The
 // delay keeps a preloaded clip, which starts at once, from flashing it.
-let loadingTimer;
-function setLoading(on) {
+let loadingTimer: ReturnType<typeof setTimeout> | undefined;
+function setLoading(on: boolean) {
   clearTimeout(loadingTimer);
   const player = audio?.closest(".player");
   if (!player) return;
@@ -115,7 +127,7 @@ const muteKey = "earshot-muted";
 function wireMute() {
   const button = $("clip-volume-mute");
   if (!button) return;
-  const apply = (muted) => {
+  const apply = (muted: boolean) => {
     if (audio) audio.muted = muted;
     button.setAttribute("aria-pressed", String(muted));
   };
@@ -129,7 +141,7 @@ function wireMute() {
 
 function wireVolume() {
   wireMute();
-  const input = $("clip-volume");
+  const input = $<HTMLInputElement>("clip-volume");
   if (!input) return;
   if (audio) audio.volume = clipVolume;
   if (!canSetVolume) {
@@ -148,7 +160,7 @@ function wireVolume() {
 // The ring runs down as one transition of --left; the timer only updates the
 // numbers and ends the round. Reduced motion has no transitions, so the timer
 // steps the ring there instead.
-function runBar(bar, remaining) {
+function runBar(bar: HTMLElement, remaining: number) {
   bar.style.transition = "none";
   bar.style.setProperty("--left", String(remaining / roundMs));
   if (reducedMotion) return;
@@ -157,23 +169,26 @@ function runBar(bar, remaining) {
   bar.style.setProperty("--left", "0");
 }
 
-// Mirrors scoreFor in src/play/quiz.ts: 1000 at the start, 100 at the end.
-const worthAt = (ms) => (ms > 0 ? Math.round(100 + (900 * ms) / roundMs) : 0);
 // The worth falls 60 points a second, so a slower redraw moves it in visible,
 // uneven jumps. A timer, not animation frames: a hidden tab pauses frames, and
 // this tick also ends the round.
 const tickMs = 50;
+const worthAt = (ms: number) => (ms > 0 ? scoreFor(roundMs - ms) : 0);
 
 // The server's clock starts when this clip reports "playing": the bar stays
 // full until the report comes back, then runs down the server's remaining
 // time. A blocked autoplay reports when the player presses play instead.
-function wireClock(round, form) {
-  const bar = $("count-bar");
-  const left = $("count-left");
+function wireClock(
+  media: HTMLAudioElement,
+  round: HTMLElement,
+  form: HTMLFormElement | null,
+) {
+  const bar = $("count-bar")!;
+  const left = $("count-left")!;
   const worth = $("count-worth");
   let reported = false;
   let ticking = false;
-  const startTick = (remaining) => {
+  const startTick = (remaining: number) => {
     if (ticking || $("round") !== round) return;
     ticking = true;
     const deadline = performance.now() + remaining;
@@ -198,62 +213,60 @@ function wireClock(round, form) {
         fetch(`/play/${round.dataset.game}/playing`, { method: "POST" }),
       )
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then(({ remaining }) => startTick(remaining))
+      .then(({ remaining }: { remaining: number }) => startTick(remaining))
       // A failed report falls back to the serve-time countdown the page
       // carried, so the round still ends on its own.
       .catch(() => startTick(Number(round.dataset.remaining || roundMs)));
   };
-  audio.addEventListener("playing", report);
+  media.addEventListener("playing", report);
   // The clip may already be playing if it was instant (a preloaded round).
-  if (!audio.paused) report();
+  if (!media.paused) report();
 }
 
-function wirePlayer(round) {
-  audio = round.querySelector("#clip");
+function wirePlayer(round: HTMLElement) {
+  const media = round.querySelector<HTMLAudioElement>("#clip");
   const toggle = $("clip-toggle");
-  const form = $("answer-form");
-  if (!toggle) return;
-  audio.removeAttribute("controls");
+  const form = $<HTMLFormElement>("answer-form");
+  audio = media;
+  if (!toggle || !media) return;
+  media.removeAttribute("controls");
   show(toggle, true);
   // Assigning src again restarts the download, so a preloaded clip keeps
   // the one it has.
-  if (audio.getAttribute("src") !== round.dataset.src)
-    audio.src = round.dataset.src;
+  const src = round.dataset.src ?? "";
+  if (media.getAttribute("src") !== src) media.src = src;
   wireVolume();
-  clipWave(audio, round.querySelector(".player-wave"));
-  ["play", "playing", "pause", "ended"].forEach((event) =>
-    audio.addEventListener(event, syncIcon),
-  );
-  ["play", "waiting"].forEach((event) =>
-    audio.addEventListener(event, () => setLoading(true)),
-  );
-  ["playing", "pause", "ended", "error"].forEach((event) =>
-    audio.addEventListener(event, () => setLoading(false)),
-  );
+  clipWave(media, round.querySelector<HTMLElement>(".player-wave"));
+  for (const event of ["play", "playing", "pause", "ended"])
+    media.addEventListener(event, syncIcon);
+  for (const event of ["play", "waiting"])
+    media.addEventListener(event, () => setLoading(true));
+  for (const event of ["playing", "pause", "ended", "error"])
+    media.addEventListener(event, () => setLoading(false));
   const blocked = () => {
     setLoading(false);
     toggle.classList.add("needs-click");
   };
   toggle.onclick = () => {
-    if (audio.paused) playClip(audio).catch(blocked);
-    else fadeOut(audio, 250);
+    if (media.paused) playClip(media).catch(blocked);
+    else fadeOut(media, 250);
   };
-  audio.addEventListener("timeupdate", () => {
-    if (audio.duration - audio.currentTime < 0.8) fadeOut(audio, 700);
+  media.addEventListener("timeupdate", () => {
+    if (media.duration - media.currentTime < 0.8) fadeOut(media, 700);
   });
-  playClip(audio).catch(blocked);
-  wireClock(round, form);
+  playClip(media).catch(blocked);
+  wireClock(media, round, form);
 }
 
 // While the reveal is up, ask for the next round's clip and its question
 // page, so Continue paints at once on audio that is already fetched. The
 // final reveal has no next round, so it skips the lookup.
-function prepare(round) {
+function prepare(round: HTMLElement) {
   prepared = null;
   if (round.dataset.last === "1") return;
   fetch(`/play/${round.dataset.game}/prepare`, { method: "POST" })
     .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-    .then(({ url, html }) => {
+    .then(({ url, html }: { url?: string; html?: string }) => {
       const next = html ? parseGame(html) : null;
       if (!url || !next || $("round") !== round) return;
       const clip = document.createElement("audio");
@@ -267,14 +280,14 @@ function prepare(round) {
 
 // A right answer counts the points up and taps the phone; the burst and the
 // miss's shake are markup and CSS.
-function celebrate(round) {
+function celebrate(round: HTMLElement) {
   const points = round.querySelector(".sheet-points");
   const score = Number(round.dataset.score || 0);
   const correct = round.dataset.correct === "1";
   if (correct && "vibrate" in navigator) navigator.vibrate(25);
   if (points && score > 0 && !reducedMotion) {
     const t0 = performance.now();
-    const step = (t) => {
+    const step = (t: number) => {
       const k = Math.min(1, (t - t0) / 500);
       points.textContent = `+${Math.round(score * k)}`;
       if (k < 1) requestAnimationFrame(step);
@@ -285,7 +298,7 @@ function celebrate(round) {
 
 // The bar's segments, streak and score take the reply's values in place,
 // so the segment fill and the streak animate instead of being replaced.
-function morphBar(next) {
+function morphBar(next: HTMLElement) {
   const segs = document.querySelectorAll(".game-progress .seg");
   next.querySelectorAll(".game-progress .seg").forEach((seg, i) => {
     if (segs[i]) segs[i].className = seg.className;
@@ -293,15 +306,16 @@ function morphBar(next) {
   const progress = document.querySelector(".game-progress");
   const label = next.querySelector(".game-progress");
   if (progress && label) {
-    progress.setAttribute("aria-label", label.getAttribute("aria-label"));
-    progress.setAttribute("aria-valuenow", label.getAttribute("aria-valuenow"));
+    for (const name of ["aria-label", "aria-valuenow"])
+      progress.setAttribute(name, label.getAttribute(name) ?? "");
   }
-  const streak = document.querySelector(".game-streak");
-  const nextStreak = next.querySelector(".game-streak");
+  const streak = document.querySelector<HTMLElement>(".game-streak");
+  const nextStreak = next.querySelector<HTMLElement>(".game-streak");
   if (streak && nextStreak) {
     streak.hidden = nextStreak.hidden;
-    streak.querySelector(".game-streak-n").textContent =
-      nextStreak.querySelector(".game-streak-n").textContent;
+    const n = streak.querySelector(".game-streak-n");
+    if (n)
+      n.textContent = nextStreak.querySelector(".game-streak-n")!.textContent;
   }
   const score = document.querySelector(".game-score-n");
   const nextScore = next.querySelector(".game-score-n");
@@ -310,8 +324,8 @@ function morphBar(next) {
 
 // The cover arrives with the verdict; it fades in once decoded rather than
 // popping into the tile.
-function fadeCovers(root) {
-  root.querySelectorAll(".cover-tile img").forEach((img) => {
+function fadeCovers(root: ParentNode) {
+  root.querySelectorAll<HTMLImageElement>(".cover-tile img").forEach((img) => {
     if (img.complete) return;
     img.classList.add("is-loading");
     img.addEventListener("load", () => img.classList.remove("is-loading"), {
@@ -323,16 +337,16 @@ function fadeCovers(root) {
 // The verdict lands in the question's own elements: the choices keep their
 // boxes and take the verdict's classes and icons, the player turns into the
 // now-playing card with its audio still running, and the sheet slides up.
-function showVerdict(next) {
+function showVerdict(next: HTMLElement) {
   const round = $("round");
-  const nextRound = next.querySelector("#round");
-  const form = $("answer-form");
-  const verdict = nextRound.querySelector(".reveal-choices, .reveal-typed");
-  if (!round || !form || !verdict) return swap(next);
+  const nextRound = next.querySelector<HTMLElement>("#round");
+  const form = $<HTMLFormElement>("answer-form");
+  const verdict = nextRound?.querySelector(".reveal-choices, .reveal-typed");
+  if (!round || !nextRound || !form || !verdict) return swap(next);
   morphBar(next);
   for (const key of Object.keys(round.dataset)) delete round.dataset[key];
   Object.assign(round.dataset, nextRound.dataset);
-  const buttons = form.querySelectorAll(".choice");
+  const buttons = form.querySelectorAll<HTMLButtonElement>(".choice");
   const results = verdict.querySelectorAll(".choice");
   if (verdict.classList.contains("reveal-choices") && buttons.length) {
     buttons.forEach((button, i) => {
@@ -355,15 +369,17 @@ function showVerdict(next) {
     wireForms(now);
   }
   const sheet = nextRound.querySelector("#sheet");
-  round.append(sheet);
-  fadeCovers(sheet);
-  wireForms(sheet);
+  if (sheet) {
+    round.append(sheet);
+    fadeCovers(sheet);
+    wireForms(sheet);
+  }
   enterReveal(round);
 }
 
 // The clip plays on through the reveal, so the player hears the rest of the
 // song they just named; Continue stops it in swap.
-function enterReveal(round) {
+function enterReveal(round: HTMLElement) {
   clearInterval(tickTimer);
   celebrate(round);
   prepare(round);
@@ -372,7 +388,7 @@ function enterReveal(round) {
   $("continue-button")?.focus({ preventScroll: true });
 }
 
-function swap(next) {
+function swap(next: HTMLElement | null) {
   if (next === null) {
     location.reload();
     return;
@@ -382,18 +398,18 @@ function swap(next) {
   // the last song plays on, or to the body while it fades under the next
   // round.
   if (audio && !audio.paused) {
-    if (next.querySelector("#round")?.dataset.phase === "done")
+    if (next.querySelector<HTMLElement>("#round")?.dataset.phase === "done")
       next.append(audio);
     else {
       document.body.append(audio);
       fadeOut(audio, 600, true);
     }
   }
-  $("game").replaceWith(next);
+  $("game")?.replaceWith(next);
   wire(next);
 }
 
-async function answer(form, submitter) {
+async function answer(form: HTMLFormElement, submitter: HTMLElement | null) {
   if (busy) return;
   busy = true;
   clearInterval(tickTimer);
@@ -408,14 +424,16 @@ async function answer(form, submitter) {
   form.classList.add("is-locked");
   // FormData is read before the lock disables anything, since a disabled
   // control is left out of it.
-  const body = new FormData(form, submitter || undefined);
-  form.querySelectorAll("button, input").forEach((control) => {
-    control.disabled = true;
-  });
+  const body = new FormData(form, submitter);
+  form
+    .querySelectorAll<HTMLButtonElement | HTMLInputElement>("button, input")
+    .forEach((control) => {
+      control.disabled = true;
+    });
   try {
     const next = await post(form.action, body);
-    const phase = next?.querySelector("#round")?.dataset.phase;
-    if (phase === "reveal") showVerdict(next);
+    const phase = next?.querySelector<HTMLElement>("#round")?.dataset.phase;
+    if (next && phase === "reveal") showVerdict(next);
     else swap(next);
   } catch {
     location.reload();
@@ -427,26 +445,26 @@ async function answer(form, submitter) {
 // A prefetched round is on screen before /next replies. A reply serving that
 // same clip changes nothing; any other reply (the game ended, the round was
 // re-resolved) replaces the page.
-async function advance(form, submitter) {
+async function advance(form: HTMLFormElement, submitter: HTMLElement | null) {
   if (busy) return;
   busy = true;
   const ready = prepared;
   prepared = null;
-  const reply = post(form.action, new FormData(form, submitter || undefined));
+  const reply = post(form.action, new FormData(form, submitter));
   try {
-    if (ready) {
-      const round = ready.next.querySelector("#round");
-      const clip = round.querySelector("#clip");
+    const round = ready?.next.querySelector<HTMLElement>("#round");
+    const clip = round?.querySelector("#clip");
+    if (ready && round && clip) {
       for (const { name, value } of clip.attributes)
         if (name !== "src") ready.clip.setAttribute(name, value);
       clip.replaceWith(ready.clip);
-      let settle;
-      served = new Promise((resolve) => {
+      let settle = () => {};
+      served = new Promise<void>((resolve) => {
         settle = resolve;
       });
       swap(ready.next);
       const next = await reply.finally(() => settle());
-      const nextRound = next?.querySelector("#round");
+      const nextRound = next?.querySelector<HTMLElement>("#round");
       if (
         nextRound?.dataset.phase !== "question" ||
         nextRound.dataset.src !== round.dataset.src
@@ -465,9 +483,10 @@ async function advance(form, submitter) {
 
 // A report is sent in the background and its disclosure becomes the
 // server's answer, so the sheet stays where it is.
-async function report(form) {
+async function report(form: HTMLFormElement) {
   const details = form.closest("details");
-  form.querySelector("button").disabled = true;
+  const button = form.querySelector("button");
+  if (button) button.disabled = true;
   // The route answers a stored report with a redirect back to the game,
   // which this page does not need to load.
   const response = await fetch(form.action, {
@@ -481,27 +500,28 @@ async function report(form) {
     response?.type === "opaqueredirect" || response?.ok === true
       ? "Reported. Thanks."
       : ((await response?.text()) ?? "The report did not go through.");
-  details.replaceWith(note);
+  details?.replaceWith(note);
 }
 
-function wireForms(root) {
-  root.querySelectorAll("form[data-solo]").forEach((form) => {
+function wireForms(root: ParentNode) {
+  root.querySelectorAll<HTMLFormElement>("form[data-solo]").forEach((form) => {
     form.addEventListener("submit", (event) => {
       event.preventDefault();
+      const submitter = event.submitter;
       if (form.classList.contains("report-form")) report(form);
-      else if (form.id === "answer-form") answer(form, event.submitter);
-      else advance(form, event.submitter);
+      else if (form.id === "answer-form") answer(form, submitter);
+      else advance(form, submitter);
     });
   });
 }
 
-function wire(root) {
-  const round = root.querySelector("#round");
+function wire(root: HTMLElement) {
+  const round = root.querySelector<HTMLElement>("#round");
   clearInterval(tickTimer);
   // The quit control is a link so a no-JS page still leaves; with JS it
   // opens the confirmation dialog instead.
   const quit = root.querySelector(".game-quit");
-  const dialog = root.querySelector("#quit-dialog");
+  const dialog = root.querySelector<HTMLDialogElement>("#quit-dialog");
   if (quit && dialog?.showModal) {
     quit.addEventListener("click", (event) => {
       event.preventDefault();
@@ -520,33 +540,34 @@ function wire(root) {
   }
 }
 
+const typing = "input, textarea, select";
+const control = "button, a, summary, input, select, textarea";
+
 // Keyboard: 1-4 answers while a question is open and Space plays or pauses
 // the clip; Enter or Space advances from the sheet. Number keys do nothing
 // once the sheet is up.
 document.addEventListener("keydown", (event) => {
   if (event.repeat || document.querySelector("dialog[open]")) return;
-  const round = $("round");
-  if (!round) return;
-  const phase = round.dataset.phase;
+  const phase = $("round")?.dataset.phase;
+  const target = event.target instanceof Element ? event.target : null;
   if (phase === "question" && /^[1-4]$/.test(event.key)) {
-    if (event.target.closest?.("input, textarea, select")) return;
+    if (target?.closest(typing)) return;
     document
-      .querySelectorAll("#answer-form .choice")
+      .querySelectorAll<HTMLElement>("#answer-form .choice")
       [Number(event.key) - 1]?.click();
   } else if (phase === "question" && event.key === " ") {
-    if (event.target.closest?.("button, a, summary, input, select, textarea"))
-      return;
+    if (target?.closest(control)) return;
     event.preventDefault();
     $("clip-toggle")?.click();
   } else if (
     phase === "reveal" &&
     (event.key === "Enter" || event.key === " ")
   ) {
-    if (event.target.closest?.("button, a, summary, input, select, textarea"))
-      return;
+    if (target?.closest(control)) return;
     event.preventDefault();
     $("continue-button")?.click();
   }
 });
 
-wire($("game"));
+const game = $("game");
+if (game) wire(game);

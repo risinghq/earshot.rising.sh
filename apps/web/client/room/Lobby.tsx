@@ -5,7 +5,8 @@ import type { RoomPlayer, RoomState } from "../../src/play/protocol";
 import { CopyButton } from "./Devices";
 import { ChevronIcon, ShareIcon, SoundOffIcon, TvIcon } from "./icons";
 import type { Room } from "./model";
-import { Mono, Mosaic, Tag, WaitRow } from "./parts";
+import { Mono, Mosaic } from "../ui/marks";
+import { Tag, WaitRow } from "./parts";
 import { host, modeLabels, plural } from "./text";
 
 function Person(props: { player: RoomPlayer; you: string }) {
