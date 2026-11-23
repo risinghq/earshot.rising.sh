@@ -1,4 +1,5 @@
 import type { Child } from "hono/jsx";
+import { ScriptTag } from "../ui/assets";
 import { PillButton, PillLink } from "../ui/pill";
 import { Section } from "../ui/section";
 import { Segmented } from "../ui/segmented";
@@ -835,8 +836,7 @@ export function questionPage(
             This game needs JavaScript: the clip and the timer run through it.
           </p>
         </noscript>
-        <script src="/wave.js" defer />
-        <script src="/solo.js" defer />
+        <ScriptTag name="solo" />
       </div>
     ),
   });
@@ -998,8 +998,7 @@ function revealPage(
           </div>
         </div>
         {quitDialog()}
-        <script src="/wave.js" defer />
-        <script src="/solo.js" defer />
+        <ScriptTag name="solo" />
       </div>
     ),
   });
@@ -1616,8 +1615,7 @@ export function finalPage(
             </ol>
           </section>
         </div>
-        <script src="/wave.js" defer />
-        <script src="/solo.js" defer />
+        <ScriptTag name="solo" />
       </div>
     ),
   });
@@ -1965,6 +1963,7 @@ export function matchPage(
   return Page({
     title: `${category.name} · Play someone random`,
     user,
+    styles: ["common", "site", "game"],
     children: (
       <div
         id="match"
@@ -2042,7 +2041,7 @@ export function matchPage(
           </div>
         </section>
 
-        <script src="/match.js" defer />
+        <ScriptTag name="match" />
       </div>
     ),
   });

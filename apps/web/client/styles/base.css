@@ -1,0 +1,416 @@
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("../fonts/bricolage-latin.woff2") format("woff2");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("../fonts/bricolage-latin-ext.woff2") format("woff2");
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  color-scheme: light;
+
+  /* A warm paper base under one blue-violet accent. The greys share the
+     paper's hue so they read as one material. */
+  --paper-hue: 85;
+
+  --neutral-1: #f5f2eb;
+  --neutral-2: oklch(0.948 0.011 var(--paper-hue));
+  --neutral-3: #ece8df;
+  --neutral-4: oklch(0.905 0.015 var(--paper-hue));
+  --neutral-5: #dcd6ca;
+  --neutral-6: #c9c1b2;
+  --neutral-7: oklch(0.7 0.018 var(--paper-hue));
+  --neutral-8: #8f8a81;
+  --neutral-9: #736e66;
+  --neutral-10: oklch(0.49 0.012 var(--paper-hue));
+  --neutral-11: #55514b;
+  --neutral-12: #17161a;
+
+  --accent-1: #f1f0fe;
+  --accent-2: #e4e3fd;
+  --accent-3: oklch(0.88 0.06 278);
+  --accent-4: oklch(0.82 0.1 276);
+  --accent-5: oklch(0.75 0.14 275);
+  --accent-6: oklch(0.68 0.18 274);
+  --accent-7: oklch(0.6 0.22 273);
+  --accent-8: oklch(0.55 0.24 272);
+  --accent-9: #3b38f0;
+  --accent-10: oklch(0.44 0.24 271);
+  --accent-11: #2522b8;
+  --accent-12: oklch(0.3 0.15 271);
+
+  /* The design's names. Older rules read the aliases below them. */
+  --bg: #f5f2eb;
+  --surface: #ffffff;
+  --surface-2: #ece8df;
+  --line: #dcd6ca;
+  --press: #c9c1b2;
+  --ink: #17161a;
+  --ink-2: #55514b;
+  --ink-3: #736e66;
+  --accent: #3b38f0;
+  --accent-press: #2522b8;
+  --accent-tint: #e4e3fd;
+  --accent-tint-2: #d3d2fb;
+  --accent-deep: #17157a;
+  --on-accent: #ffffff;
+  --focus-ring: 2px solid var(--ink);
+  --right: #12804a;
+  --right-ink: #0c5f36;
+  --right-tint: #dcf3e5;
+  --wrong: #d2392e;
+  --wrong-ink: #a2271e;
+  --wrong-tint: #fbe2de;
+  /* The stage is the dark card the clip plays on, in both themes. */
+  --stage: #17161a;
+  --stage-2: #2a2830;
+  --stage-ink: #f5f2eb;
+  --stage-ink-2: #b1aca2;
+
+  --fill: var(--surface-2);
+  --fill-hover: var(--neutral-4);
+  --fill-pressed: var(--line);
+  --segment-on: var(--surface);
+  --edge: var(--line);
+  --edge-strong: var(--neutral-8);
+  --fg: var(--ink);
+  --fg-muted: var(--ink-2);
+  --accent-hover: var(--accent-10);
+  --accent-pressed: var(--accent-press);
+  --accent-soft: var(--accent-tint);
+  --accent-text: var(--accent-press);
+  --good: var(--right);
+  --good-soft: var(--right-tint);
+  --good-ink: var(--right-ink);
+  --danger: var(--wrong);
+  --danger-soft: var(--wrong-tint);
+  --danger-ink: var(--wrong-ink);
+  --bar-track: var(--surface-2);
+  --bar-fill: var(--accent);
+  --ring: var(--accent);
+
+  /* Press depth: a solid ledge under a pressable thing. :active sinks it. */
+  --press-sm: 0 2px 0 var(--line);
+  --press-md: 0 4px 0 var(--line);
+  --press-lg: 0 5px 0 var(--accent-press);
+  --press-duration: 80ms;
+  --press-xs: 0 2px 0 var(--line);
+  --press-md-accent: 0 3px 0 var(--accent-press);
+
+  /* Site page tokens from the approved design. */
+  --field-h: 48px;
+  --r-field: 14px;
+  --focus: 0 0 0 4px var(--accent-tint);
+  --mono-l: 0.52;
+  --mono-c: 0.13;
+  --mono-fg: #fff;
+  --content: 1200px;
+  --read: 720px;
+  --chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 9l6 6 6-6' fill='none' stroke='%2355514b' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  --tick: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  --depth: 1;
+
+  --shadow-color: oklch(0.3 0.05 var(--paper-hue));
+  --shadow-raised:
+    0 0 0 1px oklch(from var(--shadow-color) l c h / 0.07),
+    0 1px 2px oklch(from var(--shadow-color) l c h / 0.1),
+    0 4px 12px -4px oklch(from var(--shadow-color) l c h / 0.08);
+  --shadow-overlay:
+    0 0 0 1px oklch(from var(--shadow-color) l c h / 0.08),
+    0 2px 4px oklch(from var(--shadow-color) l c h / 0.1),
+    0 12px 28px -8px oklch(from var(--shadow-color) l c h / 0.16);
+  --shadow-pill: 0 1px 2px oklch(from var(--shadow-color) l c h / 0.12);
+
+  --font-sans: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  --text-3xl: 2.5rem;
+  --text-answer: 1.0625rem;
+  --text-h2: 1.375rem;
+  --text-h1: 1.875rem;
+  --text-display: 2.75rem;
+  --text-score: 5.25rem;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-strong: 700;
+  --weight-heavy: 800;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+  --space-18: 72px;
+  --space-24: 96px;
+
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+
+  --control-height: 40px;
+  --field-height: 44px;
+  --control-radius: var(--radius-pill);
+  --field-radius: var(--radius-pill);
+  /* 1200px of content between the 32px gutters. */
+  --page-width: 79rem;
+  --read-width: 42rem;
+  --select-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M3 4.5l3 3 3-3' fill='none' stroke='%236f6a7b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  --on-danger: oklch(0.96 0.02 29);
+  --danger-hover: oklch(0.45 0.16 29);
+
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 120ms;
+  --duration-base: 180ms;
+  --duration-slow: 260ms;
+}
+
+@media (min-width: 900px) {
+  :root {
+    --text-answer: 1.3125rem;
+    --text-h1: 3rem;
+    --text-display: 5.5rem;
+    --text-score: 6.5rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+
+    --paper-hue: 295;
+
+    --neutral-1: #111014;
+    --neutral-2: oklch(0.2 0.009 var(--paper-hue));
+    --neutral-3: #1b1a1f;
+    --neutral-4: #27262c;
+    --neutral-5: #34323a;
+    --neutral-6: oklch(0.4 0.014 var(--paper-hue));
+    --neutral-7: oklch(0.5 0.014 82);
+    --neutral-8: #8f8a81;
+    --neutral-9: oklch(0.69 0.014 82);
+    --neutral-10: oklch(0.72 0.014 82);
+    --neutral-11: #b3aea5;
+    --neutral-12: #f2efe8;
+
+    --accent-1: oklch(0.22 0.05 283);
+    --accent-2: #26254a;
+    --accent-3: oklch(0.34 0.09 283);
+    --accent-4: oklch(0.4 0.12 282);
+    --accent-5: oklch(0.48 0.15 282);
+    --accent-6: oklch(0.56 0.17 281);
+    --accent-7: oklch(0.62 0.18 281);
+    --accent-8: oklch(0.66 0.18 281);
+    --accent-9: #8583ff;
+    --accent-10: oklch(0.74 0.15 281);
+    --accent-11: oklch(0.82 0.11 281);
+    --accent-12: oklch(0.9 0.06 281);
+
+    --bg: #111014;
+    --surface: #1b1a1f;
+    --surface-2: #27262c;
+    --line: #34323a;
+    --press: #060608;
+    --ink: #f2efe8;
+    --ink-2: #b3aea5;
+    --ink-3: #8f8a81;
+    --accent: #8583ff;
+    --accent-press: #4a47d1;
+    --accent-tint: #26254a;
+    --accent-tint-2: #33316a;
+    --accent-deep: #2b2896;
+    --on-accent: #0e0d1a;
+    --right: #3cc777;
+    --right-ink: #7be3a6;
+    --right-tint: #112c1d;
+    --wrong: #ff6b5e;
+    --wrong-ink: #ff9a90;
+    --wrong-tint: #3a1714;
+    --stage: #1f1e24;
+    --stage-2: #302e36;
+    --stage-ink: #f2efe8;
+    --stage-ink-2: #a8a39a;
+
+    --accent-text: var(--accent-11);
+    --segment-on: var(--surface-2);
+    --press-sm: 0 2px 0 var(--press);
+    --press-md: 0 4px 0 var(--press);
+    --shadow-color: oklch(0.05 0.01 var(--paper-hue));
+    --press: #4a4752;
+    --press-sm: 0 2px 0 #060608;
+    --press-md: 0 4px 0 #060608;
+    --mono-l: 0.7;
+    --mono-c: 0.12;
+    --mono-fg: #111014;
+    --chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 9l6 6 6-6' fill='none' stroke='%23b3aea5' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    --select-chevron: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M3 4.5l3 3 3-3' fill='none' stroke='%23b0abbe' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    --on-danger: oklch(0.2 0.05 29);
+    --danger-hover: oklch(0.76 0.14 29);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+  line-height: 1.4;
+  font-synthesis: none;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection {
+  background: var(--accent-9);
+  color: var(--on-accent);
+}
+a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--fg) 35%, transparent);
+  text-underline-offset: 3px;
+  transition: text-decoration-color var(--duration-fast) var(--ease);
+}
+a:hover {
+  text-decoration-color: var(--fg);
+}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+h1,
+h2,
+p,
+dl,
+dd,
+figure,
+form {
+  margin: 0;
+}
+p {
+  max-width: 62ch;
+  text-wrap: pretty;
+}
+h1 {
+  font-size: var(--text-h1);
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.03em;
+  line-height: 1;
+  text-wrap: balance;
+}
+h2 {
+  font-size: var(--text-h2);
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  text-wrap: balance;
+}
+.label {
+  color: var(--ink-3);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-heavy);
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+b,
+strong {
+  font-weight: var(--weight-strong);
+}
+small {
+  font-size: var(--text-xs);
+}
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+img {
+  max-width: 100%;
+}
+
+.wrap {
+  margin: 0 auto;
+  max-width: var(--page-width);
+  padding: 0 var(--space-4);
+}
+
+@media (min-width: 640px) {
+  .wrap {
+    padding: 0 var(--space-8);
+  }
+}
+
+[hidden] {
+  display: none !important;
+}
+/* A region that site.js swaps in place without adding a layout box. */
+.contents {
+  display: contents;
+}
+.sr-only {
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+@media (max-width: 899px) {
+  /* One breakpoint, 900px, splits every layout: copy marked .is-wide shows
+   only above it and .is-narrow only below. They are !important because a
+   component rule that sets display must not bring hidden copy back. */
+  .is-wide {
+    display: none !important;
+  }
+}
+@media (min-width: 900px) {
+  .is-narrow {
+    display: none !important;
+  }
+}
+
+/* The stage: the dark card the clip plays on. */
+@property --left {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+@starting-style {
+  .pick-sheet[open] {
+    transform: translateY(100%);
+  }
+}

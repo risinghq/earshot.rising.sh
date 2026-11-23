@@ -130,6 +130,7 @@ function adminPage(
   return Page({
     title: `${title} · Admin`,
     user,
+    styles: ["common", "site", "admin"],
     children: (
       <div class="admin dense">
         {adminNav(current, open)}

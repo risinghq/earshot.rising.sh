@@ -1,0 +1,693 @@
+@keyframes wave {
+  to {
+    transform: scaleY(calc(var(--s) * 0.35));
+  }
+}
+
+/* The screen view is a TV layout, drawn at 1920×1080. --u is one design
+   pixel, so the whole layout scales to fit any screen. It carries no site
+   chrome, and every rule is scoped to it. */
+.screen-view {
+  --u: min(calc(100vw / 1920), calc(100dvh / 1080));
+  background: var(--stage);
+  color: var(--stage-ink);
+  margin: 0;
+  min-height: 100dvh;
+  overflow: hidden;
+}
+.tv {
+  box-sizing: border-box;
+  display: grid;
+  height: 100dvh;
+  margin-inline: auto;
+  max-width: calc(1920 * var(--u));
+  padding: calc(72 * var(--u));
+}
+.tv :where(p, h1, h2) {
+  margin: 0;
+  max-width: none;
+}
+.tv-panel {
+  display: grid;
+  gap: calc(48 * var(--u));
+  grid-template-rows: auto 1fr auto;
+  min-height: 0;
+}
+.tv-panel[hidden],
+.tv-message[hidden],
+.tv-sound[hidden] {
+  display: none;
+}
+.tv-message {
+  align-self: center;
+  font-size: calc(48 * var(--u));
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-align: center;
+}
+.tv-top {
+  align-items: center;
+  display: flex;
+  gap: calc(32 * var(--u));
+  justify-content: space-between;
+}
+.tv-brand {
+  align-items: center;
+  display: flex;
+  font-size: calc(40 * var(--u));
+  font-weight: 800;
+  gap: calc(16 * var(--u));
+  letter-spacing: -0.03em;
+}
+.tv-brand .sound-mark {
+  fill: #7e7bff;
+  height: calc(48 * var(--u));
+  width: calc(48 * var(--u));
+}
+.tv-room {
+  align-items: center;
+  color: var(--stage-ink-2);
+  display: flex;
+  font-size: calc(30 * var(--u));
+  font-weight: 700;
+  gap: calc(20 * var(--u));
+}
+.tv-room .mosaic {
+  --r: calc(14 * var(--u));
+  --s: calc(72 * var(--u));
+}
+.tv-room b {
+  color: var(--stage-ink);
+  display: block;
+  font-weight: 800;
+}
+.tv-room span {
+  display: block;
+  font-size: calc(24 * var(--u));
+}
+.tv-lobby-main {
+  align-items: center;
+  display: grid;
+  gap: calc(96 * var(--u));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.tv-ask {
+  color: var(--stage-ink-2);
+  font-size: calc(32 * var(--u));
+  font-weight: 700;
+}
+.tv-code {
+  display: flex;
+  gap: calc(14 * var(--u));
+  margin-top: calc(24 * var(--u));
+}
+.tv-code span {
+  align-items: center;
+  background: var(--stage-2);
+  border-radius: calc(24 * var(--u));
+  display: flex;
+  font-size: calc(104 * var(--u));
+  font-weight: 800;
+  height: calc(150 * var(--u));
+  justify-content: center;
+  letter-spacing: -0.02em;
+  width: calc(120 * var(--u));
+}
+.tv-join {
+  align-items: center;
+  display: flex;
+  gap: calc(40 * var(--u));
+  margin-top: calc(48 * var(--u));
+}
+/* The SVG's viewBox carries the code's quiet zone, so the card needs no
+   padding of its own. */
+.tv-qr {
+  background: #fff;
+  border-radius: calc(24 * var(--u));
+  flex: none;
+  height: calc(300 * var(--u));
+  width: calc(300 * var(--u));
+}
+.tv-qr path {
+  fill: #17161a;
+}
+.tv-join span {
+  color: var(--stage-ink-2);
+  display: block;
+  font-size: calc(28 * var(--u));
+}
+.tv-players h2 {
+  align-items: baseline;
+  display: flex;
+  font-size: calc(48 * var(--u));
+  font-weight: 800;
+  justify-content: space-between;
+  letter-spacing: -0.03em;
+}
+.tv-players small {
+  color: var(--stage-ink-2);
+  font-size: calc(32 * var(--u));
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.tv-seats {
+  display: grid;
+  gap: calc(20 * var(--u));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  list-style: none;
+  margin: calc(28 * var(--u)) 0 0;
+  padding: 0;
+}
+.tv-seats li {
+  align-items: center;
+  background: var(--stage-2);
+  border-radius: calc(28 * var(--u));
+  box-sizing: border-box;
+  display: flex;
+  gap: calc(22 * var(--u));
+  height: calc(120 * var(--u));
+  padding: 0 calc(26 * var(--u));
+}
+.tv-seats li.is-away {
+  opacity: 0.5;
+}
+.tv-seats .mono {
+  --s: calc(76 * var(--u));
+}
+.tv-seats b,
+.tv-results b,
+.tv-answers b,
+.tv-standings b,
+.tv-winner-who b {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tv-seats b {
+  flex: 1;
+  font-size: calc(38 * var(--u));
+  font-weight: 800;
+}
+.tv-seats .is-open b {
+  color: #77736c;
+  font-size: calc(32 * var(--u));
+  font-weight: 700;
+}
+.tv-seat-empty {
+  border: calc(3 * var(--u)) dashed #46434d;
+  border-radius: 50%;
+  box-sizing: border-box;
+  flex: none;
+  height: calc(76 * var(--u));
+  width: calc(76 * var(--u));
+}
+.tv-tag {
+  align-items: center;
+  background: var(--stage);
+  border-radius: 999px;
+  color: var(--stage-ink-2);
+  display: flex;
+  flex: none;
+  font-size: calc(22 * var(--u));
+  font-weight: 800;
+  height: calc(40 * var(--u));
+  padding: 0 calc(16 * var(--u));
+}
+.tv-wait {
+  align-items: center;
+  align-self: end;
+  color: var(--stage-ink-2);
+  display: flex;
+  font-size: calc(30 * var(--u));
+  gap: calc(18 * var(--u));
+  min-height: calc(72 * var(--u));
+}
+.tv-wait strong {
+  color: var(--stage-ink);
+}
+.tv-wait .mono {
+  --s: calc(56 * var(--u));
+}
+/* One button for sound: in the lobby it asks for the click that lets the
+   browser play the clips later; in a round it shows when a play was
+   blocked. It sits where the lobby's footer ends. */
+.tv-sound {
+  align-items: center;
+  background: var(--accent);
+  border: 0;
+  border-radius: calc(20 * var(--u));
+  bottom: calc(72 * var(--u));
+  box-shadow: 0 calc(6 * var(--u)) 0 var(--accent-press);
+  color: var(--on-accent);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: calc(28 * var(--u));
+  font-weight: 800;
+  gap: calc(14 * var(--u));
+  height: calc(72 * var(--u));
+  padding: 0 calc(28 * var(--u));
+  position: fixed;
+  right: calc((100vw - 1920 * var(--u)) / 2 + 72 * var(--u));
+}
+.tv-sound svg {
+  fill: none;
+  height: calc(30 * var(--u));
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+  width: calc(30 * var(--u));
+}
+.tv-sound .is-solid {
+  fill: currentColor;
+}
+.tv-kicker {
+  color: var(--stage-ink-2);
+  font-size: calc(30 * var(--u));
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tv-segs {
+  display: flex;
+  flex: 1;
+  gap: calc(10 * var(--u));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tv-segs li {
+  background: var(--stage-2);
+  border-radius: calc(7 * var(--u));
+  flex: 1;
+  height: calc(14 * var(--u));
+}
+.tv-segs li.is-done {
+  background: var(--stage-ink-2);
+}
+.tv-segs li.is-now {
+  background: var(--accent);
+}
+.tv-code-pill {
+  align-items: center;
+  background: var(--stage-2);
+  border-radius: 999px;
+  display: flex;
+  font-size: calc(30 * var(--u));
+  font-weight: 800;
+  height: calc(64 * var(--u));
+  letter-spacing: 0.1em;
+  padding: 0 calc(24 * var(--u));
+}
+.tv-next {
+  color: var(--stage-ink-2);
+  font-size: calc(30 * var(--u));
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.tv-round {
+  --ring: calc(620 * var(--u));
+  gap: calc(40 * var(--u));
+}
+.tv-round-main {
+  align-items: center;
+  display: grid;
+  gap: calc(96 * var(--u));
+  grid-template-columns: var(--ring) minmax(0, 1fr);
+  min-height: 0;
+}
+.tv-ring {
+  align-items: center;
+  background: conic-gradient(
+    var(--accent) 0 calc(var(--left) * 100%),
+    var(--stage-2) 0
+  );
+  border-radius: 50%;
+  display: flex;
+  height: var(--ring);
+  justify-content: center;
+  width: var(--ring);
+}
+.tv-ring p {
+  align-items: center;
+  background: var(--stage);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  height: calc(var(--ring) - 48 * var(--u));
+  justify-content: center;
+  width: calc(var(--ring) - 48 * var(--u));
+}
+.tv-ring b {
+  font-size: calc(var(--ring) * 0.32);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+}
+.tv-ring span {
+  color: var(--stage-ink-2);
+  font-size: calc(36 * var(--u));
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  margin-top: calc(8 * var(--u));
+}
+.tv-ask-big {
+  font-size: calc(96 * var(--u));
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+.tv-sub {
+  color: var(--stage-ink-2);
+  font-size: calc(34 * var(--u));
+  margin-top: calc(20 * var(--u));
+}
+.tv-wave {
+  align-items: center;
+  display: flex;
+  gap: calc(6 * var(--u));
+  height: calc(120 * var(--u));
+  margin-top: calc(48 * var(--u));
+}
+.tv-wave i {
+  background: var(--genre, oklch(0.72 0.15 350));
+  border-radius: calc(5 * var(--u));
+  flex: 1;
+  height: 100%;
+  opacity: 0.35;
+  transform: scaleY(calc(var(--s) * 0.5));
+}
+.tv.is-live .tv-wave i {
+  animation: wave var(--d) ease-in-out var(--delay) infinite alternate;
+  opacity: 1;
+  transform: scaleY(var(--s));
+}
+.tv .tv-wave.is-following i {
+  animation: none;
+  opacity: 1;
+}
+.tv-answers {
+  display: grid;
+  gap: calc(20 * var(--u));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tv-answers li {
+  align-items: center;
+  border: calc(3 * var(--u)) dashed var(--stage-2);
+  border-radius: calc(28 * var(--u));
+  box-sizing: border-box;
+  color: var(--stage-ink-2);
+  display: flex;
+  gap: calc(20 * var(--u));
+  height: calc(112 * var(--u));
+  min-width: 0;
+  padding: 0 calc(24 * var(--u));
+}
+.tv-answers li.is-done {
+  background: var(--stage-ink);
+  border-color: var(--stage-ink);
+  border-style: solid;
+  color: var(--stage);
+}
+.tv-answers .mono {
+  --s: calc(64 * var(--u));
+  opacity: 0.35;
+}
+.tv-answers .is-done .mono {
+  opacity: 1;
+}
+.tv-answers li > span {
+  min-width: 0;
+}
+.tv-answers b {
+  display: block;
+  font-size: calc(34 * var(--u));
+  font-weight: 800;
+  line-height: 1.05;
+}
+.tv-answers small {
+  display: block;
+  font-size: calc(24 * var(--u));
+  font-weight: 700;
+  opacity: 0.75;
+}
+/* Five to eight players take two rows of cards; the ring gives up the
+   height. */
+.tv-round.is-many {
+  --ring: calc(480 * var(--u));
+}
+.tv-round.is-many .tv-answers li {
+  height: calc(88 * var(--u));
+}
+.tv-reveal {
+  grid-template-rows: auto 1fr;
+}
+.tv-reveal-main {
+  align-items: center;
+  display: grid;
+  gap: calc(88 * var(--u));
+  grid-template-columns: calc(600 * var(--u)) minmax(0, 1fr);
+  min-height: 0;
+}
+.tv-cover {
+  background: oklch(0.64 0.13 var(--hue, 25));
+  border-radius: calc(40 * var(--u));
+  box-shadow: 0 calc(40 * var(--u)) calc(80 * var(--u)) calc(-24 * var(--u))
+    rgb(0 0 0 / 0.7);
+  height: calc(600 * var(--u));
+  overflow: hidden;
+  width: calc(600 * var(--u));
+}
+.tv-cover img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+.tv-now {
+  align-items: center;
+  color: var(--stage-ink-2);
+  display: flex;
+  font-size: calc(28 * var(--u));
+  font-weight: 800;
+  gap: calc(14 * var(--u));
+  letter-spacing: 0.06em;
+  margin-top: calc(28 * var(--u));
+  text-transform: uppercase;
+}
+.tv-eq {
+  align-items: flex-end;
+  display: flex;
+  gap: calc(4 * var(--u));
+  height: calc(28 * var(--u));
+}
+.tv-eq i {
+  background: var(--accent);
+  height: calc(16 * var(--u));
+  width: calc(6 * var(--u));
+}
+.tv-eq i:nth-child(2) {
+  height: calc(28 * var(--u));
+}
+.tv-eq i:nth-child(3) {
+  height: calc(10 * var(--u));
+}
+.tv-eq i:nth-child(4) {
+  height: calc(22 * var(--u));
+}
+.tv-song {
+  -webkit-box-orient: vertical;
+  display: -webkit-box;
+  font-size: calc(104 * var(--u));
+  font-weight: 800;
+  -webkit-line-clamp: 2;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+  overflow: hidden;
+}
+.tv-artist {
+  color: var(--stage-ink-2);
+  font-size: calc(44 * var(--u));
+  margin-top: calc(16 * var(--u));
+}
+.tv-results {
+  display: flex;
+  flex-direction: column;
+  gap: calc(14 * var(--u));
+  list-style: none;
+  margin: calc(56 * var(--u)) 0 0;
+  padding: 0;
+}
+.tv-results li {
+  align-items: center;
+  background: var(--stage-2);
+  border-radius: calc(24 * var(--u));
+  display: flex;
+  gap: calc(22 * var(--u));
+  height: calc(96 * var(--u));
+  padding: 0 calc(28 * var(--u));
+}
+.tv-results .mono {
+  --s: calc(60 * var(--u));
+}
+.tv-results b {
+  flex: 1;
+  font-size: calc(38 * var(--u));
+  font-weight: 800;
+}
+.tv-pts {
+  color: var(--stage-ink-2);
+  font-size: calc(44 * var(--u));
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  text-align: right;
+  width: calc(180 * var(--u));
+}
+.tv-results .is-right .tv-pts {
+  color: var(--right);
+}
+.tv-total {
+  color: var(--stage-ink-2);
+  font-size: calc(30 * var(--u));
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  text-align: right;
+  width: calc(150 * var(--u));
+}
+.tv-reveal.is-many .tv-song {
+  font-size: calc(80 * var(--u));
+}
+.tv-reveal.is-many .tv-results {
+  gap: calc(8 * var(--u));
+  margin-top: calc(32 * var(--u));
+}
+.tv-reveal.is-many .tv-results li {
+  height: calc(60 * var(--u));
+}
+.tv-reveal.is-many .tv-results .mono {
+  --s: calc(44 * var(--u));
+}
+.tv-reveal.is-many :is(.tv-results b, .tv-pts) {
+  font-size: calc(32 * var(--u));
+}
+.tv-final-main {
+  align-items: center;
+  display: grid;
+  gap: calc(72 * var(--u));
+  grid-template-columns: calc(720 * var(--u)) minmax(0, 1fr);
+  min-height: 0;
+}
+.tv-winner {
+  background: var(--accent);
+  border-radius: calc(48 * var(--u));
+  box-shadow: 0 calc(10 * var(--u)) 0 var(--accent-press);
+  color: var(--on-accent);
+  padding: calc(56 * var(--u));
+}
+.tv-winner-label {
+  font-size: calc(30 * var(--u));
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.tv-winner-who {
+  align-items: center;
+  display: flex;
+  gap: calc(32 * var(--u));
+  margin-top: calc(28 * var(--u));
+}
+.tv-winner-who .mono {
+  --s: calc(160 * var(--u));
+  border: calc(6 * var(--u)) solid var(--on-accent);
+  box-sizing: border-box;
+}
+.tv-winner-who b {
+  font-size: calc(80 * var(--u));
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.tv-winner-score {
+  font-size: calc(180 * var(--u));
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+  margin-top: calc(36 * var(--u));
+}
+.tv-winner-correct {
+  font-size: calc(36 * var(--u));
+  font-weight: 700;
+  margin-top: calc(16 * var(--u));
+}
+.tv-standings {
+  display: flex;
+  flex-direction: column;
+  gap: calc(18 * var(--u));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tv-standings li {
+  align-items: center;
+  background: var(--stage-2);
+  border-radius: calc(32 * var(--u));
+  display: flex;
+  gap: calc(28 * var(--u));
+  height: calc(132 * var(--u));
+  padding: 0 calc(36 * var(--u));
+}
+.tv-rank {
+  color: var(--stage-ink-2);
+  flex: none;
+  font-size: calc(48 * var(--u));
+  font-weight: 800;
+  width: calc(48 * var(--u));
+}
+.tv-standings .mono {
+  --s: calc(84 * var(--u));
+}
+.tv-who {
+  flex: 1;
+  min-width: 0;
+}
+.tv-standings b {
+  display: block;
+  font-size: calc(48 * var(--u));
+  font-weight: 800;
+  line-height: 1;
+}
+.tv-standings small {
+  color: var(--stage-ink-2);
+  display: block;
+  font-size: calc(28 * var(--u));
+  margin-top: calc(6 * var(--u));
+}
+.tv-score {
+  font-size: calc(64 * var(--u));
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.tv-final.is-many .tv-standings {
+  gap: calc(12 * var(--u));
+}
+.tv-final.is-many .tv-standings li {
+  height: calc(84 * var(--u));
+}
+.tv-final.is-many .tv-standings .mono {
+  --s: calc(60 * var(--u));
+}
+.tv-final.is-many :is(.tv-rank, .tv-standings b) {
+  font-size: calc(36 * var(--u));
+}
+.tv-final.is-many .tv-score {
+  font-size: calc(48 * var(--u));
+}

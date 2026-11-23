@@ -10,6 +10,7 @@
 # coverage
 /lcov.info
 
-# web dependencies and local Wrangler state
+# web dependencies, built assets and local Wrangler state
 /apps/web/node_modules
+/apps/web/dist
 /apps/web/**/.wrangler

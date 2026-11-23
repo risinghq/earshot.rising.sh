@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-// Drives public/room.js against a fake DOM: every element is a stub that
+// Drives client/room.js against a fake DOM: every element is a stub that
 // records its children, and state messages arrive through a fake WebSocket.
 // The tests run in the Workers runtime, which has no DOM of its own.
 type Stub = {
@@ -154,7 +154,7 @@ vi.stubGlobal("matchMedia", () => ({ matches: false }));
 describe("room.js reveal", () => {
   beforeAll(async () => {
     // @ts-expect-error plain browser script has no type declarations
-    await import("../public/room.js");
+    await import("../client/room.js");
     await Promise.resolve();
   });
 

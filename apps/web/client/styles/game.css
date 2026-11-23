@@ -1,0 +1,1754 @@
+.clip-live .sound-mark rect {
+  animation: sound-bar 900ms var(--ease) infinite;
+}
+.clip-live .sound-mark rect:nth-child(2) {
+  animation-delay: -300ms;
+}
+.clip-live .sound-mark rect:nth-child(3) {
+  animation-delay: -600ms;
+}
+.clip-live .sound-mark rect:nth-child(4) {
+  animation-delay: -450ms;
+}
+@keyframes sound-bar {
+  50% {
+    transform: scaleY(0.35);
+  }
+}
+.report-form {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.guess {
+  display: grid;
+  gap: var(--space-4);
+}
+.reveal {
+  align-items: center;
+  display: flex;
+  gap: var(--space-4);
+}
+.reveal img {
+  border-radius: var(--radius-md);
+  height: 96px;
+  width: 96px;
+}
+
+/* The game. A phone stacks bar, stage, question and answers, with the answers
+   at thumb height; from 900px the stage takes a fixed left column and the
+   question sits beside it. */
+.game-bar,
+.results-head {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  margin: 0 -16px;
+  min-height: 56px;
+  padding: 8px 16px 8px 6px;
+}
+:is(.game-quit, .results-quit) {
+  align-items: center;
+  border-radius: 12px;
+  color: var(--ink-2);
+  display: inline-flex;
+  flex: none;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+:is(.game-quit, .results-quit) svg {
+  fill: currentColor;
+  height: 24px;
+  width: 24px;
+}
+:is(.game-quit, .results-quit):hover {
+  color: var(--ink);
+}
+.game-progress {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.seg {
+  background: var(--surface-2);
+  border-radius: 4px;
+  flex: 1;
+  height: 8px;
+  transition: background-color var(--duration-base) var(--ease);
+}
+.seg.is-right {
+  background: var(--right);
+}
+.seg.is-wrong {
+  background: var(--wrong);
+}
+.seg.is-current {
+  background: var(--accent);
+}
+#game:has(.player.is-loading, .needs-click) .seg.is-current {
+  background: var(--accent-tint);
+}
+.game-side {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+.game-streak {
+  align-items: center;
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+  color: var(--on-accent);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: var(--weight-heavy);
+  height: 28px;
+  padding: 0 10px;
+  position: absolute;
+  right: 16px;
+  top: 60px;
+  z-index: 2;
+}
+#game:has(.player.is-reveal, .needs-click) .game-streak {
+  display: none;
+}
+.game-score {
+  font-size: 18px;
+  font-weight: var(--weight-heavy);
+  min-width: 56px;
+  text-align: right;
+}
+.in-game .shell {
+  gap: 0;
+  padding-block: 0;
+}
+#game {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  position: relative;
+}
+#round {
+  animation: round-in 240ms var(--ease);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+@keyframes round-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+/* On a phone the stage carries the round and the question (.player-head),
+   so the page heading stays for screen readers only. */
+.round-count {
+  display: none;
+}
+.round-title {
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+.choices {
+  display: grid;
+  gap: 10px;
+  padding-bottom: 24px;
+  padding-top: 16px;
+}
+.round-keys {
+  display: none;
+}
+#round[data-phase="reveal"] {
+  padding-bottom: 240px;
+}
+#round[data-phase="reveal"] .round-keys {
+  display: none;
+}
+/* On a phone the question's stage has the now-playing card's shape and
+   height: the ring where the cover lands, the round and the question where
+   the title lands, the clock where the links land. The answers below then
+   stay put when the verdict arrives. */
+.player {
+  align-items: start;
+  background: var(--stage);
+  border-radius: 28px;
+  color: var(--stage-ink);
+  column-gap: 14px;
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  grid-template-rows: auto 1fr auto;
+  margin-top: 12px;
+  min-height: 184px;
+  padding: 14px;
+  position: relative;
+}
+.player-head {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  min-width: 0;
+}
+.player-round {
+  align-items: center;
+  color: var(--stage-ink-2);
+  display: flex;
+  font-size: 12px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: 0.08em;
+  min-height: 36px;
+  padding-right: 44px;
+  text-transform: uppercase;
+}
+.player-ask {
+  font-size: 24px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin-top: 4px;
+}
+.player audio {
+  display: none;
+}
+.player-top {
+  align-items: center;
+  display: flex;
+  grid-column: 2;
+  grid-row: 1;
+  justify-content: space-between;
+  justify-self: end;
+  min-height: 36px;
+  z-index: 1;
+}
+.player-tag {
+  align-items: center;
+  background: var(--stage-2);
+  border-radius: var(--radius-pill);
+  display: none;
+  font-size: 13px;
+  font-weight: var(--weight-strong);
+  height: 30px;
+  padding: 0 12px;
+}
+.player-sound {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+.player-mute {
+  background: var(--stage-2);
+  border-radius: 50%;
+  box-shadow: none;
+  color: var(--stage-ink);
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  width: 36px;
+}
+.player-mute:hover {
+  background: color-mix(in oklch, var(--stage-2) 80%, var(--stage-ink));
+}
+.player-mute svg {
+  fill: none;
+  height: 22px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 22px;
+}
+.player-mute .mute-body {
+  fill: currentColor;
+  stroke: none;
+}
+.player-mute .mute-off,
+.player-mute[aria-pressed="true"] .mute-on {
+  display: none;
+}
+.player-mute[aria-pressed="true"] .mute-off {
+  display: inline;
+}
+.player-volume {
+  accent-color: var(--stage-ink);
+  display: none;
+  width: 96px;
+}
+.player-ring {
+  align-items: center;
+  background: conic-gradient(
+    var(--accent) calc(var(--left) * 360deg),
+    var(--stage-2) 0
+  );
+  border-radius: 50%;
+  display: flex;
+  grid-column: 1;
+  grid-row: 1 / -1;
+  height: 120px;
+  justify-content: center;
+  position: relative;
+  transition: --left 220ms linear;
+  width: 120px;
+}
+.player-ring::before {
+  background: var(--stage);
+  border-radius: 50%;
+  content: "";
+  inset: 7px;
+  position: absolute;
+}
+.player-toggle {
+  --ledge: var(--accent-press);
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 4px 0 var(--accent-press);
+  color: var(--on-accent);
+  height: 84px;
+  min-height: 0;
+  padding: 0;
+  position: relative;
+  width: 84px;
+  z-index: 1;
+}
+.player-toggle:hover {
+  background: color-mix(in oklch, var(--accent) 90%, var(--ink));
+}
+.player-toggle:active {
+  box-shadow: 0 1px 0 var(--accent-press);
+  transform: translateY(4px);
+}
+.player-toggle svg {
+  fill: currentColor;
+  height: 32px;
+  width: 32px;
+}
+.player-loading {
+  display: none;
+}
+.player-wave {
+  align-items: center;
+  align-self: stretch;
+  display: none;
+  height: 40px;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.player-wave i {
+  background: var(--genre, oklch(0.76 0.14 350));
+  border-radius: 2px;
+  flex: none;
+  height: 100%;
+  opacity: 0.35;
+  transform: scaleY(calc(var(--s) * 0.5));
+  transition: opacity var(--duration-base) var(--ease);
+  width: 4px;
+}
+.player-wave i:nth-child(n + 35) {
+  display: none;
+}
+.clip-live .player-wave i {
+  animation: wave var(--d) ease-in-out var(--delay) infinite alternate;
+  opacity: 1;
+  transform: scaleY(var(--s));
+}
+/* wave.js sets each bar's transform from the clip's own loudness; an
+   animation would override the inline value. */
+.player-wave.is-following i {
+  animation: none;
+  opacity: 1;
+}
+.player-hint,
+.player-wait {
+  display: none;
+}
+.player-foot {
+  align-items: baseline;
+  align-self: end;
+  color: var(--stage-ink-2);
+  display: flex;
+  font-size: 14px;
+  font-weight: var(--weight-strong);
+  gap: 14px;
+  grid-column: 2;
+  grid-row: 3;
+  margin-top: 8px;
+}
+.player-foot b {
+  color: var(--stage-ink);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--weight-heavy);
+}
+.player-worth {
+  color: var(--stage-ink-2);
+}
+
+/* Loading: the ring spins an arc where the timer will run, the answers show
+   as a skeleton, and the timer waits for sound. */
+.player.is-loading :is(.player-top, .player-toggle, .player-foot) {
+  display: none;
+}
+.player.is-loading .player-ring {
+  background: var(--stage-2);
+}
+.player.is-loading .player-ring::after {
+  animation: player-spin 900ms linear infinite;
+  background: conic-gradient(var(--stage-ink-2) 60deg, transparent 0);
+  border-radius: 50%;
+  content: "";
+  inset: 0;
+  mask: radial-gradient(farthest-side, transparent calc(100% - 9px), #000 0);
+  position: absolute;
+}
+@keyframes player-spin {
+  to {
+    rotate: 1turn;
+  }
+}
+.player.is-loading .player-loading {
+  display: block;
+  font-size: 14px;
+  font-weight: var(--weight-heavy);
+  position: relative;
+  text-align: center;
+  z-index: 1;
+}
+.player.is-loading .player-wave i {
+  animation: none;
+  background: var(--stage-ink-2);
+  height: 4px;
+  opacity: 0.3;
+  transform: none;
+}
+.player.is-loading .player-wait {
+  align-self: end;
+  color: var(--stage-ink-2);
+  display: block;
+  font-size: 14px;
+  grid-column: 2;
+  grid-row: 3;
+  margin-top: 8px;
+}
+#round:has(.player.is-loading) .round-title {
+  background: var(--surface-2);
+  border-radius: 6px;
+  color: transparent;
+  height: 22px;
+  margin-left: 4px;
+  padding: 0;
+  margin-bottom: 4px;
+  margin-top: auto;
+  width: 200px;
+}
+#round:has(.player.is-loading) .choice {
+  background: transparent;
+  border-color: var(--surface-2);
+  box-shadow: none;
+}
+#round:has(.player.is-loading)
+  .choice
+  :is(.choice-key, .choice-title, .choice-artist) {
+  background: var(--surface-2);
+  border-radius: 6px;
+  color: transparent;
+}
+#round:has(.player.is-loading) .choice :is(.choice-title, .choice-artist) {
+  display: block;
+  height: 14px;
+  overflow: hidden;
+  width: 62%;
+}
+#round:has(.player.is-loading) .choice .choice-artist {
+  height: 10px;
+  margin-top: 8px;
+  width: 40%;
+}
+
+/* Blocked autoplay: the button asks for a tap, nothing else moves. */
+.player:has(.needs-click) .player-ring {
+  background: var(--stage-2);
+}
+.player-toggle.needs-click {
+  box-shadow:
+    0 5px 0 var(--accent-press),
+    0 0 0 10px rgba(59, 56, 240, 0.28);
+}
+.player:has(.needs-click) .player-hint {
+  align-self: end;
+  color: var(--stage-ink-2);
+  display: grid;
+  font-size: 14px;
+  gap: 4px;
+  grid-column: 2;
+  grid-row: 2 / 4;
+  margin-top: 8px;
+}
+.player:has(.needs-click) .player-hint b {
+  color: var(--stage-ink);
+  font-size: 20px;
+  font-weight: var(--weight-heavy);
+}
+.player:has(.needs-click)
+  :is(.player-wave, .player-foot, .player-wait, .player-ask) {
+  display: none;
+}
+#round:has(.needs-click) :is(.choices, .guess) {
+  opacity: 0.4;
+}
+#round:has(.needs-click) .round-title {
+  color: var(--ink-3);
+}
+
+/* Reveal: the stage turns into the now-playing card and the ring shrinks to
+   a pause button in its corner, so the clip keeps playing. */
+.player.is-reveal {
+  align-items: stretch;
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+  padding: 14px;
+}
+.player.is-reveal
+  > :is(
+    .player-top,
+    .player-head,
+    .player-wave,
+    .player-foot,
+    .player-hint,
+    .player-wait,
+    .player-loading
+  ) {
+  display: none;
+}
+.player.is-reveal .player-ring {
+  background: var(--stage-2);
+  height: 36px;
+  margin: 0;
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  transition: none;
+  width: 36px;
+  z-index: 1;
+}
+.player.is-reveal .player-ring::before {
+  content: none;
+}
+.player.is-reveal .player-toggle {
+  background: transparent;
+  box-shadow: none;
+  color: var(--stage-ink);
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  transform: none;
+  width: 100%;
+}
+.player.is-reveal .player-toggle svg {
+  height: 16px;
+  width: 16px;
+}
+.now {
+  animation: now-in 240ms var(--ease);
+  column-gap: 14px;
+  display: grid;
+  flex: 1;
+  grid-template-columns: 120px minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr;
+  min-width: 0;
+}
+@keyframes now-in {
+  from {
+    opacity: 0;
+  }
+}
+.now-cover {
+  aspect-ratio: 1;
+  border-radius: 16px;
+  grid-column: 1;
+  grid-row: 1 / -1;
+  width: 120px;
+}
+.now-label {
+  align-items: center;
+  color: var(--stage-ink-2);
+  display: flex;
+  font-size: 12px;
+  font-weight: var(--weight-heavy);
+  gap: 6px;
+  letter-spacing: 0.08em;
+  min-height: 36px;
+  padding-right: 44px;
+  text-transform: uppercase;
+}
+.now-eq {
+  align-items: end;
+  color: var(--accent);
+  display: inline-flex;
+  gap: 2px;
+  height: 12px;
+  width: 18px;
+}
+.now-eq i {
+  --s: 1;
+  animation: wave 600ms var(--ease) infinite alternate;
+  background: currentColor;
+  border-radius: 1px;
+  height: 100%;
+  transform-origin: 50% 100%;
+  width: 3px;
+}
+.now-eq i:nth-child(2) {
+  animation-delay: -200ms;
+}
+.now-eq i:nth-child(3) {
+  animation-delay: -400ms;
+}
+.now-eq i:nth-child(4) {
+  animation-delay: -100ms;
+}
+body:not(.clip-live) .now-eq i {
+  animation: none;
+  transform: scaleY(0.4);
+}
+.now-song {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+  min-width: 0;
+}
+/* Two title lines and one byline keep the card within the question stage's
+   height on a phone. */
+.now-title {
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  display: -webkit-box;
+  font-size: 24px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.now-by {
+  color: var(--stage-ink-2);
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.now-links {
+  align-items: center;
+  align-self: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.now-link {
+  align-items: center;
+  color: var(--stage-ink);
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: var(--weight-strong);
+  gap: 5px;
+  text-decoration: none;
+}
+.now-link-long {
+  display: none;
+}
+.out-icon {
+  fill: none;
+  height: 14px;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.4;
+  width: 14px;
+}
+.sheet-report {
+  flex: none;
+}
+.sheet-report > summary {
+  align-items: center;
+  border-radius: 10px;
+  color: var(--stage-ink-2);
+  display: inline-flex;
+  gap: 6px;
+  justify-content: center;
+  min-height: 32px;
+  min-width: 32px;
+}
+.sheet-report > summary::after {
+  display: none;
+}
+.report-flag svg {
+  display: block;
+  fill: currentColor;
+  height: 16px;
+  width: 16px;
+}
+.report-label {
+  display: none;
+}
+.now .report-done {
+  color: var(--stage-ink-2);
+  flex: none;
+  margin: 0 0 0 auto;
+}
+.now:has(.sheet-report[open]) .now-links {
+  flex-wrap: wrap;
+}
+.now .sheet-report[open] {
+  flex: 0 0 100%;
+}
+.now .report-form {
+  flex-wrap: wrap;
+}
+
+/* An answer is a key on a ledge: it sinks when pressed and stays down once
+   picked. */
+.choice {
+  align-items: center;
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 4px 0 var(--line);
+  color: var(--ink);
+  display: flex;
+  font-weight: var(--weight-strong);
+  gap: 14px;
+  justify-content: flex-start;
+  min-height: 64px;
+  padding: 8px 14px;
+  position: relative;
+  text-align: left;
+  width: 100%;
+}
+.choice:hover {
+  background: var(--surface);
+}
+.choice:not([disabled]):active {
+  box-shadow: 0 0 0 var(--line);
+  transform: translateY(4px);
+}
+.choice-key {
+  align-items: center;
+  background: var(--surface-2);
+  border-radius: 9px;
+  color: var(--ink-2);
+  display: inline-flex;
+  flex: none;
+  font-size: 14px;
+  font-weight: var(--weight-heavy);
+  height: 32px;
+  justify-content: center;
+  width: 32px;
+}
+.choice-label {
+  display: grid;
+  min-width: 0;
+}
+.choice-title {
+  font-size: 17px;
+  font-weight: var(--weight-strong);
+  overflow-wrap: anywhere;
+}
+.choice-artist {
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: var(--weight-regular);
+}
+#round[data-phase="question"] .choices .choice {
+  animation: choice-in 200ms var(--ease) backwards;
+}
+#round[data-phase="question"] .choices .choice:nth-child(2) {
+  animation-delay: 20ms;
+}
+#round[data-phase="question"] .choices .choice:nth-child(3) {
+  animation-delay: 40ms;
+}
+#round[data-phase="question"] .choices .choice:nth-child(4) {
+  animation-delay: 60ms;
+}
+@keyframes choice-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.choice.is-picked {
+  background: var(--accent-2);
+  border-color: var(--accent-7);
+  box-shadow: 0 0 0 var(--line);
+  transform: translateY(4px);
+}
+.choices.is-locked .choice,
+.choice[disabled] {
+  cursor: default;
+}
+.choice[disabled] {
+  opacity: 1;
+}
+.choice-mark {
+  background: var(--right);
+  border-radius: 50%;
+  fill: #fff;
+  flex: none;
+  height: 32px;
+  padding: 7px;
+  width: 32px;
+}
+.is-wrong .choice-mark {
+  background: var(--wrong);
+  padding: 8px;
+}
+/* The pick tag sits on the card's top border, so it takes no width from the
+   title: a title that wrapped would move every option below it. */
+.choice-you {
+  background: var(--bg);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: var(--weight-heavy);
+  line-height: 18px;
+  padding: 0 8px;
+  position: absolute;
+  right: 16px;
+  top: -10px;
+}
+.burst {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+.burst i {
+  animation: burst-out 620ms var(--ease) forwards;
+  background: var(--right);
+  border-radius: 50%;
+  height: 6px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  width: 6px;
+}
+.burst i:nth-child(1) {
+  --bx: -52px;
+  --by: -34px;
+}
+.burst i:nth-child(2) {
+  --bx: -18px;
+  --by: -48px;
+}
+.burst i:nth-child(3) {
+  --bx: 16px;
+  --by: -44px;
+}
+.burst i:nth-child(4) {
+  --bx: 50px;
+  --by: -26px;
+}
+.burst i:nth-child(5) {
+  --bx: -56px;
+  --by: 26px;
+}
+.burst i:nth-child(6) {
+  --bx: -20px;
+  --by: 44px;
+}
+.burst i:nth-child(7) {
+  --bx: 18px;
+  --by: 48px;
+}
+.burst i:nth-child(8) {
+  --bx: 54px;
+  --by: 30px;
+}
+@keyframes burst-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--bx)), calc(-50% + var(--by)))
+      scale(0.4);
+  }
+}
+.reveal-typed {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-top: 20px;
+}
+.reveal-typed > div {
+  background: var(--surface);
+  border: 2px solid var(--line);
+  border-radius: 16px;
+  display: grid;
+  gap: 4px;
+  padding: 12px 16px;
+}
+.reveal-typed dt {
+  color: var(--ink-3);
+  font-size: 13px;
+  font-weight: var(--weight-strong);
+}
+.reveal-typed dd {
+  font-size: 17px;
+  font-weight: var(--weight-strong);
+  overflow-wrap: anywhere;
+}
+.streak {
+  color: var(--accent-text);
+  font-weight: var(--weight-strong);
+  margin: 0;
+}
+
+/* The solo verdict sheet slides up over the answers on a phone. */
+#sheet {
+  animation: sheet-in 260ms var(--ease);
+  background: var(--surface);
+  border-radius: 28px 28px 0 0;
+  border-top: 2px solid var(--line);
+  bottom: 0;
+  box-shadow: 0 -12px 32px -12px rgba(23, 22, 26, 0.18);
+  left: 0;
+  padding: 20px 16px 28px;
+  position: fixed;
+  right: 0;
+  z-index: 40;
+}
+#sheet.is-good {
+  border-top-color: var(--right);
+}
+#sheet.is-bad {
+  border-top-color: var(--wrong);
+}
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+#sheet .sheet-in {
+  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr auto;
+}
+.sheet-heading {
+  font-size: 30px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.is-good .sheet-heading {
+  color: var(--right);
+}
+.is-bad .sheet-heading {
+  color: var(--wrong);
+}
+#sheet .sheet-points {
+  align-self: end;
+  color: var(--right);
+  font-size: 40px;
+  font-weight: var(--weight-heavy);
+  grid-column: 2;
+  grid-row: 1 / 3;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+#sheet .sheet-points.is-none {
+  color: var(--ink-3);
+}
+.sheet-sub {
+  align-items: center;
+  color: var(--ink-2);
+  display: flex;
+  font-size: 14px;
+  gap: 8px;
+  margin-top: 8px;
+}
+.sheet-streak {
+  align-items: center;
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+  color: var(--on-accent);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: var(--weight-heavy);
+  height: 26px;
+  padding: 0 10px;
+}
+#sheet .sheet-next {
+  grid-column: 1 / -1;
+  margin-top: 18px;
+}
+#sheet .sheet-next .pill {
+  border-radius: 16px;
+  font-size: 18px;
+  font-weight: var(--weight-heavy);
+  gap: 10px;
+  min-height: 58px;
+  width: 100%;
+}
+.sheet-next .pill.is-busy {
+  cursor: progress;
+  opacity: 0.7;
+}
+.sheet-kbd {
+  display: none;
+}
+.choices.is-locked .choice:not(.is-picked) {
+  opacity: 0.5;
+}
+
+/* The game bar's segment for the revealed round is the countdown to the
+   next one: it fills in the verdict's colour over --next-ms. */
+.seg[data-reveal] {
+  background: var(--seg-tint);
+  overflow: hidden;
+  position: relative;
+}
+.seg[data-reveal]::after {
+  animation: seg-fill var(--next-ms, 5000ms) linear forwards;
+  background: var(--seg-ink);
+  content: "";
+  inset: 0;
+  position: absolute;
+  transform-origin: left;
+}
+.seg[data-reveal="right"] {
+  --seg-ink: var(--right);
+  --seg-tint: var(--right-tint);
+}
+.seg[data-reveal="wrong"] {
+  --seg-ink: var(--wrong);
+  --seg-tint: var(--wrong-tint);
+}
+@keyframes seg-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .seg[data-reveal]::after {
+    animation: none;
+  }
+}
+.round-said {
+  color: var(--wrong);
+}
+.round-who {
+  align-items: center;
+  color: var(--ink-2);
+  display: flex;
+  font-size: 12px;
+  font-weight: var(--weight-strong);
+  gap: 6px;
+  grid-column: 2;
+  min-width: 0;
+}
+.round-who .mono-stack > .mono {
+  --s: 16px;
+  font-size: 0;
+}
+.round-points.is-wrong .choice-mark {
+  background: var(--wrong-tint);
+  fill: var(--wrong);
+}
+@media (min-width: 900px) {
+  .game-bar,
+  .results-head {
+    gap: 20px;
+    margin: 0;
+    min-height: 88px;
+    padding: 0;
+  }
+  :is(.game-quit, .results-quit) {
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+  }
+  .game-progress {
+    gap: 6px;
+  }
+  .seg {
+    border-radius: 5px;
+    height: 10px;
+  }
+  .game-side {
+    gap: 20px;
+  }
+  .game-streak {
+    font-size: 14px;
+    height: 32px;
+    padding: 0 12px;
+    position: static;
+  }
+  #game:has(.player.is-reveal, .needs-click) .game-streak {
+    display: inline-flex;
+  }
+  .game-score {
+    font-size: 28px;
+    min-width: 90px;
+  }
+  #game {
+    min-height: 0;
+    padding-bottom: 48px;
+  }
+  #round:is([data-phase="question"], [data-phase="reveal"]) {
+    column-gap: 56px;
+    display: grid;
+    grid-template-columns: 480px minmax(0, 1fr);
+    margin: 24px auto 0;
+    max-width: 1120px;
+    padding-bottom: 0;
+    row-gap: 14px;
+    width: 100%;
+  }
+  /* Both phases share one grid: the verdict sheet takes the keys' row, which
+     is held at the sheet's height, so the answers stay where they were. */
+  #round:is([data-phase="question"], [data-phase="reveal"]) {
+    grid-template-rows: 1fr auto auto auto minmax(124px, auto) 1fr;
+  }
+  #round:is([data-phase="question"], [data-phase="reveal"]) > * {
+    grid-column: 2;
+  }
+  #round[data-phase="reveal"] > :is(.round-count, .round-title) {
+    color: var(--ink-3);
+  }
+  #round:is([data-phase="question"], [data-phase="reveal"]) > .player {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    height: 660px;
+    margin: 0;
+    padding: 24px 28px 28px;
+    border-radius: 32px;
+  }
+  .round-count {
+    display: block;
+  }
+  .round-title {
+    clip-path: none;
+    height: auto;
+    overflow: visible;
+    position: static;
+    white-space: normal;
+    width: auto;
+  }
+  #round > .round-count {
+    font-size: 13px;
+    grid-row: 2;
+    padding: 0;
+  }
+  #round > .round-title {
+    font-size: 48px;
+    font-weight: var(--weight-heavy);
+    grid-row: 3;
+    letter-spacing: -0.035em;
+    line-height: 1;
+    margin: 0;
+    padding: 0 0 10px;
+  }
+  #round > :is(.choices, .guess, .reveal-typed) {
+    grid-row: 4;
+  }
+  #round[data-phase="question"] > .round-keys {
+    align-self: start;
+    color: var(--ink-3);
+    display: block;
+    font-size: 14px;
+    grid-row: 5;
+    margin-top: 10px;
+  }
+  .round-keys kbd {
+    border: 1.5px solid var(--line);
+    border-radius: 6px;
+    color: var(--ink-2);
+    font-family: inherit;
+    font-weight: var(--weight-strong);
+    padding: 2px 7px;
+  }
+  #round[data-phase="reveal"] > #sheet {
+    align-self: start;
+    grid-row: 5;
+  }
+  .choices {
+    gap: 12px;
+    padding: 0;
+  }
+  .choice {
+    border-radius: 18px;
+    box-shadow: 0 5px 0 var(--line);
+    gap: 18px;
+    min-height: 84px;
+    padding: 12px 20px;
+  }
+  .choice:not([disabled]):active,
+  .choice.is-picked {
+    transform: translateY(5px);
+  }
+  .choice-key {
+    border-radius: 10px;
+    font-size: 16px;
+    height: 40px;
+    width: 40px;
+  }
+  .choice-title {
+    font-size: 21px;
+  }
+  .choice-artist {
+    font-size: 16px;
+  }
+  .choice-you {
+    font-size: 14px;
+  }
+  .choice-mark {
+    height: 40px;
+    padding: 9px;
+    width: 40px;
+  }
+  .is-wrong .choice-mark {
+    padding: 10px;
+  }
+  .reveal-typed {
+    padding: 0;
+  }
+}
+@media (min-width: 900px) {
+  @media (hover: hover) {
+    .choices:not(.reveal-choices, .is-locked) .choice:not([disabled]):hover {
+      border-color: var(--ink);
+      box-shadow: 0 5px 0 var(--ink);
+    }
+    .choices:not(.reveal-choices, .is-locked)
+      .choice:not([disabled]):hover
+      .choice-key {
+      background: var(--ink);
+      color: var(--bg);
+    }
+  }
+}
+@media (min-width: 900px) {
+  /* The tall stage: tag and sound on top, the ring, the waveform, the
+     clock. The page beside it carries the round and the question. */
+  .player {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .player-head {
+    display: none;
+  }
+  .player-top {
+    align-self: stretch;
+    justify-self: auto;
+    min-height: 40px;
+  }
+  .player-volume {
+    display: block;
+  }
+  .player-mute {
+    background: transparent;
+    height: 32px;
+    min-height: 32px;
+    width: 32px;
+  }
+  .player-tag {
+    display: inline-flex;
+    font-size: 14px;
+    height: 32px;
+    padding: 0 14px;
+  }
+  .player-wave {
+    display: flex;
+  }
+  .player-loading,
+  .player.is-loading .player-loading {
+    font-size: 17px;
+  }
+  .player.is-loading .player-wait {
+    align-self: auto;
+    margin-top: 12px;
+    text-align: center;
+  }
+  .player:has(.needs-click) .player-hint {
+    align-self: auto;
+    justify-items: center;
+    margin-top: 18px;
+    text-align: center;
+  }
+  .player:has(.needs-click) .player-hint b {
+    font-size: 22px;
+  }
+  .now-title {
+    display: block;
+  }
+  .now-by {
+    white-space: normal;
+  }
+  .player-ring {
+    height: 264px;
+    margin-block: auto;
+    width: 264px;
+  }
+  .player-ring::before {
+    inset: 12px;
+  }
+  .player.is-loading .player-ring::after {
+    mask: radial-gradient(farthest-side, transparent calc(100% - 12px), #000 0);
+  }
+  .player-toggle {
+    box-shadow: 0 6px 0 var(--accent-press);
+    height: 176px;
+    width: 176px;
+  }
+  .player-toggle.needs-click {
+    box-shadow:
+      0 6px 0 var(--accent-press),
+      0 0 0 12px rgba(59, 56, 240, 0.28);
+  }
+  .player-toggle svg {
+    height: 60px;
+    width: 60px;
+  }
+  .player-wave {
+    height: 64px;
+    margin-top: 0;
+  }
+  .player-wave i {
+    width: 5px;
+  }
+  .player-wave i:nth-child(n + 35) {
+    display: block;
+  }
+  .player-foot {
+    align-self: stretch;
+    font-size: 17px;
+    justify-content: space-between;
+    margin-top: 18px;
+  }
+  .player-foot b {
+    font-size: 34px;
+  }
+  .player:has(.needs-click) .player-hint {
+    margin-bottom: auto;
+  }
+  .player.is-loading .player-wait {
+    margin-bottom: auto;
+  }
+  .player.is-loading .player-wave {
+    margin-bottom: 0;
+  }
+  /* The skeleton is the heading's own box, so the answers below do not move
+     when the clip loads. */
+  #round:has(.player.is-loading) .round-title {
+    height: auto;
+    margin: 0;
+    width: fit-content;
+  }
+  .player.is-reveal {
+    padding: 24px 28px 28px;
+  }
+  .player.is-reveal .player-ring {
+    height: 44px;
+    right: 28px;
+    top: 24px;
+    width: 44px;
+  }
+  .player.is-reveal .player-toggle svg {
+    height: 18px;
+    width: 18px;
+  }
+  .now {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .now-label {
+    font-size: 13px;
+    min-height: 44px;
+  }
+  .now-eq {
+    height: 16px;
+    width: 22px;
+  }
+  .now-cover {
+    border-radius: 24px;
+    box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.6);
+    margin: 28px auto 0;
+    width: 320px;
+  }
+  .now-song {
+    gap: 6px;
+    margin-top: auto;
+  }
+  .now-title {
+    font-size: 40px;
+  }
+  .now-by {
+    font-size: 19px;
+  }
+  .now-links {
+    align-self: stretch;
+    margin-top: 18px;
+  }
+  .now-link {
+    background: var(--stage-2);
+    border-radius: 12px;
+    font-size: 15px;
+    min-height: 40px;
+    padding: 0 14px;
+  }
+  .now-link-long {
+    display: inline;
+  }
+  .sheet-report > summary {
+    font-size: 14px;
+    font-weight: 600;
+    padding: 0 8px;
+  }
+  .report-label {
+    display: inline;
+  }
+  #sheet {
+    animation: none;
+    border: 2px solid var(--line);
+    border-radius: 22px;
+    box-shadow: none;
+    padding: 20px 20px 20px 24px;
+    position: static;
+  }
+  #sheet.is-good {
+    border-color: var(--right);
+  }
+  #sheet.is-bad {
+    border-color: var(--wrong);
+  }
+  #sheet .sheet-in {
+    column-gap: 20px;
+    grid-template-columns: auto 1fr auto;
+  }
+  .sheet-heading {
+    font-size: 34px;
+  }
+  #sheet .sheet-points {
+    align-self: baseline;
+    font-size: 34px;
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .sheet-sub {
+    font-size: 15px;
+    grid-column: 1 / 3;
+    grid-row: 2;
+  }
+  .sheet-sub .sheet-streak {
+    display: none;
+  }
+  #sheet .sheet-next {
+    grid-column: 3;
+    grid-row: 1 / 3;
+    margin: 0;
+  }
+  #sheet .sheet-next .pill {
+    min-height: 60px;
+    padding: 0 28px;
+    width: auto;
+  }
+  .sheet-kbd {
+    background: var(--accent-press);
+    border-radius: 6px;
+    display: inline;
+    font-family: inherit;
+    font-size: 13px;
+    padding: 2px 8px;
+  }
+  #player-wrap .player {
+    margin-inline: auto;
+    max-width: 480px;
+  }
+  #room .choices {
+    margin-inline: auto;
+    max-width: 640px;
+    width: 100%;
+  }
+  .report-label {
+    display: inline;
+  }
+}
+@media (prefers-color-scheme: dark) {
+  .choice {
+    box-shadow: 0 4px 0 var(--press);
+  }
+  .choice-mark {
+    fill: var(--bg);
+  }
+}
+@media (prefers-color-scheme: dark) and (min-width: 900px) {
+  .choice {
+    box-shadow: 0 5px 0 var(--press);
+  }
+}
+
+/* Results: the score card leads, the stats follow, and the board and rounds
+   sit below on a phone or beside it from 900px. */
+.results-head b {
+  flex: 1;
+  font-size: 16px;
+  font-weight: var(--weight-heavy);
+}
+#round.results {
+  display: grid;
+  gap: 24px;
+  padding-bottom: 120px;
+}
+.results-main {
+  display: grid;
+  gap: 14px;
+}
+.results-stats {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0;
+}
+.results-stats > div {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 12px 14px;
+}
+.results-stats dt {
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.results-stats dd {
+  font-size: 24px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.results-actions {
+  background: var(--bg);
+  border-top: 1.5px solid var(--line);
+  bottom: 0;
+  display: flex;
+  gap: 10px;
+  left: 0;
+  padding: 12px 16px 20px;
+  position: fixed;
+  right: 0;
+  z-index: 30;
+}
+.results-actions > * {
+  flex: 1;
+}
+.results-actions > a {
+  flex: none;
+  order: -1;
+  padding-inline: 20px;
+}
+.results-actions form .pill,
+.results-actions > .pill {
+  border-radius: 16px;
+  min-height: 56px;
+}
+.results-actions form .pill {
+  width: 100%;
+}
+.results-card h2 {
+  align-items: baseline;
+  display: flex;
+  font-size: 20px;
+  font-weight: var(--weight-heavy);
+  justify-content: space-between;
+  letter-spacing: -0.02em;
+  padding: 0 4px 10px;
+}
+.results-card h2 small {
+  color: var(--ink-3);
+  font-size: 13px;
+  font-weight: var(--weight-regular);
+  letter-spacing: 0;
+}
+:is(.board-rows, .round-rows) {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.round-rows {
+  border-radius: 20px;
+}
+:is(.board-rows, .round-rows) li {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 14px;
+}
+:is(.board-rows, .round-rows) li + li {
+  border-top: 1.5px solid var(--surface-2);
+}
+.board-foot {
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+  border-radius: 0 0 20px 20px;
+  border-top: 0;
+  color: var(--ink-2);
+  font-size: 14px;
+  padding: 12px 14px;
+}
+.round-i {
+  color: var(--ink-3);
+  display: none;
+  font-weight: var(--weight-heavy);
+  width: 20px;
+}
+.round-rows .cover-tile {
+  border-radius: 10px;
+  flex: none;
+  height: 44px;
+  width: 44px;
+}
+.round-song {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.round-song b,
+.round-song small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.round-song b {
+  font-size: 15px;
+}
+.round-song small {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.round-points {
+  font-size: 14px;
+  font-weight: var(--weight-heavy);
+}
+.round-points .choice-mark {
+  background: var(--wrong-tint);
+  fill: var(--wrong);
+  height: 22px;
+  padding: 4px;
+  width: 22px;
+}
+.round-points.is-right {
+  color: var(--right);
+}
+.round-points.is-wrong {
+  color: var(--ink-3);
+}
+@media (min-width: 900px) {
+  .results-head b {
+    font-size: 18px;
+    padding-right: 0;
+    text-align: left;
+  }
+  :is(#round, #done-panel).results {
+    align-items: start;
+    gap: 24px;
+    grid-template-columns: 400px minmax(0, 1fr) 340px;
+    padding-bottom: 48px;
+  }
+  #round.results.no-board {
+    grid-template-columns: 400px minmax(0, 1fr);
+  }
+  .results-actions {
+    background: none;
+    border: 0;
+    padding: 4px 0 0;
+    position: static;
+  }
+  .results-actions > a {
+    order: 0;
+  }
+  .results-actions form .pill,
+  .results-actions > .pill {
+    min-height: 60px;
+  }
+  .results-card {
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 24px;
+    overflow: hidden;
+  }
+  .results-card h2 {
+    padding: 20px 20px 12px;
+  }
+  .results-rounds {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .results-board {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  :is(.board-rows, .round-rows),
+  .board-foot {
+    border: 0;
+    border-radius: 0;
+  }
+  :is(.board-rows, .round-rows) {
+    border-top: 1.5px solid var(--surface-2);
+  }
+  .round-rows li {
+    min-height: 62px;
+    padding: 8px 20px;
+  }
+  .round-i {
+    display: block;
+  }
+  .board-foot {
+    padding: 14px 20px;
+  }
+}
+
+/* One small quit confirmation: the safe action is primary, leaving is
+   quiet. */
+.quit-dialog {
+  border: 0;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay);
+  color: var(--fg);
+  margin: auto;
+  max-width: min(22rem, calc(100vw - var(--space-8)));
+  padding: var(--space-6);
+}
+.quit-dialog::backdrop {
+  background: oklch(from var(--shadow-color) l c h / 0.4);
+}
+.quit-dialog h2 {
+  margin-bottom: var(--space-1);
+}
+.quit-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+  margin-top: var(--space-4);
+}

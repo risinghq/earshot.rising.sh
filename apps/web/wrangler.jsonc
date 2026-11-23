@@ -16,7 +16,10 @@
     { "pattern": "music.rising.sh", "custom_domain": true },
   ],
   "triggers": { "crons": ["* * * * *"] },
-  "assets": { "directory": "./public" },
+  // vite build writes the browser assets here; wrangler runs it before dev
+  // and deploy.
+  "build": { "command": "npm run build" },
+  "assets": { "directory": "./dist" },
   "d1_databases": [
     {
       "binding": "DB",

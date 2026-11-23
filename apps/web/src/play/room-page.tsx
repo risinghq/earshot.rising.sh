@@ -1,4 +1,5 @@
 import { providerHref, type SignedInUser } from "../auth";
+import { ScriptTag } from "../ui/assets";
 import { SaveScoreCard, SignInButtons } from "../ui/empty";
 import { Mosaic } from "../ui/person";
 import { PillButton } from "../ui/pill";
@@ -221,7 +222,7 @@ function pickSheet(code: string) {
   );
 }
 
-// The room page is one shell for every phase. public/room.js shows the panel
+// The room page is one shell for every phase. client/room.js shows the panel
 // that matches the room's state and fills it. The round uses the solo
 // round's parts (game bar, stage, choices, sheet, results), so the two modes
 // look and move the same. The stage and its <audio> persist for the whole
@@ -233,6 +234,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
     title: `Room ${code}`,
     user,
     chrome: "game",
+    styles: ["common", "game", "room"],
     children: (
       <div
         id="game"
@@ -640,8 +642,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
         {quitDialog()}
         {pickSheet(code)}
         {devicesSheet(code)}
-        <script src="/wave.js" defer />
-        <script src="/room.js" defer />
+        <ScriptTag name="room" />
       </div>
     ),
   });

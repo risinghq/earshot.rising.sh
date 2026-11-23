@@ -1,3 +1,4 @@
+import { fontUrl, ScriptTag, Styles } from "../ui/assets";
 import { Mosaic } from "../ui/person";
 import { waveBars } from "../ui/player";
 import { soundMark } from "../ui/shell";
@@ -36,7 +37,7 @@ const segments = (
 );
 
 // The screen page is a full-viewport document, not the site shell: a TV has
-// no use for site navigation. public/screen.js follows the room over its
+// no use for site navigation. client/screen.js follows the room over its
 // WebSocket and shows the panel matching the broadcast phase. The screen
 // plays the clip and shows the game; the phones answer. The layout comes
 // from the Claude Design file "Earshot Room", drawn at 1920×1080.
@@ -56,14 +57,14 @@ export function screenPage(code: string, joinUrl: string) {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link
           rel="preload"
-          href="/bricolage-latin.woff2"
+          href={fontUrl}
           as="font"
           type="font/woff2"
           crossorigin="anonymous"
         />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="stylesheet" href="/styles.css" />
+        <Styles names={["common", "screen"]} />
         <title>{`Room ${code} on screen · Earshot`}</title>
       </head>
       <body class="screen-view">
@@ -203,8 +204,7 @@ export function screenPage(code: string, joinUrl: string) {
           {soundOffIcon}
           Click once to turn on sound
         </button>
-        <script src="/wave.js" defer />
-        <script src="/screen.js" defer />
+        <ScriptTag name="screen" />
       </body>
     </html>
   );
