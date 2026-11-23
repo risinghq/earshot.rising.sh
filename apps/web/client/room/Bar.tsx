@@ -1,4 +1,4 @@
-// The game's top bar, as the server's gameBar draws it (src/play/pages.tsx):
+// The game's top bar, as the server's gameBar draws it (src/play/game-parts.tsx):
 // a way out, the room's Devices, a segment per round and the score.
 // Segments fill with this player's right and wrong answers; the current
 // round is the accent one. On the reveal the round's segment is the

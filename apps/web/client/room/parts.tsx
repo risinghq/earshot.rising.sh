@@ -56,7 +56,7 @@ export function WaitRow(props: {
   );
 }
 
-// The same label the server renders in pages.tsx choiceLabel.
+// The same label the server renders in round-page.tsx choiceLabel.
 export function ChoiceLabel(props: { choice: Choice }) {
   return (
     <span class="choice-label">
