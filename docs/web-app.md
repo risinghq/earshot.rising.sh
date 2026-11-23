@@ -78,9 +78,11 @@ request crosses an origin, so there is no CORS to configure for the dashboard.
 The static asset requests are free on Workers, as on Pages.
 
 Libraries: [Hono](https://hono.dev) for routing and its JSX for server HTML,
-valibot to validate the upload body, vitest with
-`@cloudflare/vitest-pool-workers` so the tests run against real workerd and D1.
-Formatting and linting follow the repository: oxfmt and oxlint.
+[Solid](https://solidjs.com) for the room's phone and TV pages, Vite to build
+the browser assets, valibot to validate the upload body and every socket message
+(`src/play/messages.ts`), vitest with `@cloudflare/vitest-pool-workers` so the
+tests run against real workerd and D1. Formatting and linting follow the
+repository: oxfmt and oxlint.
 
 ### The component layer
 

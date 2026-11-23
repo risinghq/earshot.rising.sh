@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import type { Env } from "../types";
 import { catalog, enoughTracks, getCategory } from "./catalog";
 import { byDecade } from "./pool";
+import { readMatchMessage } from "./messages";
 import type { MatchServerMessage } from "./protocol";
 import { newRoomCode, newRoomSecret, nicknameMaxLength } from "./room";
 import type { Candidate } from "./sources";
@@ -68,18 +69,13 @@ export class Matchmaker extends DurableObject<Env> {
   }
 
   async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer) {
-    let message: { type?: string; name?: unknown };
-    try {
-      message = JSON.parse(typeof raw === "string" ? raw : "");
-    } catch {
-      return;
-    }
-    if (message.type !== "join") return;
+    const message = readMatchMessage(raw);
+    if (message === null) return;
     const seat = this.seat(ws);
     if (seat === null || seat.queued !== 0) return;
     let name = seat.name;
     if (seat.uid === null) {
-      name = typeof message.name === "string" ? message.name.trim() : "";
+      name = message.name?.trim() ?? "";
       if (name === "" || [...name].length > nicknameMaxLength) {
         this.send(ws, { type: "error", code: "name" });
         return;
