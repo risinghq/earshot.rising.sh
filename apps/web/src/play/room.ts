@@ -34,6 +34,7 @@ import {
   trackKeyFor,
 } from "./outcomes";
 import { getCategory } from "./catalog";
+import { readClientMessage } from "./messages";
 
 export const maxPlayers = 8;
 export const nicknameMaxLength = 20;
@@ -334,52 +335,25 @@ export class Room extends DurableObject<Env> {
   }
 
   async webSocketMessage(ws: WebSocket, raw: string | ArrayBuffer) {
-    let message: {
-      type?: string;
-      name?: unknown;
-      token?: unknown;
-      answer?: unknown;
-      category?: unknown;
-      mode?: unknown;
-      id?: unknown;
-    };
-    try {
-      message = JSON.parse(typeof raw === "string" ? raw : "");
-    } catch {
-      return;
-    }
+    const message = readClientMessage(raw);
+    if (message === null) return;
+    const now = Date.now();
+    if (message.type === "watch") return this.watch(ws);
+    if (message.type === "join")
+      return this.join(ws, message.name, message.token, now);
+    if (message.type === "loaded") return this.markLoaded(ws, now);
+    // The rest act for a seated player.
     const pid = this.pidOf(ws);
-    if (message.type === "watch") {
-      await this.watch(ws);
-    } else if (message.type === "join") {
-      await this.join(
-        ws,
-        typeof message.name === "string" ? message.name : undefined,
-        typeof message.token === "string" ? message.token : undefined,
-        Date.now(),
-      );
-    } else if (message.type === "start" && pid !== undefined) {
-      await this.start(pid, Date.now());
-    } else if (message.type === "loaded") {
-      await this.markLoaded(ws, Date.now());
-    } else if (
-      message.type === "answer" &&
-      pid !== undefined &&
-      typeof message.answer === "string"
-    ) {
-      await this.answer(pid, message.answer.slice(0, 200), Date.now());
-    } else if (
-      message.type === "suggest" &&
-      pid !== undefined &&
-      typeof message.category === "string"
-    ) {
-      await this.suggest(pid, message.category.slice(0, 80), message.mode);
-    } else if (
-      message.type === "vote" &&
-      pid !== undefined &&
-      typeof message.id === "string"
-    ) {
-      await this.vote(pid, message.id);
+    if (pid === undefined) return;
+    switch (message.type) {
+      case "start":
+        return this.start(pid, now);
+      case "answer":
+        return this.answer(pid, message.answer, now);
+      case "suggest":
+        return this.suggest(pid, message.category, message.mode);
+      case "vote":
+        return this.vote(pid, message.id);
     }
   }
 
@@ -773,11 +747,10 @@ export class Room extends DurableObject<Env> {
 
   // Anyone seated may suggest between games. Suggesting what is already up
   // next votes for it; a player's new suggestion replaces their old one.
-  async suggest(pid: string, slug: string, value: unknown) {
+  async suggest(pid: string, slug: string, mode: Mode) {
     const s = this.s;
-    const mode = parseMode(value);
     if (s === undefined || s.kind !== "room" || s.phase !== "done") return;
-    if (mode === null || !s.players.some((p) => p.id === pid)) return;
+    if (!s.players.some((p) => p.id === pid)) return;
     const same = () =>
       s.suggestions?.find((x) => x.slug === slug && x.mode === mode);
     if (same() !== undefined) return this.vote(pid, same()!.id);
