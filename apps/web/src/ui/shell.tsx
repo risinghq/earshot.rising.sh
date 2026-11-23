@@ -1,5 +1,6 @@
 import type { Child } from "hono/jsx";
 import type { SignedInUser } from "../auth";
+import { fontUrl, ScriptTag, Styles, type Style } from "./assets";
 import { Monogram } from "./person";
 
 export type NavSection = "play" | "board" | "groups";
@@ -13,6 +14,9 @@ interface PageOptions {
   // "game" drops the site header: while a game runs the page shows only the
   // game, with its own top bar rendered by the page's children.
   chrome?: "full" | "game";
+  // The page's stylesheets. Site pages need common and site; a game page
+  // adds game.
+  styles?: Style[];
   bodyClass?: string;
   children: Child;
 }
@@ -63,6 +67,7 @@ export function Page({
   nav,
   footer,
   chrome = "full",
+  styles = chrome === "game" ? ["common", "site", "game"] : ["common", "site"],
   bodyClass,
   children,
 }: PageOptions) {
@@ -124,16 +129,16 @@ export function Page({
         {head}
         <link
           rel="preload"
-          href="/bricolage-latin.woff2"
+          href={fontUrl}
           as="font"
           type="font/woff2"
           crossorigin="anonymous"
         />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />{" "}
-        <link rel="stylesheet" href="/styles.css" />
-        <script src="/site.js" defer />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <Styles names={styles} />
+        <ScriptTag name="site" />
         <title>{`${title} · Earshot`}</title>
       </head>
       <body

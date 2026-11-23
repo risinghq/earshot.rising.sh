@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-// Drives public/match.js against a fake DOM and WebSocket: the page logic is
+// Drives client/match.js against a fake DOM and WebSocket: the page logic is
 // plain JS, so each element is a small stub and messages are delivered by hand.
 interface Stub {
   hidden: boolean;
@@ -70,7 +70,7 @@ vi.stubGlobal("WebSocket", FakeSocket);
 describe("match.js", () => {
   beforeAll(async () => {
     // @ts-expect-error plain browser script has no type declarations
-    await import("../public/match.js");
+    await import("../client/match.js");
     await Promise.resolve();
   });
 

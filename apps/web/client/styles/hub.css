@@ -1,0 +1,469 @@
+fieldset legend,
+.setup-hint {
+  color: var(--fg-muted);
+}
+
+/* The hub. On a phone: intro, setup, the For you card, then genre rows in one
+   list card. From 900px the intro and the card share a row and genres become
+   a three-column grid of cards. */
+.hub .shell {
+  gap: 0;
+  padding-block: 0;
+}
+.hub-intro {
+  padding: 16px 4px 0;
+}
+.hub-intro .display {
+  font-size: 44px;
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+.hub-intro .lede {
+  font-size: 16px;
+  margin-top: 10px;
+}
+.play-setup {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+}
+.setup-row legend {
+  float: left;
+  line-height: 48px;
+  margin: 0;
+  width: 52px;
+}
+.setup-row .segmented {
+  overflow: hidden;
+}
+.tile {
+  margin: 0;
+}
+.for-you {
+  margin-top: 20px;
+}
+.for-you button {
+  align-items: center;
+  background: var(--accent);
+  border-radius: 24px;
+  box-shadow: 0 6px 0 var(--accent-press);
+  color: var(--on-accent);
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 20px;
+  text-align: left;
+  width: 100%;
+}
+.for-you button:hover {
+  background: color-mix(in oklch, var(--accent) 92%, var(--ink));
+}
+.for-you button:active {
+  box-shadow: 0 0 0 var(--accent-press);
+  transform: translateY(6px);
+}
+.for-you-text {
+  display: grid;
+  gap: 2px;
+}
+.for-you-text .label {
+  color: var(--on-accent);
+  opacity: 0.8;
+}
+.for-you-name {
+  font-size: 28px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+.for-you-note {
+  font-size: 15px;
+  font-weight: var(--weight-medium);
+  opacity: 0.9;
+}
+.for-you-play {
+  align-items: center;
+  background: var(--on-accent);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 4px 0 var(--accent-press);
+  color: var(--accent);
+  display: inline-flex;
+  flex: none;
+  gap: 8px;
+  height: 64px;
+  justify-content: center;
+  width: 64px;
+}
+.for-you-play svg {
+  fill: currentColor;
+  height: 28px;
+  width: 28px;
+}
+.for-you-play span {
+  display: none;
+}
+.hub-section-head {
+  align-items: baseline;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 32px 4px 12px;
+}
+.hub-section-head h2 {
+  font-size: 22px;
+}
+.hub-section-head p {
+  color: var(--ink-3);
+  font-size: 14px;
+}
+.genres {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.genres > .tile,
+.genre-more {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  padding: 12px 0 12px 12px;
+}
+.genres > .tile + .tile,
+.genres > .genre-more {
+  border-top: 1.5px solid var(--surface-2);
+}
+.genre-art-button {
+  background: none;
+  border-radius: 12px;
+  box-shadow: none;
+  flex: none;
+  min-height: 0;
+  padding: 0;
+}
+.genre-art-button:hover {
+  background: none;
+}
+.genre-art-button:active {
+  transform: scale(0.97);
+}
+.genre-art {
+  background: var(--surface-2);
+  border-radius: 12px;
+  display: grid;
+  flex: none;
+  grid-template-columns: 1fr 1fr;
+  height: 72px;
+  overflow: hidden;
+  width: 72px;
+}
+.genre-art img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+.genre-art.is-single img {
+  grid-area: 1 / 1 / 3 / 3;
+}
+.genre-art.is-blank {
+  color: var(--ink-3);
+  place-items: center;
+  grid-template-columns: 1fr;
+}
+.genre-art.is-blank .sound-mark {
+  fill: currentColor;
+}
+.genre-body {
+  display: grid;
+  flex: 1;
+  gap: 8px;
+  min-width: 0;
+}
+.genre-title {
+  align-items: baseline;
+  display: flex;
+  gap: 8px;
+  padding-right: 12px;
+}
+.genre-title b {
+  font-size: 18px;
+  font-weight: var(--weight-heavy);
+  letter-spacing: -0.02em;
+}
+.genre-title span {
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.genre-chips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 0 12px 3px 0;
+  scrollbar-width: none;
+}
+.genre-chips::-webkit-scrollbar {
+  display: none;
+}
+.genre-chips .chip {
+  padding: 0 11px;
+}
+/* Generation labels ("2nd gen") are too wide to scroll in a row, so the six
+   chips sit in a three-column grid. */
+.genre-chips[data-kind="gen"] {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: visible;
+  padding-right: 0;
+}
+.genre-chips[data-kind="gen"] .chip {
+  justify-content: center;
+  white-space: nowrap;
+}
+.genre-more {
+  color: var(--ink-3);
+  font-size: 16px;
+  font-weight: var(--weight-strong);
+  max-width: none;
+}
+.genre-more .genre-art {
+  background: none;
+  border: 2px dashed var(--line);
+}
+.ways {
+  display: grid;
+  gap: 12px;
+}
+.way {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: 20px;
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+}
+.way h3 {
+  font-size: 16px;
+  font-weight: var(--weight-heavy);
+  margin: 0;
+}
+.way .chips .tile {
+  display: contents;
+}
+.way .inline-form input {
+  border: 1.5px solid var(--press);
+  border-radius: 14px;
+  flex: 1;
+  min-height: 48px;
+  min-width: 0;
+  width: auto;
+}
+.way .inline-form .pill {
+  border-radius: 14px;
+  min-height: 48px;
+}
+.way .hint {
+  color: var(--ink-3);
+  font-size: 13px;
+}
+.hub-note {
+  color: var(--ink-3);
+  font-size: 13px;
+  padding: 24px 4px 28px;
+}
+@media (min-width: 900px) {
+  .hub-hero {
+    align-items: end;
+    display: grid;
+    gap: 48px;
+    grid-template-columns: 1.15fr 1fr;
+    padding-top: 40px;
+  }
+  .hub-intro {
+    padding: 0;
+  }
+  .hub-intro .display {
+    font-size: 88px;
+    letter-spacing: -0.045em;
+    line-height: 0.92;
+  }
+  .hub-intro .lede {
+    font-size: 20px;
+    margin-top: 16px;
+    max-width: 520px;
+  }
+  .play-setup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 32px;
+  }
+  .setup-row legend {
+    height: 1px;
+    overflow: hidden;
+    position: absolute;
+    width: 1px;
+  }
+  .for-you {
+    margin-top: 0;
+  }
+  .for-you button {
+    align-items: flex-end;
+    border-radius: 28px;
+    min-height: 200px;
+    padding: 28px;
+  }
+  .for-you-name {
+    font-size: 44px;
+  }
+  .for-you-note {
+    font-size: 17px;
+  }
+  .for-you-play {
+    border-radius: 16px;
+    font-size: 18px;
+    font-weight: var(--weight-heavy);
+    height: 56px;
+    padding: 0 24px 0 18px;
+    width: auto;
+  }
+  .for-you-play svg {
+    height: 22px;
+    width: 22px;
+  }
+  .for-you-play span {
+    display: inline;
+  }
+  .hub-lists {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .hub-section,
+  .genres,
+  .ways {
+    display: contents;
+  }
+  .hub-section-head {
+    grid-column: 1 / -1;
+    padding: 56px 0 0;
+  }
+  .hub-section-head h2 {
+    font-size: 28px;
+  }
+  .hub-section-head p {
+    font-size: 15px;
+  }
+  .hub-section[aria-labelledby="ways-title"] .hub-section-head {
+    display: none;
+  }
+  .genres > .tile {
+    align-items: center;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 20px;
+    gap: 16px;
+    padding: 14px;
+  }
+  .genres > .genre-more {
+    background: none;
+    border: 2px dashed var(--line);
+    border-radius: 20px;
+    justify-content: center;
+    min-height: 150px;
+    padding: 14px;
+  }
+  .genres > .tile + .tile {
+    border-top: 1.5px solid var(--line);
+  }
+  .genre-more .genre-art {
+    display: none;
+  }
+  .genre-art {
+    height: 120px;
+    width: 120px;
+  }
+  .genre-title {
+    padding-right: 0;
+  }
+  .genre-title b {
+    font-size: 20px;
+  }
+  .genre-title span {
+    display: none;
+  }
+  .genre-chips {
+    flex-wrap: wrap;
+    overflow: visible;
+    padding: 0 0 3px;
+  }
+  .genre-chips .chip {
+    min-height: 34px;
+    padding: 0 10px;
+  }
+  .way {
+    align-content: start;
+    padding: 18px;
+  }
+  .way h3 {
+    font-size: 18px;
+  }
+  .way .inline-form input,
+  .way .inline-form .pill {
+    border-radius: 12px;
+    min-height: 44px;
+  }
+  .way .hint {
+    display: none;
+  }
+  .hub-note {
+    font-size: 14px;
+    padding: 32px 0 48px;
+  }
+}
+
+/* Genre chips: a colour mosaic and the name. The rail lists every genre. */
+.genre-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 899px) {
+  .rail.is-scroll .genre-chips {
+    flex-wrap: nowrap;
+    margin: 0 calc(-1 * var(--space-5));
+    overflow-x: auto;
+    padding: 0 var(--space-5) 6px;
+    scrollbar-width: none;
+  }
+}
+@media (min-width: 900px) {
+  .rail:not(.is-scroll) .genre-chips {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.for-you-note {
+  align-items: center;
+  background: var(--accent-tint);
+  border-radius: 16px;
+  color: var(--accent);
+  display: flex;
+  flex: 1 1 100%;
+  font-size: 14px;
+  font-weight: 700;
+  gap: 10px;
+  padding: 12px 14px;
+}
+.for-you-note .sound-mark {
+  height: 22px;
+  width: 22px;
+}
+@media (min-width: 900px) {
+  .for-you-note {
+    background: none;
+    flex: 1 1 auto;
+    padding: 0;
+  }
+}

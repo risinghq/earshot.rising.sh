@@ -48,7 +48,8 @@ crates/music-stats/     the Rust crate: Cargo.toml, src/, tests/
 apps/web/
   wrangler.jsonc        Worker, D1, KV, cron, custom domain, assets
   migrations/           D1 migrations, applied with wrangler
-  public/               static files: CSS, favicon
+  client/               browser scripts, stylesheets and fonts, built by Vite
+  public/               files served under a fixed name: favicon, _headers
   src/                  the Worker, in TypeScript
   test/                 vitest tests that run in workerd
 ```
@@ -67,8 +68,8 @@ The Worker is TypeScript, for these reasons:
 The frontend is the Worker. The profile page is public and has to carry link
 preview tags, so the Worker renders it as HTML on the server, with the charts as
 inline SVG. The sign-in and settings pages are server-rendered forms. The pages
-need no client script, and the static files in `apps/web/public/` are served by
-the Worker's `assets` binding. Cloudflare documents this route in its
+need no client script, and the built files in `apps/web/dist/` are served by the
+Worker's `assets` binding. Cloudflare documents this route in its
 [migration guide](https://developers.cloudflare.com/workers/static-assets/migration-guides/migrate-from-pages/)
 and says Workers offer a broader set of features than Pages. It replaces a
 separate Pages project. One deploy then covers the API and the pages, and no
@@ -89,15 +90,42 @@ modules in `src/app.tsx` and `src/settings.tsx` compose them and hold no markup
 of their own. `Page` renders the header and footer; each other component has one
 job and takes typed props.
 
-Every visual value lives in `public/styles.css` as custom properties on `:root`:
-the neutral and accent colours in OKLCH, the type scale, the spacing scale,
-radii, shadows, easing and durations. Components read the tokens; the dark theme
-is a second set of the same names under `@media (prefers-color-scheme: dark)`,
-and `prefers-reduced-motion` turns every transition off. Bricolage Grotesque is
-self-hosted as a variable woff2 (weight and optical size) in `public/` with its
-OFL licence. The only client script is the copy button on a freshly issued token
-and the export helper on the settings page; both are progressive enhancement
-over working markup.
+Every visual value lives in `client/styles/base.css` as custom properties on
+`:root`: the neutral and accent colours in OKLCH, the type scale, the spacing
+scale, radii, shadows, easing and durations. Components read the tokens; the
+dark theme is a second set of the same names under
+`@media (prefers-color-scheme: dark)`, and `prefers-reduced-motion` turns every
+transition off. Bricolage Grotesque is self-hosted as a variable woff2 (weight
+and optical size) in `client/fonts/` with its OFL licence. The only client
+script is the copy button on a freshly issued token and the export helper on the
+settings page; both are progressive enhancement over working markup.
+
+### Browser assets
+
+`vite build` turns `client/` into `dist/`, and wrangler runs it before `dev` and
+`deploy`; `npm test` and `npm run typecheck` run it first too. Vite minifies
+every file and names it by its content hash under `/assets/`, so
+`public/_headers` marks that path `immutable` for a year: a returning visitor
+fetches a file again only after it changed. The Worker reads the hashed names
+from the build manifest through `src/ui/assets.tsx`, which renders the `<link>`,
+`<script type="module">` and `modulepreload` tags.
+
+The stylesheet is split by the component it styles, one file per area in
+`client/styles/`, and a page loads only the groups it uses:
+
+| Group    | Areas                      | Loaded by                      |
+| -------- | -------------------------- | ------------------------------ |
+| `common` | base tokens, controls      | every page                     |
+| `site`   | header, hub, artist, pages | site pages, admin, solo, match |
+| `game`   | the round, player, choices | solo, match, room              |
+| `admin`  | admin tables               | admin pages                    |
+| `room`   | lobby, room round, sheets  | the room's phone page          |
+| `screen` | the TV                     | the room's TV page             |
+
+`Page` takes the list as `styles`, defaulting to `common` and `site`, plus
+`game` under the game chrome. A rule shared by two groups belongs in
+`controls.css`. A group loads after `common`, so a rule that overrides a control
+wins without extra specificity.
 
 ## 2. Data model
 
@@ -1158,7 +1186,7 @@ the solo game.
   the creator, who alone can start the game or a rematch.
 - **Connection.** `GET /play/room/CODE/ws` upgrades to a WebSocket accepted with
   the hibernation API, so an idle object can be evicted while its sockets stay
-  open. The page is a static shell; one small script in `public/room.js` renders
+  open. The page is a static shell; one small script in `client/room.js` renders
   the phase the object broadcasts. A reload or a dropped connection rejoins by
   sending the stored token, which keeps the nickname and the points. Nicknames
   are 1 to 20 characters and unique in a room, case-insensitive.
@@ -1185,7 +1213,7 @@ the solo game.
   an idle deadline; an hour later the alarm closes any open sockets with code
   1001 — the page shows the room has closed — and deletes the object's storage.
 - **The screen.** `/play/room/CODE/screen` is the room on a shared display,
-  rendered by `public/screen.js`. Its socket sends `watch` instead of `join`: it
+  rendered by `client/screen.js`. Its socket sends `watch` instead of `join`: it
   holds no seat, scores nothing, and counts toward nothing a player counts
   toward — not `maxPlayers`, not the seats a match waits for, not the
   everyone-answered early close. While a screen watches, the snapshot sends the

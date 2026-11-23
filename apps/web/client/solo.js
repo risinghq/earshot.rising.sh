@@ -7,6 +7,8 @@
 // the form locks at once; the verdict that comes back is morphed into the
 // same buttons, so nothing reflows. Continue paints the next question from
 // the copy /prepare sent during the reveal, while /next serves that round.
+import { clipWave, prefetchWave } from "./wave.js";
+
 let audio = document.getElementById("clip");
 const $ = (id) => document.getElementById(id);
 const show = (el, on) => {
@@ -218,7 +220,7 @@ function wirePlayer(round) {
   if (audio.getAttribute("src") !== round.dataset.src)
     audio.src = round.dataset.src;
   wireVolume();
-  globalThis.clipWave?.(audio, round.querySelector(".player-wave"));
+  clipWave(audio, round.querySelector(".player-wave"));
   ["play", "playing", "pause", "ended"].forEach((event) =>
     audio.addEventListener(event, syncIcon),
   );
@@ -257,7 +259,7 @@ function prepare(round) {
       const clip = document.createElement("audio");
       clip.preload = "auto";
       clip.src = url;
-      globalThis.clipWave?.prefetch(url);
+      prefetchWave(url);
       prepared = { url, next, clip };
     })
     .catch(() => {});

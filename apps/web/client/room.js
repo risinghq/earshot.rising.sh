@@ -2,6 +2,8 @@
 // change; render() shows the panel for its phase and fills it. The round
 // reuses the solo round's markup, and the stage and its <audio> persist
 // across rounds so a phone that unlocked sound once keeps it.
+import { clipWave } from "./wave.js";
+
 const root = document.getElementById("game");
 const code = root.dataset.code;
 const $ = (id) => document.getElementById(id);
@@ -94,7 +96,7 @@ let state = null;
 // volume the page sets, so the slider stays hidden there.
 const clip = $("clip");
 const player = clip.closest(".player");
-globalThis.clipWave?.(clip, player.querySelector(".player-wave"));
+clipWave(clip, player.querySelector(".player-wave"));
 const toggle = $("clip-toggle");
 const volumeProbe = document.createElement("audio");
 volumeProbe.volume = 0.5;

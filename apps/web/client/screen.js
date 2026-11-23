@@ -1,5 +1,7 @@
 // The room's TV page. It watches the room over the same WebSocket as the
 // phones, plays the clip and shows the game; the phones answer.
+import { clipWave } from "./wave.js";
+
 const root = document.getElementById("screen");
 const code = root.dataset.code;
 const $ = (id) => document.getElementById(id);
@@ -50,7 +52,7 @@ let loadedFor = 0; // the round number this screen last reported ready
 // blocked. Once the page has had a click, Chrome and Firefox let every
 // later clip play.
 const audio = $("screen-clip");
-globalThis.clipWave?.(audio, document.querySelector(".tv-wave"));
+clipWave(audio, document.querySelector(".tv-wave"));
 const soundButton = $("screen-sound");
 let wantsSound = false;
 let blocked = false;

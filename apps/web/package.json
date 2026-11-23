@@ -3,12 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "vite build",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "lint": "oxlint src test bench",
+    "pretest": "vite build",
     "test": "vitest run",
+    "pretypecheck": "vite build",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -20,6 +23,7 @@
     "@cloudflare/workers-types": "5.20261112.1",
     "oxfmt": "0.75.0",
     "typescript": "7.0.2",
+    "vite": "8.3.8",
     "vitest": "5.1.0",
     "wrangler": "4.160.1"
   }

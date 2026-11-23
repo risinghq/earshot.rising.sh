@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
-// Drives public/solo.js's keyboard handling against a fake DOM, the same way
+// Drives client/solo.js's keyboard handling against a fake DOM, the same way
 // room-js.test.ts drives room.js: elements are stubs and keys are delivered
 // through the captured keydown listener.
 const baseEl = () => ({
@@ -104,7 +104,7 @@ const key = (value: string, target: unknown = {}) =>
 describe("solo.js keyboard", () => {
   beforeAll(async () => {
     // @ts-expect-error plain browser script has no type declarations
-    await import("../public/solo.js");
+    await import("../client/solo.js");
   });
 
   it("pressing 2 answers the second choice while the question is open", () => {
