@@ -1,4 +1,4 @@
-// The answered song, as the server's nowPlaying draws it (src/play/pages.tsx),
+// The answered song, as the server's nowPlaying draws it (src/play/round-page.tsx),
 // with its report form. Reports go over fetch so the room socket stays
 // connected.
 import { Show, createSignal } from "solid-js";

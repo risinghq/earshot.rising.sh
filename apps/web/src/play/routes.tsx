@@ -26,16 +26,11 @@ import {
   type Game,
   type Mode,
 } from "./game";
-import {
-  artistPage,
-  artistsPage,
-  feedErrorPage,
-  gamePage,
-  boardPage,
-  categoryBoardPage,
-  hubPage,
-  matchPage,
-} from "./pages";
+import { artistPage, artistsPage } from "./artist-page";
+import { boardPage, categoryBoardPage } from "./board-page";
+import { gamePage } from "./game-page";
+import { feedErrorPage, hubPage } from "./hub-page";
+import { matchPage } from "./match-page";
 import { tileFacts } from "./hub";
 import { claimGame, readBoard, readCategoryBoard, recordGame } from "./results";
 import { forYouCategory, forYouCold, forYouMix, forYouSlug } from "./foryou";

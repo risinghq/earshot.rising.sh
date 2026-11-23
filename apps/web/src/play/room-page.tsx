@@ -2,7 +2,7 @@ import { providerHref, type SignedInUser } from "../auth";
 import { ScriptTag } from "../ui/assets";
 import { SaveScoreCard, SignInButtons } from "../ui/empty";
 import { Page } from "../ui/shell";
-import { quitDialog } from "./pages";
+import { quitDialog } from "./game-parts";
 import { categoryBoardDays } from "./results";
 
 // The room page is one shell for every phase. The room plays over a live

@@ -91,7 +91,10 @@ shell), `Section` (a card), `Stats`, `RankedList`, `PillLink` and `PillButton`,
 `Segmented`, `Notice`, `TokenDisplay`, `EmptyState` and `DayBars`. The route
 modules in `src/app.tsx` and `src/settings.tsx` compose them and hold no markup
 of their own. `Page` renders the header and footer; each other component has one
-job and takes typed props.
+job and takes typed props. The game's pages live one module per page in
+`src/play/`: `hub-page`, `round-page`, `final-page`, `game-page`, `artist-page`,
+`board-page`, `match-page`, `room-page` and `screen-page`. Parts that the round,
+final and room pages share are in `game-parts.tsx`.
 
 Every visual value lives in `client/styles/base.css` as custom properties on
 `:root`: the neutral and accent colours in OKLCH, the type scale, the spacing
