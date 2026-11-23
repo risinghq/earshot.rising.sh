@@ -1,6 +1,7 @@
 // The messages a room's WebSocket carries, between the room's Durable Object
-// (room.ts) and the browser pages (client/room, client/screen.js). Types only,
-// and imports only rules.ts, so a client bundle can take it whole.
+// (room.ts) and the browser pages (client/room, client/screen), and the
+// matchmaker's (match.ts and client/match.ts). Types only, and imports only
+// rules.ts, so a client bundle can take it whole.
 import type { Choice, Mode } from "./rules";
 
 export type RoomKind = "room" | "match";
@@ -131,6 +132,15 @@ export type ClientMessage =
   | { type: "answer"; answer: string }
   | { type: "suggest"; category: string; mode: Mode }
   | { type: "vote"; id: string };
+
+// The matchmaker's socket (match.ts and client/match.ts). A "feed" error means
+// the category's songs could not be loaded for the new room.
+export type MatchServerMessage =
+  | { type: "queued" }
+  | { type: "matched"; code: string; token: string }
+  | { type: "error"; code: "name" | "taken" | "feed" };
+
+export type MatchClientMessage = { type: "join"; name?: string };
 
 // The close codes the room ends a socket with.
 export const closeCodes = { gone: 1001, moved: 4001 } as const;

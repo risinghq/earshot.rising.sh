@@ -17,11 +17,11 @@ const url = (key: string) => {
 export type Style = "common" | "site" | "admin" | "game" | "room" | "screen";
 // Each page script's entry module, as vite.config.ts lists it.
 const scripts = {
-  site: "client/site.js",
+  site: "client/site.ts",
   room: "client/room/main.tsx",
-  solo: "client/solo.js",
-  match: "client/match.js",
-  screen: "client/screen.js",
+  solo: "client/solo.ts",
+  match: "client/match.ts",
+  screen: "client/screen/main.tsx",
 } as const;
 export type Script = keyof typeof scripts;
 

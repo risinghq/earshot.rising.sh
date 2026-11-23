@@ -358,7 +358,7 @@
   opacity: 1;
   transform: scaleY(var(--s));
 }
-/* wave.js sets each bar's transform from the clip's own loudness; an
+/* client/wave.ts sets each bar's transform from the clip's own loudness; an
    animation would override the inline value. */
 .player-wave.is-following i {
   animation: none;

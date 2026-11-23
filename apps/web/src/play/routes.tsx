@@ -519,7 +519,7 @@ playApp.post("/", async (context) => {
 
 type PlayContext = Context<{ Bindings: Env }>;
 
-// solo.js sends this header and takes the page in the reply, saving the
+// client/solo.ts sends this header and takes the page in the reply, saving the
 // redirect's second round trip. A form post without the script keeps the 303,
 // so a reload of the page cannot resubmit the form.
 const inline = (context: PlayContext) => context.req.header("x-solo") === "1";

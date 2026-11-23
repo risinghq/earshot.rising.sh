@@ -5,7 +5,7 @@ const copyIcon = (
   </svg>
 );
 
-// The Copy button appears only where the clipboard API exists (client/site.js
+// The Copy button appears only where the clipboard API exists (client/site.ts
 // shows it), so a page without JavaScript leaves the field to select by hand.
 export function TokenField({ token, label }: { token: string; label: string }) {
   return (

@@ -6,17 +6,21 @@
 // the curves exist, or when anything fails, the CSS animation stays.
 const rate = 11025;
 const fps = 40;
-const bands = [
+type Band = { type: BiquadFilterType; frequency: number; Q?: number };
+type Curves = Float32Array[];
+
+const bands: Band[] = [
   { type: "lowpass", frequency: 220 },
   { type: "bandpass", frequency: 1000, Q: 0.8 },
   { type: "highpass", frequency: 3200 },
 ];
-const curves = new Map();
-const playable = (url) => /^https?:/.test(url) && !url.endsWith("/silence.wav");
+const curves = new Map<string, Promise<Curves | null>>();
+const playable = (url: string) =>
+  /^https?:/.test(url) && !url.endsWith("/silence.wav");
 
 // One loudness value per frame, scaled between this band's quiet floor and
 // its loud moments, so a beat reads as a jump rather than a wobble.
-function loudness(samples) {
+function loudness(samples: Float32Array) {
   const step = Math.floor(rate / fps);
   const out = new Float32Array(Math.floor(samples.length / step));
   for (let f = 0; f < out.length; f += 1) {
@@ -34,7 +38,7 @@ function loudness(samples) {
   return out;
 }
 
-async function render(buffer, band) {
+async function render(buffer: AudioBuffer, band: Band) {
   const context = new OfflineAudioContext(1, buffer.length, rate);
   const source = context.createBufferSource();
   source.buffer = buffer;
@@ -49,33 +53,34 @@ async function render(buffer, band) {
 
 // Keyed by the URL without its query: a re-signed link to the same clip
 // reuses the curves.
-function curvesFor(url) {
+function curvesFor(url: string): Promise<Curves | null> {
   const key = url.split("?")[0];
-  if (!curves.has(key))
-    curves.set(
-      key,
-      fetch(url, { mode: "cors", credentials: "omit" })
-        .then((response) => {
-          if (!response.ok) throw new Error(`clip ${response.status}`);
-          return response.arrayBuffer();
-        })
-        .then((bytes) =>
-          new OfflineAudioContext(1, rate, rate).decodeAudioData(bytes),
-        )
-        .then((buffer) =>
-          Promise.all(bands.map((band) => render(buffer, band))),
-        )
-        .catch(() => null),
-    );
-  return curves.get(key);
+  let found = curves.get(key);
+  if (!found) {
+    found = fetch(url, { mode: "cors", credentials: "omit" })
+      .then((response) => {
+        if (!response.ok) throw new Error(`clip ${response.status}`);
+        return response.arrayBuffer();
+      })
+      .then((bytes) =>
+        new OfflineAudioContext(1, rate, rate).decodeAudioData(bytes),
+      )
+      .then((buffer) => Promise.all(bands.map((band) => render(buffer, band))))
+      .catch(() => null);
+    curves.set(key, found);
+  }
+  return found;
 }
 
-export function clipWave(audio, wave) {
+export function clipWave(
+  audio: HTMLAudioElement | null,
+  wave: HTMLElement | null,
+) {
   if (!audio || !wave || !globalThis.OfflineAudioContext) return;
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  const bars = [...wave.children];
+  const bars = [...wave.children] as HTMLElement[];
   const level = bars.map(() => 0);
-  let current = null;
+  let current: Curves = [];
   let frame = 0;
 
   const stop = () => {
@@ -132,6 +137,6 @@ export function clipWave(audio, wave) {
   });
 }
 
-export function prefetchWave(url) {
+export function prefetchWave(url: string) {
   if (playable(url)) curvesFor(url);
 }

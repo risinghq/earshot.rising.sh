@@ -1,23 +1,7 @@
-// Small pieces every room view uses.
+// Small pieces the room's views share.
 import { For, Show } from "solid-js";
 import type { Choice } from "../../src/play/rules";
-import { hueOf } from "../../src/ui/marks";
-
-// A person's monogram, in the hue the server pages give the same name.
-export function Mono(props: { name: string; size?: number }) {
-  return (
-    <span
-      class="mono"
-      style={{
-        "--hue": String(hueOf(props.name)),
-        "--s": props.size ? `${props.size}px` : undefined,
-      }}
-      aria-hidden="true"
-    >
-      {[...props.name][0] ?? "?"}
-    </span>
-  );
-}
+import { Mono } from "../ui/marks";
 
 export function MonoStack(props: {
   names: string[];
@@ -34,16 +18,6 @@ export function MonoStack(props: {
     >
       <For each={props.names}>{(name) => <Mono name={name} />}</For>
     </span>
-  );
-}
-
-export function Mosaic(props: { seed: string }) {
-  return (
-    <span
-      class="mosaic"
-      style={{ "--hue": String(hueOf(props.seed)) }}
-      aria-hidden="true"
-    />
   );
 }
 
@@ -80,23 +54,6 @@ export function WaitRow(props: {
       </span>
     </p>
   );
-}
-
-// Markup the server owns and renders once into <template id="room-parts">:
-// the sign-in buttons, the save-score card and the board's sign-in line.
-// Each part is the content of a [data-part] wrapper; each use takes a
-// fresh copy, and ref receives its first element.
-export function Part(props: { name: string; ref?: (el: HTMLElement) => void }) {
-  const template = document.getElementById("room-parts");
-  const source =
-    template instanceof HTMLTemplateElement
-      ? template.content.querySelector(`[data-part="${props.name}"]`)
-      : null;
-  if (!source) return null;
-  const nodes = [...source.childNodes].map((node) => node.cloneNode(true));
-  const first = nodes.find((node) => node.nodeType === Node.ELEMENT_NODE);
-  if (first) props.ref?.(first as HTMLElement);
-  return nodes;
 }
 
 // The same label the server renders in pages.tsx choiceLabel.

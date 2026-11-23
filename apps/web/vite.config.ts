@@ -20,11 +20,11 @@ export default defineConfig({
     assetsInlineLimit: (file) => !file.endsWith(".woff2"),
     rollupOptions: {
       input: [
-        "client/site.js",
+        "client/site.ts",
         "client/room/main.tsx",
-        "client/solo.js",
-        "client/match.js",
-        "client/screen.js",
+        "client/solo.ts",
+        "client/match.ts",
+        "client/screen/main.tsx",
         "client/styles/common.css",
         "client/styles/site.css",
         "client/styles/admin.css",

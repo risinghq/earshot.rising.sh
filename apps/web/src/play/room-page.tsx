@@ -35,7 +35,7 @@ export function roomPage(code: string, user: SignedInUser | null) {
         {quitDialog()}
         {/* The sign-in markup the room shows, built from the auth routes'
             links; the client takes a copy of each part where it needs it. */}
-        <template id="room-parts">
+        <template data-parts>
           <div data-part="sign-in">
             <SignInButtons next={back} />
           </div>

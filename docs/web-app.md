@@ -97,9 +97,10 @@ scale, radii, shadows, easing and durations. Components read the tokens; the
 dark theme is a second set of the same names under
 `@media (prefers-color-scheme: dark)`, and `prefers-reduced-motion` turns every
 transition off. Bricolage Grotesque is self-hosted as a variable woff2 (weight
-and optical size) in `client/fonts/` with its OFL licence. The only client
-script is the copy button on a freshly issued token and the export helper on the
-settings page; both are progressive enhancement over working markup.
+and optical size) in `client/fonts/` with its OFL licence. The site pages' only
+script is `client/site.ts`: it closes the account menu, copies an issued token,
+and posts a `data-inline` form over fetch. All three are progressive enhancement
+over working markup.
 
 ### Browser assets
 
@@ -130,13 +131,17 @@ wins without extra specificity.
 
 The server renders every page with Hono JSX. A page that changes while it is
 open draws that part in the browser with Solid, in TypeScript under `client/`:
-the room's phone page is `client/room/`, entered at `main.tsx`. Its components
-import the room's message types from `src/play/protocol.ts` and the game's rules
-from `src/play/rules.ts`, the same modules the Durable Object uses, so a change
-to a message or a rule fails the type check on both sides.
-`client/tsconfig.json` typechecks the browser code with Solid's JSX, and
-`npm run typecheck` runs both projects. Markup only the server can build, such
-as the sign-in links, comes in a `<template>` the components copy from. The
+the room's phone page is `client/room/` and its TV page is `client/screen/`,
+each entered at `main.tsx`, with the pieces both use in `client/ui/`. Their
+components import the room's message types from `src/play/protocol.ts` and the
+game's rules from `src/play/rules.ts`, the same modules the Durable Object uses,
+so a change to a message or a rule fails the type check on both sides. The solo
+page (`client/solo.ts`), the matchmaker (`client/match.ts`) and `client/site.ts`
+stay plain TypeScript over the server's markup: they enhance a page that already
+works, and Solid's runtime would add 16 kB gzipped to each without drawing
+anything. `client/tsconfig.json` typechecks the browser code with Solid's JSX,
+and `npm run typecheck` runs both projects. Markup only the server can build,
+such as the sign-in links, comes in a `<template>` the components copy from. The
 components' tests run in happy-dom, a second vitest project beside the workerd
 one.
 
@@ -1146,16 +1151,16 @@ stops when the next round loads or the game ends.
   case, accents, punctuation, a "feat." credit and bracketed suffixes, plus a
   small edit distance for typos. The answer never reaches the browser before it
   is guessed.
-- **The page.** `solo.js` posts each answer and Continue with an `x-solo: 1`
-  header, and the server answers with the next page in the same response instead
-  of a 303, so a tap costs one round trip. Without the header, or without
-  scripts, the same forms redirect. On a pick the answer locks and marks the
-  choice at once, and the verdict then morphs the open question in place. While
-  the reveal shows, `/prepare` resolves the next round and returns its clip URL
-  and rendered question. The script preloads that clip, and Continue shows the
-  prepared question at once while `/next` commits it. The server's reply
-  replaces the page only when it differs. The server still judges every answer
-  and starts the clock on the playing report.
+- **The page.** `client/solo.ts` posts each answer and Continue with an
+  `x-solo: 1` header, and the server answers with the next page in the same
+  response instead of a 303, so a tap costs one round trip. Without the header,
+  or without scripts, the same forms redirect. On a pick the answer locks and
+  marks the choice at once, and the verdict then morphs the open question in
+  place. While the reveal shows, `/prepare` resolves the next round and returns
+  its clip URL and rendered question. The script preloads that clip, and
+  Continue shows the prepared question at once while `/next` commits it. The
+  server's reply replaces the page only when it differs. The server still judges
+  every answer and starts the clock on the playing report.
 - **Attribution.** Each reveal names the title and artist, shows the cover and
   links to the track on Deezer or Apple Music with the service's name, which
   both services require.
@@ -1226,7 +1231,7 @@ the solo game.
   an idle deadline; an hour later the alarm closes any open sockets with code
   1001 — the page shows the room has closed — and deletes the object's storage.
 - **The screen.** `/play/room/CODE/screen` is the room on a shared display,
-  rendered by `client/screen.js`. Its socket sends `watch` instead of `join`: it
+  rendered by `client/screen/`. Its socket sends `watch` instead of `join`: it
   holds no seat, scores nothing, and counts toward nothing a player counts
   toward — not `maxPlayers`, not the seats a match waits for, not the
   everyone-answered early close. While a screen watches, the snapshot sends the

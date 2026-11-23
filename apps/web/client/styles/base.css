@@ -377,7 +377,7 @@ img {
 [hidden] {
   display: none !important;
 }
-/* A region that site.js swaps in place without adding a layout box. */
+/* A region that client/site.ts swaps in place without adding a layout box. */
 .contents {
   display: contents;
 }

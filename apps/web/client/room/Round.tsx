@@ -6,7 +6,8 @@ import type { Reveal, RoomState } from "../../src/play/protocol";
 import { maxChoices, type Choice } from "../../src/play/rules";
 import { CheckIcon, CrossIcon } from "./icons";
 import type { Room } from "./model";
-import { ChoiceLabel, Mono } from "./parts";
+import { Mono } from "../ui/marks";
+import { ChoiceLabel } from "./parts";
 import { Stage } from "./Stage";
 import { mineOf, placeLine, revealNote, verdictOf, verdictWords } from "./text";
 
