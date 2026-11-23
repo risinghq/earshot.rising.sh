@@ -15,7 +15,15 @@ const url = (key: string) => {
 // Stylesheets by page group, in the order a page lists them; every page
 // starts with "common".
 export type Style = "common" | "site" | "admin" | "game" | "room" | "screen";
-export type Script = "site" | "room" | "solo" | "match" | "screen";
+// Each page script's entry module, as vite.config.ts lists it.
+const scripts = {
+  site: "client/site.js",
+  room: "client/room/main.tsx",
+  solo: "client/solo.js",
+  match: "client/match.js",
+  screen: "client/screen.js",
+} as const;
+export type Script = keyof typeof scripts;
 
 export const fontUrl = url("client/fonts/bricolage-latin.woff2");
 
@@ -32,7 +40,7 @@ export function Styles({ names }: { names: Style[] }) {
 // A module script, with a preload for each chunk it imports, so the browser
 // fetches them in parallel instead of after parsing the entry.
 export function ScriptTag({ name }: { name: Script }) {
-  const key = `client/${name}.js`;
+  const key = scripts[name];
   return (
     <>
       {(chunks[key]?.imports ?? []).map((chunk) => (

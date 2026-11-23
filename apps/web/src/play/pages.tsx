@@ -16,15 +16,17 @@ import type { BoardEntry, BoardPeriod, CategoryBoardEntry } from "./results";
 import { categoryBoardDays, categoryBoardSize } from "./results";
 import { roundSeconds, roundsPerGame } from "./game";
 import { matchWaitMs } from "./room";
-import { defaultMode, modes, type Choice, type Mode } from "./quiz";
+import {
+  byline,
+  defaultMode,
+  linkService,
+  modeNames,
+  modes,
+  type Choice,
+  type Mode,
+} from "./rules";
 import { providerHref, type SignedInUser } from "../auth";
 import type { ArtistHit, Candidate, Preview } from "./sources";
-
-export const modeNames: Record<Mode, string> = {
-  easy: "Easy",
-  normal: "Normal",
-  hard: "Hard",
-};
 
 const modeHints: Record<Mode, string> = {
   easy: "Song + artist",
@@ -124,7 +126,7 @@ const whoActions: Record<PlayWho, string> = {
 };
 // The hub offers the two shown modes; ?mode=hard still reaches the tiles.
 const hubModes = ["easy", "normal"] as const satisfies readonly Mode[];
-// A room tile carries the creator's token, which room.js keeps in
+// A room tile carries the creator's token, which the room client keeps in
 // localStorage; the room refuses a switch without it. The token is filled on
 // submit because this script runs before the tiles are parsed.
 const setupScript = `
@@ -496,7 +498,7 @@ export function hubPage({
   });
 }
 
-export const quitIcon = (
+const quitIcon = (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
   </svg>
@@ -506,18 +508,18 @@ const trophyIcon = (
     <path d="M7 4h10v3h3v2a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 15.9V18h3v2H8v-2h3v-2.1A5 5 0 0 1 8.3 13H8a4 4 0 0 1-4-4V7h3zm0 5V9H6a2 2 0 0 0 1 1.7zm10 0v1.7A2 2 0 0 0 18 9z" />
   </svg>
 );
-export const checkIcon = (
+const checkIcon = (
   <svg viewBox="0 0 24 24" class="choice-mark" aria-hidden="true">
     <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
   </svg>
 );
-export const flagIcon = (
+const flagIcon = (
   <svg viewBox="0 0 24 24" aria-hidden="true">
     <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z" />
   </svg>
 );
 
-export const crossIcon = (
+const crossIcon = (
   <svg viewBox="0 0 24 24" class="choice-mark" aria-hidden="true">
     <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
   </svg>
@@ -545,7 +547,7 @@ function bestStreak(results: Game["results"]) {
 // streak and the score. Client scripts update it by id as rounds land. A
 // finished round's segment turns right or wrong when marks says which. A
 // room passes its mode, which takes the streak's place.
-export function gameBar({
+function gameBar({
   done,
   marks = [],
   total,
@@ -625,8 +627,7 @@ export function quitDialog(back: string = "/") {
   );
 }
 
-// The song a reveal shows. The room page renders it empty as a template and
-// room.js fills it.
+// The song a reveal shows. client/room/NowPlaying.tsx draws the same card.
 type ShownSong = Pick<
   RoundResult,
   "trackKey" | "title" | "original" | "artist" | "cover" | "link"
@@ -676,13 +677,9 @@ const outIcon = (
 );
 
 // The answered song, shown on the clip's own stage while the clip plays on.
-// solo.js and room.js move this block into the question's player, so the
+// solo.js moves this block into the question's player, so the
 // audio and its pause button survive the reveal.
-export function nowPlaying(
-  result: ShownSong,
-  categorySlug: string,
-  back: string,
-) {
+function nowPlaying(result: ShownSong, categorySlug: string, back: string) {
   return (
     <div class="now">
       <p class="now-label">
@@ -717,7 +714,8 @@ export function nowPlaying(
   );
 }
 
-// room.js and screen.js build the same label for their choices.
+// client/room/parts.tsx and screen.js build the same label for their
+// choices.
 function choiceLabel({ title, artist }: Choice) {
   return (
     <span class="choice-label">
@@ -841,13 +839,6 @@ export function questionPage(
     ),
   });
 }
-
-const linkService = (link: string) =>
-  link.includes("apple.com") ? "Apple Music" : "Deezer";
-
-// A romanized title keeps its own script beside the artist.
-const byline = (result: { original?: string; artist: string }) =>
-  result.original ? `${result.original} · ${result.artist}` : result.artist;
 
 function revealPage(
   game: Game,

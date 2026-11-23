@@ -51,7 +51,8 @@ apps/web/
   client/               browser scripts, stylesheets and fonts, built by Vite
   public/               files served under a fixed name: favicon, _headers
   src/                  the Worker, in TypeScript
-  test/                 vitest tests that run in workerd
+  test/                 vitest tests that run in workerd; client/ holds the
+                        browser components' own tests
 ```
 
 The Worker is TypeScript, for these reasons:
@@ -126,6 +127,18 @@ The stylesheet is split by the component it styles, one file per area in
 `game` under the game chrome. A rule shared by two groups belongs in
 `controls.css`. A group loads after `common`, so a rule that overrides a control
 wins without extra specificity.
+
+The server renders every page with Hono JSX. A page that changes while it is
+open draws that part in the browser with Solid, in TypeScript under `client/`:
+the room's phone page is `client/room/`, entered at `main.tsx`. Its components
+import the room's message types from `src/play/protocol.ts` and the game's rules
+from `src/play/rules.ts`, the same modules the Durable Object uses, so a change
+to a message or a rule fails the type check on both sides.
+`client/tsconfig.json` typechecks the browser code with Solid's JSX, and
+`npm run typecheck` runs both projects. Markup only the server can build, such
+as the sign-in links, comes in a `<template>` the components copy from. The
+components' tests run in happy-dom, a second vitest project beside the workerd
+one.
 
 ## 2. Data model
 
@@ -1186,10 +1199,10 @@ the solo game.
   the creator, who alone can start the game or a rematch.
 - **Connection.** `GET /play/room/CODE/ws` upgrades to a WebSocket accepted with
   the hibernation API, so an idle object can be evicted while its sockets stay
-  open. The page is a static shell; one small script in `client/room.js` renders
-  the phase the object broadcasts. A reload or a dropped connection rejoins by
-  sending the stored token, which keeps the nickname and the points. Nicknames
-  are 1 to 20 characters and unique in a room, case-insensitive.
+  open. The page is a static shell; `client/room/` renders the phase the object
+  broadcasts. A reload or a dropped connection rejoins by sending the stored
+  token, which keeps the nickname and the points. Nicknames are 1 to 20
+  characters and unique in a room, case-insensitive.
 - **Messages.** The client sends `join` (nickname or token), `start` and
   `answer`. The object answers `joined`, `error` (`name`, `taken`, `full`,
   `gone`) and `state`, a snapshot of the phase, the players, the round number

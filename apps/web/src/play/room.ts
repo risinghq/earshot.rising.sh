@@ -15,11 +15,16 @@ import {
   shuffled,
 } from "./quiz";
 import {
-  readCategoryBoard,
-  recordResults,
+  closeCodes,
   type CategoryBoardEntry,
-  type ResultRow,
-} from "./results";
+  type PastRound,
+  type Reveal,
+  type RoomKind,
+  type RoomPreview,
+  type RoomState,
+  type ServerMessage,
+} from "./protocol";
+import { readCategoryBoard, recordResults, type ResultRow } from "./results";
 import { QuotaError, type Candidate } from "./sources";
 import {
   type GameOrigin,
@@ -84,8 +89,6 @@ interface Player {
   marks?: boolean[];
 }
 
-export type RoomKind = "room" | "match";
-
 interface SeatedPlayer {
   name: string;
   token: string;
@@ -117,28 +120,6 @@ interface Round {
   credit?: string;
   answers: Record<string, RoundAnswer>;
 }
-
-interface Reveal {
-  number: number;
-  track: string;
-  title: string;
-  original: string | null;
-  artist: string;
-  cover: string | null;
-  link: string | null;
-  until: number;
-  choices: Choice[];
-  results: {
-    name: string;
-    answer: string | null;
-    correct: boolean;
-    score: number;
-    streak: number;
-  }[];
-}
-
-// A finished round as the final card lists it.
-type PastRound = Omit<Reveal, "until" | "track" | "choices">;
 
 // A category someone wants next. Each player holds one vote; suggesting
 // casts it.
@@ -453,7 +434,7 @@ export class Room extends DurableObject<Env> {
     );
   }
 
-  private send(ws: WebSocket, value: unknown) {
+  private send(ws: WebSocket, value: ServerMessage) {
     try {
       ws.send(JSON.stringify(value));
     } catch {
@@ -489,7 +470,7 @@ export class Room extends DurableObject<Env> {
       : s.players.find((player) => player.id === pid);
     const connected = this.connectedPids();
     const screened = this.hasScreen();
-    const snapshot: Record<string, unknown> = {
+    const snapshot: RoomState = {
       type: "state",
       code: s.code,
       kind: s.kind,
@@ -567,7 +548,7 @@ export class Room extends DurableObject<Env> {
 
   // What a device that holds no seat may see: enough to show the room it is
   // about to join, or the one it cannot join because it is full.
-  private preview() {
+  private preview(): RoomPreview {
     const s = this.s!;
     return {
       type: "preview",
@@ -726,7 +707,7 @@ export class Room extends DurableObject<Env> {
       if (other === ws) continue;
       this.send(other, { type: "moved" });
       other.serializeAttachment({ ...this.infoOf(other), pid: undefined });
-      other.close(4001, "seat moved");
+      other.close(closeCodes.moved, "seat moved");
     }
     ws.serializeAttachment({
       ...this.infoOf(ws),
@@ -1187,7 +1168,8 @@ export class Room extends DurableObject<Env> {
       // An hour without client action ends the room whoever is connected;
       // 1001 tells each page to show the closed state instead of retrying.
       this.s = undefined;
-      for (const ws of this.ctx.getWebSockets()) ws.close(1001, "room closed");
+      for (const ws of this.ctx.getWebSockets())
+        ws.close(closeCodes.gone, "room closed");
       await this.ctx.storage.deleteAll();
       await this.ctx.storage.deleteAlarm();
       return;

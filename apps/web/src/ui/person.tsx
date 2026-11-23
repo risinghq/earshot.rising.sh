@@ -1,8 +1,6 @@
-// The design's name hash: the same name always gets the same hue, so a
-// person keeps one colour on every board, list and group.
-export function hueOf(text: string) {
-  return [...text].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) % 360, 7);
-}
+import { hueOf } from "./marks";
+
+export { hueOf };
 
 const hueStyle = (text: string, size?: number) =>
   size === undefined

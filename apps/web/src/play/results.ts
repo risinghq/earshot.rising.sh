@@ -1,6 +1,7 @@
 import type { Env } from "../types";
 import { putGame, type Game } from "./game";
 import { playerKeyOf } from "./outcomes";
+import type { CategoryBoardEntry } from "./protocol";
 
 export type GameKind = "solo" | "room" | "match";
 
@@ -140,15 +141,7 @@ export async function readBoard(env: Env, period: BoardPeriod) {
   return entries;
 }
 
-export interface CategoryBoardEntry {
-  name: string;
-  score: number;
-  // Of the best game. Null for games written before migration 0018; absent
-  // from a board cached before it.
-  correct?: number | null;
-  rounds?: number | null;
-  finished_at?: number;
-}
+export type { CategoryBoardEntry };
 
 export const categoryBoardDays = 15;
 export const categoryBoardSize = 10;

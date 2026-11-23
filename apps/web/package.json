@@ -8,19 +8,23 @@
     "deploy": "wrangler deploy",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
-    "lint": "oxlint src test bench",
+    "lint": "oxlint src test bench client",
     "pretest": "vite build",
     "test": "vitest run",
     "pretypecheck": "vite build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p client"
   },
   "dependencies": {
+    "@solidjs/web": "2.0.3",
     "hono": "4.13.18",
+    "solid-js": "2.0.3",
     "valibot": "1.5.0"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "1.8.0",
     "@cloudflare/workers-types": "5.20261112.1",
+    "@solidjs/vite-plugin": "3.0.1",
+    "happy-dom": "21.0.4",
     "oxfmt": "0.75.0",
     "typescript": "7.0.2",
     "vite": "8.3.8",
