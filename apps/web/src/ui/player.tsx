@@ -1,10 +1,6 @@
-// The waveform's bars: fixed heights and timings, so every round draws the
-// same shape and the server renders it once. The phone shows the first 34.
-export const waveBars = Array.from({ length: 46 }, (_, i) => {
-  const scale = 0.3 + 0.7 * Math.abs(Math.sin(i * 1.7) * Math.cos(i * 0.45));
-  const duration = 0.45 + ((i * 37) % 45) / 100;
-  return `--s:${scale.toFixed(2)};--d:${duration.toFixed(2)}s;--delay:${(-i * 0.13).toFixed(2)}s`;
-});
+import { waveBars } from "./marks";
+
+export { waveBars };
 
 // The clip's stage, shared by the solo round page and the room's phone page:
 // the play toggle inside the countdown ring, a waveform that moves while the

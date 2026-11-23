@@ -7,25 +7,19 @@ import {
   type Candidate,
   type Preview,
 } from "./sources";
+import { maxChoices, roundsPerGame, type Choice, type Mode } from "./rules";
 
-export const roundSeconds = 15;
-export const roundsPerGame = 10;
-export const maxChoices = 4;
-
-// Easy shows four titles with their artists, Normal four titles alone, and
-// Hard asks for the title typed.
-export const modes = ["easy", "normal", "hard"] as const;
-export type Mode = (typeof modes)[number];
-export const defaultMode: Mode = "easy";
-
-export function parseMode(value: unknown): Mode | null {
-  return modes.find((mode) => mode === value) ?? null;
-}
-
-export interface Choice {
-  title: string;
-  artist?: string;
-}
+export {
+  defaultMode,
+  maxChoices,
+  modes,
+  parseMode,
+  roundSeconds,
+  roundsPerGame,
+  scoreFor,
+  type Choice,
+  type Mode,
+} from "./rules";
 
 export interface PoolEntry {
   title: string;
@@ -81,11 +75,6 @@ export function upcomingTitles(candidates: PoolEntry[], index: number) {
   return candidates
     .slice(index + 1, index + roundsPerGame)
     .map((candidate) => candidate.title);
-}
-
-export function scoreFor(elapsedMs: number) {
-  if (elapsedMs >= roundSeconds * 1000) return 0;
-  return Math.round(1000 - (900 * elapsedMs) / (roundSeconds * 1000));
 }
 
 function levenshtein(a: string, b: string) {

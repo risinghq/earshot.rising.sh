@@ -2,9 +2,13 @@
 // assets. Every emitted file name carries a content hash, so public/_headers
 // can mark /assets/* immutable; the Worker reads the hashed names from the
 // manifest (src/ui/assets.ts).
+import solidPlugin from "@solidjs/vite-plugin";
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  // Only the browser's components are Solid; src/ renders Hono JSX on the
+  // server.
+  plugins: [solidPlugin({ include: ["client/**/*.tsx"] })],
   publicDir: "public",
   build: {
     outDir: "dist",
@@ -17,7 +21,7 @@ export default defineConfig({
     rollupOptions: {
       input: [
         "client/site.js",
-        "client/room.js",
+        "client/room/main.tsx",
         "client/solo.js",
         "client/match.js",
         "client/screen.js",
