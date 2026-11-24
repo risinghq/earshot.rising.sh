@@ -1,3 +1,4 @@
+import * as v from "valibot";
 import { normalizeText } from "../../listening/normalize";
 import { FeedError, fetchJson } from "../../platform/fetch-json";
 
@@ -37,23 +38,64 @@ export interface Preview {
 // misses like code 800 for an unknown ISRC, which must stay skippable.
 export class QuotaError extends Error {}
 
-async function deezerGet(url: string): Promise<unknown> {
-  const body = (await fetchJson(url)) as { error?: { code?: number } };
-  if (body?.error?.code === 4) throw new QuotaError(url);
+// Every field Deezer may leave out is nullish, so a body only fails on a
+// field of the wrong type.
+const deezerBody = <E extends v.ObjectEntries>(entries: E) =>
+  v.object({
+    ...entries,
+    error: v.nullish(v.object({ code: v.nullish(v.number()) })),
+  });
+
+// A malformed entry drops out of the list, so one bad track does not cost
+// the rest.
+const entriesOf = <T>(schema: v.GenericSchema<unknown, T>) =>
+  v.nullish(
+    v.pipe(
+      v.array(v.unknown()),
+      v.transform((items) =>
+        items.flatMap((item) => {
+          const parsed = v.safeParse(schema, item);
+          return parsed.success ? [parsed.output] : [];
+        }),
+      ),
+    ),
+  );
+
+interface DeezerReply {
+  error?: { code?: number | null } | null;
+}
+
+async function deezerGet<T extends DeezerReply>(
+  url: string,
+  schema: v.GenericSchema<unknown, T>,
+): Promise<T> {
+  const body = await fetchJson(url, schema);
+  if (body.error?.code === 4) throw new QuotaError(url);
   return body;
 }
 
-interface DeezerTrack {
-  id?: number;
-  title?: string;
-  preview?: string;
-  link?: string;
-  release_date?: string;
-  artist?: { id?: number; name?: string };
-  album?: { cover_medium?: string };
+const trackEntries = {
+  id: v.nullish(v.number()),
+  title: v.nullish(v.string()),
+  preview: v.nullish(v.string()),
+  link: v.nullish(v.string()),
+  release_date: v.nullish(v.string()),
+  artist: v.nullish(
+    v.object({ id: v.nullish(v.number()), name: v.nullish(v.string()) }),
+  ),
+  album: v.nullish(v.object({ cover_medium: v.nullish(v.string()) })),
   // Only /track/{id} lists contributors; list and search results do not.
-  contributors?: { name?: string; role?: string }[];
-}
+  contributors: v.nullish(
+    v.array(
+      v.object({ name: v.nullish(v.string()), role: v.nullish(v.string()) }),
+    ),
+  ),
+};
+const TrackBody = deezerBody(trackEntries);
+const TrackList = deezerBody({
+  data: entriesOf(v.object(trackEntries)),
+});
+type DeezerTrack = v.InferOutput<typeof TrackBody>;
 
 const creditShown = 3;
 
@@ -103,7 +145,7 @@ function deezerCandidate(track: DeezerTrack): Candidate | null {
 }
 
 async function deezerList(url: string): Promise<Candidate[]> {
-  const body = (await deezerGet(url)) as { data?: DeezerTrack[] };
+  const body = await deezerGet(url, TrackList);
   return (body.data ?? [])
     .map(deezerCandidate)
     .filter((track): track is Candidate => track !== null);
@@ -131,9 +173,10 @@ export interface PlaylistInfo {
 export async function deezerPlaylistTracks(playlistId: string) {
   const tracks: (DeezerTrack & { id: number })[] = [];
   for (let index = 0; index < 1000; index += 100) {
-    const body = (await deezerGet(
+    const body = await deezerGet(
       `https://api.deezer.com/playlist/${playlistId}/tracks?limit=100&index=${index}`,
-    )) as { data?: DeezerTrack[] };
+      TrackList,
+    );
     const page = (body.data ?? []).filter(
       (track): track is DeezerTrack & { id: number } =>
         typeof track.id === "number",
@@ -144,19 +187,22 @@ export async function deezerPlaylistTracks(playlistId: string) {
   return tracks;
 }
 
+const owner = v.nullish(v.object({ name: v.nullish(v.string()) }));
+const PlaylistBody = deezerBody({
+  id: v.nullish(v.number()),
+  title: v.nullish(v.string()),
+  nb_tracks: v.nullish(v.number()),
+  creator: owner,
+  user: owner,
+});
+
 export async function deezerPlaylistInfo(
   playlistId: string,
 ): Promise<PlaylistInfo | null> {
-  const body = (await deezerGet(
+  const body = await deezerGet(
     `https://api.deezer.com/playlist/${playlistId}`,
-  )) as {
-    id?: number;
-    title?: string;
-    nb_tracks?: number;
-    creator?: { name?: string };
-    user?: { name?: string };
-    error?: { code?: number };
-  };
+    PlaylistBody,
+  );
   if (body.error?.code === 800) return null;
   if (typeof body.title !== "string" || typeof body.nb_tracks !== "number")
     throw new FeedError("playlist lookup failed", playlistId);
@@ -169,9 +215,10 @@ export async function deezerPlaylistInfo(
 }
 
 export async function deezerTrackYear(deezerId: number) {
-  const track = (await deezerGet(
+  const track = await deezerGet(
     `https://api.deezer.com/track/${deezerId}`,
-  )) as DeezerTrack;
+    TrackBody,
+  );
   const year = Number(track.release_date?.slice(0, 4));
   return Number.isInteger(year) && year > 0 ? year : null;
 }
@@ -180,12 +227,16 @@ export function deezerArtistTop(artistId: number) {
   return deezerList(`https://api.deezer.com/artist/${artistId}/top?limit=100`);
 }
 
-interface DeezerArtist {
-  id?: number;
-  name?: string;
-  nb_fan?: number;
-  picture_medium?: string;
-}
+const artistEntries = {
+  id: v.nullish(v.number()),
+  name: v.nullish(v.string()),
+  nb_fan: v.nullish(v.number()),
+  picture_medium: v.nullish(v.string()),
+};
+const ArtistBody = deezerBody(artistEntries);
+const ArtistList = deezerBody({
+  data: entriesOf(v.object(artistEntries)),
+});
 
 // Only Deezer's no-data error (code 800) means the artist does not exist.
 // Any other error body — code 700 is a busy service — or a failed fetch is a
@@ -193,9 +244,7 @@ interface DeezerArtist {
 // of turning a real artist into a 404.
 export async function deezerArtist(artistId: number) {
   const url = `https://api.deezer.com/artist/${artistId}`;
-  const body = (await deezerGet(url)) as DeezerArtist & {
-    error?: { code?: number };
-  };
+  const body = await deezerGet(url, ArtistBody);
   if (body.error?.code === 800) return null;
   if (typeof body.name !== "string" || body.name === "")
     throw new FeedError("artist lookup failed", url);
@@ -217,13 +266,15 @@ export interface ArtistHit {
 // Deezer's own order leads with minor duplicates, so the hits are ranked by
 // fan count instead.
 export async function deezerSearchArtists(query: string): Promise<ArtistHit[]> {
-  const body = (await deezerGet(
+  const body = await deezerGet(
     `https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}`,
-  )) as { data?: DeezerArtist[] };
+    ArtistList,
+  );
   return (body.data ?? [])
-    .filter(
-      (artist): artist is DeezerArtist & { id: number; name: string } =>
-        typeof artist.id === "number" && typeof artist.name === "string",
+    .flatMap(({ id, name, ...artist }) =>
+      typeof id === "number" && typeof name === "string"
+        ? [{ ...artist, id, name }]
+        : [],
     )
     .map((artist) => ({
       id: artist.id,
@@ -234,44 +285,51 @@ export async function deezerSearchArtists(query: string): Promise<ArtistHit[]> {
     .sort((a, b) => b.fans - a.fans);
 }
 
-interface AppleFeedEntry {
-  id?: string;
-  name?: string;
-  artistName?: string;
-  url?: string;
-  artworkUrl100?: string;
-}
+const AppleFeed = v.object({
+  feed: v.nullish(
+    v.object({
+      results: entriesOf(
+        v.object({
+          name: v.nullish(v.string()),
+          artistName: v.nullish(v.string()),
+          url: v.nullish(v.string()),
+          artworkUrl100: v.nullish(v.string()),
+        }),
+      ),
+    }),
+  ),
+});
 
 export async function appleChart(country: string): Promise<Candidate[]> {
-  const body = (await fetchJson(
+  const body = await fetchJson(
     `https://rss.marketingtools.apple.com/api/v2/${country}/music/most-played/50/songs.json`,
-  )) as { feed?: { results?: AppleFeedEntry[] } };
-  return (body.feed?.results ?? [])
-    .filter(
-      (
-        entry,
-      ): entry is Required<Pick<AppleFeedEntry, "name" | "artistName">> &
-        AppleFeedEntry =>
-        typeof entry.name === "string" && typeof entry.artistName === "string",
-    )
-    .map((entry) => ({
-      title: entry.name!,
-      artist: entry.artistName!,
-      cover: entry.artworkUrl100 ?? null,
-      link: entry.url ?? null,
-    }));
+    AppleFeed,
+  );
+  return (body.feed?.results ?? []).flatMap((entry) =>
+    typeof entry.name === "string" && typeof entry.artistName === "string"
+      ? [
+          {
+            title: entry.name,
+            artist: entry.artistName,
+            cover: entry.artworkUrl100 ?? null,
+            link: entry.url ?? null,
+          },
+        ]
+      : [],
+  );
 }
 
 export async function deezerPreview(deezerId: number): Promise<Preview | null> {
-  const track = (await deezerGet(
+  const track = await deezerGet(
     `https://api.deezer.com/track/${deezerId}`,
-  )) as DeezerTrack;
+    TrackBody,
+  );
   return typeof track.preview === "string" && track.preview
     ? trackPreview(track)
     : null;
 }
 
-function artistMatches(found: string | undefined, wanted: string) {
+function artistMatches(found: string | null | undefined, wanted: string) {
   return (
     typeof found === "string" && normalizeText(found) === normalizeText(wanted)
   );
@@ -283,9 +341,10 @@ export async function deezerSearchPreview(
   artist: string,
   title: string,
 ): Promise<Preview | null> {
-  const body = (await deezerGet(
+  const body = await deezerGet(
     `https://api.deezer.com/search?q=${encodeURIComponent(`${artist} ${title}`)}&limit=5`,
-  )) as { data?: DeezerTrack[] };
+    TrackList,
+  );
   const hit = (body.data ?? []).find(
     (track) =>
       typeof track.preview === "string" &&
@@ -303,9 +362,10 @@ export async function deezerSearchPreview(
 
 // The album cover of the first hit by the wanted artist, preview or not.
 export async function deezerTrackCover(artist: string, title: string) {
-  const body = (await deezerGet(
+  const body = await deezerGet(
     `https://api.deezer.com/search?q=${encodeURIComponent(`${artist} ${title}`)}&limit=5`,
-  )) as { data?: DeezerTrack[] };
+    TrackList,
+  );
   const hit = (body.data ?? []).find((track) =>
     artistMatches(track.artist?.name, artist),
   );
@@ -315,9 +375,10 @@ export async function deezerTrackCover(artist: string, title: string) {
 // Deezer gives an artist with no picture a blank image whose path has an
 // empty hash (".../images/artist//250x250-..."), which counts as none.
 export async function deezerArtistPicture(name: string) {
-  const body = (await deezerGet(
+  const body = await deezerGet(
     `https://api.deezer.com/search/artist?q=${encodeURIComponent(name)}&limit=5`,
-  )) as { data?: DeezerArtist[] };
+    ArtistList,
+  );
   const hit = (body.data ?? []).find((artist) =>
     artistMatches(artist.name, name),
   );
@@ -330,9 +391,10 @@ export async function deezerIsrcPreview(
   isrc: string,
   artist: string,
 ): Promise<Preview | null> {
-  const track = (await deezerGet(
+  const track = await deezerGet(
     `https://api.deezer.com/track/isrc:${encodeURIComponent(isrc)}`,
-  )) as DeezerTrack;
+    TrackBody,
+  );
   return typeof track.preview === "string" &&
     track.preview &&
     artistMatches(track.artist?.name, artist)

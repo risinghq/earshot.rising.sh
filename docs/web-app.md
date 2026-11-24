@@ -101,8 +101,9 @@ The static asset requests are free on Workers, as on Pages.
 
 Libraries: [Hono](https://hono.dev) for routing and its JSX for server HTML,
 [Solid](https://solidjs.com) for the room's phone and TV pages, Vite to build
-the browser assets, valibot to validate the upload body and every socket message
-(`src/play/room/messages.ts`), vitest with `@cloudflare/vitest-plugin` so the
+the browser assets, valibot to validate the upload body, every socket message
+(`src/play/room/messages.ts`) and every third-party JSON reply
+(`src/platform/fetch-json.ts`), vitest with `@cloudflare/vitest-plugin` so the
 tests run against real workerd and D1, and msw through `@msw/cloudflare` for the
 Worker's outbound requests. `test/network.ts` owns the mock network: a test adds
 handlers for the services it reaches, and a request no handler matches fails the
