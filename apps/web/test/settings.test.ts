@@ -2,8 +2,9 @@ import { env } from "cloudflare:test";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
-import { network } from "./network";
+import { database } from "../src/db";
 import { sourceRemovalStatements } from "../src/settings";
+import { network } from "./network";
 
 const now = Math.floor(Date.now() / 1000);
 const origin = "https://earshot.rising.sh";
@@ -240,6 +241,12 @@ describe("sources", () => {
     )
       .bind(now - 600)
       .run();
+    // A duplicate stays out of the totals, before the recount and after it.
+    await env.DB.prepare(
+      "INSERT INTO plays (user_id, played_at, source_id, ref, track_id, dup) VALUES (1, ?1, 10, 'd1', 1, 1)",
+    )
+      .bind(now - 300)
+      .run();
     expect(await count("track_totals", "user_id = 1")).toBe(1);
     expect(
       (
@@ -306,7 +313,8 @@ describe("sources", () => {
       .bind(now)
       .run();
 
-    const results = await env.DB.batch(sourceRemovalStatements(env.DB, 1, 10));
+    const db = database(env.DB);
+    const results = await db.batch(sourceRemovalStatements(db, 1, 10));
     expect(results[0]?.meta.rows_read).toBeLessThan(1000);
     expect(await count("plays", "user_id = 2")).toBe(1000);
     expect(await count("plays", "user_id = 1")).toBe(0);
@@ -517,6 +525,28 @@ describe("deletion", () => {
     const response = await post("/settings/delete", { confirm: "nope" });
     expect(response.status).toBe(400);
     expect(await count("users")).toBe(1);
+  });
+
+  it("removes a group the deleted account leaves empty, and keeps one with members", async () => {
+    await seedUser();
+    await env.DB.batch([
+      env.DB.prepare(
+        "INSERT INTO users (id, github_id, name, created_at) VALUES (2, 2000, 'bob', ?1)",
+      ).bind(now),
+      env.DB.prepare(
+        "INSERT INTO friend_groups (id, name, creator_id, created_at) VALUES (1, 'only alice', 2, ?1), (2, 'both', 2, ?1)",
+      ).bind(now),
+      env.DB.prepare(
+        "INSERT INTO group_members (group_id, user_id, created_at) VALUES (1, 1, ?1), (2, 1, ?1), (2, 2, ?1)",
+      ).bind(now),
+    ]);
+    expect((await post("/settings/delete", { confirm: "alice" })).status).toBe(
+      303,
+    );
+    const groups = await env.DB.prepare("SELECT name FROM friend_groups").all<{
+      name: string;
+    }>();
+    expect(groups.results).toEqual([{ name: "both" }]);
   });
 
   it("a new person signs in, connects a source, and deletes the account, and no row of theirs remains", async () => {
