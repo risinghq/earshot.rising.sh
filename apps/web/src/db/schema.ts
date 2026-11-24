@@ -266,6 +266,7 @@ export const sources = sqliteTable(
     tz: text(),
   },
   (table) => [
+    unique("sources_user_id_kind_unique").on(table.userId, table.kind),
     index("sources_due")
       .on(table.nextPullAt)
       .where(sql`next_pull_at IS NOT NULL`),
@@ -334,6 +335,10 @@ export const friendRequests = sqliteTable(
     createdAt: integer("created_at").notNull(),
   },
   (table) => [
+    unique("friend_requests_from_user_to_user_unique").on(
+      table.fromUser,
+      table.toUser,
+    ),
     index("friend_requests_from").on(table.fromUser),
     index("friend_requests_to").on(table.toUser),
   ],
@@ -448,7 +453,12 @@ export const categorySources = sqliteTable(
     position: integer().default(0).notNull(),
     refreshedAt: integer("refreshed_at"),
   },
-  () => [
+  (table) => [
+    unique("category_sources_category_kind_ref_unique").on(
+      table.category,
+      table.kind,
+      table.ref,
+    ),
     check(
       "category_sources_check_7",
       sql`kind IN ('deezer_playlist', 'curated')`,
