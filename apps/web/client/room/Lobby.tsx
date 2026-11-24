@@ -1,7 +1,7 @@
 // The lobby: the room's link to share, a sound check, the players and open
 // seats, and the host's controls.
 import { For, Repeat, Show } from "solid-js";
-import type { RoomPlayer, RoomState } from "../../src/play/protocol";
+import type { RoomPlayer, RoomState } from "../../src/play/room/protocol";
 import { CopyButton } from "./Devices";
 import { ChevronIcon, ShareIcon, SoundOffIcon, TvIcon } from "./icons";
 import type { Room } from "./model";

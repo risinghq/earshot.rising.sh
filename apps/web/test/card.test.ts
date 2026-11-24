@@ -1,7 +1,7 @@
 import { env, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import { cutToWidth, displayWidth, renderCard } from "../src/card";
-import type { PeriodStats } from "../src/types";
+import { cutToWidth, displayWidth, renderCard } from "../src/profile/card";
+import type { PeriodStats } from "../src/profile/stats";
 import { readPage, textAt } from "./html";
 
 const now = Math.floor(Date.now() / 1000);

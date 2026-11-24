@@ -1,7 +1,7 @@
 import { env, SELF } from "cloudflare:test";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
-import { fillImages, missRetrySeconds } from "../src/images";
+import { fillImages, missRetrySeconds } from "../src/profile/images";
 import { readPage } from "./html";
 import { network } from "./network";
 

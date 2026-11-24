@@ -14,8 +14,8 @@
   },
   "include": [
     ".",
-    "../src/play/protocol.ts",
-    "../src/play/rules.ts",
+    "../src/play/room/protocol.ts",
+    "../src/play/game/rules.ts",
     "../src/ui/marks.ts"
   ]
 }

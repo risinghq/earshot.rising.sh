@@ -51,10 +51,30 @@ apps/web/
   drizzle.config.ts     where drizzle-kit reads the schema and writes migrations
   client/               browser scripts, stylesheets and fonts, built by Vite
   public/               files served under a fixed name: favicon, _headers
-  src/                  the Worker, in TypeScript
+  src/                  the Worker, in TypeScript, one folder per feature
+    index.tsx           the Worker's entry: fetch, the cron and the Durable Objects
+    app.tsx             mounts each feature's routes
+    env.ts              the bindings and secrets the Worker reads
+    account/            sign-in, sessions, the sign-in page and settings
+    listening/          sources and plays: upload, ListenBrainz API, Spotify,
+                        YouTube Music, matching, duplicates and the pull cron
+    profile/            the public profile page, its stats, card and images
+    social/             friends, groups and the group blend
+    play/               the game; routes.tsx mounts it under /play
+      catalog/          categories, feeds, the track pool, eras, For you
+      game/             rules, rounds, outcomes and results every mode shares
+      hub/ solo/ room/ match/ board/ artist/
+                        one folder per screen or mode, each with its page
+    admin/              the admin pages
+    platform/           the database, secrets, JSON fetch and host redirect
+    ui/                 the shared Hono JSX components
   test/                 vitest tests that run in workerd; client/ holds the
                         browser components' own tests
 ```
+
+A feature folder owns its routes, pages and data. A module imports another
+feature's module directly; `platform/` and `ui/` import no feature but
+`account/auth` (the session user the shell shows).
 
 The Worker is TypeScript, for these reasons:
 
@@ -81,8 +101,8 @@ The static asset requests are free on Workers, as on Pages.
 Libraries: [Hono](https://hono.dev) for routing and its JSX for server HTML,
 [Solid](https://solidjs.com) for the room's phone and TV pages, Vite to build
 the browser assets, valibot to validate the upload body and every socket message
-(`src/play/messages.ts`), vitest with `@cloudflare/vitest-plugin` so the tests
-run against real workerd and D1, and msw through `@msw/cloudflare` for the
+(`src/play/room/messages.ts`), vitest with `@cloudflare/vitest-plugin` so the
+tests run against real workerd and D1, and msw through `@msw/cloudflare` for the
 Worker's outbound requests. `test/network.ts` owns the mock network: a test adds
 handlers for the services it reaches, and a request no handler matches fails the
 test. Formatting and linting follow the repository: oxfmt and oxlint.
@@ -91,13 +111,14 @@ test. Formatting and linting follow the repository: oxfmt and oxlint.
 
 The pages are built from typed Hono JSX components in `src/ui/`: `Page` (the
 shell), `Section` (a card), `Stats`, `RankedList`, `PillLink` and `PillButton`,
-`Segmented`, `Notice`, `TokenDisplay`, `EmptyState` and `DayBars`. The route
-modules in `src/app.tsx` and `src/settings.tsx` compose them and hold no markup
-of their own. `Page` renders the header and footer; each other component has one
-job and takes typed props. The game's pages live one module per page in
-`src/play/`: `hub-page`, `round-page`, `final-page`, `game-page`, `artist-page`,
-`board-page`, `match-page`, `room-page` and `screen-page`. Parts that the round,
-final and room pages share are in `game-parts.tsx`.
+`Segmented`, `Notice`, `TokenDisplay`, `EmptyState` and `DayBars`. Each
+feature's pages compose them, such as `src/profile/page.tsx` and
+`src/account/settings.tsx`. `Page` renders the header and footer; each other
+component has one job and takes typed props. The game's pages sit in the folder
+of their mode: `hub/page`, `solo/page` with `solo/round-page` and
+`solo/final-page`, `artist/page`, `board/page`, `match/page`, `room/page` and
+`room/screen-page`. Parts that the round, final and room pages share are in
+`play/game/parts.tsx`.
 
 Every visual value lives in `client/styles/base.css` as custom properties on
 `:root`: the neutral and accent colours in OKLCH, the type scale, the spacing
@@ -157,27 +178,28 @@ The server renders every page with Hono JSX. A page that changes while it is
 open draws that part in the browser with Solid, in TypeScript under `client/`:
 the room's phone page is `client/room/` and its TV page is `client/screen/`,
 each entered at `main.tsx`, with the pieces both use in `client/ui/`. Their
-components import the room's message types from `src/play/protocol.ts` and the
-game's rules from `src/play/rules.ts`, the same modules the Durable Object uses,
-so a change to a message or a rule fails the type check on both sides. The solo
-page (`client/solo.ts`), the matchmaker (`client/match.ts`) and `client/site.ts`
-stay plain TypeScript over the server's markup: they enhance a page that already
-works, and Solid's runtime would add 16 kB gzipped to each without drawing
-anything. `client/tsconfig.json` typechecks the browser code with Solid's JSX,
-and `npm run typecheck` runs both projects. Markup only the server can build,
-such as the sign-in links, comes in a `<template>` the components copy from. The
-components' tests run in happy-dom, a second vitest project beside the workerd
-one.
+components import the room's message types from `src/play/room/protocol.ts` and
+the game's rules from `src/play/game/rules.ts`, the same modules the Durable
+Object uses, so a change to a message or a rule fails the type check on both
+sides. The solo page (`client/solo.ts`), the matchmaker (`client/match.ts`) and
+`client/site.ts` stay plain TypeScript over the server's markup: they enhance a
+page that already works, and Solid's runtime would add 16 kB gzipped to each
+without drawing anything. `client/tsconfig.json` typechecks the browser code
+with Solid's JSX, and `npm run typecheck` runs both projects. Markup only the
+server can build, such as the sign-in links, comes in a `<template>` the
+components copy from. The components' tests run in happy-dom, a second vitest
+project beside the workerd one.
 
 ## 2. Data model
 
 All times are Unix seconds in UTC. A table holds only what a query reads.
 
-`apps/web/src/db/schema.ts` declares the schema in
+`apps/web/src/platform/db/schema.ts` declares the schema in
 [Drizzle](https://orm.drizzle.team/docs/connect-cloudflare-d1), and queries are
 built from it, so a row's type comes from its table. Columns are camelCase in
-TypeScript and snake_case in SQL. `src/db/index.ts` holds one query builder per
-D1 binding and `batchWrites`, which runs a list of writes in batches.
+TypeScript and snake_case in SQL. `src/platform/db/index.ts` holds one query
+builder per D1 binding and `batchWrites`, which runs a list of writes in
+batches.
 
 `npm run db:generate` diffs the schema against the last migration's snapshot and
 writes `migrations/<timestamp>_<name>/migration.sql`. CI runs
@@ -993,11 +1015,11 @@ list by name, and the member can leave any group.
   track and top artist carries `image`: a Deezer album cover or artist picture
   URL, or `null` when none is known yet.
 - **Images.** No source sends usable artwork for every play, so the cron looks
-  each track and artist up on Deezer by name (`src/images.ts`): a track takes
-  the album cover of the first hit by the same artist, an artist the picture of
-  the hit with the same name. Each tick looks up six of each, newest first, and
-  a miss is tried again after 30 days. The profile and the group playlist show
-  the image over the colour tile, which stays when there is none.
+  each track and artist up on Deezer by name (`src/profile/images.ts`): a track
+  takes the album cover of the first hit by the same artist, an artist the
+  picture of the hit with the same name. Each tick looks up six of each, newest
+  first, and a miss is tried again after 30 days. The profile and the group
+  playlist show the image over the colour tile, which stays when there is none.
 - **Snapshots.** The figures of one user and period are cached in KV under
   `snap:<user id>:<period>`, with a TTL of 15 minutes for `week` and `month` and
   6 hours for `all`. A request that finds no snapshot computes it from D1 and
@@ -1021,7 +1043,8 @@ list by name, and the member can leave any group.
 ## Guess the song
 
 The hub at `/` starts a solo quiz: ten rounds, each a 15-second preview clip.
-The player picks a category and a difficulty, the `Mode` in `src/play/quiz.ts`:
+The player picks a category and a difficulty, the `Mode` in
+`src/play/game/quiz.ts`:
 
 - **Easy**, the default, offers four titles, each with its artist.
 - **Normal** offers the four titles alone. Its round never carries the artists,
@@ -1062,9 +1085,9 @@ stops when the next round loads or the game ends.
     marking tracks without a release date so they are not looked up again.
     Deezer's date is the release the track sits on, often a remaster.
   - A `curated` source has the ref `<category>/<decade>` and reads that list
-    from `src/play/curated.json`, which is bundled into the Worker, so a refill
-    costs no request and every due one refills in the same run. Its year is the
-    song's original release year and replaces a looked-up one.
+    from `src/play/catalog/curated.json`, which is bundled into the Worker, so a
+    refill costs no request and every due one refills in the same run. Its year
+    is the song's original release year and replaces a looked-up one.
   - Migration `0013` replaces the seeded playlists of Pop, Rock, Metal, K-pop,
     Anime and Rock en Español with one curated source per decade. SQLite cannot
     alter a CHECK, so it rebuilds `category_sources`; dropping the old table
@@ -1077,8 +1100,8 @@ stops when the next round loads or the game ends.
     extends Pop to the 1960s, Rock to the 1960s and 2010s, Metal to the 1970s
     and 2020s, K-pop to the 1990s, Anime to the 1980s and Rock en Español to the
     2010s. J-pop dates its songs from the JP store, like Anime.
-- **Curated lists.** `scripts/curate.ts` writes `src/play/curated.json` from
-  `scripts/curated-seeds.json`. A category's seed names its decades, seed
+- **Curated lists.** `scripts/curate.ts` writes `src/play/catalog/curated.json`
+  from `scripts/curated-seeds.json`. A category's seed names its decades, seed
   artists, a per-artist cap per decade, a stream floor, and hand fixes: `drop`
   removes an `Artist|Title`, `years` sets one, and an artist's `only` names its
   songs (anime singers' top songs are not all themes). Popularity is the Spotify
@@ -1136,12 +1159,12 @@ stops when the next round loads or the game ends.
   categories and every tile's covers and eras are kept together in KV under
   `play:hub` for ten minutes, so a visit reads one small entry instead of every
   pool; an admin category edit deletes it, and a run with a failed pool is not
-  kept. The code is `src/play/hub.ts`.
+  kept. The code is `src/play/hub/hub.ts`.
 - **For you.** The first tile on `/` starts a solo game whose pool is scored per
-  player from D1 alone, in `src/play/foryou.ts`. An affinity per (category,
-  decade) comes from the player's `round_outcomes` — rounds played, correct rate
-  and answer speed — and, for a signed-in player, from the artists of their
-  "From my listening" top tracks, counted where those artists sit in
+  player from D1 alone, in `src/play/catalog/foryou.ts`. An affinity per
+  (category, decade) comes from the player's `round_outcomes` — rounds played,
+  correct rate and answer speed — and, for a signed-in player, from the artists
+  of their "From my listening" top tracks, counted where those artists sit in
   `catalog_members`. About seven of the ten rounds are known candidates:
   unbanned catalog tracks from the player's top cells that the player has not
   answered in 30 days. Three are new: tracks that share a source playlist with
@@ -1162,13 +1185,13 @@ stops when the next round loads or the game ends.
   tracks, two artists interleaved one for one. That list holds every release of
   a song, so the feed keeps one entry per answer title: the first release with
   no remix, live, instrumental or language-version clause, at the song's first
-  rank (`songsOnce` in `src/play/pool.ts`). The player finds artists through the
-  search box on `/`, which answers `/search/artist?q=` hits sorted by fan count:
-  the first as a card, the next six as rows, the rest folded. A search that
-  finds nothing, or fails, offers six genres instead; only then does the page
-  read D1. A malformed slug is a 404; an unknown id or an artist with fewer than
-  four distinct titles shows the category-unavailable page. No D1 row is written
-  per artist.
+  rank (`songsOnce` in `src/play/catalog/pool.ts`). The player finds artists
+  through the search box on `/`, which answers `/search/artist?q=` hits sorted
+  by fan count: the first as a card, the next six as rows, the rest folded. A
+  search that finds nothing, or fails, offers six genres instead; only then does
+  the page read D1. A malformed slug is a 404; an unknown id or an artist with
+  fewer than four distinct titles shows the category-unavailable page. No D1 row
+  is written per artist.
 - **Artist page.** `/play/artist/IDS` shows each artist's photo and fan count
   (`artistProfile`, kept in KV for a day), the first six songs of the catalog
   the game will play, and one start form. Its Who choice picks the endpoint:
@@ -1256,15 +1279,15 @@ the solo game.
   candidates, the players and their scores, the open round and its clock. The
   creator's browsers keep a per-room token; the one from the room's link marks
   the creator, who alone can start the game or a rematch.
-- **Code.** Three layers in `src/play/`. `room-game.ts` holds the rules as plain
-  functions over the stored room, the connected players and the time.
-  `room-host.ts` runs a room: it turns socket messages and deadlines into rule
-  calls, saves, broadcasts and D1 writes, and reaches the clock, sockets,
-  storage, alarm, Deezer and D1 through one `RoomPorts` interface. `room.ts` is
-  the Durable Object, which supplies the real ports. The rules and the host are
-  tested without the Workers runtime, the host with fake ports;
-  `test/rooms.test.ts` keeps what only the runtime shows: the routes, hibernated
-  sockets, eviction, the alarm and the rows D1 receives.
+- **Code.** Three layers in `src/play/room/`. `game.ts` holds the rules as plain
+  functions over the stored room, the connected players and the time. `host.ts`
+  runs a room: it turns socket messages and deadlines into rule calls, saves,
+  broadcasts and D1 writes, and reaches the clock, sockets, storage, alarm,
+  Deezer and D1 through one `RoomPorts` interface. `room.ts` is the Durable
+  Object, which supplies the real ports. The rules and the host are tested
+  without the Workers runtime, the host with fake ports; `test/rooms.test.ts`
+  keeps what only the runtime shows: the routes, hibernated sockets, eviction,
+  the alarm and the rows D1 receives.
 - **Connection.** `GET /play/room/CODE/ws` upgrades to a WebSocket accepted with
   the hibernation API, so an idle object can be evicted while its sockets stay
   open. The page is a static shell; `client/room/` renders the phase the object
@@ -1301,8 +1324,8 @@ the solo game.
   clip URL to the screen only; the players' snapshots carry `screen: true` and
   no URL, so a phone never plays the clip. The screen's lobby shows the room
   code, the join link and a QR code of it, drawn on the server by
-  `src/play/qr.ts`. The finish also freezes the category board into the room
-  state, so the game-over card and the screen's standings show the same
+  `src/play/room/qr.ts`. The finish also freezes the category board into the
+  room state, so the game-over card and the screen's standings show the same
   `readCategoryBoard` board without another read.
 
 ### Matches
@@ -1322,12 +1345,12 @@ guest sends a nickname in its first message.
   player. A second player who picks the same nickname is sent back to pick
   another. "From my listening" is never offered: a stranger must not play
   someone's listening history.
-- **Code.** `match-host.ts` runs the queue through `MatchPorts`: the sockets,
-  the clock, the category's tracks and opening the room. `match.ts` is the
-  Durable Object that supplies them. `test/match-host.test.ts` covers the queue
-  with fake ports, including a partner who leaves mid-pair; `test/match.test.ts`
-  keeps the route, the session the Worker reads into a seat, eviction and the
-  room it opens.
+- **Code.** `src/play/match/host.ts` runs the queue through `MatchPorts`: the
+  sockets, the clock, the category's tracks and opening the room. `match.ts` is
+  the Durable Object that supplies them. `test/match-host.test.ts` covers the
+  queue with fake ports, including a partner who leaves mid-pair;
+  `test/match.test.ts` keeps the route, the session the Worker reads into a
+  seat, eviction and the room it opens.
 - **No creator.** A match room has no creator: it starts by itself once every
   seated player holds a live socket, and if one never connects the game starts
   with whoever showed up after 90 seconds. There is no rematch button, and

@@ -4,11 +4,11 @@ import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
 import { readPage } from "./html";
 import { deezerTracks, network } from "./network";
-import { sha256Bytes } from "../src/auth";
-import { database } from "../src/db";
-import { forYouCold, forYouMix } from "../src/play/foryou";
-import { getGame, putGame, type Game } from "../src/play/game";
-import type { Env } from "../src/types";
+import { sha256Bytes } from "../src/account/auth";
+import { database } from "../src/platform/db";
+import { forYouCold, forYouMix } from "../src/play/catalog/foryou";
+import { getGame, putGame, type Game } from "../src/play/game/game";
+import type { Env } from "../src/env";
 
 const origin = "https://earshot.rising.sh";
 const testEnv = () => ({ DB: env.DB, CACHE: env.CACHE, SOLO: env.SOLO }) as Env;

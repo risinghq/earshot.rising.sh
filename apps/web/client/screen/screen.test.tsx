@@ -8,7 +8,7 @@ import type {
   RoomPlayer,
   RoomState,
   ServerMessage,
-} from "../../src/play/protocol";
+} from "../../src/play/room/protocol";
 import { createScreen, type Screen as ScreenModel } from "./model";
 import { Screen } from "./Screen";
 

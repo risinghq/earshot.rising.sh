@@ -3,7 +3,7 @@
 // visit. Artist search runs as you type: 250 ms after the last key, and a
 // newer query aborts the older request.
 import { createSignal } from "solid-js";
-import type { Mode } from "../../src/play/rules";
+import type { Mode } from "../../src/play/game/rules";
 import type { PickPurpose } from "./text";
 
 export interface PickItem {

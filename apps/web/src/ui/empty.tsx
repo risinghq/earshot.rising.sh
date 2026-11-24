@@ -1,5 +1,5 @@
 import type { Child } from "hono/jsx";
-import { providerHref } from "../auth";
+import { providerHref } from "../account/auth";
 
 interface EmptyStateOptions {
   title: string;

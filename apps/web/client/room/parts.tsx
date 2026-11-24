@@ -1,6 +1,6 @@
 // Small pieces the room's views share.
 import { For, Show } from "solid-js";
-import type { Choice } from "../../src/play/rules";
+import type { Choice } from "../../src/play/game/rules";
 import { Mono } from "../ui/marks";
 
 export function MonoStack(props: {

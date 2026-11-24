@@ -1,7 +1,7 @@
 import { env } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../bench/index";
-import { pullDueSources } from "../src/cron";
+import { pullDueSources } from "../src/listening/cron";
 
 const now = Math.floor(Date.now() / 1000);
 const key = btoa(

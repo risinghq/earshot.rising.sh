@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { creditLine } from "../src/play/sources";
+import { creditLine } from "../src/play/catalog/sources";
 
 const credited = (...people: [string, string][]) => ({
   contributors: people.map(([name, role]) => ({ name, role })),

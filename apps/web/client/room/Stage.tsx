@@ -3,7 +3,7 @@
 // the clip plays, the seconds left and what a right answer is worth now.
 // On the reveal the now-playing card joins it with the clip still running.
 import { For, Show, createEffect, onSettled } from "solid-js";
-import { roundsPerGame, scoreFor } from "../../src/play/rules";
+import { roundsPerGame, scoreFor } from "../../src/play/game/rules";
 import { waveBars } from "../../src/ui/marks";
 import { clipWave } from "../wave";
 import { MuteIcon } from "./icons";

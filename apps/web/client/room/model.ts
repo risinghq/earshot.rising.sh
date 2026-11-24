@@ -10,8 +10,8 @@ import type {
   RoomPreview,
   RoomState,
   ServerMessage,
-} from "../../src/play/protocol";
-import { roundSeconds, type Mode } from "../../src/play/rules";
+} from "../../src/play/room/protocol";
+import { roundSeconds, type Mode } from "../../src/play/game/rules";
 import type { Clip } from "./clip";
 import { joinErrors, mineOf } from "./text";
 

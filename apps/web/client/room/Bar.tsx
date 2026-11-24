@@ -1,11 +1,11 @@
-// The game's top bar, as the server's gameBar draws it (src/play/game-parts.tsx):
+// The game's top bar, as the server's gameBar draws it (src/play/game/parts.tsx):
 // a way out, the room's Devices, a segment per round and the score.
 // Segments fill with this player's right and wrong answers; the current
 // round is the accent one. On the reveal the round's segment is the
 // countdown to the next round: it fills in the verdict's colour until the
 // room moves on.
 import { Repeat } from "solid-js";
-import { modeNames, roundsPerGame } from "../../src/play/rules";
+import { modeNames, roundsPerGame } from "../../src/play/game/rules";
 import { QuitIcon } from "./icons";
 import type { Room } from "./model";
 import { DevicesButton } from "./Devices";

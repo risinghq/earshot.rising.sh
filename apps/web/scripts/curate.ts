@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Builds src/play/curated.json from scripts/curated-seeds.json.
+// Builds src/play/catalog/curated.json from scripts/curated-seeds.json.
 //
 //   node scripts/curate.ts [CATEGORY...]
 //   node scripts/curate.ts --list "ARTIST"
@@ -53,7 +53,8 @@ interface CategorySeed {
   themes?: Record<string, string>;
   // Two cuts of one song share their title alone, whoever is credited.
   titleKey?: boolean;
-  // The acts of each generation, keyed by its first year (src/play/eras.ts).
+  // The acts of each generation, keyed by its first year
+  // (src/play/catalog/eras.ts).
   // A category with generations files a song under its act's generation,
   // not its release decade; decades then only bound the year lookups.
   generations?: Record<string, string[]>;
@@ -91,7 +92,7 @@ export interface CuratedTrack {
 
 const root = new URL("..", import.meta.url).pathname;
 const seedsPath = join(root, "scripts/curated-seeds.json");
-const outPath = join(root, "src/play/curated.json");
+const outPath = join(root, "src/play/catalog/curated.json");
 const cacheDir = process.env.CURATE_CACHE ?? join(tmpdir(), "earshot-curate");
 const userAgent = "Mozilla/5.0 (compatible; catalog-curation)";
 const candidatesPerArtist = 12;

@@ -5,17 +5,22 @@ import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
 import { readPage } from "./html";
 import { network } from "./network";
-import { sha256Bytes } from "../src/auth";
-import { database } from "../src/db";
-import { catalogPool, poolEras, byDecade } from "../src/play/pool";
-import { catalog, warmChartCache } from "../src/play/catalog";
-import { refreshCatalog, refreshSource } from "../src/play/refresh";
-import curated from "../src/play/curated.json";
+import { sha256Bytes } from "../src/account/auth";
+import { database } from "../src/platform/db";
+import { catalogPool, poolEras, byDecade } from "../src/play/catalog/pool";
+import { catalog, warmChartCache } from "../src/play/catalog/catalog";
+import { refreshCatalog, refreshSource } from "../src/play/catalog/refresh";
+import curated from "../src/play/catalog/curated.json";
 import seeds from "../scripts/curated-seeds.json";
 import { fold, sameArtist } from "../scripts/artist-names";
-import { eraLabel, eraName, erasCount, generations } from "../src/play/eras";
-import { answerKey } from "../src/play/quiz";
-import { mergeAnonOutcomes } from "../src/play/outcomes";
+import {
+  eraLabel,
+  eraName,
+  erasCount,
+  generations,
+} from "../src/play/catalog/eras";
+import { answerKey } from "../src/play/game/quiz";
+import { mergeAnonOutcomes } from "../src/play/game/outcomes";
 
 const origin = "https://earshot.rising.sh";
 const testEnv = (extra: Record<string, unknown> = {}) =>
@@ -465,7 +470,7 @@ describe("year backfill", () => {
         return HttpResponse.json({ error: { code: 4, message: "quota" } });
       }),
     );
-    const { fillMissingYears } = await import("../src/play/refresh");
+    const { fillMissingYears } = await import("../src/play/catalog/refresh");
     await expect(fillMissingYears(testEnv() as never)).rejects.toThrow();
     const tracks = await env.DB.prepare(
       "SELECT deezer_id, year FROM catalog_tracks WHERE deezer_id = 1",

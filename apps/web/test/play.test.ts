@@ -5,7 +5,7 @@ import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
 import { readPage, textAt, type ReadPage } from "./html";
 import { network } from "./network";
-import { eraMinTracks } from "../src/play/pool";
+import { eraMinTracks } from "../src/play/catalog/pool";
 import {
   advance,
   answerRound,
@@ -18,8 +18,8 @@ import {
   scoreFor,
   serveRound,
   type Game,
-} from "../src/play/game";
-import type { Candidate } from "../src/play/sources";
+} from "../src/play/game/game";
+import type { Candidate } from "../src/play/catalog/sources";
 
 const origin = "https://earshot.rising.sh";
 const testEnv = () => ({ DB: env.DB, CACHE: env.CACHE, SOLO: env.SOLO });

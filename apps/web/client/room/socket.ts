@@ -5,7 +5,7 @@ import {
   closeCodes,
   type ClientMessage,
   type ServerMessage,
-} from "../../src/play/protocol";
+} from "../../src/play/room/protocol";
 
 export interface SocketEvents {
   open: () => void;

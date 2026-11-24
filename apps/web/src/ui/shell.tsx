@@ -1,5 +1,5 @@
 import type { Child } from "hono/jsx";
-import type { SignedInUser } from "../auth";
+import type { SignedInUser } from "../account/auth";
 import { fontUrl, ScriptTag, Styles, type Style } from "./assets";
 import { Monogram } from "./person";
 

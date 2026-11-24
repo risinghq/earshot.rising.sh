@@ -3,16 +3,16 @@ import * as v from "valibot";
 import { beforeEach, describe, it } from "vitest";
 import { eq } from "drizzle-orm";
 import migrations from "virtual:web-migrations";
-import { getStats } from "../src/aggregate";
-import { database, t } from "../src/db";
-import { resolvePageTracks } from "../src/matching";
-import { normalizeText } from "../src/normalize";
+import { getStats } from "../src/profile/stats";
+import { database, t } from "../src/platform/db";
+import { resolvePageTracks } from "../src/listening/matching";
+import { normalizeText } from "../src/listening/normalize";
 import {
   playInputs,
   pullSpotify,
   RecentlyPlayedSchema,
   sealTokens,
-} from "../src/spotify";
+} from "../src/listening/spotify";
 // @ts-expect-error vite ?raw import
 import fixtureRaw from "./fixtures/spotify-recently-played.json?raw";
 

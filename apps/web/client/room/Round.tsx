@@ -2,8 +2,8 @@
 // hard mode) and one card that follows the round: who answered, then at
 // the reveal what each player scored, under this player's verdict.
 import { For, Repeat, Show, createEffect, createSignal } from "solid-js";
-import type { Reveal, RoomState } from "../../src/play/protocol";
-import { maxChoices, type Choice } from "../../src/play/rules";
+import type { Reveal, RoomState } from "../../src/play/room/protocol";
+import { maxChoices, type Choice } from "../../src/play/game/rules";
 import { CheckIcon, CrossIcon } from "./icons";
 import type { Room } from "./model";
 import { Mono } from "../ui/marks";

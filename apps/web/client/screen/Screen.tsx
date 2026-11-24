@@ -2,8 +2,8 @@
 // who has answered, the reveal with each player's points, and the final
 // standings. The layout comes from the Claude Design file "Earshot Room".
 import { For, Repeat, Show, createEffect, createSignal } from "solid-js";
-import type { Reveal, RoomState } from "../../src/play/protocol";
-import { modeNames, scoreFor } from "../../src/play/rules";
+import type { Reveal, RoomState } from "../../src/play/room/protocol";
+import { modeNames, scoreFor } from "../../src/play/game/rules";
 import { hueOf, waveBars } from "../../src/ui/marks";
 import { Mono, Mosaic } from "../ui/marks";
 import { Part } from "../ui/part";

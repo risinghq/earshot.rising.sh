@@ -5,8 +5,8 @@ import type {
   ClientMessage,
   RoomState,
   ServerMessage,
-} from "../../src/play/protocol";
-import { roundSeconds } from "../../src/play/rules";
+} from "../../src/play/room/protocol";
+import { roundSeconds } from "../../src/play/game/rules";
 import { clipWave } from "../wave";
 
 export const roundMs = roundSeconds * 1000;

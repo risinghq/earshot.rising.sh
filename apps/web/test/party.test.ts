@@ -4,7 +4,7 @@ import {
   youtubePlaylistUrl,
   type PartyCandidate,
   type PartyUser,
-} from "../src/party-blend";
+} from "../src/social/party-blend";
 
 function candidate(
   trackId: number,

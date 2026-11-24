@@ -4,7 +4,8 @@
 the top tracks to a Gist. It can also upload the YouTube Music plays to a
 service. It is a library crate with a thin binary, so the tests in `tests/` can
 call every module. The crate lives in `crates/music-stats/`, and the `src/` and
-`tests/` paths on this page are relative to it.
+`tests/` paths on this page are relative to it. The web app's modules are laid
+out in [Web app: layout and languages](web-app.md#1-layout-and-languages).
 
 ```text
 main → config::load → app::run

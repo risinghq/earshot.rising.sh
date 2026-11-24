@@ -1,15 +1,15 @@
 import { env, SELF } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getStats } from "../src/aggregate";
+import { getStats } from "../src/profile/stats";
 import { app } from "../src/app";
-import { database } from "../src/db";
+import { database } from "../src/platform/db";
 import {
   resolvePageTracks,
   storeListens,
   trackCandidates,
   type ExistingTrack,
-} from "../src/matching";
-import { normalizeText, trackKey } from "../src/normalize";
+} from "../src/listening/matching";
+import { normalizeText, trackKey } from "../src/listening/normalize";
 import { readPage, speculates, textAt } from "./html";
 
 const now = Math.floor(Date.now() / 1000);

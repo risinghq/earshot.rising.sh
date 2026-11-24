@@ -1,19 +1,23 @@
 import { describe, expect, it } from "vitest";
-import type { Category } from "../src/play/catalog";
-import type { GameStart, Outcome } from "../src/play/outcomes";
-import type { ServerMessage } from "../src/play/protocol";
-import { scoreFor } from "../src/play/quiz";
-import type { CategoryBoardEntry, ResultRow } from "../src/play/results";
-import { QuotaError, type Candidate, type Preview } from "../src/play/sources";
-import type { RoomInit, Stored } from "../src/play/room-game";
-import { idleMs, matchWaitMs, revealMs } from "../src/play/room-game";
+import type { Category } from "../src/play/catalog/catalog";
+import type { GameStart, Outcome } from "../src/play/game/outcomes";
+import type { ServerMessage } from "../src/play/room/protocol";
+import { scoreFor } from "../src/play/game/quiz";
+import type { CategoryBoardEntry, ResultRow } from "../src/play/game/results";
+import {
+  QuotaError,
+  type Candidate,
+  type Preview,
+} from "../src/play/catalog/sources";
+import type { RoomInit, Stored } from "../src/play/room/game";
+import { idleMs, matchWaitMs, revealMs } from "../src/play/room/game";
 import {
   RoomHost,
   type ClientMessage,
   type RoomPorts,
   type Socket,
   type SocketInfo,
-} from "../src/play/room-host";
+} from "../src/play/room/host";
 
 type Message = ServerMessage & Record<string, unknown>;
 

@@ -8,7 +8,7 @@ import {
   parseHistoryPage,
   SignedOutError,
   todayIn,
-} from "../src/youtube";
+} from "../src/listening/youtube";
 // @ts-expect-error vite ?raw import
 import fixture from "./fixtures/history.html?raw";
 

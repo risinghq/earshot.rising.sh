@@ -7,7 +7,7 @@
 // the form locks at once; the verdict that comes back is morphed into the
 // same buttons, so nothing reflows. Continue paints the next question from
 // the copy /prepare sent during the reveal, while /next serves that round.
-import { roundSeconds, scoreFor } from "../src/play/rules";
+import { roundSeconds, scoreFor } from "../src/play/game/rules";
 import { clipWave, prefetchWave } from "./wave";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) =>

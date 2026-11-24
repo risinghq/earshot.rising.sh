@@ -4,7 +4,7 @@
 import type {
   MatchClientMessage,
   MatchServerMessage,
-} from "../src/play/protocol";
+} from "../src/play/room/protocol";
 
 const root = document.getElementById("match")!;
 const slug = root.dataset.category;
