@@ -1226,6 +1226,15 @@ the solo game.
   candidates, the players and their scores, the open round and its clock. The
   creator's browsers keep a per-room token; the one from the room's link marks
   the creator, who alone can start the game or a rematch.
+- **Code.** Three layers in `src/play/`. `room-game.ts` holds the rules as plain
+  functions over the stored room, the connected players and the time.
+  `room-host.ts` runs a room: it turns socket messages and deadlines into rule
+  calls, saves, broadcasts and D1 writes, and reaches the clock, sockets,
+  storage, alarm, Deezer and D1 through one `RoomPorts` interface. `room.ts` is
+  the Durable Object, which supplies the real ports. The rules and the host are
+  tested without the Workers runtime, the host with fake ports;
+  `test/rooms.test.ts` keeps what only the runtime shows: the routes, hibernated
+  sockets, eviction, the alarm and the rows D1 receives.
 - **Connection.** `GET /play/room/CODE/ws` upgrades to a WebSocket accepted with
   the hibernation API, so an idle object can be evicted while its sockets stay
   open. The page is a static shell; `client/room/` renders the phase the object

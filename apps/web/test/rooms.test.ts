@@ -1,77 +1,46 @@
-import { env, runInDurableObject } from "cloudflare:test";
-import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
-import { app } from "../src/app";
-import { seedCatalog } from "./catalog";
-import type { Room } from "../src/play/room";
-import { readCategoryBoard, recordResults } from "../src/play/results";
+// What only the Workers runtime shows about a room: the routes in front of
+// the Durable Object, real hibernatable sockets, storage across an eviction,
+// the alarm, and the rows D1 receives. The room's rules and its handling of
+// messages are tested without the runtime in room-game and room-host.
+import {
+  env,
+  evictDurableObject,
+  runDurableObjectAlarm,
+  SELF,
+} from "cloudflare:test";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { idleMs } from "../src/play/room-game";
+import {
+  connect,
+  origin,
+  playOut,
+  roomStub,
+  setClock,
+  stubChart,
+  titleOfClip,
+  type Message,
+} from "./room-client";
 
-const origin = "https://music.rising.sh";
-const testEnv = () => ({ DB: env.DB, CACHE: env.CACHE, ROOMS: env.ROOMS });
+const post = (path: string, fields: Record<string, string>) =>
+  SELF.fetch(`${origin}${path}`, {
+    method: "POST",
+    redirect: "manual",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      origin,
+    },
+    body: new URLSearchParams(fields).toString(),
+  });
 
-const deezerTrack = (id: number, title: string, preview = true) => ({
-  id,
-  title,
-  link: `https://www.deezer.com/track/${id}`,
-  preview: preview ? `https://cdn.example/${id}.mp3` : "",
-  artist: { name: "Artist" },
-  album: { cover_medium: `https://cdn.example/${id}.jpg` },
-});
-
-const quotaBody = {
-  error: { type: "Exception", message: "Quota limit exceeded", code: 4 },
-};
-
-async function stubChart(titles: string[], previewOf = (_id: number) => true) {
-  await seedCatalog(
-    env.DB,
-    "pop",
-    titles.map((title, i) => ({ id: 100 + i, title })),
-  );
-  await seedCatalog(
-    env.DB,
-    "rock",
-    titles.map((title, i) => ({ id: 200 + i, title })),
-  );
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (input: RequestInfo | URL) => {
-      const url = String(input);
-      const id = /track\/(\d+)/.exec(url)?.[1];
-      if (id)
-        return Response.json(
-          deezerTrack(Number(id), "x", previewOf(Number(id))),
-        );
-      return Response.json({ data: [] });
-    }),
-  );
-}
-
-async function createRoom(mode = "normal") {
-  const response = await app.fetch(
-    new Request(`${origin}/play/room`, {
-      method: "POST",
-      headers: {
-        "content-type": "application/x-www-form-urlencoded",
-        origin,
-      },
-      body: new URLSearchParams({ category: "pop", mode }).toString(),
-    }),
-    testEnv() as never,
-  );
+async function createRoom() {
+  const response = await post("/play/room", {
+    category: "pop",
+    mode: "normal",
+  });
   expect(response.status).toBe(303);
   const location = new URL(response.headers.get("location")!, origin);
   const code = /room\/(\w+)/.exec(location.pathname)![1];
   return { code, key: location.searchParams.get("k")! };
-}
-
-const stubFor = (code: string) =>
-  env.ROOMS.get(env.ROOMS.idFromName(code)) as DurableObjectStub<Room>;
-
-interface Client {
-  ws: WebSocket;
-  inbox: Array<Record<string, unknown>>;
-  send: (value: unknown) => void;
-  close: () => void;
 }
 
 async function sha256(value: string) {
@@ -80,10 +49,7 @@ async function sha256(value: string) {
   );
 }
 
-let userSeq = 0;
-async function signIn(name: string) {
-  userSeq += 1;
-  const id = 100 + userSeq;
+async function signIn(id: number, name: string) {
   const token = `sess_${id}_${"s".repeat(30)}`;
   const now = Math.floor(Date.now() / 1000);
   await env.DB.batch([
@@ -97,907 +63,176 @@ async function signIn(name: string) {
   return `__Host-session=${token}`;
 }
 
-async function connect(code: string, cookie?: string): Promise<Client> {
-  const headers: Record<string, string> = { upgrade: "websocket" };
-  if (cookie) headers.cookie = cookie;
-  const response = await app.fetch(
-    new Request(`${origin}/play/room/${code}/ws`, { headers }),
-    testEnv() as never,
-  );
-  const ws = response.webSocket!;
-  ws.accept();
-  const inbox: Array<Record<string, unknown>> = [];
-  ws.addEventListener("message", (event) => {
-    inbox.push(JSON.parse(String(event.data)));
-  });
-  return {
-    ws,
-    inbox,
-    send: (value) => ws.send(JSON.stringify(value)),
-    close: () => ws.close(),
-  };
-}
-
-async function waitFor(
-  client: Client,
-  match: (message: Record<string, unknown>) => boolean,
-  timeoutMs = 3000,
-): Promise<Record<string, unknown>> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const found = [...client.inbox].reverse().find(match);
-    if (found) return found;
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  }
-  throw new Error(`no matching message; got ${JSON.stringify(client.inbox)}`);
-}
-
-const isType = (type: string) => (m: Record<string, unknown>) =>
-  m.type === type;
-const inPhase = (phase: string) => (m: Record<string, unknown>) =>
-  m.type === "state" && m.phase === phase;
-
-async function join(client: Client, name: string | undefined, token?: string) {
-  client.send({ type: "join", name, token });
-  return waitFor(client, isType("joined"));
-}
-
-const stored = (code: string) =>
-  runInDurableObject(stubFor(code), (_room, state) =>
-    state.storage.get("room"),
-  ) as Promise<Record<string, never>>;
-
-const call = <T>(code: string, fn: (room: Room) => T) =>
-  runInDurableObject(stubFor(code), (room) => fn(room));
-
-// Plays a whole game inside one visit to the object: each round every
-// seated player answers the served track, then the reveal deadline is
-// ticked past. A null round means the quota hold; its retry deadline is
-// the tick that moves it. Nothing waits on a real alarm.
-const playGame = (code: string) =>
-  runInDurableObject(stubFor(code), async (room, state) => {
-    const read = () =>
-      state.storage.get("room") as Promise<Record<string, never>>;
-    for (let round = 0; round < 10; round += 1) {
-      const s = await read();
-      if (s.phase === "done") return;
-      const current = s.round as {
-        index: number;
-        startedAt: number;
-      } | null;
-      if (current === null) {
-        const hold = (s.retryAt ??
-          (s.reveal as { until: number } | null)?.until ??
-          0) as number;
-        await room.tick(hold + 1);
-        round -= 1;
-        continue;
-      }
-      const title = (s.candidates as { title: string }[])[current.index].title;
-      for (const player of s.players as { id: string }[])
-        await room.answer(player.id, title, current.startedAt + 1_000);
-      // A tick past the round end also clears the reveal that followed.
-      await room.tick(current.startedAt + 60_000);
-    }
-  });
+const answerable = (playing: Message) =>
+  setClock((playing.startedAt as number) + 1_000);
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
-describe("rooms", () => {
-  it("writes one outcome row per answering player", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+describe("a room in the runtime", () => {
+  it("logs the game and one outcome row per answering player, and reports the revealed track", async () => {
+    await stubChart(10);
     const { code, key } = await createRoom();
     const ann = await connect(code);
     const bob = await connect(code);
-    await join(ann, "Ann", key);
-    await join(bob, "Bob");
+    await ann.join("Ann", key);
+    await bob.join("Bob");
     ann.send({ type: "start" });
-    await waitFor(ann, inPhase("playing"));
-    const room = await stored(code);
-    const started = room.round as {
-      index: number;
-      startedAt: number;
+    const playing = await ann.state("playing");
+    answerable(playing);
+    for (const player of [ann, bob])
+      player.send({ type: "answer", answer: titleOfClip(playing) });
+    const { reveal } = (await ann.state("reveal")) as {
+      reveal: { track: string; title: string; artist: string };
     };
-    const title = (room.candidates as { title: string }[])[started.index].title;
-    const players = room.players as { id: string }[];
-    await call(code, async (room) => {
-      for (const player of players)
-        await room.answer(player.id, title, started.startedAt + 1_000);
-    });
-    const rows = await env.DB.prepare(
-      `SELECT player_key, track_key, category, kind, mode
-       FROM round_outcomes`,
-    ).all<{
-      player_key: string;
-      track_key: string;
-      category: string;
-      kind: string;
-      mode: string;
-    }>();
-    expect(rows.results.length).toBe(2);
-    for (const row of rows.results)
+    expect(reveal.title).toBe(titleOfClip(playing));
+
+    const games = await env.DB.prepare(
+      "SELECT id, kind, category, origin, players FROM games WHERE room = ?1",
+    )
+      .bind(code)
+      .all();
+    expect(games.results).toMatchObject([
+      { kind: "room", category: "pop", origin: "start", players: 2 },
+    ]);
+    const outcomes = await env.DB.prepare(
+      "SELECT game_id, round, title, category, kind, mode FROM round_outcomes",
+    ).all();
+    expect(outcomes.results).toHaveLength(2);
+    for (const row of outcomes.results)
       expect(row).toMatchObject({
+        game_id: games.results[0].id,
+        round: 1,
+        title: reveal.title,
         category: "pop",
         kind: "room",
         mode: "normal",
       });
-    ann.close();
-    bob.close();
-  });
 
-  it("carries the track identity a room report needs", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    ann.send({ type: "start" });
-    await waitFor(ann, inPhase("playing"));
-    const room = await stored(code);
-    const started = room.round as { index: number; startedAt: number };
-    const title = (room.candidates as { title: string }[])[started.index].title;
-    const pid = (room.players as { id: string }[])[0].id;
-    await call(code, (room) =>
-      room.answer(pid, title, started.startedAt + 1_000),
-    );
-    const revealed = (await stored(code)).reveal as {
-      track: string;
-      title: string;
-      artist: string;
-    };
-    expect(revealed.track).toMatch(/^(dz:|at:)/);
-    expect(revealed.title).toBe(title);
-    expect(revealed.artist).toBeTruthy();
-    const response = await app.fetch(
-      new Request(`${origin}/play/report`, {
-        method: "POST",
-        headers: {
-          "content-type": "application/x-www-form-urlencoded",
-          origin,
-        },
-        body: new URLSearchParams({
-          track: revealed.track,
-          title: revealed.title,
-          artist: revealed.artist,
-          category: "pop",
-          reason: "bad_clip",
-        }).toString(),
-      }),
-      env as never,
-    );
-    expect(response.status).toBe(303);
-    const row = await env.DB.prepare(
-      "SELECT track_key, title, reason FROM track_reports",
-    ).first<{ track_key: string; title: string; reason: string }>();
-    expect(row).toMatchObject({
-      track_key: revealed.track,
-      title,
+    const report = await post("/play/report", {
+      track: reveal.track,
+      title: reveal.title,
+      artist: reveal.artist,
+      category: "pop",
       reason: "bad_clip",
     });
-    ann.close();
-  });
-  it("reaches the reveal when the outcome write fails", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    await env.DB.prepare(
-      "CREATE TRIGGER refuse_outcome BEFORE INSERT ON round_outcomes BEGIN SELECT RAISE(ABORT, 'refused'); END",
-    ).run();
-    onTestFinished(async () => {
-      await env.DB.prepare("DROP TRIGGER refuse_outcome").run();
-    });
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    const bob = await connect(code);
-    await join(ann, "Ann", key);
-    await join(bob, "Bob");
-    ann.send({ type: "start" });
-    await waitFor(ann, inPhase("playing"));
-    const room = await stored(code);
-    const started = room.round as {
-      index: number;
-      startedAt: number;
-    };
-    const title = (room.candidates as { title: string }[])[started.index].title;
-    const players = room.players as { id: string }[];
-    await call(code, async (room) => {
-      for (const player of players)
-        await room.answer(player.id, title, started.startedAt + 1_000);
-    });
-    const after = await stored(code);
-    expect(after.phase).toBe("reveal");
-    expect(after.round).toBeNull();
+    expect(report.status).toBe(303);
     expect(
-      await env.DB.prepare("SELECT COUNT(*) AS n FROM round_outcomes").first(),
-    ).toEqual({ n: 0 });
-    ann.close();
-    bob.close();
-  });
-  it("reaches the final standings after 10 rounds", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    // Seats are planted through init and the game begun inside the object;
-    // a screen socket still receives the standings broadcast under test.
-    const code = "STANDINGS";
-    await stubFor(code).fetch("http://room/init", {
-      method: "POST",
-      body: JSON.stringify({
-        code,
-        categorySlug: "",
-        categoryName: "Pop",
-        mode: "normal",
-        candidates: Array.from({ length: 10 }, (_, i) => ({
-          deezerId: 100 + i,
-          title: `Song ${i}`,
-          artist: "Artist",
-          cover: null,
-          link: null,
-        })),
-        creatorToken: "k",
-        players: [{ name: "Ann", token: "a", userId: null }],
-      }),
+      await env.DB.prepare(
+        "SELECT track_key, title, reason FROM track_reports",
+      ).first(),
+    ).toEqual({
+      track_key: reveal.track,
+      title: reveal.title,
+      reason: "bad_clip",
     });
-    const screen = await connect(code);
-    screen.send({ type: "watch" });
-    await call(code, (room) =>
-      (room as unknown as { begin(now: number): Promise<void> }).begin(
-        Date.now(),
-      ),
-    );
-    await playGame(code);
-    const after = await stored(code);
-    expect(after.phase).toBe("done");
-    const last = (await waitFor(screen, inPhase("done"))) as never as {
-      phase: string;
-      standings: { name: string; score: number }[];
-    };
-    expect(last.phase).toBe("done");
-    expect(last.standings[0].name).toBe("Ann");
-    expect(last.standings[0].score).toBeGreaterThan(9_000);
-    screen.close();
   });
 
-  it("keeps the points on a reconnect with the token", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+  it("keeps the room, its seats and the clip across an eviction", async () => {
+    await stubChart(10);
     const { code, key } = await createRoom();
-    const first = await connect(code);
-    const joined = (await join(first, "Ann", key)) as { token: string };
-    first.send({ type: "start" });
-    await waitFor(first, inPhase("playing"));
-    const score = await runInDurableObject(
-      stubFor(code),
-      async (room, state) => {
-        const s = (await state.storage.get("room")) as Record<string, never>;
-        const current = s.round as { index: number; startedAt: number };
-        const title = (s.candidates as { title: string }[])[current.index]
-          .title;
-        const pid = (s.players as { id: string }[])[0].id;
-        await room.answer(pid, title, current.startedAt + 1_000);
-        const after = (await state.storage.get("room")) as Record<
-          string,
-          never
-        >;
-        return (after.players as { score: number }[])[0].score;
-      },
+    const phone = await connect(code);
+    const { token } = (await phone.join("Ann", key)) as { token: string };
+    phone.send({ type: "start" });
+    const playing = await phone.state("playing");
+
+    await evictDurableObject(roomStub(code));
+    // The phone's socket hibernated with its seat; a new device opening the
+    // seat link moves the seat off it, and gets the clip re-resolved.
+    const laptop = await connect(code);
+    expect(await laptop.join(undefined, token)).toMatchObject({ name: "Ann" });
+    await phone.next((m) => m.type === "moved");
+    const resumed = await laptop.next(
+      (m) => m.type === "state" && m.clip !== undefined,
     );
-    expect(score).toBeGreaterThan(0);
-    first.close();
-    const second = await connect(code);
-    const rejoined = (await join(second, undefined, joined.token)) as {
-      name: string;
-    };
-    expect(rejoined.name).toBe("Ann");
-    const state = (await waitFor(second, inPhase("reveal"))) as never as {
+    expect(resumed).toMatchObject({ phase: "playing", clip: playing.clip });
+
+    answerable(playing);
+    laptop.send({ type: "answer", answer: titleOfClip(playing) });
+    const revealed = (await laptop.state("reveal")) as {
       players: { name: string; score: number }[];
     };
-    expect(state.players.find((p) => p.name === "Ann")!.score).toBe(score);
-    second.close();
+    expect(revealed.players[0].name).toBe("Ann");
+    expect(revealed.players[0].score).toBeGreaterThan(0);
   });
 
-  it("retries the same candidate after a quota answer", async () => {
-    let limited = true;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        if (url.includes("api.deezer.com/chart/"))
-          return Response.json({
-            data: [1, 2, 3, 4, 5].map((i) => deezerTrack(i, `Song ${i}`)),
-          });
-        if (url.includes("api.deezer.com/track/"))
-          return Response.json(limited ? quotaBody : deezerTrack(7, "Kept"));
-        return Response.json({ data: [] });
-      }),
-    );
-    await seedCatalog(
-      env.DB,
-      "pop",
-      [1, 2, 3, 4, 5].map((i) => ({ id: i, title: `Song ${i}` })),
-    );
+  it("closes an idle room on its alarm, even with a socket open", async () => {
+    await stubChart(10);
     const { code, key } = await createRoom();
     const ann = await connect(code);
-    await join(ann, "Ann", key);
-    ann.send({ type: "start" });
-    const loading = await waitFor(ann, inPhase("loading"));
-    expect(loading.round).toBe(1);
-    const held = await stored(code);
-    expect(held.phase).toBe("loading");
-    expect(held.next).toBe(0);
-    limited = false;
-    const retryAt = (held.retryAt ?? 0) as number;
-    await call(code, (room) => room.tick(retryAt + 1));
-    const after = await stored(code);
-    expect(after.phase).toBe("playing");
-    expect(after.next).toBe(1);
-    ann.close();
-  });
-
-  it("stamps the round start after the clip resolves", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        if (url.includes("api.deezer.com/chart/"))
-          return Response.json({
-            data: [1, 2, 3, 4, 5].map((i) => deezerTrack(i, `Song ${i}`)),
-          });
-        if (url.includes("api.deezer.com/track/")) {
-          await new Promise((resolve) => setTimeout(resolve, 1600));
-          return Response.json(deezerTrack(7, "Slow"));
-        }
-        return Response.json({ data: [] });
-      }),
-    );
-    await seedCatalog(
-      env.DB,
-      "pop",
-      [1, 2, 3, 4, 5].map((i) => ({ id: i, title: `Song ${i}` })),
-    );
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    ann.send({ type: "start" });
-    const playing = (await waitFor(ann, inPhase("playing"), 10_000)) as {
-      now: number;
-      startedAt: number;
-    };
-    expect(playing.startedAt).toBeGreaterThan(playing.now);
-    ann.close();
-  });
-
-  it("keeps the quota retry in the future after a slow lookup", async () => {
-    // The lookup is slow enough that a retryAt stamped at request time
-    // would be provably earlier than one stamped at the response.
-    let requestedAt = 0;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        if (url.includes("api.deezer.com/chart/"))
-          return Response.json({
-            data: [1, 2, 3, 4, 5].map((i) => deezerTrack(i, `Song ${i}`)),
-          });
-        if (url.includes("api.deezer.com/track/")) {
-          requestedAt = Date.now();
-          await new Promise((resolve) => setTimeout(resolve, 100));
-          return Response.json(quotaBody);
-        }
-        return Response.json({ data: [] });
-      }),
-    );
-    await seedCatalog(
-      env.DB,
-      "pop",
-      [1, 2, 3, 4, 5].map((i) => ({ id: i, title: `Song ${i}` })),
-    );
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    ann.send({ type: "start" });
-    // The quota hold broadcasts after saving retryAt; the begin broadcast
-    // is the first loading state, the hold the second. waitFor can evaluate
-    // a buffered message more than once, so count distinct messages.
-    const loadingStates = new Set<unknown>();
-    await waitFor(ann, (m) => {
-      if ((m as { phase?: string }).phase === "loading") loadingStates.add(m);
-      return loadingStates.size >= 2;
+    await ann.join("Ann", key);
+    await ann.state("lobby");
+    setClock(Date.now() + idleMs + 1);
+    expect(await runDurableObjectAlarm(roomStub(code))).toBe(true);
+    await vi.waitFor(() => expect(ann.closedWith).toBe(1001));
+    const late = await connect(code);
+    late.send({ type: "join", name: "Late" });
+    expect(await late.next((m) => m.type === "error")).toMatchObject({
+      code: "gone",
     });
-    const held = await stored(code);
-    expect(held.phase).toBe("loading");
-    expect(held.retryAt as number).toBeGreaterThan(requestedAt + 2_500);
-    expect(held.retryAt as number).toBeGreaterThan(Date.now());
   });
 
-  it("does not let a re-resolved clip overwrite the next round", async () => {
-    let slowId = -1;
-    // The re-resolution is held until round 2 is served, so the race is
-    // forced: no real-clock delay decides whether it lands late.
-    let release = () => {};
-    const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    let slowServed = false;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        if (url.includes("api.deezer.com/chart/"))
-          return Response.json({
-            data: [1, 2, 3, 4, 5].map((i) => deezerTrack(i, `Song ${i}`)),
-          });
-        const id = /track\/(\d+)/.exec(url)?.[1];
-        if (id) {
-          if (id === String(slowId)) {
-            await gate;
-            slowServed = true;
-          }
-          return Response.json(deezerTrack(Number(id), "x"));
-        }
-        return Response.json({ data: [] });
-      }),
-    );
-    await seedCatalog(
-      env.DB,
-      "pop",
-      [1, 2, 3, 4, 5].map((i) => ({ id: i, title: `Song ${i}` })),
-    );
+  it("switches the room to the host's pick between games and starts it", async () => {
+    await stubChart(4);
     const { code, key } = await createRoom();
     const ann = await connect(code);
-    await join(ann, "Ann", key);
+    await ann.join("Ann", key);
     ann.send({ type: "start" });
-    await waitFor(ann, inPhase("playing"));
-    const room = await stored(code);
-    const first = room.round as { index: number; endsAt: number };
-    slowId = (room.candidates as { deezerId?: number }[])[first.index]
-      .deezerId!;
-    await call(code, (room) => {
-      const exposed = room as unknown as {
-        clip: string | null;
-        ensureClip(): void;
-      };
-      exposed.clip = null;
-      exposed.ensureClip();
-    });
-    await call(code, (room) => room.tick(first.endsAt + 1));
-    const revealed = await stored(code);
-    await call(code, (room) =>
-      room.tick((revealed.reveal as { until: number }).until + 1),
-    );
-    const round2 = ((await stored(code)).round as { index: number }).index;
-    release();
-    await vi.waitFor(() => expect(slowServed).toBe(true));
-    const after = await call(code, async (room) => {
-      // The late lookup's continuation runs inside the object; yield once so
-      // it has landed before the clip is read.
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      return (room as unknown as { clip: string | null }).clip;
-    });
-    const expected = (
-      (await stored(code)).candidates as { deezerId?: number }[]
-    )[round2].deezerId;
-    expect(after).toBe(`https://cdn.example/${expected}.mp3`);
-    ann.close();
-  });
-
-  it("closes the round when the last unanswered player leaves", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    const bob = await connect(code);
-    await join(ann, "Ann", key);
-    await join(bob, "Bob");
-    ann.send({ type: "start" });
-    await waitFor(ann, inPhase("playing"));
-    const room = await stored(code);
-    const started = room.round as { index: number; startedAt: number };
-    const title = (room.candidates as { title: string }[])[started.index].title;
-    const pid = (room.players as { id: string; name: string }[]).find(
-      (p) => p.name === "Ann",
-    )!.id;
-    await call(code, (room) =>
-      room.answer(pid, title, started.startedAt + 1_000),
-    );
-    bob.close();
-    const reveal = await waitFor(ann, inPhase("reveal"));
-    expect(reveal.type).toBe("state");
-    ann.close();
-  });
-
-  it("starts the round once every connected device reports the clip loaded", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    const bob = await connect(code);
-    await join(ann, "Ann", key);
-    await join(bob, "Bob");
-    ann.send({ type: "start" });
-    const first = (await waitFor(ann, inPhase("playing"))) as {
-      startedAt: number;
-    };
-    const provisional = first.startedAt;
-    ann.send({ type: "loaded" });
-    bob.send({ type: "loaded" });
-    const moved = (await waitFor(
-      ann,
-      (m) =>
-        m.type === "state" &&
-        m.phase === "playing" &&
-        (m.startedAt as number) < provisional,
-    )) as { startedAt: number; endsAt: number };
-    expect(moved.endsAt - moved.startedAt).toBe(15_000);
-    ann.close();
-    bob.close();
-  });
-
-  it("lets a screen watch without taking a seat", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const screen = await connect(code);
-    screen.send({ type: "watch" });
-    const state = await waitFor(screen, inPhase("lobby"));
-    expect(state.watch).toBe(true);
-    expect((state.you as { name: string }).name).toBe("");
-    expect(screen.inbox.some(isType("joined"))).toBe(false);
-    expect((await stored(code)).players).toHaveLength(0);
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    expect((await stored(code)).players).toHaveLength(1);
-    const roster = (await waitFor(
-      screen,
-      (m) =>
-        m.type === "state" && (m.players as { name: string }[]).length === 1,
-    )) as { players: { name: string }[] };
-    expect(roster.players[0].name).toBe("Ann");
-    ann.close();
-    screen.close();
-  });
-
-  it("keeps the clip on the screen while the phones get a screen flag", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    const screen = await connect(code);
-    screen.send({ type: "watch" });
-    const flagged = (await waitFor(
-      ann,
-      (m) => m.type === "state" && m.screen === true,
-    )) as { screen: boolean };
-    expect(flagged.screen).toBe(true);
-    ann.send({ type: "start" });
-    const phone = (await waitFor(ann, inPhase("playing"))) as {
-      clip?: string;
-      screen?: boolean;
-      choices?: string[];
-    };
-    expect(phone.clip).toBeUndefined();
-    expect(phone.screen).toBe(true);
-    expect(phone.choices).toHaveLength(4);
-    const tv = (await waitFor(screen, inPhase("playing"))) as {
-      clip?: string;
-    };
-    expect(tv.clip).toMatch(/^https:\/\/cdn\.example\//);
-    ann.close();
-    screen.close();
-  });
-
-  it("does not let a screen fill a seat, so a match still waits alone", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const code = "MATCHX";
-    const init = await stubFor(code).fetch(
-      new Request("https://room/init", {
-        method: "POST",
-        body: JSON.stringify({
-          code,
-          kind: "match",
-          categorySlug: "pop",
-          categoryName: "Pop",
-          mode: "normal",
-          candidates: Array.from({ length: 10 }, (_, i) => ({
-            title: `Song ${i}`,
-            artist: "Artist",
-            cover: null,
-            link: null,
-            deezerId: 100 + i,
-          })),
-          creatorToken: "",
-          players: [
-            { name: "Ann", token: "tok-a", userId: null },
-            { name: "Bob", token: "tok-b", userId: null },
-          ],
-        }),
-      }),
-    );
-    expect(init.ok).toBe(true);
-    const screen = await connect(code);
-    screen.send({ type: "watch" });
-    await waitFor(screen, inPhase("lobby"));
-    const ann = await connect(code);
-    await join(ann, undefined, "tok-a");
-    // One seated player and a screen is still only one player: the match
-    // does not start until every seat holds a live socket.
-    expect((await stored(code)).phase).toBe("lobby");
-    const bob = await connect(code);
-    await join(bob, undefined, "tok-b");
-    await waitFor(bob, inPhase("loading"));
-    ann.close();
-    bob.close();
-    screen.close();
-  });
-
-  it("adds the category board to the final standings", async () => {
-    const now = Math.floor(Date.now() / 1000);
-    await env.DB.prepare(
-      "INSERT INTO users (id, github_id, name, is_public, created_at) VALUES (1, 1, 'pro', 1, 1)",
-    ).run();
-    await env.DB.prepare(
-      `INSERT INTO game_results
-       (id, user_id, finished_at, category, kind, score, rank, players)
-       VALUES ('t:1:pop', 1, ?1, 'pop', 'solo', 7000, 1, 1)`,
-    )
-      .bind(now - 60)
-      .run();
-    await stubChart(Array.from({ length: 4 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    const screen = await connect(code);
-    screen.send({ type: "watch" });
-    await waitFor(screen, inPhase("lobby"));
-    ann.send({ type: "start" });
-    await waitFor(ann, inPhase("playing"));
-    await playGame(code);
-    const done = (await waitFor(ann, inPhase("done"))) as {
-      phase: string;
-      board: { name: string; score: number }[];
-    };
-    expect(done.phase).toBe("done");
-    expect(done.board).toMatchObject([{ name: "pro", score: 7000 }]);
-    const screenDone = (await waitFor(screen, inPhase("done"))) as {
-      board: { name: string; score: number }[];
-    };
-    expect(screenDone.board).toMatchObject([{ name: "pro", score: 7000 }]);
-    ann.close();
-    screen.close();
-  });
-
-  it("saves a guest's finished game once they sign in from the room", async () => {
-    await stubChart(Array.from({ length: 4 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    ann.send({ type: "start" });
-    await waitFor(ann, inPhase("playing"));
-    await playGame(code);
-    await waitFor(ann, inPhase("done"));
-    const guestRows = await env.DB.prepare(
-      "SELECT COUNT(*) AS n FROM game_results",
-    ).first<{ n: number }>();
-    expect(guestRows?.n).toBe(0);
-    ann.close();
-
-    const cookie = await signIn("ann");
-    const back = await connect(code, cookie);
-    await join(back, undefined, key);
-    const state = (await waitFor(
-      back,
-      (m) =>
-        m.type === "state" &&
-        (m.you as { user: boolean } | undefined)?.user === true,
-    )) as { you: { name: string } };
-    expect(state.you.name).toBe("Ann");
-    const rows = await env.DB.prepare(
-      "SELECT users.name, kind FROM game_results JOIN users ON users.id = user_id",
-    ).all<{ name: string; kind: string }>();
-    expect(rows.results).toEqual([{ name: "ann", kind: "room" }]);
-    back.close();
-  });
-
-  it("collects Up next votes and starts the host's pick at once", async () => {
-    await stubChart(Array.from({ length: 4 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    const bob = await connect(code);
-    await join(bob, "Bob");
-    ann.send({ type: "start" });
-    await waitFor(ann, inPhase("playing"));
-    await playGame(code);
-    await waitFor(bob, inPhase("done"));
-
-    type UpNext = { slug: string; votes: number; voted: boolean; by: string };
-    const upNext = (client: Client, test: (list: UpNext[]) => boolean) =>
-      waitFor(
-        client,
-        (m) => m.phase === "done" && test((m.suggestions ?? []) as UpNext[]),
-      ).then((m) => m.suggestions as UpNext[]);
-
-    bob.send({ type: "suggest", category: "nope", mode: "normal" });
-    bob.send({ type: "suggest", category: "rock", mode: "normal" });
-    expect(await upNext(bob, (list) => list.length === 1)).toMatchObject([
-      { slug: "rock", votes: 1, voted: true, by: "Bob" },
-    ]);
-    // Suggesting what is already listed votes for it.
-    ann.send({ type: "suggest", category: "rock", mode: "normal" });
-    expect(await upNext(ann, (list) => list[0]?.votes === 2)).toMatchObject([
-      { slug: "rock", votes: 2, voted: true },
-    ]);
-
-    const switchTo = (token: string) =>
-      app.fetch(
-        new Request(`${origin}/play/room/${code}/switch`, {
-          method: "POST",
-          headers: {
-            "content-type": "application/x-www-form-urlencoded",
-            origin,
-          },
-          body: new URLSearchParams({
-            category: "rock",
-            mode: "normal",
-            k: token,
-            start: "1",
-          }).toString(),
-        }),
-        testEnv() as never,
-      );
+    await playOut(ann, code, 4);
+    const switchTo = (k: string) =>
+      post(`/play/room/${code}/switch`, {
+        category: "rock",
+        mode: "normal",
+        k,
+        start: "1",
+      });
     expect((await switchTo("not-the-key")).status).toBe(403);
     expect((await switchTo(key)).status).toBe(303);
-    const next = await waitFor(
-      bob,
-      (m) => m.type === "state" && m.phase !== "done" && m.phase !== "lobby",
-    );
-    expect(next.categorySlug).toBe("rock");
-    const after = await stored(code);
-    expect(after.suggestions).toEqual([]);
-
-    // The game log holds both games and what started each.
+    expect(
+      await ann.next((m) => m.type === "state" && m.phase === "playing"),
+    ).toMatchObject({ categorySlug: "rock", round: 1 });
     const games = await env.DB.prepare(
-      "SELECT id, kind, category, origin, players FROM games WHERE room = ?1 ORDER BY started_at, origin DESC",
+      "SELECT category, origin FROM games WHERE room = ?1 ORDER BY started_at, origin DESC",
     )
       .bind(code)
-      .all<{ id: string; origin: string }>();
-    expect(games.results).toMatchObject([
-      { kind: "room", category: "pop", origin: "start", players: 2 },
-      { kind: "room", category: "rock", origin: "pick", players: 2 },
+      .all();
+    expect(games.results).toEqual([
+      { category: "pop", origin: "start" },
+      { category: "rock", origin: "pick" },
     ]);
-    const first = await env.DB.prepare(
-      "SELECT round, title, artist FROM round_outcomes WHERE game_id = ?1 ORDER BY round LIMIT 1",
-    )
-      .bind(games.results[0].id)
-      .first<{ round: number; title: string; artist: string }>();
-    expect(first).toMatchObject({
-      round: 1,
-      title: expect.stringMatching(/^Song /),
-    });
-    ann.close();
-    bob.close();
-  });
-
-  it("refreshes a cached category board when results are written", async () => {
-    const now = Math.floor(Date.now() / 1000);
-    await env.DB.prepare(
-      "INSERT INTO users (id, github_id, name, is_public, created_at) VALUES (1, 1, 'pro', 1, 1)",
-    ).run();
-    // The board was read right before the game: its cache holds a stale,
-    // empty copy that must not survive the result write.
-    await env.CACHE.put("play:catboard:pop", JSON.stringify([]));
-    await recordResults(testEnv() as never, [
-      {
-        id: "t:stale:pop",
-        userId: 1,
-        finishedAt: now,
-        category: "pop",
-        kind: "room",
-        score: 5000,
-        rank: 1,
-        players: 2,
-        correct: 7,
-        rounds: 10,
-      },
-    ]);
-    expect(await readCategoryBoard(testEnv() as never, "pop")).toEqual([
-      { name: "pro", score: 5000, correct: 7, rounds: 10, finished_at: now },
-    ]);
-  });
-
-  it("deletes an idle room even with a socket open", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    const room = await stored(code);
-    const lastActive = room.lastActive as number;
-    const tickAt = lastActive + 3_600_001;
-    await call(code, (room) => room.tick(tickAt));
-    const cleared = await runInDurableObject(stubFor(code), async (_r, s) => ({
-      state: await s.storage.get("room"),
-      alarm: await s.storage.getAlarm(),
-    }));
-    expect(cleared.state).toBeUndefined();
-    expect(cleared.alarm === null || cleared.alarm > tickAt).toBe(true);
-    ann.close();
   });
 
   it("seats a signed-in player under their name, once across devices", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    await stubChart(10);
     const { code } = await createRoom();
-    const cookie = await signIn("ann");
+    const cookie = await signIn(101, "ann");
     const phone = await connect(code, cookie);
-    await join(phone, undefined);
+    await phone.join();
     const laptop = await connect(code, cookie);
-    await join(laptop, undefined);
-    const players = (await stored(code)).players as { name: string }[];
-    expect(players.map((p) => p.name)).toEqual(["ann"]);
-    const state = (await waitFor(laptop, inPhase("lobby"))) as {
-      players: { name: string; user: boolean }[];
-      seats: number;
-    };
-    expect(state.players[0]).toMatchObject({ name: "ann", user: true });
-    expect(state.seats).toBeGreaterThan(1);
-    await waitFor(phone, isType("moved"));
-    phone.close();
-    laptop.close();
-  });
-
-  it("moves a guest's seat to the device that opens its link", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code } = await createRoom();
-    const phone = await connect(code);
-    const { token } = (await join(phone, "Ann")) as { token: string };
-    const laptop = await connect(code);
-    const joined = (await join(laptop, undefined, token)) as { name: string };
-    expect(joined.name).toBe("Ann");
-    await waitFor(phone, isType("moved"));
-    const players = (await stored(code)).players as { name: string }[];
-    expect(players.map((p) => p.name)).toEqual(["Ann"]);
-    const state = (await waitFor(laptop, inPhase("lobby"))) as {
-      players: { name: string; connected: boolean }[];
-    };
-    expect(state.players[0]).toMatchObject({ name: "Ann", connected: true });
-    // Taking the seat back moves it again, the other way.
-    const back = await connect(code);
-    await join(back, undefined, token);
-    await waitFor(laptop, isType("moved"));
-    phone.close();
-    laptop.close();
-    back.close();
-  });
-
-  it("previews the room to a guest who has not picked a name", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const host = await connect(code);
-    await join(host, undefined, key);
-    const guest = await connect(code);
-    guest.send({ type: "join" });
-    const preview = (await waitFor(guest, isType("preview"))) as {
-      category: string;
-      players: string[];
-    };
-    expect(preview.category).toBe("Pop");
-    expect(preview.players).toEqual(["Host"]);
-    expect(await waitFor(guest, isType("error"))).toMatchObject({
-      code: "name",
+    await laptop.join();
+    await phone.next((m) => m.type === "moved");
+    expect(await laptop.state("lobby")).toMatchObject({
+      players: [{ name: "ann", user: true }],
     });
-    host.close();
-    guest.close();
   });
 
   it("draws a seat link's QR code and refuses a malformed key", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
+    await stubChart(10);
     const { code } = await createRoom();
     // The legacy test origin redirects page GETs; the sheet loads the canonical host.
     const canonical = "https://earshot.rising.sh";
-    const seat = await app.fetch(
-      new Request(`${canonical}/play/room/${code}/seat.svg?k=abcdefgh12345678`),
-      testEnv() as never,
+    const seat = await SELF.fetch(
+      `${canonical}/play/room/${code}/seat.svg?k=abcdefgh12345678`,
     );
     expect(seat.status).toBe(200);
     expect(seat.headers.get("content-type")).toBe("image/svg+xml");
     expect(seat.headers.get("cache-control")).toBe("private, no-store");
     expect(await seat.text()).toMatch(/^<svg [^>]*viewBox="-4 -4 \d+ \d+"/);
-    const bad = await app.fetch(
-      new Request(`${canonical}/play/room/${code}/seat.svg?k=a/b`),
-      testEnv() as never,
+    const bad = await SELF.fetch(
+      `${canonical}/play/room/${code}/seat.svg?k=a/b`,
     );
     expect(bad.status).toBe(404);
   });

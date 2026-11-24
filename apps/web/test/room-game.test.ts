@@ -92,6 +92,18 @@ function match() {
 }
 
 describe("seats", () => {
+  it("plants a signed-in name up to 39 characters and a guest's up to 20", () => {
+    const seats = (name: string, userId: number | null) => [
+      { name, token: "t1", userId },
+      { name: "Bob", token: "t2", userId: null },
+    ];
+    expect(game.seatedOk(seats("x".repeat(39), 1))).toBe(true);
+    expect(game.seatedOk(seats("x".repeat(40), 1))).toBe(false);
+    expect(game.seatedOk(seats("y".repeat(20), null))).toBe(true);
+    expect(game.seatedOk(seats("y".repeat(21), null))).toBe(false);
+    expect(game.seatedOk(seats("bob", null))).toBe(false);
+  });
+
   it("seats the creator as Host when they give no nickname", () => {
     const s = newRoom();
     expect(seated(s, "", { token: "host" })).toMatchObject({
