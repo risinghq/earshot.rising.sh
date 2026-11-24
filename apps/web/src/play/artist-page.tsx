@@ -3,7 +3,7 @@ import { Page } from "../ui/shell";
 import { type ArtistProfile, type Category } from "./catalog";
 import { type CategoryBoardEntry, categoryBoardDays } from "./results";
 import { roundSeconds, roundsPerGame } from "./game";
-import { matchWaitMs } from "./room";
+import { matchWaitMs } from "./room-game";
 import { defaultMode, modeNames, modes, type Mode } from "./rules";
 import { type SignedInUser } from "../auth";
 import { type ArtistHit, type Candidate } from "./sources";

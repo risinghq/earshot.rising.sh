@@ -4,7 +4,8 @@ import { catalog, enoughTracks, getCategory } from "./catalog";
 import { byDecade } from "./pool";
 import { readMatchMessage } from "./messages";
 import type { MatchServerMessage } from "./protocol";
-import { newRoomCode, newRoomSecret, nicknameMaxLength } from "./room";
+import { newRoomCode, newRoomSecret } from "./room";
+import { nicknameMaxLength } from "./room-game";
 import type { Candidate } from "./sources";
 
 // One global object serialises the queue. Its whole state is the attachment
