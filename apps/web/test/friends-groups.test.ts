@@ -1,6 +1,7 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
+import { readPage } from "./html";
 
 const now = Math.floor(Date.now() / 1000);
 const origin = "https://earshot.rising.sh";
@@ -377,6 +378,48 @@ describe("groups", () => {
     });
     expect(refused.status).toBe(403);
     expect(await count("friend_groups")).toBe(1);
+  });
+
+  it("puts each new group's members in that group", async () => {
+    const alice = await seedUser(1, "alice");
+    await seedUser(2, "bob");
+    await seedUser(3, "carol");
+    await makeFriends(1, 2);
+    await makeFriends(1, 3);
+    await post("/groups", alice, { name: "Kitchen", member: "2" });
+    const porch = await post("/groups", alice, { name: "Porch", member: "3" });
+    expect(porch.headers.get("location")).toBe("/groups/2");
+    const members = await env.DB.prepare(
+      "SELECT group_id, user_id FROM group_members ORDER BY group_id, user_id",
+    ).all();
+    expect(members.results).toEqual([
+      { group_id: 1, user_id: 1 },
+      { group_id: 1, user_id: 2 },
+      { group_id: 2, user_id: 1 },
+      { group_id: 2, user_id: 3 },
+    ]);
+  });
+
+  it("offers to add only friends who are not in the group yet", async () => {
+    const alice = await seedUser(1, "alice");
+    await seedUser(2, "bob");
+    await seedUser(3, "carol");
+    await seedUser(4, "eve");
+    await makeFriends(1, 2);
+    await makeFriends(1, 3);
+    const created = await post("/groups", alice, {
+      name: "Kitchen",
+      member: "2",
+    });
+    const groupPath = created.headers.get("location") ?? "";
+    const page = await readPage(
+      await (await get(groupPath, alice)).text(),
+      origin,
+    );
+    const add = page.forms.find(
+      (form) => form.action === `${origin}${groupPath}/members`,
+    );
+    expect(add?.choices.user).toEqual(["3"]);
   });
 
   it("answers 404 for non-members and explains itself signed out", async () => {
