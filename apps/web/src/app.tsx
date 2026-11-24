@@ -1,7 +1,9 @@
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import type { Env, Period, PeriodStats } from "./types";
+import { and, eq, sql } from "drizzle-orm";
 import { getStats } from "./aggregate";
+import { database, t, type Db } from "./db";
 import {
   beginSignIn,
   returnPath,
@@ -52,22 +54,26 @@ function readTheme(value: string | undefined): CardTheme | null {
   return value === "light" || value === "dark" ? value : null;
 }
 
-async function findUser(db: D1Database, name: string) {
+async function findUser(db: Db, name: string) {
+  const u = t.users;
   return db
-    .prepare(
-      `SELECT id, name,
-       (
-         SELECT group_concat(kind) FROM sources WHERE user_id = users.id
-       ) AS kinds
-       FROM users
-       WHERE name = ?1 COLLATE NOCASE AND is_public = 1 AND admin_hidden = 0`,
+    .select({
+      id: u.id,
+      name: u.name,
+      kinds: sql<string | null>`(${db
+        .select({ kinds: sql`group_concat(${t.sources.kind})` })
+        .from(t.sources)
+        .where(eq(t.sources.userId, u.id))})`,
+    })
+    .from(u)
+    .where(
+      and(
+        sql`${u.name} = ${name} COLLATE NOCASE`,
+        eq(u.isPublic, 1),
+        eq(u.adminHidden, 0),
+      ),
     )
-    .bind(name)
-    .first<{
-      id: number;
-      name: string;
-      kinds: string | null;
-    }>();
+    .get();
 }
 
 async function getSnapshot(
@@ -90,7 +96,13 @@ async function getSnapshot(
     )
       return cached;
   }
-  const snapshot = await getStats(env.DB, user.id, user.name, period, now);
+  const snapshot = await getStats(
+    database(env.DB),
+    user.id,
+    user.name,
+    period,
+    now,
+  );
   if (env.CACHE) {
     await env.CACHE.put(key, JSON.stringify(snapshot), {
       expirationTtl: period === "all" ? 6 * 3600 : 15 * 60,
@@ -138,28 +150,25 @@ const trackSeed = (track: { title: string; artist: string }) =>
 type Relation = "friends" | "sent" | "none" | "self" | "out";
 
 async function relationTo(
-  db: D1Database,
+  db: Db,
   viewer: SignedInUser | null,
   userId: number,
 ): Promise<Relation> {
   if (viewer === null) return "out";
   if (viewer.id === userId) return "self";
+  const { friendships: f, friendRequests: r } = t;
   const [friends, sent] = await db.batch([
     db
-      .prepare(
-        `SELECT 1 AS yes FROM friendships
-         WHERE user_id = ?1 AND friend_id = ?2`,
-      )
-      .bind(viewer.id, userId),
+      .select({ yes: sql`1` })
+      .from(f)
+      .where(and(eq(f.userId, viewer.id), eq(f.friendId, userId))),
     db
-      .prepare(
-        `SELECT 1 AS yes FROM friend_requests
-         WHERE from_user = ?1 AND to_user = ?2`,
-      )
-      .bind(viewer.id, userId),
+      .select({ yes: sql`1` })
+      .from(r)
+      .where(and(eq(r.fromUser, viewer.id), eq(r.toUser, userId))),
   ]);
-  if (friends.results.length > 0) return "friends";
-  return sent.results.length > 0 ? "sent" : "none";
+  if (friends.length > 0) return "friends";
+  return sent.length > 0 ? "sent" : "none";
 }
 
 function ProfileActions({
@@ -556,7 +565,7 @@ app.get("/u/:path", async (context) => {
   // Each D1 read is a round trip to the database's region, so reads that do
   // not depend on each other run together.
   const [user, viewer] = await Promise.all([
-    findUser(context.env.DB, name),
+    findUser(database(context.env.DB), name),
     format === "html" ? sessionUser(context) : null,
   ]);
   if (!user)
@@ -567,7 +576,7 @@ app.get("/u/:path", async (context) => {
   if (format === "html") {
     const [snapshot, relation] = await Promise.all([
       getSnapshot(context.env, user, period, now),
-      relationTo(context.env.DB, viewer, user.id),
+      relationTo(database(context.env.DB), viewer, user.id),
     ]);
     return context.html(
       profilePage(

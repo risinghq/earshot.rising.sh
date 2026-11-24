@@ -683,7 +683,9 @@ describe("profile API", () => {
       updated_at: pinnedNow,
     } as const;
 
-    expect(await getStats(env.DB, 1, "alice", "week", pinnedNow)).toEqual({
+    expect(
+      await getStats(database(env.DB), 1, "alice", "week", pinnedNow),
+    ).toEqual({
       ...base,
       period: "week",
       from: pinnedNow - 7 * 86400,
@@ -701,7 +703,9 @@ describe("profile API", () => {
         daily("2023-11-14", 1),
       ],
     });
-    expect(await getStats(env.DB, 1, "alice", "month", pinnedNow)).toEqual({
+    expect(
+      await getStats(database(env.DB), 1, "alice", "month", pinnedNow),
+    ).toEqual({
       ...base,
       period: "month",
       from: pinnedNow - 30 * 86400,
@@ -721,7 +725,9 @@ describe("profile API", () => {
         daily("2023-11-14", 1),
       ],
     });
-    expect(await getStats(env.DB, 1, "alice", "all", pinnedNow)).toEqual({
+    expect(
+      await getStats(database(env.DB), 1, "alice", "all", pinnedNow),
+    ).toEqual({
       ...base,
       period: "all",
       from: null,

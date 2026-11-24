@@ -261,7 +261,7 @@ async function benchStats(plays: number, tracks: number) {
       const { db, calls } = timedDb(env.DB, batched);
       const total = await timeAsync(async () => {
         calls.length = 0;
-        await getStats(db, 1, "alice", period, now);
+        await getStats(database(db), 1, "alice", period, now);
       }, 5);
       const d1 = calls.reduce((sum, call) => sum + call.ms, 0);
       console.log(
