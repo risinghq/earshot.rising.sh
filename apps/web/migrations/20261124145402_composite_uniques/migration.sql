@@ -1,0 +1,6 @@
+-- The baseline snapshot missed the composite UNIQUE constraints on sources
+-- (user_id, kind), friend_requests (from_user, to_user) and category_sources
+-- (category, kind, ref). The tables have had them since 0001, 0011 and 0013,
+-- so this migration runs nothing and only carries the corrected snapshot.
+-- drizzle-kit wrote a rebuild of the three tables here; on D1 the rebuild's
+-- DROP TABLE would cascade deletes and drop the tables' triggers.

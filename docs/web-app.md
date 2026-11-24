@@ -188,6 +188,17 @@ flat files from before Drizzle, and production recorded them by those names. The
 `20261124141330_baseline` folder runs nothing; its snapshot is the schema they
 built. `migrations_pattern` in `wrangler.jsonc` applies both shapes in order.
 
+Read each generated migration before committing it. SQLite cannot add a
+constraint to an existing table, so drizzle-kit rebuilds the table: it creates
+`__new_<table>`, copies the rows, drops the old table and renames the new one.
+D1 runs a migration inside a transaction, where `PRAGMA foreign_keys=OFF` has no
+effect, and `PRAGMA defer_foreign_keys` does not stop cascades
+([D1 foreign keys](https://developers.cloudflare.com/d1/sql-api/foreign-keys/)).
+So that DROP TABLE runs every `ON DELETE CASCADE` that points at the table, and
+it drops the table's triggers. Write such a change by hand instead. A constraint
+the tables already have needs only the snapshot: keep the generated folder and
+replace its SQL with a comment, as `20261124145402_composite_uniques` does.
+
 The SQL below is what those migrations build.
 
 ```sql
