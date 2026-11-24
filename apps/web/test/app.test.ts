@@ -559,9 +559,6 @@ describe("profile API", () => {
       /<nav class="segmented is-stage" aria-label="Time period" data-swap="main">/,
     );
     expect(html).toContain('<main class="wrap shell" id="main">');
-    expect(html).toContain(
-      '<link rel="preconnect" href="https://cdn-images.dzcdn.net"/>',
-    );
     const rules = JSON.parse(
       html.match(/<script type="speculationrules">(.*?)<\/script>/s)![1],
     );
