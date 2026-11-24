@@ -1292,6 +1292,11 @@ guest sends a nickname in its first message.
   player. A second player who picks the same nickname is sent back to pick
   another. "From my listening" is never offered: a stranger must not play
   someone's listening history.
+- **Code.** `match-host.ts` runs the queue through `MatchPorts`: the sockets,
+  the clock, the category's tracks and opening the room. `match.ts` is the
+  Durable Object that supplies them. `test/match-host.test.ts` covers the queue
+  with fake ports, including a partner who leaves mid-pair; `test/match.test.ts`
+  keeps the route, eviction and the room it opens.
 - **No creator.** A match room has no creator: it starts by itself once every
   seated player holds a live socket, and if one never connects the game starts
   with whoever showed up after 90 seconds. There is no rematch button, and

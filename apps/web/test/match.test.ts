@@ -1,11 +1,13 @@
+// The match queue as the runtime runs it: the route, the Matchmaker's
+// hibernated sockets and the room it opens. The queue's rules are in
+// match-host.test.ts.
 import {
   env,
+  evictDurableObject,
   runDurableObjectAlarm,
-  runInDurableObject,
 } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
-import type { Matchmaker } from "../src/play/match";
 import { scoreFor } from "../src/play/quiz";
 import { matchWaitMs } from "../src/play/room-game";
 import {
@@ -24,15 +26,6 @@ const testEnv = () => ({
   CACHE: env.CACHE,
   ROOMS: env.ROOMS,
   MATCHMAKER: env.MATCHMAKER,
-});
-
-const deezerTrack = (id: number, title: string) => ({
-  id,
-  title,
-  link: `https://www.deezer.com/track/${id}`,
-  preview: `https://cdn.example/${id}.mp3`,
-  artist: { name: "Artist" },
-  album: { cover_medium: `https://cdn.example/${id}.jpg` },
 });
 
 async function sha256(value: string) {
@@ -92,32 +85,8 @@ const resultRows = () =>
     .all()
     .then((r) => r.results);
 
-const mmStub = () =>
-  env.MATCHMAKER.get(
-    env.MATCHMAKER.idFromName("global"),
-  ) as DurableObjectStub<Matchmaker>;
-
-// Reads the seats a hibernated Matchmaker keeps on its sockets; polling it
-// beats a fixed sleep before a negative assertion.
-const queuedCategories = () =>
-  runInDurableObject(mmStub(), (mm) =>
-    (
-      mm as unknown as {
-        waiting(): { seat: { category: string; name: string } }[];
-      }
-    )
-      .waiting()
-      .map((entry) => entry.seat),
-  );
-
-async function untilQueued(count: number) {
-  for (let poll = 0; poll < 250; poll += 1) {
-    const seats = await queuedCategories();
-    if (seats.length === count) return seats;
-    await new Promise((resolve) => setTimeout(resolve, 20));
-  }
-  throw new Error("queue did not reach the expected size");
-}
+const matchmaker = () =>
+  env.MATCHMAKER.get(env.MATCHMAKER.idFromName("global"));
 
 afterEach(() => {
   vi.useRealTimers();
@@ -140,35 +109,18 @@ describe("matchmaker", () => {
     expect(state.players.map((p) => p.name).sort()).toEqual(["Ann", "Bob"]);
   });
 
-  it("does not pair players queued in different categories", async () => {
+  it("keeps a queued player through the matchmaker's eviction", async () => {
     await stubChart(12);
     const ann = await queue("pop");
     ann.send({ type: "join", name: "Ann" });
     await ann.next(isType("queued"));
-    const bob = await queue("rock");
-    bob.send({ type: "join", name: "Bob" });
-    await bob.next(isType("queued"));
-    const seats = await untilQueued(2);
-    expect(seats.map((seat) => seat.category).sort()).toEqual(["pop", "rock"]);
-    expect(ann.inbox.some(isType("matched"))).toBe(false);
-    expect(bob.inbox.some(isType("matched"))).toBe(false);
-  });
-
-  it("leaves the queue when the socket closes", async () => {
-    await stubChart(12);
-    const ann = await queue("pop");
-    ann.send({ type: "join", name: "Ann" });
-    await ann.next(isType("queued"));
-    ann.close();
-    await untilQueued(0);
+    // The seat lives on the hibernated socket, not in the object's memory.
+    await evictDurableObject(matchmaker());
     const bob = await queue("pop");
     bob.send({ type: "join", name: "Bob" });
-    await bob.next(isType("queued"));
-    const cid = await queue("pop");
-    cid.send({ type: "join", name: "Cid" });
+    const matchedAnn = (await ann.next(isType("matched"))) as { code: string };
     const matchedBob = (await bob.next(isType("matched"))) as { code: string };
-    const matchedCid = (await cid.next(isType("matched"))) as { code: string };
-    expect(matchedBob.code).toBe(matchedCid.code);
+    expect(matchedAnn.code).toBe(matchedBob.code);
   });
 
   it("starts a match with whoever came once the wait is over, and writes their result", async () => {
@@ -214,57 +166,6 @@ describe("matchmaker", () => {
     expect(state.players.map((p) => p.name).sort()).toEqual(["Ann", "Bob"]);
   });
 
-  it("pairs the survivor with the next waiter when a partner dies mid-pair", async () => {
-    let release = () => {};
-    const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        if (url.includes("api.deezer.com/chart/")) {
-          await gate;
-          return Response.json({
-            data: Array.from({ length: 12 }, (_, i) =>
-              deezerTrack(100 + i, `Song ${i}`),
-            ),
-          });
-        }
-        const id = /track\/(\d+)/.exec(url)?.[1];
-        if (id) return Response.json(deezerTrack(Number(id), "x"));
-        return Response.json({ data: [] });
-      }),
-    );
-    // The gate holds the live chart fetch inside pair(); playlist-backed
-    // categories read D1 and would pair before the sockets can die.
-    const ann = await queue("top-50-global");
-    ann.send({ type: "join", name: "Ann" });
-    await ann.next(isType("queued"));
-    const bob = await queue("top-50-global");
-    bob.send({ type: "join", name: "Bob" });
-    // Ann and Bob are marked pairing; Cat joins and waits alone.
-    const cat = await queue("top-50-global");
-    cat.send({ type: "join", name: "Cat" });
-    await cat.next(isType("queued"));
-    bob.close();
-    // The close must reach the object before the fetch resolves.
-    for (let poll = 0; poll < 250; poll += 1) {
-      const open = await runInDurableObject(
-        mmStub(),
-        (_mm, state) =>
-          state.getWebSockets().filter((ws) => ws.readyState === WebSocket.OPEN)
-            .length,
-      );
-      if (open === 2) break;
-      await new Promise((resolve) => setTimeout(resolve, 20));
-    }
-    release();
-    const matchedAnn = (await ann.next(isType("matched"))) as { code: string };
-    const matchedCat = (await cat.next(isType("matched"))) as { code: string };
-    expect(matchedAnn.code).toBe(matchedCat.code);
-  });
-
   it("refuses the 'mine' category for random matching", async () => {
     const ann = await signIn("ann");
     const cookie = `__Host-session=${ann.token}`;
@@ -293,16 +194,6 @@ describe("matchmaker", () => {
       testEnv() as never,
     );
     expect(page.status).toBe(404);
-  });
-
-  it("asks a second guest with the same nickname to pick another", async () => {
-    await stubChart(12);
-    const ann = await queue("pop");
-    ann.send({ type: "join", name: "Ann" });
-    await ann.next(isType("queued"));
-    const twin = await queue("pop");
-    twin.send({ type: "join", name: "ann" });
-    await twin.next((m) => m.type === "error" && m.code === "taken");
   });
 });
 
