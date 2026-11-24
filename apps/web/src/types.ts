@@ -16,26 +16,7 @@ export interface Env {
   SOURCE_ENCRYPTION_KEY?: string;
 }
 
-export interface SourceRow {
-  id: number;
-  user_id: number;
-  kind: string;
-  account: string | null;
-  secret?: ArrayBuffer | Uint8Array | null;
-  cursor: number | null;
-  backfill_before: number | null;
-  gap_before: number | null;
-  gap_floor: number | null;
-  next_pull_at: number | null;
-  idle_pulls: number;
-  tz?: string | null;
-  status?: string;
-  error?: string | null;
-  last_page?: string | null;
-  play_seq?: number;
-  gap_at?: number | null;
-  play_count?: number;
-}
+export type SourceRow = typeof import("./db/schema").sources.$inferSelect;
 
 export interface TrackInput {
   kind: string;

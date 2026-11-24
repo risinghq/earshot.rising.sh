@@ -14,7 +14,7 @@ import {
 } from "./auth";
 import { and, count, eq, inArray, isNull, notExists, sql } from "drizzle-orm";
 import { database, t, type Db } from "./db";
-import { ingestPage, type PageSource } from "./ingest";
+import { ingestPage, pageSourceFields } from "./ingest";
 import { sourceNames } from "./names";
 import { sealSecret } from "./secret";
 import type { Env } from "./types";
@@ -1026,22 +1026,12 @@ settingsApp.post("/ytmusic", async (context) => {
           error: null,
         },
       }),
-    db
-      .select({
-        id: t.sources.id,
-        user_id: t.sources.userId,
-        status: t.sources.status,
-        last_page: t.sources.lastPage,
-        play_seq: t.sources.playSeq,
-        gap_at: t.sources.gapAt,
-      } satisfies Record<keyof PageSource, unknown>)
-      .from(t.sources)
-      .where(ytmusicOf(user.id)),
+    db.select(pageSourceFields).from(t.sources).where(ytmusicOf(user.id)),
   ]);
   let inserted = 0;
   if (source !== undefined) {
     const result = await ingestPage(
-      context.env.DB,
+      db,
       source,
       plays
         .filter(

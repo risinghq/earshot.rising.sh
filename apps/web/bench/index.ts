@@ -8,7 +8,9 @@ import {
 } from "../src/spotify";
 import { markDuplicates } from "../src/duplicates";
 import { resolvePageTracks, storeListens } from "../src/matching";
-import type { Env, SourceRow } from "../src/types";
+import { eq } from "drizzle-orm";
+import { database, t } from "../src/db";
+import type { Env } from "../src/types";
 import fixture from "../test/fixtures/spotify-recently-played.json";
 
 const page = { items: fixture.items };
@@ -259,7 +261,7 @@ export default {
           await run(
             (run) =>
               storeListens(
-                env.DB,
+                database(env.DB),
                 playInputs(
                   shiftPlays(playsOf(sizeOf(url)), run).map((item) => ({
                     at: playAt(item),
@@ -277,11 +279,11 @@ export default {
       case "/pull":
         await ensureBench(env.DB, env);
         try {
-          const row = await env.DB.prepare(
-            "SELECT * FROM sources WHERE id = ?1",
-          )
-            .bind(benchSourceId)
-            .first<SourceRow>();
+          const row = await database(env.DB)
+            .select()
+            .from(t.sources)
+            .where(eq(t.sources.id, benchSourceId))
+            .get();
           return report(
             "/pull",
             await run(
@@ -318,7 +320,7 @@ export default {
         if (range === null)
           return new Response("run /dups-seed first\n", { status: 400 });
         const result = await markDuplicates(
-          env.DB,
+          database(env.DB),
           dupUserId,
           range.f,
           range.t,

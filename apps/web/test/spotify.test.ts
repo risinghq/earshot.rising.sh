@@ -9,7 +9,7 @@ import {
   pullSpotify,
   sealTokens,
 } from "../src/spotify";
-import type { SourceRow } from "../src/types";
+import { database, t } from "../src/db";
 import fixture from "./fixtures/spotify-recently-played.json";
 
 const now = Math.floor(Date.now() / 1000);
@@ -57,7 +57,7 @@ async function seedSource(tokens: object, extra = "") {
 }
 
 async function sourceRow() {
-  return (await env.DB.prepare("SELECT * FROM sources").first()) as SourceRow;
+  return (await database(env.DB).select().from(t.sources).get())!;
 }
 
 const cookie = `__Host-session=${session}`;
@@ -142,15 +142,10 @@ describe("connect", () => {
     const source = await sourceRow();
     expect(source.kind).toBe("spotify");
     expect(source.account).toBe("spotify-user");
-    expect(source.next_pull_at).toBeGreaterThan(0);
-    const secret = new TextDecoder().decode(
-      new Uint8Array(source.secret as ArrayBuffer),
-    );
+    expect(source.nextPullAt).toBeGreaterThan(0);
+    const secret = new TextDecoder().decode(source.secret!);
     expect(secret).not.toContain("refresh-1");
-    const tokens = await openTokens(
-      testEnv() as never,
-      source.secret as Uint8Array,
-    );
+    const tokens = await openTokens(testEnv() as never, source.secret!);
     expect(tokens.r).toBe("refresh-1");
     expect(tokens.a).toBe("access-1");
   });
@@ -247,7 +242,7 @@ describe("pull", () => {
     const source = await sourceRow();
     expect(source.status).toBe("error");
     expect(source.error).toContain("connect Spotify");
-    expect(source.next_pull_at).toBeNull();
+    expect(source.nextPullAt).toBeNull();
   });
 
   it("waits out Retry-After on a 429", async () => {
@@ -262,7 +257,7 @@ describe("pull", () => {
     });
     await pullSpotify(testEnv() as never, await sourceRow(), fetcher, now);
     const source = await sourceRow();
-    expect(source.next_pull_at).toBe(now + 90);
+    expect(source.nextPullAt).toBe(now + 90);
     expect(source.status).toBe("active");
   });
 });

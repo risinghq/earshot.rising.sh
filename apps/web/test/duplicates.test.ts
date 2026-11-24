@@ -1,9 +1,11 @@
 import { env, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
+import { database } from "../src/db";
 import { markDuplicates } from "../src/duplicates";
 import { storeListens } from "../src/matching";
 
+const db = database(env.DB);
 const now = Math.floor(Date.now() / 1000);
 const dayText = new Date((now - 86400) * 1000).toISOString().slice(0, 10);
 const noon = Date.parse(`${dayText}T12:00:00.000Z`) / 1000;
@@ -97,7 +99,13 @@ function countedDb() {
         count(result);
         return result;
       },
-      raw: async <T = unknown>(options?: never) => bound.raw<T>(options),
+      // Drizzle reads selects through raw(), which carries no meta, so the
+      // wrapper answers it from all() to count rows_read.
+      raw: async () => {
+        const result = await bound.all<Record<string, unknown>>();
+        count(result);
+        return result.results.map((row) => Object.values(row));
+      },
     } as unknown as D1PreparedStatement;
     reals.set(fake, bound);
     return fake;
@@ -112,7 +120,7 @@ function countedDb() {
       return results;
     },
   } as unknown as D1Database;
-  return { db, counts };
+  return { db: database(db), counts };
 }
 
 describe("markDuplicates", () => {
@@ -247,7 +255,7 @@ describe("markDuplicates", () => {
   ])("$name", async ({ kinds, plays, from, to, totals }) => {
     await seedUser(kinds);
     await seedPlays(plays);
-    const result = await markDuplicates(env.DB, 1, from, to);
+    const result = await markDuplicates(db, 1, from, to);
     const flags = await dupByRef();
     for (const [index, play] of plays.entries())
       expect(flags.get(play.ref ?? `p${index}`), `play ${index}`).toBe(
@@ -277,7 +285,7 @@ describe("markDuplicates", () => {
         { kind: better as SeedPlay["kind"], at: noon, ref: "winner" },
         { kind: worse as SeedPlay["kind"], at: noon, ref: "loser" },
       ]);
-      await markDuplicates(env.DB, 1, noon, noon);
+      await markDuplicates(db, 1, noon, noon);
       const flags = await dupByRef();
       expect(flags.get("winner")).toBe(0);
       expect(flags.get("loser")).toBe(1);
@@ -287,10 +295,10 @@ describe("markDuplicates", () => {
   it("marks an older row when the better source arrives later", async () => {
     await seedUser(["listenbrainz", "lastfm"]);
     await seedPlays([{ kind: "lastfm", at: noon, ref: "old" }]);
-    const first = await markDuplicates(env.DB, 1, noon, noon);
+    const first = await markDuplicates(db, 1, noon, noon);
     expect(first.marked).toBe(0);
     await seedPlays([{ kind: "listenbrainz", at: noon + 60, ref: "new" }]);
-    const second = await markDuplicates(env.DB, 1, noon + 60, noon + 60);
+    const second = await markDuplicates(db, 1, noon + 60, noon + 60);
     expect(second.marked).toBe(1);
     const flags = await dupByRef();
     expect(flags.get("old")).toBe(1);
@@ -304,9 +312,9 @@ describe("markDuplicates", () => {
   it("marks a YouTube play when a better play arrives later on its day", async () => {
     await seedUser(["lastfm", "ytmusic"]);
     await seedPlays([{ kind: "ytmusic", at: noon, ref: "y1" }]);
-    await markDuplicates(env.DB, 1, noon, noon);
+    await markDuplicates(db, 1, noon, noon);
     await seedPlays([{ kind: "lastfm", at: noon + 3600, ref: "f1" }]);
-    await markDuplicates(env.DB, 1, noon + 3600, noon + 3600);
+    await markDuplicates(db, 1, noon + 3600, noon + 3600);
     const flags = await dupByRef();
     expect(flags.get("y1")).toBe(1);
     expect(flags.get("f1")).toBe(0);
@@ -322,9 +330,9 @@ describe("markDuplicates", () => {
       { kind: "listenbrainz", at: noon },
       { kind: "lastfm", at: noon + 5 },
     ]);
-    const first = await markDuplicates(env.DB, 1, noon, noon + 5);
+    const first = await markDuplicates(db, 1, noon, noon + 5);
     expect(first.marked).toBe(1);
-    const second = await markDuplicates(env.DB, 1, noon, noon + 5);
+    const second = await markDuplicates(db, 1, noon, noon + 5);
     expect(second.marked).toBe(0);
     expect(second.rowsWritten).toBe(0);
     const totals = await env.DB.prepare(
@@ -339,10 +347,10 @@ describe("markDuplicates", () => {
       { kind: "listenbrainz", at: noon + 200, ref: "lb" },
       { kind: "lastfm", at: noon + 400, ref: "fm2" },
     ]);
-    const first = await markDuplicates(env.DB, 1, noon + 400, noon + 400);
+    const first = await markDuplicates(db, 1, noon + 400, noon + 400);
     expect(first.marked).toBe(1);
     await seedPlays([{ kind: "lastfm", at: noon, ref: "fm1" }]);
-    const second = await markDuplicates(env.DB, 1, noon, noon);
+    const second = await markDuplicates(db, 1, noon, noon);
     expect(second.marked).toBe(0);
     const flags = await dupByRef();
     expect(flags.get("fm2")).toBe(1);
@@ -359,13 +367,13 @@ describe("markDuplicates", () => {
       { kind: "listenbrainz", at: noon, ref: "l1" },
       { kind: "lastfm", at: noon + 300, ref: "f1" },
     ]);
-    const first = await markDuplicates(env.DB, 1, noon, noon + 300);
+    const first = await markDuplicates(db, 1, noon, noon + 300);
     expect(first.marked).toBe(1);
     await seedPlays([{ kind: "lastfm", at: noon + 1150, ref: "f2" }]);
-    const second = await markDuplicates(env.DB, 1, noon + 1150, noon + 1150);
+    const second = await markDuplicates(db, 1, noon + 1150, noon + 1150);
     expect(second.marked).toBe(0);
     await seedPlays([{ kind: "listenbrainz", at: noon + 590, ref: "l2" }]);
-    const third = await markDuplicates(env.DB, 1, noon + 590, noon + 590);
+    const third = await markDuplicates(db, 1, noon + 590, noon + 590);
     expect(third.marked).toBe(1);
     const flags = await dupByRef();
     expect(flags.get("f1")).toBe(1);
@@ -382,11 +390,11 @@ describe("markDuplicates", () => {
       { kind: "listenbrainz", at: noon, ref: "l1" },
       { kind: "lastfm", at: noon + 510, ref: "f1" },
     ]);
-    await markDuplicates(env.DB, 1, noon, noon + 510);
+    await markDuplicates(db, 1, noon, noon + 510);
     await seedPlays([{ kind: "lastfm", at: noon - 400, ref: "f2" }]);
-    await markDuplicates(env.DB, 1, noon - 400, noon - 400);
+    await markDuplicates(db, 1, noon - 400, noon - 400);
     await seedPlays([{ kind: "listenbrainz", at: noon + 1000, ref: "l0" }]);
-    await markDuplicates(env.DB, 1, noon + 1000, noon + 1000);
+    await markDuplicates(db, 1, noon + 1000, noon + 1000);
     const flags = await dupByRef();
     expect(flags.get("f1")).toBe(1);
     expect(flags.get("f2")).toBe(1);
@@ -406,13 +414,13 @@ describe("markDuplicates", () => {
       { kind: "lastfm", at: day - 1050, ref: "fm0" },
       { kind: "lastfm", at: day - 590, ref: "fm1" },
     ]);
-    const first = await markDuplicates(env.DB, 1, day - 1050, day - 590);
+    const first = await markDuplicates(db, 1, day - 1050, day - 590);
     expect(first.marked).toBe(1);
     expect((await dupByRef()).get("fm0")).toBe(1);
     await seedPlays([
       { kind: "lastfm", at: day + 43200, track: 2, ref: "other" },
     ]);
-    const second = await markDuplicates(env.DB, 1, day + 43200, day + 43200);
+    const second = await markDuplicates(db, 1, day + 43200, day + 43200);
     expect(second.marked).toBe(0);
     const flags = await dupByRef();
     expect(flags.get("fm1")).toBe(0);
@@ -572,7 +580,7 @@ describe("cross-source duplicates", () => {
       { at: times[0], meta: songA },
     ];
     const lbStored = await storeListens(
-      env.DB,
+      db,
       plays.map((play, index) => ({
         kind: "listenbrainz",
         sourceKey: `lb-${index}`,
@@ -584,8 +592,8 @@ describe("cross-source duplicates", () => {
       })),
       "listenbrainz",
     );
-    await markDuplicates(env.DB, 1, times[0], times[2]);
-    expect(lbStored.inserted).toBe(3);
+    await markDuplicates(db, 1, times[0], times[2]);
+    expect(lbStored).toBe(3);
 
     const upload = await post([
       { day: dayText, artist: "Artist One", title: "Song A", video_id: "va2" },
@@ -657,7 +665,7 @@ describe("cross-source duplicates", () => {
       additional_info: {},
     };
     const stored = await storeListens(
-      env.DB,
+      db,
       [fmAt + 3, fmAt + 103].map((at, index) => ({
         kind: "listenbrainz",
         sourceKey: `bf-${index}`,
@@ -669,8 +677,8 @@ describe("cross-source duplicates", () => {
       })),
       "listenbrainz",
     );
-    await markDuplicates(env.DB, 1, fmAt + 3, fmAt + 103);
-    expect(stored.inserted).toBe(2);
+    await markDuplicates(db, 1, fmAt + 3, fmAt + 103);
+    expect(stored).toBe(2);
     const flags = await dupByRef();
     expect(flags.get("old1")).toBe(1);
     expect(flags.get("old2")).toBe(1);

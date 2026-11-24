@@ -1,5 +1,8 @@
+import { eq, lte, sql } from "drizzle-orm";
+import { database, t } from "./db";
 import {
-  dailyLimitPattern,
+  failureMessage,
+  isDailyLimit,
   maxSourcesPerPull,
   nextPullDelay,
   nextUtcMidnight,
@@ -23,19 +26,17 @@ export async function pullDueSources(
   now = Math.floor(Date.now() / 1000),
 ) {
   if (await env.CACHE?.get(d1CapKey)) return;
-  let result;
+  const db = database(env.DB);
+  let due: SourceRow[];
   try {
-    result = await env.DB.prepare(
-      `SELECT id, user_id, kind, account, secret, cursor, backfill_before,
-       gap_before, gap_floor, next_pull_at, idle_pulls, tz, status,
-       last_page, play_seq, gap_at
-       FROM sources WHERE next_pull_at IS NOT NULL AND next_pull_at <= ?1
-       ORDER BY next_pull_at, id LIMIT ${maxSourcesPerPull}`,
-    )
-      .bind(now)
-      .all<SourceRow>();
+    due = await db
+      .select()
+      .from(t.sources)
+      .where(lte(t.sources.nextPullAt, now))
+      .orderBy(t.sources.nextPullAt, t.sources.id)
+      .limit(maxSourcesPerPull);
   } catch (error) {
-    if (error instanceof Error && dailyLimitPattern.test(error.message)) {
+    if (isDailyLimit(error)) {
       if (env.CACHE)
         await env.CACHE.put(d1CapKey, "1", {
           expiration: nextUtcMidnight(now),
@@ -44,28 +45,28 @@ export async function pullDueSources(
     }
     throw error;
   }
-  for (const source of result.results) {
+  for (const source of due) {
     const pull = pulls[source.kind];
     if (!pull) continue;
     try {
       await pull(env, source, now);
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message.slice(0, 200)
-          : "Source pull failed";
-      if (dailyLimitPattern.test(message)) {
+      if (isDailyLimit(error)) {
         if (env.CACHE)
           await env.CACHE.put(d1CapKey, "1", {
             expiration: nextUtcMidnight(now),
           });
         return;
       }
-      await env.DB.prepare(
-        "UPDATE sources SET status = 'error', error = ?1, idle_pulls = idle_pulls + 1, next_pull_at = ?2 WHERE id = ?3",
-      )
-        .bind(message, now + nextPullDelay(0, source.idle_pulls + 1), source.id)
-        .run();
+      await db
+        .update(t.sources)
+        .set({
+          status: "error",
+          error: failureMessage(error).slice(0, 200),
+          idlePulls: sql`${t.sources.idlePulls} + 1`,
+          nextPullAt: now + nextPullDelay(0, source.idlePulls + 1),
+        })
+        .where(eq(t.sources.id, source.id));
     }
   }
 }

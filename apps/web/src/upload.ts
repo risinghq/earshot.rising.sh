@@ -1,15 +1,20 @@
 import type { Context } from "hono";
 import * as v from "valibot";
-import { ingestPage, type PageSource } from "./ingest";
+import { and, eq, isNull } from "drizzle-orm";
+import { database, t } from "./db";
+import { ingestPage, pageSourceFields, type PageSource } from "./ingest";
 import type { Env } from "./types";
 
 const maxPlays = 1000;
 const uploadIntervalSeconds = 30;
 
-interface UploadSource extends PageSource {
-  token_id: number;
-  last_ok_at: number | null;
-}
+const uploadSourceFields = {
+  ...pageSourceFields,
+  tokenId: t.tokens.id,
+  lastOkAt: t.sources.lastOkAt,
+};
+
+type UploadSource = PageSource & { tokenId: number; lastOkAt: number | null };
 
 interface UploadPlay {
   day: string;
@@ -46,23 +51,6 @@ const bodySchema = v.strictObject({
 });
 
 const tokenPattern = /^msu_[A-Za-z0-9_-]{43}$/;
-
-const tokenSql = `
-  SELECT tokens.id AS token_id,
-    sources.id,
-    sources.user_id,
-    sources.status,
-    sources.last_page,
-    sources.play_seq,
-    sources.gap_at,
-    sources.last_ok_at
-  FROM tokens
-  JOIN sources ON sources.id = tokens.source_id
-  WHERE tokens.hash = ?1 AND tokens.revoked_at IS NULL
-    AND sources.kind = 'ytmusic'
-`;
-
-const writeTokenSql = "UPDATE tokens SET last_used_at = ?1 WHERE id = ?2";
 
 function isRealDay(day: string) {
   const time = Date.parse(`${day}T00:00:00.000Z`);
@@ -129,21 +117,30 @@ async function authenticate(context: Context<{ Bindings: Env }>) {
     "SHA-256",
     new TextEncoder().encode(token),
   );
-  const source = await context.env.DB.prepare(tokenSql)
-    .bind(new Uint8Array(digest))
-    .first<UploadSource>();
+  const source: UploadSource | undefined = await database(context.env.DB)
+    .select(uploadSourceFields)
+    .from(t.tokens)
+    .innerJoin(t.sources, eq(t.sources.id, t.tokens.sourceId))
+    .where(
+      and(
+        eq(t.tokens.hash, new Uint8Array(digest)),
+        isNull(t.tokens.revokedAt),
+        eq(t.sources.kind, "ytmusic"),
+      ),
+    )
+    .get();
   return source ?? context.json({ error: "unknown or revoked token" }, 401);
 }
 
 function rateLimit(context: Context, source: UploadSource, now: number) {
   if (
-    source.last_ok_at === null ||
-    now - source.last_ok_at >= uploadIntervalSeconds
+    source.lastOkAt === null ||
+    now - source.lastOkAt >= uploadIntervalSeconds
   )
     return null;
   context.header(
     "Retry-After",
-    String(uploadIntervalSeconds - (now - source.last_ok_at)),
+    String(uploadIntervalSeconds - (now - source.lastOkAt)),
   );
   return context.json({ error: "one upload per source every 30 seconds" }, 429);
 }
@@ -189,10 +186,15 @@ export async function uploadPlays(context: Context<{ Bindings: Env }>) {
       200,
     );
 
-  const db = context.env.DB;
+  const db = database(context.env.DB);
   const result = await ingestPage(db, source, plays, {
     now,
-    extra: [db.prepare(writeTokenSql).bind(now, source.token_id)],
+    extra: [
+      db
+        .update(t.tokens)
+        .set({ lastUsedAt: now })
+        .where(eq(t.tokens.id, source.tokenId)),
+    ],
   });
   if (result.raced)
     return context.json({ error: "two uploads raced; send again" }, 409);

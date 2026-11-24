@@ -1,3 +1,7 @@
+import { and, eq, inArray, sql, type AnyColumn, type SQL } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
+import { union } from "drizzle-orm/sqlite-core";
+import { batchOf, jsonField, jsonRows, t, type Db } from "./db";
 import { normalizeText } from "./normalize";
 import type { TrackInput } from "./types";
 
@@ -52,133 +56,161 @@ export interface PageResolution {
   newTracks: NewTrack[];
 }
 
-const readAliasSql = `
-  WITH page AS (
-    SELECT DISTINCT value AS source_key
-    FROM json_each(?1)
-  )
-  SELECT aliases.source_key,
-    tracks.id,
-    tracks.key,
-    tracks.mbid,
-    tracks.isrc,
-    artists.key AS artistKey,
-    substr(tracks.key, instr(tracks.key, char(31)) + 1) AS titleKey
-  FROM track_aliases AS aliases
-  JOIN page ON page.source_key = aliases.source_key
-  JOIN tracks ON tracks.id = aliases.track_id
-  JOIN artists ON artists.id = tracks.artist_id
-  WHERE aliases.kind = ?2
-  ORDER BY tracks.id
-`;
+// A track key is the artist key and the title key joined by U+001F.
+const titleKey =
+  sql<string>`substr(${t.tracks.key}, instr(${t.tracks.key}, char(31)) + 1)`.as(
+    "titleKey",
+  );
 
-export const readTrackSql = `
-  SELECT * FROM (
-  SELECT DISTINCT
-    tracks.id,
-    tracks.key,
-    tracks.mbid,
-    tracks.isrc,
-    artists.key AS artistKey,
-    substr(tracks.key, instr(tracks.key, char(31)) + 1) AS titleKey
-  FROM tracks
-  JOIN (
-    SELECT DISTINCT json_extract(value, '$.normalizedKey') AS k
-    FROM json_each(?1)
-    WHERE json_extract(value, '$.normalizedKey') IS NOT NULL
-  ) AS page ON tracks.key = page.k
-  JOIN artists ON artists.id = tracks.artist_id
-  UNION
-  SELECT DISTINCT
-    tracks.id,
-    tracks.key,
-    tracks.mbid,
-    tracks.isrc,
-    artists.key AS artistKey,
-    substr(tracks.key, instr(tracks.key, char(31)) + 1) AS titleKey
-  FROM tracks
-  JOIN (
-    SELECT DISTINCT json_extract(value, '$.mbid') AS k
-    FROM json_each(?1)
-    WHERE json_extract(value, '$.mbid') IS NOT NULL
-  ) AS page ON tracks.mbid = page.k
-  JOIN artists ON artists.id = tracks.artist_id
-  UNION
-  SELECT DISTINCT
-    tracks.id,
-    tracks.key,
-    tracks.mbid,
-    tracks.isrc,
-    artists.key AS artistKey,
-    substr(tracks.key, instr(tracks.key, char(31)) + 1) AS titleKey
-  FROM tracks
-  JOIN (
-    SELECT DISTINCT json_extract(value, '$.isrc') AS k
-    FROM json_each(?1)
-    WHERE json_extract(value, '$.isrc') IS NOT NULL
-  ) AS page ON tracks.isrc = page.k
-  JOIN artists ON artists.id = tracks.artist_id
-  ) AS candidates
-  ORDER BY id
-`;
+const trackFields = {
+  id: t.tracks.id,
+  key: t.tracks.key,
+  mbid: t.tracks.mbid,
+  isrc: t.tracks.isrc,
+  artistKey: t.artists.key,
+  titleKey,
+};
 
-export const bulkArtistSql = `
-  INSERT OR IGNORE INTO artists (key, name, mbid)
-  SELECT json_extract(value, '$.k'), json_extract(value, '$.a'), NULL
-  FROM json_each(?1)
-`;
+type Candidate = {
+  normalizedKey: string;
+  mbid: string | null;
+  isrc: string | null;
+};
 
-export const bulkTrackSql = `
-  INSERT OR IGNORE INTO tracks (key, artist_id, title, mbid, isrc)
-  SELECT
-    json_extract(value, '$.key'),
-    (SELECT id FROM artists WHERE key = json_extract(value, '$.artistKey')),
-    json_extract(value, '$.title'),
-    json_extract(value, '$.mbid'),
-    json_extract(value, '$.isrc')
-  FROM json_each(?1)
-`;
+// The stored tracks a page could match by key, MBID or ISRC. Each branch
+// reads one indexed column, so none scans the tracks table.
+export function trackCandidates(db: Db, candidates: Candidate[]) {
+  const branch = (column: AnyColumn, name: keyof Candidate) =>
+    db
+      .select(trackFields)
+      .from(t.tracks)
+      .innerJoin(t.artists, eq(t.artists.id, t.tracks.artistId))
+      .where(
+        inArray(
+          column,
+          db
+            .select({ value: jsonField<string>(name) })
+            .from(jsonRows(candidates)),
+        ),
+      );
+  return union(
+    branch(t.tracks.key, "normalizedKey"),
+    branch(t.tracks.mbid, "mbid"),
+    branch(t.tracks.isrc, "isrc"),
+    // A compound select orders by output position or alias; column 1 is id.
+  ).orderBy(sql`1`);
+}
 
-export const bulkAliasSql = `
-  INSERT OR IGNORE INTO track_aliases (kind, source_key, track_id)
-  SELECT
-    ?2,
-    json_extract(item.value, '$.s'),
-    tracks.id
-  FROM json_each(?1) AS item
-  JOIN tracks ON tracks.key = json_extract(item.value, '$.t')
-`;
-
-const bulkPlaySql = `
-  INSERT OR IGNORE INTO plays (user_id, played_at, source_id, ref, track_id)
-  SELECT
-    json_extract(item.value, '$.u'),
-    json_extract(item.value, '$.at'),
-    json_extract(item.value, '$.s'),
-    json_extract(item.value, '$.r'),
-    tracks.id
-  FROM json_each(?1) AS item
-  JOIN tracks ON tracks.key = json_extract(item.value, '$.k')
-  RETURNING 1 AS inserted
-`;
-
-export function artistInsertRows(newTracks: NewTrack[]) {
+function artistInsert(db: Db, newTracks: NewTrack[]) {
   const artists = new Map<string, string>();
   for (const track of newTracks)
     if (!artists.has(track.artistKey))
       artists.set(track.artistKey, track.artist);
-  return JSON.stringify([...artists].map(([k, a]) => ({ k, a })));
+  return db
+    .insert(t.artists)
+    .select(
+      db
+        .select({
+          key: jsonField<string>("k").as("key"),
+          name: jsonField<string>("a").as("name"),
+        })
+        .from(jsonRows([...artists].map(([k, a]) => ({ k, a }))))
+        .where(sql`true`),
+    )
+    .onConflictDoNothing();
 }
 
-export function aliasInsertRows(listens: ResolvedListen[]) {
-  const seen = new Set<string>();
-  const rows = [];
-  for (const listen of listens) {
-    if (seen.has(listen.sourceKey)) continue;
-    seen.add(listen.sourceKey);
-    rows.push({ s: listen.sourceKey, t: listen.trackKey });
-  }
-  return JSON.stringify(rows);
+function trackInsert(db: Db, newTracks: NewTrack[]) {
+  const artistId = db
+    .select({ id: t.artists.id })
+    .from(t.artists)
+    .where(eq(t.artists.key, jsonField<string>("artistKey")));
+  return db
+    .insert(t.tracks)
+    .select(
+      db
+        .select({
+          key: jsonField<string>("key").as("key"),
+          artistId: sql<number>`(${artistId})`.as("artist_id"),
+          title: jsonField<string>("title").as("title"),
+          mbid: jsonField<string | null>("mbid").as("mbid"),
+          isrc: jsonField<string | null>("isrc").as("isrc"),
+        })
+        .from(jsonRows(newTracks))
+        .where(sql`true`),
+    )
+    .onConflictDoNothing();
+}
+
+function aliasInsert(db: Db, listens: ResolvedListen[], kind: string) {
+  const rows = new Map<string, string>();
+  for (const listen of listens)
+    if (!rows.has(listen.sourceKey))
+      rows.set(listen.sourceKey, listen.trackKey);
+  return db
+    .insert(t.trackAliases)
+    .select(
+      db
+        .select({
+          kind: sql<string>`${kind}`.as("kind"),
+          sourceKey: jsonField<string>("s").as("source_key"),
+          trackId: t.tracks.id,
+        })
+        .from(jsonRows([...rows].map(([s, k]) => ({ s, k }))))
+        .innerJoin(t.tracks, eq(t.tracks.key, jsonField<string>("k")))
+        .where(sql`true`),
+    )
+    .onConflictDoNothing();
+}
+
+// The artist, track and alias rows a resolved page adds, in the order the
+// plays need them. One batch runs them as one transaction.
+export function pageWrites(
+  db: Db,
+  { listens, newTracks }: PageResolution,
+  kind: string,
+): BatchItem<"sqlite">[] {
+  const writes: BatchItem<"sqlite">[] = [];
+  if (newTracks.length > 0)
+    writes.push(artistInsert(db, newTracks), trackInsert(db, newTracks));
+  if (listens.length > 0) writes.push(aliasInsert(db, listens, kind));
+  return writes;
+}
+
+// Returns one row per play it inserted; a play already stored is skipped.
+// `guard` gates the whole page on a condition read in the same statement.
+export function playInsert(
+  db: Db,
+  listens: ResolvedListen[],
+  guard: SQL = sql`true`,
+) {
+  return db
+    .insert(t.plays)
+    .select(
+      db
+        .select({
+          userId: jsonField<number>("u").as("user_id"),
+          playedAt: jsonField<number>("at").as("played_at"),
+          sourceId: jsonField<number>("s").as("source_id"),
+          ref: jsonField<string>("r").as("ref"),
+          trackId: t.tracks.id,
+        })
+        .from(
+          jsonRows(
+            listens.map((listen) => ({
+              u: listen.userId,
+              at: listen.listenedAt,
+              s: listen.sourceId,
+              r: listen.ref,
+              k: listen.trackKey,
+            })),
+          ),
+        )
+        .innerJoin(t.tracks, eq(t.tracks.key, jsonField<string>("k")))
+        .where(guard),
+    )
+    .onConflictDoNothing()
+    .returning({ trackId: t.plays.trackId });
 }
 
 interface NormalizeCache {
@@ -354,25 +386,35 @@ export function resolvePageTracks(
   return resolvePage(inputs, prepared, aliases, existingTracks);
 }
 
-async function readAliases(db: D1Database, inputs: BulkListen[], kind: string) {
-  const payload = JSON.stringify(inputs.map((input) => input.sourceKey));
-  const rows = (
-    await db
-      .prepare(readAliasSql)
-      .bind(payload, kind)
-      .all<ExistingTrack & { source_key: string }>()
-  ).results;
+async function readAliases(db: Db, inputs: BulkListen[], kind: string) {
+  const rows = await db
+    .select({ sourceKey: t.trackAliases.sourceKey, ...trackFields })
+    .from(t.trackAliases)
+    .innerJoin(t.tracks, eq(t.tracks.id, t.trackAliases.trackId))
+    .innerJoin(t.artists, eq(t.artists.id, t.tracks.artistId))
+    .where(
+      and(
+        eq(t.trackAliases.kind, kind),
+        inArray(
+          t.trackAliases.sourceKey,
+          db
+            .select({ value: sql<string>`value` })
+            .from(jsonRows(inputs.map((input) => input.sourceKey))),
+        ),
+      ),
+    )
+    .orderBy(t.tracks.id);
   const aliases = new Map<string, ExistingTrack>();
   const tracks = new Map<number, ExistingTrack>();
-  for (const row of rows) {
-    aliases.set(row.source_key, row);
-    tracks.set(row.id, row);
+  for (const { sourceKey, ...track } of rows) {
+    aliases.set(sourceKey, track);
+    tracks.set(track.id, track);
   }
   return { aliases, tracks };
 }
 
 export async function resolveStoredPage(
-  db: D1Database,
+  db: Db,
   inputs: BulkListen[],
   kind: string,
 ): Promise<PageResolution> {
@@ -382,11 +424,7 @@ export async function resolveStoredPage(
     new Set(existing.aliases.keys()),
     newCache(),
   );
-  const candidates: Array<{
-    normalizedKey: string;
-    mbid: string | null;
-    isrc: string | null;
-  }> = [];
+  const candidates: Candidate[] = [];
   const seen = new Set<string>();
   for (const input of inputs) {
     const fields = prepared.get(input.sourceKey);
@@ -398,60 +436,27 @@ export async function resolveStoredPage(
       isrc: input.isrc ?? null,
     });
   }
-  if (candidates.length > 0) {
-    const rows = (
-      await db
-        .prepare(readTrackSql)
-        .bind(JSON.stringify(candidates))
-        .all<ExistingTrack>()
-    ).results;
-    for (const row of rows) existing.tracks.set(row.id, row);
-  }
+  if (candidates.length > 0)
+    for (const row of await trackCandidates(db, candidates))
+      existing.tracks.set(row.id, row);
   return resolvePage(inputs, prepared, existing.aliases, [
     ...existing.tracks.values(),
   ]);
 }
 
-export interface StoreResult {
-  inserted: number;
-  rowsWritten: number;
-}
-
+// Stores a page of listens and returns how many plays were new.
 export async function storeListens(
-  db: D1Database,
+  db: Db,
   inputs: BulkListen[],
   kind: string,
-): Promise<StoreResult> {
-  const empty = { inserted: 0, rowsWritten: 0 };
-  if (inputs.length === 0) return empty;
+): Promise<number> {
+  if (inputs.length === 0) return 0;
   const resolution = await resolveStoredPage(db, inputs, kind);
-  const statements: D1PreparedStatement[] = [];
-  if (resolution.newTracks.length > 0) {
-    statements.push(
-      db.prepare(bulkArtistSql).bind(artistInsertRows(resolution.newTracks)),
-      db.prepare(bulkTrackSql).bind(JSON.stringify(resolution.newTracks)),
-    );
-  }
-  const playRows = JSON.stringify(
-    resolution.listens.map((listen) => ({
-      u: listen.userId,
-      at: listen.listenedAt,
-      s: listen.sourceId,
-      k: listen.trackKey,
-      r: listen.ref,
-    })),
+  const results = await db.batch(
+    batchOf([
+      ...pageWrites(db, resolution, kind),
+      playInsert(db, resolution.listens),
+    ]),
   );
-  statements.push(
-    db.prepare(bulkAliasSql).bind(aliasInsertRows(resolution.listens), kind),
-    db.prepare(bulkPlaySql).bind(playRows),
-  );
-  const results = await db.batch(statements);
-  const rowsWritten = results.reduce(
-    (sum, result) => sum + (result.meta?.rows_written ?? 0),
-    0,
-  );
-  return {
-    inserted: results.at(-1)?.results?.length ?? 0,
-    rowsWritten,
-  };
+  return (results.at(-1) as unknown[]).length;
 }

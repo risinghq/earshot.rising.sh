@@ -5,7 +5,8 @@ import worker from "../src/index";
 import { pullDueSources } from "../src/cron";
 import { maxSourcesPerPull } from "../src/pull";
 import { sealTokens } from "../src/spotify";
-import type { SourceRow } from "../src/types";
+import { eq } from "drizzle-orm";
+import { database, t } from "../src/db";
 import fixture from "./fixtures/spotify-recently-played.json";
 
 const now = Math.floor(Date.now() / 1000);
@@ -41,9 +42,11 @@ async function seedUser() {
 }
 
 async function sourceRow() {
-  return (await env.DB.prepare(
-    "SELECT * FROM sources WHERE id = 10",
-  ).first()) as SourceRow;
+  return (await database(env.DB)
+    .select()
+    .from(t.sources)
+    .where(eq(t.sources.id, 10))
+    .get())!;
 }
 
 const playsBody = () =>
@@ -62,7 +65,7 @@ describe("pull scheduling", () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async () => playsBody());
     await pullDueSources(testEnv() as never, now);
     const source = await sourceRow();
-    expect(source.next_pull_at).toBe(now + 20 * 60);
+    expect(source.nextPullAt).toBe(now + 20 * 60);
   });
 
   it("pulls at most maxSourcesPerPull due sources in one tick", async () => {
@@ -103,9 +106,9 @@ describe("pull scheduling", () => {
     for (let attempt = 1; attempt <= 3; attempt += 1) {
       await pullDueSources(testEnv() as never, pullAt);
       const source = await sourceRow();
-      expect(source.idle_pulls).toBe(attempt);
-      gaps.push((source.next_pull_at ?? 0) - pullAt);
-      pullAt = source.next_pull_at ?? pullAt;
+      expect(source.idlePulls).toBe(attempt);
+      gaps.push((source.nextPullAt ?? 0) - pullAt);
+      pullAt = source.nextPullAt ?? pullAt;
     }
     expect(gaps).toEqual([30 * 60, 60 * 60, 2 * 60 * 60]);
   });
@@ -116,20 +119,13 @@ describe("pull scheduling", () => {
       new Error(
         "Your account has exceeded D1's free tier daily row write limit. Upgrade to a paid plan or wait until tomorrow (midnight UTC) to continue.",
       );
+    const fail = async () => {
+      throw capError();
+    };
     const prepare = vi.spyOn(env.DB, "prepare").mockImplementation(
       () =>
         ({
-          bind: () => ({
-            all: async () => {
-              throw capError();
-            },
-            run: async () => {
-              throw capError();
-            },
-            first: async () => {
-              throw capError();
-            },
-          }),
+          bind: () => ({ all: fail, run: fail, first: fail, raw: fail }),
         }) as unknown as D1PreparedStatement,
     );
     const fetcher = vi.spyOn(globalThis, "fetch");
@@ -165,7 +161,7 @@ describe("pull scheduling", () => {
     ).first<{ n: number }>();
     expect(plays?.n).toBe(1);
     const source = await sourceRow();
-    expect((source.next_pull_at ?? 0) - now).toBeGreaterThanOrEqual(20 * 60);
+    expect((source.nextPullAt ?? 0) - now).toBeGreaterThanOrEqual(20 * 60);
   });
 });
 

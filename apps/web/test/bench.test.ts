@@ -1,8 +1,10 @@
 import { applyD1Migrations, env, reset, SELF } from "cloudflare:test";
 import * as v from "valibot";
 import { beforeEach, describe, it } from "vitest";
+import { eq } from "drizzle-orm";
 import migrations from "virtual:web-migrations";
 import { getStats } from "../src/aggregate";
+import { database, t } from "../src/db";
 import { resolvePageTracks } from "../src/matching";
 import { normalizeText } from "../src/normalize";
 import {
@@ -26,33 +28,6 @@ const testEnv = (db: D1Database) =>
     SPOTIFY_CLIENT_SECRET: "spotify-secret",
     SOURCE_ENCRYPTION_KEY: key,
   }) as never;
-
-function resultsFor(sql: string, aliasRows: any[]) {
-  if (sql.includes("track_aliases") && sql.includes("SELECT"))
-    return { results: aliasRows };
-  return { results: [] as any[] };
-}
-
-function fakeDb(aliasRows: any[] = []) {
-  const db = {
-    prepare(sql: string) {
-      return {
-        sql,
-        bind(..._args: any[]) {
-          return {
-            sql,
-            all: async () => resultsFor(sql, aliasRows),
-            run: async () => ({ success: true }),
-            first: async () => null,
-          };
-        },
-      };
-    },
-    batch: async (stmts: any[]) =>
-      stmts.map((stmt) => resultsFor(stmt.sql, aliasRows)),
-  } as unknown as D1Database;
-  return db;
-}
 
 function median(values: number[]) {
   const sorted = [...values].sort((a, b) => a - b);
@@ -140,43 +115,24 @@ describe("bench", () => {
     const stringifyNew = time(() => JSON.stringify(resolution.newTracks));
     const stringifyListens = time(() => JSON.stringify(resolution.listens));
 
-    const fakeEnv = testEnv(fakeDb());
-    const source = {
-      id: 10,
-      user_id: 1,
-      kind: "spotify",
-      account: "rob",
-      cursor: null,
-      backfill_before: null,
-      gap_before: null,
-      gap_floor: null,
-      next_pull_at: now,
-      idle_pulls: 0,
-      secret: await sealTokens(testEnv(fakeDb()), {
-        r: "r",
-        a: "a",
-        e: now + 3600,
-      }),
-    };
     const fetcher = (async (_input: RequestInfo | URL) =>
       new Response(JSON.stringify({ items: plays }), {
         status: 200,
         headers: { "content-type": "application/json" },
       })) as typeof fetch;
-    const pullFake = await timeAsync(async () =>
-      pullSpotify(fakeEnv, { ...source }, fetcher, now),
-    );
+    const readSource = async () =>
+      (await database(env.DB)
+        .select()
+        .from(t.sources)
+        .where(eq(t.sources.id, 10))
+        .get())!;
 
-    const realSource = await env.DB.prepare(
-      "SELECT * FROM sources WHERE id = 10",
-    ).first<any>();
+    const realSource = await readSource();
     const pullRealNew = await timeAsync(
       async () => pullSpotify(testEnv(env.DB), { ...realSource }, fetcher, now),
       3,
     );
-    const storedReal = await env.DB.prepare(
-      "SELECT * FROM sources WHERE id = 10",
-    ).first<any>();
+    const storedReal = await readSource();
     const pullRealStored = await timeAsync(
       async () => pullSpotify(testEnv(env.DB), storedReal, fetcher, now + 900),
       3,
@@ -190,7 +146,6 @@ describe("bench", () => {
     console.log("stringify prepared:", stringifyPrepared.toFixed(2), "ms");
     console.log("stringify newTracks:", stringifyNew.toFixed(2), "ms");
     console.log("stringify listens :", stringifyListens.toFixed(2), "ms");
-    console.log("pull new (fake D1):", pullFake.toFixed(2), "ms");
     console.log("pull new (real D1):", pullRealNew.toFixed(2), "ms");
     console.log("pull stored(realD1):", pullRealStored.toFixed(2), "ms");
   });

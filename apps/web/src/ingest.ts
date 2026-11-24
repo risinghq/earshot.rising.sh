@@ -1,22 +1,31 @@
+import { eq, and, sql } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 import { alignPage, type Alignment, type PagePair } from "./align";
+import { batchOf, t, type Db } from "./db";
 import { markDuplicates } from "./duplicates";
 import {
-  aliasInsertRows,
-  artistInsertRows,
-  bulkAliasSql,
-  bulkArtistSql,
-  bulkTrackSql,
+  pageWrites,
+  playInsert,
   resolveStoredPage,
   type PageResolution,
 } from "./matching";
 
+export const pageSourceFields = {
+  id: t.sources.id,
+  userId: t.sources.userId,
+  status: t.sources.status,
+  lastPage: t.sources.lastPage,
+  playSeq: t.sources.playSeq,
+  gapAt: t.sources.gapAt,
+};
+
 export interface PageSource {
   id: number;
-  user_id: number;
+  userId: number;
   status: string;
-  last_page: string | null;
-  play_seq: number;
-  gap_at: number | null;
+  lastPage: string | null;
+  playSeq: number;
+  gapAt: number | null;
 }
 
 export interface PagePlay {
@@ -29,7 +38,7 @@ export interface PagePlay {
 export interface IngestOptions {
   now: number;
   pullNextAt?: number;
-  extra?: D1PreparedStatement[];
+  extra?: BatchItem<"sqlite">[];
 }
 
 export interface IngestResult {
@@ -41,66 +50,25 @@ export interface IngestResult {
   raced: boolean;
 }
 
-const writePlaySql = `
-  INSERT OR IGNORE INTO plays (user_id, played_at, source_id, ref, track_id)
-  SELECT
-    json_extract(item.value, '$.userId'),
-    json_extract(item.value, '$.listenedAt'),
-    json_extract(item.value, '$.sourceId'),
-    json_extract(item.value, '$.ref'),
-    (SELECT id FROM tracks WHERE key = json_extract(item.value, '$.trackKey'))
-  FROM json_each(?1) AS item
-  WHERE (SELECT play_seq FROM sources WHERE id = ?2) = ?3
-`;
-
-const uploadSourceSql = `
-  UPDATE sources SET
-    last_page = ?1,
-    play_seq = play_seq + ?2,
-    maybe_missing = maybe_missing + ?3,
-    status = ?4,
-    gap_at = ?5,
-    last_ok_at = ?6
-  WHERE id = ?7 AND play_seq = ?8
-`;
-
-const pullSourceSql = `
-  UPDATE sources SET
-    last_page = ?1,
-    play_seq = play_seq + ?2,
-    maybe_missing = maybe_missing + ?3,
-    status = ?4,
-    gap_at = ?5,
-    next_pull_at = ?6,
-    error = NULL,
-    idle_pulls = 0,
-    play_count = play_count + ?2
-  WHERE id = ?7 AND play_seq = ?8
-`;
-
-const pullReplaySql = `
-  UPDATE sources SET
-    next_pull_at = ?1,
-    error = NULL,
-    idle_pulls = 0,
-    status = CASE WHEN status = 'error' THEN 'active' ELSE status END
-  WHERE id = ?2
-`;
-
 export function uploadListenedAt(play: PagePlay) {
   return Date.parse(`${play.day}T12:00:00.000Z`) / 1000;
 }
 
-function touchSource(
-  db: D1Database,
-  source: PageSource,
-  options: IngestOptions,
-) {
+// A page that adds nothing still proves the source works: a pull moves its
+// next pull and clears an error, an upload stamps its last success.
+function touchSource(db: Db, source: PageSource, options: IngestOptions) {
+  const where = eq(t.sources.id, source.id);
   if (options.pullNextAt !== undefined)
-    return db.prepare(pullReplaySql).bind(options.pullNextAt, source.id);
-  return db
-    .prepare("UPDATE sources SET last_ok_at = ?1 WHERE id = ?2")
-    .bind(options.now, source.id);
+    return db
+      .update(t.sources)
+      .set({
+        nextPullAt: options.pullNextAt,
+        error: null,
+        idlePulls: 0,
+        status: sql`CASE WHEN ${t.sources.status} = 'error' THEN 'active' ELSE ${t.sources.status} END`,
+      })
+      .where(where);
+  return db.update(t.sources).set({ lastOkAt: options.now }).where(where);
 }
 
 function pageDayRange(plays: PagePlay[]): [number, number] {
@@ -109,7 +77,7 @@ function pageDayRange(plays: PagePlay[]): [number, number] {
 }
 
 async function resolvePage(
-  db: D1Database,
+  db: Db,
   source: PageSource,
   added: PagePlay[],
 ): Promise<PageResolution> {
@@ -120,7 +88,7 @@ async function resolvePage(
       artist: play.artist,
       title: play.title,
       listenedAt: uploadListenedAt(play),
-      userId: source.user_id,
+      userId: source.userId,
       sourceId: source.id,
     }))
     .reverse();
@@ -129,47 +97,44 @@ async function resolvePage(
   return resolveStoredPage(db, inputs, "ytmusic");
 }
 
+// The source still holds the play_seq the page was aligned against; a page
+// that raced another one changes nothing.
+const unchangedSince = (source: PageSource) =>
+  and(eq(t.sources.id, source.id), eq(t.sources.playSeq, source.playSeq));
+
 function sourceUpdate(
-  db: D1Database,
+  db: Db,
   source: PageSource,
   alignment: Alignment,
   added: number,
   pageJson: string,
   options: IngestOptions,
 ) {
-  const gapAt = alignment.gap ? options.now : source.gap_at;
-  if (options.pullNextAt !== undefined)
-    return db
-      .prepare(pullSourceSql)
-      .bind(
-        pageJson,
-        added,
-        alignment.ambiguous,
-        alignment.gap ? "gap" : "active",
-        gapAt,
-        options.pullNextAt,
-        source.id,
-        source.play_seq,
-      );
-  return db
-    .prepare(uploadSourceSql)
-    .bind(
-      pageJson,
-      added,
-      alignment.ambiguous,
-      alignment.gap ? "gap" : "active",
-      gapAt,
-      options.now,
-      source.id,
-      source.play_seq,
-    );
+  const page = {
+    lastPage: pageJson,
+    playSeq: sql`${t.sources.playSeq} + ${added}`,
+    maybeMissing: sql`${t.sources.maybeMissing} + ${alignment.ambiguous}`,
+    status: alignment.gap ? ("gap" as const) : ("active" as const),
+    gapAt: alignment.gap ? options.now : source.gapAt,
+  };
+  const update =
+    options.pullNextAt !== undefined
+      ? {
+          ...page,
+          nextPullAt: options.pullNextAt,
+          error: null,
+          idlePulls: 0,
+          playCount: sql`${t.sources.playCount} + ${added}`,
+        }
+      : { ...page, lastOkAt: options.now };
+  return db.update(t.sources).set(update).where(unchangedSince(source));
 }
 
 // The store, gap and duplicate step shared by an upload and a pull: align the
 // page against the last accepted one, write the new plays in one batch guarded
 // by play_seq, then pair duplicates over the span the page touched.
 export async function ingestPage(
-  db: D1Database,
+  db: Db,
   source: PageSource,
   plays: PagePlay[],
   options: IngestOptions,
@@ -192,8 +157,8 @@ export async function ingestPage(
     };
   }
 
-  if (source.last_page === pageJson) {
-    await markDuplicates(db, source.user_id, ...pageDayRange(plays));
+  if (source.lastPage === pageJson) {
+    await markDuplicates(db, source.userId, ...pageDayRange(plays));
     await db.batch([touchSource(db, source, options), ...extra]);
     return {
       received: plays.length,
@@ -206,45 +171,39 @@ export async function ingestPage(
   }
 
   const previous =
-    source.last_page === null
+    source.lastPage === null
       ? null
-      : (JSON.parse(source.last_page) as PagePair[]);
+      : (JSON.parse(source.lastPage) as PagePair[]);
   const alignment = alignPage(previous, pairs);
   const added = plays.slice(0, alignment.newCount);
-  const { listens, newTracks } = await resolvePage(db, source, added);
+  const resolution = await resolvePage(db, source, added);
+  const { listens } = resolution;
 
-  const statements: D1PreparedStatement[] = [];
-  if (newTracks.length > 0) {
-    statements.push(
-      db.prepare(bulkArtistSql).bind(artistInsertRows(newTracks)),
-      db.prepare(bulkTrackSql).bind(JSON.stringify(newTracks)),
-    );
-  }
-  let playsIndex = -1;
-  if (listens.length > 0) {
-    statements.push(
-      db.prepare(bulkAliasSql).bind(aliasInsertRows(listens), "ytmusic"),
-      db.prepare(writePlaySql).bind(
-        JSON.stringify(
-          listens.map((listen, index) => ({
-            ...listen,
-            ref: `${listen.sourceKey}#${source.play_seq + index + 1}`,
-          })),
-        ),
-        source.id,
-        source.play_seq,
+  const writes = pageWrites(db, resolution, "ytmusic");
+  if (listens.length > 0)
+    writes.push(
+      playInsert(
+        db,
+        listens.map((listen, index) => ({
+          ...listen,
+          ref: `${listen.sourceKey}#${source.playSeq + index + 1}`,
+        })),
+        sql`(${db
+          .select({ playSeq: t.sources.playSeq })
+          .from(t.sources)
+          .where(eq(t.sources.id, source.id))}) = ${source.playSeq}`,
       ),
     );
-    playsIndex = statements.length - 1;
-  }
-  const updateIndex = statements.length;
-  statements.push(
-    sourceUpdate(db, source, alignment, listens.length, pageJson, options),
-    ...extra,
+  const updateIndex = writes.length;
+  const results = await db.batch(
+    batchOf([
+      ...writes,
+      sourceUpdate(db, source, alignment, listens.length, pageJson, options),
+      ...extra,
+    ]),
   );
-
-  const results = await db.batch(statements);
-  if ((results[updateIndex]?.meta?.changes ?? 0) === 0)
+  const update = results[updateIndex] as D1Result;
+  if (update.meta.changes === 0)
     return {
       received: plays.length,
       inserted: 0,
@@ -260,13 +219,13 @@ export async function ingestPage(
       : pageDayRange(plays);
   await markDuplicates(
     db,
-    source.user_id,
+    source.userId,
     Math.min(...times),
     Math.max(...times),
   );
   return {
     received: plays.length,
-    inserted: playsIndex >= 0 ? listens.length : 0,
+    inserted: listens.length,
     gap: alignment.gap,
     ambiguous: alignment.ambiguous,
     replay: false,
