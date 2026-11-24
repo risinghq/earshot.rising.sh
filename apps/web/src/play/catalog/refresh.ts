@@ -62,28 +62,35 @@ interface SourceTrack {
 }
 
 // A curated source's ref is `<category>/<decade>`, a key into the bundled
-// list that scripts/curate.ts writes.
+// list that scripts/curate.ts writes, with an optional third segment that
+// keeps only tracks whose theme starts with it (`anime/1990/op`).
 // A deploy applies migrations before the new code is live, so for a minute
 // the old bundle can meet a source it has no list for. That is a failure to
 // retry, not an empty source to keep for a day.
 function curatedTracks(ref: string): SourceTrack[] {
-  const [category, decade] = ref.split("/");
+  const [category, decade, theme] = ref.split("/");
   const list = curated[category]?.[decade];
   if (list === undefined) throw new Error(`no curated list for ${ref}`);
-  return list.map((track) => ({
-    key: track.id === undefined ? `it:${track.itunesId}` : `dz:${track.id}`,
-    deezerId: track.id ?? null,
-    title: track.title,
-    original: track.original ?? null,
-    work: track.work ?? null,
-    theme: track.theme ?? null,
-    artist: track.artist,
-    artistId: track.artistId,
-    cover: track.cover,
-    link: track.link ?? `https://www.deezer.com/track/${track.id}`,
-    preview: track.preview ?? null,
-    year: track.year,
-  }));
+  return list
+    .filter(
+      (track) =>
+        theme === undefined ||
+        track.theme?.toLowerCase().startsWith(theme.toLowerCase()),
+    )
+    .map((track) => ({
+      key: track.id === undefined ? `it:${track.itunesId}` : `dz:${track.id}`,
+      deezerId: track.id ?? null,
+      title: track.title,
+      original: track.original ?? null,
+      work: track.work ?? null,
+      theme: track.theme ?? null,
+      artist: track.artist,
+      artistId: track.artistId,
+      cover: track.cover,
+      link: track.link ?? `https://www.deezer.com/track/${track.id}`,
+      preview: track.preview ?? null,
+      year: track.year,
+    }));
 }
 
 async function playlistTracks(ref: string): Promise<SourceTrack[]> {
