@@ -1,3 +1,4 @@
+import { enhance, listen } from "./behaviours";
 import { enableSwap } from "./swap";
 
 // Progressive enhancement only: the <details> account menu already opens and
@@ -34,7 +35,12 @@ const showCopy = (scope: ParentNode) => {
     .querySelectorAll<HTMLElement>("[data-copy]")
     .forEach((button) => (button.hidden = false));
 };
-showCopy(document);
+const arrive = (scope: ParentNode) => {
+  showCopy(scope);
+  enhance(scope);
+};
+listen(document);
+arrive(document);
 document.addEventListener("click", async (event) => {
   const button = (event.target as Element | null)?.closest?.<HTMLElement>(
     "[data-copy]",
@@ -71,7 +77,7 @@ document.addEventListener("submit", async (event) => {
     const current = document.getElementById(id);
     if (!fresh || !current) throw new Error("no region");
     current.replaceWith(fresh);
-    showCopy(fresh);
+    arrive(fresh);
     // Keep focus in the region: a button that went away hands it to the
     // region's first control.
     fresh
@@ -83,4 +89,4 @@ document.addEventListener("submit", async (event) => {
   }
 });
 
-enableSwap(showCopy);
+enableSwap(arrive);

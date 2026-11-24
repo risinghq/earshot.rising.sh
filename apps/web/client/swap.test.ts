@@ -31,7 +31,9 @@ beforeAll(() => {
   vi.stubGlobal("fetch", fetchPage);
   vi.spyOn(location, "assign").mockImplementation(assign);
   enableSwap(swapped);
+  prefetchedOnLoad = fetchPage.mock.calls.map(([input]) => String(input));
 });
+let prefetchedOnLoad: string[] = [];
 
 beforeEach(() => {
   fetchPage.mockClear();
@@ -40,6 +42,10 @@ beforeEach(() => {
 });
 
 describe("a [data-swap] link", () => {
+  it("fetches the period choices not shown once the page has loaded", () => {
+    expect(prefetchedOnLoad).toEqual([`${location.origin}/u/ada?period=month`]);
+  });
+
   it("swaps the region, the address and the title without a reload", async () => {
     link("Month").click();
     await vi.waitFor(() =>

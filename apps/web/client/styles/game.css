@@ -217,6 +217,11 @@
 .player audio {
   display: none;
 }
+@media (scripting: none) {
+  .player audio {
+    display: block;
+  }
+}
 .player-top {
   align-items: center;
   display: flex;

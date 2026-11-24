@@ -375,7 +375,7 @@ function categoryPage(
             <form
               method="post"
               action="/admin/sources/remove"
-              onsubmit="return confirm('Remove this source?')"
+              data-confirm="Remove this source?"
             >
               <input type="hidden" name="id" value={source.id} />
               <input type="hidden" name="category" value={category.slug} />
@@ -636,10 +636,8 @@ function tracksPage(
                 <form
                   method="post"
                   action="/admin/tracks/ban"
-                  onsubmit={
-                    track.bannedAt === null
-                      ? "return confirm('Ban this track?')"
-                      : undefined
+                  data-confirm={
+                    track.bannedAt === null ? "Ban this track?" : undefined
                   }
                 >
                   <input type="hidden" name="category" value={category.slug} />
@@ -808,10 +806,8 @@ function usersPage(
               <form
                 method="post"
                 action="/admin/users/hide"
-                onsubmit={
-                  row.adminHidden === 1
-                    ? undefined
-                    : "return confirm('Hide this user?')"
+                data-confirm={
+                  row.adminHidden === 1 ? undefined : "Hide this user?"
                 }
               >
                 <input type="hidden" name="user_id" value={row.id} />

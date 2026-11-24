@@ -1429,11 +1429,18 @@ details.disclosure.manage {
     border-top: 1.5px solid var(--surface-2);
     margin-top: 0;
   }
-  .manage[open] > summary {
-    display: none;
-  }
-  .manage[open] > .manage-body {
-    padding-top: 16px;
+  /* A browser without ::details-content keeps the panel a disclosure, since
+     a hidden summary would leave a closed panel no way to open. */
+  @supports selector(::details-content) {
+    .manage > summary {
+      display: none;
+    }
+    .manage::details-content {
+      content-visibility: visible;
+    }
+    .manage > .manage-body {
+      padding-top: 16px;
+    }
   }
 }
 .leave-row {

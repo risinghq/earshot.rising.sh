@@ -426,24 +426,9 @@ function GroupHero({ data }: { data: GroupPageData }) {
   );
 }
 
-// The script folds a long playlist to its first rows and shows the button
-// that unfolds it, so without JavaScript every row stays visible.
-const foldScript = `
-const card = document.getElementById("playlist");
-const more = document.getElementById("show-all");
-if (card && more) {
-  card.classList.add("is-folded");
-  more.hidden = false;
-  more.addEventListener("click", () => {
-    card.classList.remove("is-folded");
-    more.remove();
-  });
-}
-`;
-
 function PlaylistCard({ items }: { items: PartyTrack[] }) {
   return (
-    <section class="top-card playlist-card" id="playlist">
+    <section class="top-card playlist-card" id="playlist" data-fold>
       <header>
         <h2>Playlist</h2>
         <span class="count">{count(items.length, "track", "tracks")}</span>
@@ -470,27 +455,13 @@ function PlaylistCard({ items }: { items: PartyTrack[] }) {
         ))}
       </ol>
       {items.length > foldRows && (
-        <>
-          <button class="show-all" id="show-all" type="button" hidden>
-            Show all {items.length}
-          </button>
-          <script
-            type="module"
-            dangerouslySetInnerHTML={{ __html: foldScript }}
-          />
-        </>
+        <button class="show-all" id="show-all" type="button" data-unfold hidden>
+          Show all {items.length}
+        </button>
       )}
     </section>
   );
 }
-
-// The manage panel is a disclosure on a phone. On desktop a script opens it
-// and the CSS hides its summary, so without JavaScript it stays a working
-// disclosure.
-const manageScript = `
-const manage = document.getElementById("manage");
-if (manage && matchMedia("(min-width: 900px)").matches) manage.open = true;
-`;
 
 function ManageGroup({ data, error }: { data: GroupPageData; error?: string }) {
   const { group, friends, mine } = data;
@@ -554,10 +525,6 @@ function ManageGroup({ data, error }: { data: GroupPageData; error?: string }) {
           <button class="btn is-leave">Leave the group</button>
         </form>
       </div>
-      <script
-        type="module"
-        dangerouslySetInnerHTML={{ __html: manageScript }}
-      />
     </details>
   );
 }

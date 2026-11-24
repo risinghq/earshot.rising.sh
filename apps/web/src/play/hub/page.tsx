@@ -26,29 +26,6 @@ const whoActions: Record<PlayWho, string> = {
 // The hub offers the two shown modes; ?mode=hard still reaches the tiles.
 const hubModes = ["easy", "normal"] as const satisfies readonly Mode[];
 
-// A room tile carries the creator's token, which the room client keeps in
-// localStorage; the room refuses a switch without it. The token is filled on
-// submit because this script runs before the tiles are parsed.
-const setupScript = `
-const setup = document.getElementById("play-setup");
-const actions = { solo: "/play", room: "/play/room" };
-setup.addEventListener("change", () => {
-  const who = setup.querySelector('input[name="who"]:checked')?.value;
-  const mode = setup.querySelector('input[name="mode"]:checked').value;
-  document.querySelectorAll("form.tile").forEach((tile) => {
-    if (who && !tile.hasAttribute("data-solo") && !tile.hasAttribute("data-room"))
-      tile.action = actions[who];
-    tile.querySelector('input[name="mode"]').value = mode;
-  });
-});
-document.addEventListener("submit", (event) => {
-  const tile = event.target;
-  if (!tile.matches("form.tile[data-room]")) return;
-  tile.querySelector('input[name="k"]').value =
-    localStorage.getItem("quiz-room-" + tile.dataset.room) ?? "";
-});
-`;
-
 // Four covers make a mosaic; fewer show the first one whole, and none shows
 // the mark on a tint.
 function genreArt(covers: string[]) {
@@ -75,7 +52,6 @@ function genreArt(covers: string[]) {
 // room (`/?room=CODE`), sets that room's next category.
 type TileTarget = { who: PlayWho } | { room: string };
 
-// Every form.tile follows the setup choices through setupScript.
 function tileForm(
   category: Category,
   target: TileTarget,
@@ -278,7 +254,13 @@ export function hubPage({
                 </p>
               </>
             )}
-            <form class="play-setup" id="play-setup" method="get" action="/">
+            <form
+              class="play-setup"
+              id="play-setup"
+              method="get"
+              action="/"
+              data-setup
+            >
               {room !== undefined && (
                 <input type="hidden" name="room" value={room} />
               )}
@@ -327,7 +309,6 @@ export function hubPage({
                 </button>
               </noscript>
             </form>
-            <script dangerouslySetInnerHTML={{ __html: setupScript }} />
           </div>
           {room === undefined && forYouCard(mode, forYouColdStart)}
         </div>
