@@ -1084,19 +1084,28 @@ stops when the next round loads or the game ends.
   `track_reports` use the same key. An iTunes track stores its `preview` URL,
   since iTunes preview URLs are not signed. A track whose title is romanized
   keeps the title in its own script as `original_title`: the reveal shows it
-  beside the artist, and a typed answer may use either title. The pool a game
-  draws from is the union of the category's sources deduplicated by track key
-  and by normalized answer title per artist, banned tracks removed. A source
-  refills once a day and upserts its tracks, so an override or a ban survives a
-  refill.
+  beside the artist, and a typed answer may use either title. A song from a show
+  or film also stores the show as `work` and its slot there as `theme` (`OP1`,
+  `ED2`). The pool a game draws from is the union of the category's sources
+  deduplicated by track key and by normalized answer title per artist, banned
+  tracks removed. A source refills once a day and upserts its tracks, so an
+  override or a ban survives a refill.
   - A `deezer_playlist` source refetches its playlist, at most two per cron run.
     The run then fills missing years from `/track/{id}`, at most 40 tracks,
     marking tracks without a release date so they are not looked up again.
     Deezer's date is the release the track sits on, often a remaster.
-  - A `curated` source has the ref `<category>/<decade>` and reads that list
-    from `src/play/catalog/curated.json`, which is bundled into the Worker, so a
-    refill costs no request and every due one refills in the same run. Its year
-    is the song's original release year and replaces a looked-up one.
+  - A `curated` source has the ref `<list>/<decade>` and reads that list from
+    `src/play/catalog/curated.json`, which is bundled into the Worker, so a
+    refill costs no request and every due one refills in the same run. A third
+    segment is a theme prefix: `anime/1990/op` reads the anime 1990s list and
+    keeps only the songs whose `theme` starts with `op`. Its year is the song's
+    original release year and replaces a looked-up one.
+  - Anime openings and Anime endings play the anime catalog's opening and ending
+    themes as their own categories. Each of their sources names the anime decade
+    list and the theme prefix (`anime/1990/op`, `anime/1990/ed`), so the songs
+    stay in one list and the `theme` field decides which categories hold them.
+    Both source every anime decade, so the whole theme plays in the all-decades
+    game; the era floor still decides which decades get a chip.
   - Migration `0013` replaces the seeded playlists of Pop, Rock, Metal, K-pop,
     Anime and Rock en Español with one curated source per decade. SQLite cannot
     alter a CHECK, so it rebuilds `category_sources`; dropping the old table
@@ -1249,7 +1258,8 @@ stops when the next round loads or the game ends.
   every answer and starts the clock on the playing report.
 - **Attribution.** Each reveal names the title and artist, shows the cover and
   links to the track on Deezer or Apple Music with the service's name, which
-  both services require.
+  both services require. A track with a work adds the show and its slot, as
+  `Bubblegum Crisis · OP2`.
 - **Outcomes.** Every answered round — solo, room or match — writes one
   `round_outcomes` row per answering player through `recordOutcomes`: a player
   key, the track, the category, the mode and game kind, whether the answer was
