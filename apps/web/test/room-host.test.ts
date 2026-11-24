@@ -3,6 +3,7 @@ import type { Category } from "../src/play/catalog/catalog";
 import type { GameStart, Outcome } from "../src/play/game/outcomes";
 import type { ServerMessage } from "../src/play/room/protocol";
 import { scoreFor } from "../src/play/game/quiz";
+import type { Mode } from "../src/play/game/rules";
 import type { CategoryBoardEntry, ResultRow } from "../src/play/game/results";
 import {
   QuotaError,
@@ -78,6 +79,8 @@ function world(init: Partial<RoomInit> = {}) {
       link: null,
       cover: null,
     }),
+    draw: null as Candidate[] | null,
+    draws: [] as { players: number; candidates: number; mode: Mode }[],
     failOutcomes: false,
   };
   const ports: RoomPorts = {
@@ -104,6 +107,14 @@ function world(init: Partial<RoomInit> = {}) {
     recordOutcomes: async (rows) => {
       w.outcomes.push({ rows, phase: w.saved?.phase });
       if (w.failOutcomes) throw new Error("D1 refused");
+    },
+    weightedDraw: async (players, candidates, mode) => {
+      w.draws.push({
+        players: players.length,
+        candidates: candidates.length,
+        mode,
+      });
+      return w.draw;
     },
     recordResults: async (rows) => {
       w.results.push(...rows);
@@ -199,6 +210,34 @@ describe("a game", () => {
     expect(room.w.outcomes).toHaveLength(1);
     expect(room.w.outcomes[0].rows).toHaveLength(2);
     expect(ann.state).toMatchObject({ phase: "reveal" });
+  });
+
+  it("plays a room in the order the weighted draw gives", async () => {
+    const room = world();
+    const order = songs(10).reverse();
+    room.w.draw = order;
+    const ann = await room.seat("Ann", "host");
+    await room.seat("Bob");
+    await room.send(ann, { type: "start" });
+    expect(room.w.draws).toEqual([
+      { players: 2, candidates: 10, mode: "normal" },
+    ]);
+    expect(room.w.saved!.candidates.map((song) => song.title)).toEqual(
+      order.map((song) => song.title),
+    );
+  });
+
+  it("keeps the plain shuffle for a match", async () => {
+    const room = world({
+      kind: "match",
+      creatorToken: "",
+      candidates: songs(4),
+      players: [{ name: "ann", token: "a", userId: 7 }],
+    });
+    await room.seat(undefined, "a", { uid: 7, name: "ann" });
+    await room.fire();
+    expect(room.w.starts).toMatchObject([{ origin: "match" }]);
+    expect(room.w.draws).toEqual([]);
   });
 
   it("reaches the reveal when the outcome write fails", async () => {
