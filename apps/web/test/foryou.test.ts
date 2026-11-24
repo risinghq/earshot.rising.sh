@@ -4,6 +4,7 @@ import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
 import { deezerTracks, network } from "./network";
 import { sha256Bytes } from "../src/auth";
+import { database } from "../src/db";
 import { forYouCold, forYouMix } from "../src/play/foryou";
 import { getGame, putGame, type Game } from "../src/play/game";
 import type { Env } from "../src/types";
@@ -247,8 +248,8 @@ describe("the hub's For you tile", () => {
     const key = "a:warming";
     for (let i = 0; i < 10; i += 1)
       await outcome(key, 700 + i, "pop", 1990, false);
-    expect(await forYouCold(env.DB, key, null)).toBe(false);
-    expect(await forYouCold(env.DB, "a:fresh", null)).toBe(true);
+    expect(await forYouCold(database(env.DB), key, null)).toBe(false);
+    expect(await forYouCold(database(env.DB), "a:fresh", null)).toBe(true);
   });
 
   it("drops a track the admin bans after the mix was cached", async () => {

@@ -1,7 +1,29 @@
+import {
+  and,
+  count,
+  countDistinct,
+  desc,
+  eq,
+  gt,
+  inArray,
+  isNull,
+  min,
+  notInArray,
+  or,
+  sql,
+} from "drizzle-orm";
+import { alias } from "drizzle-orm/sqlite-core";
+import { database, t, type Db } from "../db";
 import type { Env } from "../types";
 import { distinctAnswers, interleave, type Category } from "./catalog";
 import { trackKeyFor } from "./outcomes";
-import { dedupePool, type PoolRow } from "./pool";
+import {
+  dedupePool,
+  groupDecade,
+  poolFields,
+  rowDecade,
+  type PoolRow,
+} from "./pool";
 import { answerKey, roundSeconds, roundsPerGame } from "./quiz";
 import type { Candidate } from "./sources";
 
@@ -23,26 +45,10 @@ const recentSeconds = 30 * 86400;
 const fallbackCategories = 3;
 export const coldRounds = 10;
 
-// Same precedence as the category pools: the answer-year override, then the
-// decade the source playlist declares, then the release year. The grouped
-// form takes the earliest declared decade, as dedupePool keeps one row per
-// Deezer id.
-const rowDecade = `COALESCE(
-  CASE WHEN ct.answer_year > 0 THEN ct.answer_year / 10 * 10 END,
-  cs.decade,
-  CASE WHEN ct.year > 0 THEN ct.year / 10 * 10 END
-)`;
-const groupDecade = `COALESCE(
-  CASE WHEN ct.answer_year > 0 THEN ct.answer_year / 10 * 10 END,
-  MIN(cs.decade),
-  CASE WHEN ct.year > 0 THEN ct.year / 10 * 10 END
-)`;
-const candidateCols = `ct.track_key, ct.deezer_id,
-       COALESCE(ct.answer_title, ct.title) AS title,
-       CASE WHEN ct.answer_title IS NULL THEN ct.original_title END
-         AS original_title,
-       ct.artist, ct.cover, ct.link, ct.preview,
-       COALESCE(ct.answer_year, ct.year) AS year`;
+const ct = t.catalogTracks;
+const cs = t.categorySources;
+const cm = t.catalogMembers;
+const ro = t.roundOutcomes;
 
 interface Cell {
   category: string;
@@ -58,64 +64,93 @@ interface OutcomeCellRow {
   ms: number;
 }
 
-function outcomeCells(db: D1Database, playerKey: string) {
+interface ListeningCellRow {
+  category: string;
+  era: number | null;
+  weight: number;
+}
+
+function outcomeCells(db: Db, playerKey: string): Promise<OutcomeCellRow[]> {
   return db
-    .prepare(
-      `SELECT category, era, COUNT(*) AS played,
-              AVG(correct) AS rate, AVG(elapsed_ms) AS ms
-       FROM round_outcomes
-       WHERE player_key = ?1
-       GROUP BY category, era`,
-    )
-    .bind(playerKey)
-    .all<OutcomeCellRow>()
-    .then((rows) => rows.results);
+    .select({
+      category: ro.category,
+      era: ro.era,
+      played: count(),
+      rate: sql<number>`AVG(${ro.correct})`,
+      ms: sql<number>`AVG(${ro.elapsedMs})`,
+    })
+    .from(ro)
+    .where(eq(ro.playerKey, playerKey))
+    .groupBy(ro.category, ro.era);
 }
 
 // A signed-in player's listening teaches the mix where their artists live:
 // the artists of the same top tracks the "From my listening" category plays,
 // counted at every (category, decade) cell they occupy in the catalog.
-function listeningCells(db: D1Database, userId: number) {
+function listeningCells(db: Db, userId: number): Promise<ListeningCellRow[]> {
+  const top = db
+    .select({ artistId: t.tracks.artistId })
+    .from(t.trackTotals)
+    .innerJoin(t.tracks, eq(t.tracks.id, t.trackTotals.trackId))
+    .where(eq(t.trackTotals.userId, userId))
+    .orderBy(desc(t.trackTotals.plays))
+    .limit(40)
+    .as("top");
   return db
-    .prepare(
-      `SELECT cs.category AS category, ${rowDecade} AS era, COUNT(*) AS weight
-       FROM (
-         SELECT tracks.artist_id
-         FROM track_totals
-         JOIN tracks ON tracks.id = track_totals.track_id
-         WHERE track_totals.user_id = ?1
-         ORDER BY track_totals.plays DESC
-         LIMIT 40
-       ) top
-       JOIN artists ON artists.id = top.artist_id
-       JOIN catalog_tracks ct ON LOWER(ct.artist) = LOWER(artists.name)
-       JOIN catalog_members cm ON cm.track_key = ct.track_key
-       JOIN category_sources cs ON cs.id = cm.source_id
-       JOIN categories ON categories.slug = cs.category
-       WHERE categories.hidden = 0
-       GROUP BY cs.category, era`,
-    )
-    .bind(userId)
-    .all<{ category: string; era: number | null; weight: number }>()
-    .then((rows) => rows.results);
+    .select({ category: cs.category, era: rowDecade(), weight: count() })
+    .from(top)
+    .innerJoin(t.artists, eq(t.artists.id, top.artistId))
+    .innerJoin(ct, sql`LOWER(${ct.artist}) = LOWER(${t.artists.name})`)
+    .innerJoin(cm, eq(cm.trackKey, ct.trackKey))
+    .innerJoin(cs, eq(cs.id, cm.sourceId))
+    .innerJoin(t.categories, eq(t.categories.slug, cs.category))
+    .where(eq(t.categories.hidden, 0))
+    .groupBy(cs.category, rowDecade());
 }
 
-function playlistCategories(db: D1Database) {
+const visiblePlaylist = and(
+  eq(t.categories.hidden, 0),
+  eq(t.categories.feed, "deezer_playlist"),
+);
+
+function playlistCategories(db: Db) {
   return db
-    .prepare(
-      `SELECT slug FROM categories
-       WHERE hidden = 0 AND feed = 'deezer_playlist'
-       ORDER BY position, slug`,
-    )
-    .all<{ slug: string }>()
-    .then((rows) => rows.results.map((row) => row.slug));
+    .select({ slug: t.categories.slug })
+    .from(t.categories)
+    .where(visiblePlaylist)
+    .orderBy(t.categories.position, t.categories.slug);
+}
+
+// The playlist categories with the most answered rounds, across all players.
+function mostPlayed(db: Db) {
+  return db
+    .select({ slug: ro.category })
+    .from(ro)
+    .innerJoin(t.categories, eq(t.categories.slug, ro.category))
+    .where(visiblePlaylist)
+    .groupBy(ro.category)
+    .orderBy(desc(count()), ro.category)
+    .limit(fallbackCategories);
+}
+
+// The tracks the player answered, ever or after `since`.
+function answered(db: Db, playerKey: string, since?: number) {
+  return db
+    .select({ trackKey: ro.trackKey })
+    .from(ro)
+    .where(
+      and(
+        eq(ro.playerKey, playerKey),
+        since === undefined ? undefined : gt(ro.answeredAt, since),
+      ),
+    );
 }
 
 // Correct rate rewards the cells the player actually knows; answer speed does
 // the same, scaled so a slow average still counts something.
 function mergeCells(
   outcomes: OutcomeCellRow[],
-  listening: { category: string; era: number | null; weight: number }[],
+  listening: ListeningCellRow[],
   playable: string[],
 ) {
   const keep = new Set(playable);
@@ -139,123 +174,111 @@ function mergeCells(
 // Known tracks are unbanned catalog rows from the player's top cells that the
 // player has not answered in the last 30 days. A cell without an era — a
 // chart or artist game, or a track without a year — means the whole category.
-function knownCandidates(
-  db: D1Database,
+async function knownCandidates(
+  db: Db,
   playerKey: string,
   cells: Cell[],
   since: number,
 ) {
-  if (cells.length === 0) return Promise.resolve([] as Candidate[]);
-  let next = 3;
-  const clauses = cells
-    .map((cell) =>
+  if (cells.length === 0) return [];
+  const inCells = or(
+    ...cells.map((cell) =>
       cell.era === null
-        ? `cs.category = ?${next++}`
-        : `(cs.category = ?${next++} AND ${rowDecade} = ?${next++})`,
+        ? eq(cs.category, cell.category)
+        : and(eq(cs.category, cell.category), eq(rowDecade(), cell.era)),
+    ),
+  );
+  const rows = await db
+    .select({ ...poolFields(), decade: rowDecade(), category: cs.category })
+    .from(cs)
+    .innerJoin(cm, eq(cm.sourceId, cs.id))
+    .innerJoin(ct, eq(ct.trackKey, cm.trackKey))
+    .innerJoin(
+      t.categories,
+      and(eq(t.categories.slug, cs.category), eq(t.categories.hidden, 0)),
     )
-    .join(" OR ");
-  const binds: (string | number)[] = [playerKey, since];
-  for (const cell of cells) {
-    binds.push(cell.category);
-    if (cell.era !== null) binds.push(cell.era);
-  }
-  return db
-    .prepare(
-      `SELECT ${candidateCols}, ${rowDecade} AS decade,
-              cs.category AS category
-       FROM category_sources cs
-       JOIN catalog_members cm ON cm.source_id = cs.id
-       JOIN catalog_tracks ct ON ct.track_key = cm.track_key
-       JOIN categories ON categories.slug = cs.category AND categories.hidden = 0
-       WHERE ct.banned_at IS NULL
-         AND ct.track_key NOT IN (
-           SELECT track_key FROM round_outcomes
-           WHERE player_key = ?1 AND answered_at > ?2
-         )
-         AND (${clauses})
-       ORDER BY cs.position, cs.id, cm.position
-       LIMIT 80`,
+    .where(
+      and(
+        isNull(ct.bannedAt),
+        notInArray(ct.trackKey, answered(db, playerKey, since)),
+        inCells,
+      ),
     )
-    .bind(...binds)
-    .all<PoolRow>()
-    .then((rows) => dedupePool(rows.results));
+    .orderBy(cs.position, cs.id, cm.position)
+    .limit(80);
+  return dedupePool(rows);
 }
 
 // New tracks share a source playlist with tracks the player answered
 // correctly, and are ranked by how many of those tracks they sit beside.
-function newCandidates(db: D1Database, playerKey: string) {
-  return db
-    .prepare(
-      `SELECT ${candidateCols}, ${groupDecade} AS decade,
-              MIN(cs.category) AS category,
-              COUNT(DISTINCT ro.track_key) AS shared
-       FROM round_outcomes ro
-       JOIN catalog_members seed ON seed.track_key = ro.track_key
-       JOIN catalog_members cm ON cm.source_id = seed.source_id
-       JOIN catalog_tracks ct ON ct.track_key = cm.track_key
-       JOIN category_sources cs ON cs.id = cm.source_id
-       JOIN categories ON categories.slug = cs.category AND categories.hidden = 0
-       WHERE ro.player_key = ?1
-         AND ro.correct = 1
-         AND ct.banned_at IS NULL
-         AND ct.track_key NOT IN (
-           SELECT track_key FROM round_outcomes WHERE player_key = ?1
-         )
-       GROUP BY ct.track_key
-       ORDER BY shared DESC, MIN(cs.position), MIN(cs.id), MIN(cm.position)
-       LIMIT 40`,
+async function newCandidates(db: Db, playerKey: string) {
+  const seed = alias(t.catalogMembers, "seed");
+  const shared = countDistinct(ro.trackKey);
+  const rows = await db
+    .select({
+      ...poolFields(),
+      decade: groupDecade(),
+      category: min(cs.category),
+      shared,
+    })
+    .from(ro)
+    .innerJoin(seed, eq(seed.trackKey, ro.trackKey))
+    .innerJoin(cm, eq(cm.sourceId, seed.sourceId))
+    .innerJoin(ct, eq(ct.trackKey, cm.trackKey))
+    .innerJoin(cs, eq(cs.id, cm.sourceId))
+    .innerJoin(
+      t.categories,
+      and(eq(t.categories.slug, cs.category), eq(t.categories.hidden, 0)),
     )
-    .bind(playerKey)
-    .all<PoolRow>()
-    .then((rows) => dedupePool(rows.results));
+    .where(
+      and(
+        eq(ro.playerKey, playerKey),
+        eq(ro.correct, 1),
+        isNull(ct.bannedAt),
+        notInArray(ct.trackKey, answered(db, playerKey)),
+      ),
+    )
+    .groupBy(ct.trackKey)
+    .orderBy(desc(shared), min(cs.position), min(cs.id), min(cm.position))
+    .limit(40);
+  return dedupePool(rows);
 }
 
 // The pool the mix falls back to: the union of the most-played categories'
-// catalogs, all eras, or the first categories by position when nobody has
-// played yet.
+// catalogs, all eras, topped up with the first playlist categories by
+// position when fewer have been played.
 async function fallbackPool(
-  db: D1Database,
+  db: Db,
   playerKey: string,
   since: number,
+  played: string[],
   playlists: string[],
 ) {
-  const played = await db
-    .prepare(
-      `SELECT ro.category AS slug
-       FROM round_outcomes ro
-       JOIN categories ON categories.slug = ro.category
-       WHERE categories.hidden = 0 AND categories.feed = 'deezer_playlist'
-       GROUP BY ro.category
-       ORDER BY COUNT(*) DESC, ro.category
-       LIMIT ${fallbackCategories}`,
-    )
-    .all<{ slug: string }>();
-  const slugs = played.results.map((row) => row.slug);
+  const slugs = [...played];
   for (const slug of playlists) {
     if (slugs.length >= fallbackCategories) break;
     if (!slugs.includes(slug)) slugs.push(slug);
   }
-  if (slugs.length === 0) return [] as Candidate[];
-  const marks = slugs.map((_, index) => `?${index + 3}`).join(", ");
+  if (slugs.length === 0) return [];
   const rows = await db
-    .prepare(
-      `SELECT ${candidateCols}, ${groupDecade} AS decade,
-              MIN(cs.category) AS category
-       FROM category_sources cs
-       JOIN catalog_members cm ON cm.source_id = cs.id
-       JOIN catalog_tracks ct ON ct.track_key = cm.track_key
-       WHERE cs.category IN (${marks})
-         AND ct.banned_at IS NULL
-         AND ct.track_key NOT IN (
-           SELECT track_key FROM round_outcomes
-           WHERE player_key = ?1 AND answered_at > ?2
-         )
-       GROUP BY ct.track_key
-       ORDER BY MIN(cs.position), MIN(cs.id), MIN(cm.position)`,
+    .select({
+      ...poolFields(),
+      decade: groupDecade(),
+      category: min(cs.category),
+    })
+    .from(cs)
+    .innerJoin(cm, eq(cm.sourceId, cs.id))
+    .innerJoin(ct, eq(ct.trackKey, cm.trackKey))
+    .where(
+      and(
+        inArray(cs.category, slugs),
+        isNull(ct.bannedAt),
+        notInArray(ct.trackKey, answered(db, playerKey, since)),
+      ),
     )
-    .bind(playerKey, since, ...slugs)
-    .all<PoolRow>();
-  return dedupePool(rows.results);
+    .groupBy(ct.trackKey)
+    .orderBy(min(cs.position), min(cs.id), min(cm.position));
+  return dedupePool(rows);
 }
 
 // A round's choices need different answers, so a title already picked — even
@@ -279,27 +302,23 @@ function takeDistinct(pools: Candidate[][], count: number, seen: Set<string>) {
 // cannot enumerate per-player keys. Re-reading the catalog rows for the
 // cached ids on a hit keeps bans and answer overrides current; when too few
 // tracks survive, the mix is rebuilt instead.
-async function revalidate(db: D1Database, cached: Candidate[]) {
+async function revalidate(db: Db, cached: Candidate[]) {
   const keys = [...new Set(cached.map(trackKeyFor))].filter(
     (key) => !key.startsWith("at:"),
   );
   if (keys.length === 0) return null;
-  const marks = keys.map((_, index) => `?${index + 1}`).join(", ");
-  const rows = await db
-    .prepare(
-      `SELECT ${candidateCols}, ${rowDecade} AS decade,
-              cs.category AS category
-       FROM catalog_tracks ct
-       JOIN catalog_members cm ON cm.track_key = ct.track_key
-       JOIN category_sources cs ON cs.id = cm.source_id
-       JOIN categories ON categories.slug = cs.category AND categories.hidden = 0
-       WHERE ct.banned_at IS NULL AND ct.track_key IN (${marks})`,
+  const rows: PoolRow[] = await db
+    .select({ ...poolFields(), decade: rowDecade(), category: cs.category })
+    .from(ct)
+    .innerJoin(cm, eq(cm.trackKey, ct.trackKey))
+    .innerJoin(cs, eq(cs.id, cm.sourceId))
+    .innerJoin(
+      t.categories,
+      and(eq(t.categories.slug, cs.category), eq(t.categories.hidden, 0)),
     )
-    .bind(...keys)
-    .all<PoolRow>();
+    .where(and(isNull(ct.bannedAt), inArray(ct.trackKey, keys)));
   const live = new Map<string, PoolRow>();
-  for (const row of rows.results)
-    live.set(`${row.track_key}:${row.category}`, row);
+  for (const row of rows) live.set(`${row.trackKey}:${row.category}`, row);
   const seen = new Set<string>();
   const tracks: Candidate[] = [];
   for (const track of cached) {
@@ -311,7 +330,7 @@ async function revalidate(db: D1Database, cached: Candidate[]) {
     tracks.push({
       ...track,
       title: row.title,
-      original: row.original_title ?? undefined,
+      original: row.originalTitle ?? undefined,
       artist: row.artist,
       cover: row.cover,
       link: row.link,
@@ -324,19 +343,16 @@ async function revalidate(db: D1Database, cached: Candidate[]) {
 }
 
 export async function forYouCold(
-  db: D1Database,
+  db: Db,
   playerKey: string,
   userId: number | null,
 ) {
-  const row = await db
-    .prepare(
-      "SELECT COUNT(*) AS played FROM round_outcomes WHERE player_key = ?1",
-    )
-    .bind(playerKey)
-    .first<{ played: number }>();
-  if ((row?.played ?? 0) >= coldRounds) return false;
-  if (userId === null) return true;
-  return (await listeningCells(db, userId)).length === 0;
+  const [played, listening] = await Promise.all([
+    db.$count(ro, eq(ro.playerKey, playerKey)),
+    userId === null ? [] : listeningCells(db, userId),
+  ]);
+  if (played >= coldRounds) return false;
+  return userId === null || listening.length === 0;
 }
 
 export async function forYouMix(
@@ -344,33 +360,43 @@ export async function forYouMix(
   playerKey: string,
   userId: number | null,
 ): Promise<Candidate[]> {
+  const db = database(env.DB);
   const key = `play:foryou:${playerKey}`;
   const cached = await env.CACHE?.get<Candidate[]>(key, "json").catch(
     () => null,
   );
   if (cached && cached.length > 0) {
-    const live = await revalidate(env.DB, cached);
+    const live = await revalidate(db, cached);
     if (live !== null) return live;
   }
-  const db = env.DB;
   const since = Math.floor(Date.now() / 1000) - recentSeconds;
-  const [outcomes, listening, playlists] = await Promise.all([
+  // Two rounds of queries: everything that needs no other result, then the
+  // pools that need the cells and the fallback categories.
+  const [outcomes, listening, playlists, played, newPool] = await Promise.all([
     outcomeCells(db, playerKey),
-    userId === null ? Promise.resolve([]) : listeningCells(db, userId),
-    playlistCategories(db),
+    userId === null ? [] : listeningCells(db, userId),
+    playlistCategories(db).then((rows) => rows.map((row) => row.slug)),
+    mostPlayed(db).then((rows) => rows.map((row) => row.slug)),
+    newCandidates(db, playerKey),
   ]);
-  const fallback = await fallbackPool(db, playerKey, since, playlists);
   const rounds = outcomes.reduce((total, row) => total + row.played, 0);
+  const cold = rounds < coldRounds && listening.length === 0;
+  const [fallback, knownPool] = await Promise.all([
+    fallbackPool(db, playerKey, since, played, playlists),
+    cold
+      ? []
+      : knownCandidates(
+          db,
+          playerKey,
+          mergeCells(outcomes, listening, playlists),
+          since,
+        ),
+  ]);
   const seen = new Set<string>();
   let tracks: Candidate[];
-  if (rounds < coldRounds && listening.length === 0) {
+  if (cold) {
     tracks = takeDistinct([fallback], roundsPerGame + spare, seen);
   } else {
-    const cells = mergeCells(outcomes, listening, playlists);
-    const [knownPool, newPool] = await Promise.all([
-      knownCandidates(db, playerKey, cells, since),
-      newCandidates(db, playerKey),
-    ]);
     const known = takeDistinct([knownPool, fallback], knownTarget, seen);
     const fresh = takeDistinct([newPool, knownPool, fallback], newTarget, seen);
     const extra = takeDistinct([knownPool, newPool, fallback], spare, seen);

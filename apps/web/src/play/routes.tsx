@@ -1,7 +1,9 @@
 import { Hono, type Context } from "hono";
 import { csrf } from "hono/csrf";
 import { notFoundPage } from "../app";
+import { and, eq, gt, lt, sql } from "drizzle-orm";
 import { sessionUser } from "../auth";
+import { database, t } from "../db";
 import type { Env } from "../types";
 import type { Candidate } from "./sources";
 import { defaultMode, parseMode } from "./quiz";
@@ -261,7 +263,7 @@ playApp.get("/board", async (context) => {
   // category, because reading it caches the board under the slug.
   const [user, categories, category, points] = await Promise.all([
     sessionUser(context),
-    listCategories(context.env.DB),
+    listCategories(database(context.env.DB)),
     slug === undefined ? null : getCategory(context.env, slug),
     slug === undefined ? readBoard(context.env, period) : null,
   ]);
@@ -323,7 +325,7 @@ playApp.get("/room/:code", async (context) => {
 playApp.get("/picks", async (context) => {
   const query = context.req.query("q")?.trim().slice(0, 80) ?? "";
   if (query === "") {
-    const genres = (await listCategories(context.env.DB))
+    const genres = (await listCategories(database(context.env.DB)))
       .filter((category) => category.feed !== "mine")
       .map(({ slug, name }) => ({ slug, name }));
     return context.json({ genres });
@@ -367,7 +369,7 @@ playApp.get("/artists", async (context) => {
   // costs no D1 read.
   const genres =
     results === null || results.length === 0
-      ? (await listCategories(context.env.DB))
+      ? (await listCategories(database(context.env.DB)))
           .filter((category) => category.feed !== "mine")
           .slice(0, 6)
       : [];
@@ -412,12 +414,9 @@ playApp.get("/artist/:ids", async (context) => {
   );
 });
 
-const reportReasons = new Set([
-  "wrong_song",
-  "bad_clip",
-  "wrong_title",
-  "other",
-]);
+type ReportReason = (typeof t.trackReports.reason.enumValues)[number];
+
+const reportReasons = new Set<string>(t.trackReports.reason.enumValues);
 const reportLimitPerHour = 10;
 
 // A report needs the player key only to rate-limit it; signed-out players
@@ -436,33 +435,39 @@ playApp.post("/report", async (context) => {
   // the shared `a:` bucket so the hourly limit still applies.
   const playerKey = playerKeyOf(user?.id ?? null, anonOf(context));
   const now = Math.floor(Date.now() / 1000);
-  const recent = await context.env.DB.prepare(
-    `SELECT COUNT(*) AS n FROM track_reports
-     WHERE player_key = ?1 AND created_at > ?2`,
-  )
-    .bind(playerKey, now - 3600)
-    .first<{ n: number }>();
-  if ((recent?.n ?? 0) >= reportLimitPerHour)
-    return context.text("Too many reports. Try again later.", 429);
   const category = typeof body.category === "string" ? body.category : "";
   const detail = typeof body.detail === "string" ? body.detail.trim() : "";
-  await context.env.DB.prepare(
-    `INSERT INTO track_reports
-       (track_key, title, artist, category, reason, detail,
-        player_key, created_at)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`,
-  )
-    .bind(
-      track,
-      title,
-      artist,
-      category || null,
-      reason,
-      detail || null,
-      playerKey,
-      now,
-    )
-    .run();
+  const db = database(context.env.DB);
+  // The count sits inside the insert, so two reports sent at once cannot
+  // both pass a count taken before either wrote.
+  const sent = await db.insert(t.trackReports).select(
+    db
+      .select({
+        trackKey: sql<string>`${track}`.as("track_key"),
+        title: sql<string>`${title}`.as("title"),
+        artist: sql<string>`${artist}`.as("artist"),
+        category: sql<string | null>`${category || null}`.as("category"),
+        reason: sql<ReportReason>`${reason}`.as("reason"),
+        detail: sql<string | null>`${detail || null}`.as("detail"),
+        playerKey: sql<string>`${playerKey}`.as("player_key"),
+        createdAt: sql<number>`${now}`.as("created_at"),
+      })
+      .from(sql`(SELECT 1)`)
+      .where(
+        lt(
+          db.$count(
+            t.trackReports,
+            and(
+              eq(t.trackReports.playerKey, playerKey),
+              gt(t.trackReports.createdAt, now - 3600),
+            ),
+          ),
+          reportLimitPerHour,
+        ),
+      ),
+  );
+  if (sent.meta.changes === 0)
+    return context.text("Too many reports. Try again later.", 429);
   return context.redirect(
     back.startsWith("/") && !back.startsWith("//") ? back : "/",
     303,
@@ -476,7 +481,11 @@ export async function renderHub(context: PlayContext) {
     hubTiles(context.env),
   ]);
   const playerKey = playerKeyOf(user?.id ?? null, anonOf(context));
-  const cold = await forYouCold(context.env.DB, playerKey, user?.id ?? null);
+  const cold = await forYouCold(
+    database(context.env.DB),
+    playerKey,
+    user?.id ?? null,
+  );
   const who = context.req.query("who");
   const mode = context.req.query("mode");
   const room = context.req.query("room")?.toUpperCase();

@@ -1,3 +1,4 @@
+import { database } from "../db";
 import type { Env } from "../types";
 import { catalog, listCategories, type Category } from "./catalog";
 import { poolEras } from "./pool";
@@ -62,7 +63,7 @@ export async function hubTiles(env: Env): Promise<HubTiles> {
     () => null,
   );
   if (cached) return cached;
-  const categories = await listCategories(env.DB);
+  const categories = await listCategories(database(env.DB));
   const facts = await Promise.all(
     categories.map((category) => factsOf(env, category)),
   );
