@@ -80,9 +80,9 @@ The static asset requests are free on Workers, as on Pages.
 Libraries: [Hono](https://hono.dev) for routing and its JSX for server HTML,
 [Solid](https://solidjs.com) for the room's phone and TV pages, Vite to build
 the browser assets, valibot to validate the upload body and every socket message
-(`src/play/messages.ts`), vitest with `@cloudflare/vitest-plugin` so the
-tests run against real workerd and D1. Formatting and linting follow the
-repository: oxfmt and oxlint.
+(`src/play/messages.ts`), vitest with `@cloudflare/vitest-plugin` so the tests
+run against real workerd and D1. Formatting and linting follow the repository:
+oxfmt and oxlint.
 
 ### The component layer
 
