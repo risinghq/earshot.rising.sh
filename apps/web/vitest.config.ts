@@ -1,7 +1,17 @@
 import { cloudflareTest } from "@cloudflare/vitest-plugin";
 import { readD1Migrations } from "@cloudflare/vitest-plugin";
 import solidPlugin from "@solidjs/vite-plugin";
+import { accessSync, constants } from "node:fs";
 import { defineConfig } from "vitest/config";
+
+// Miniflare keeps the tests' storage under os.tmpdir(), and a Durable Object
+// or KV write waits for its commit to reach that disk: about 60 ms per write
+// on ext4, under 1 ms in memory. Test storage is thrown away, so it lives in
+// shared memory where the host has it.
+try {
+  accessSync("/dev/shm", constants.W_OK);
+  process.env.TMPDIR = "/dev/shm";
+} catch {}
 
 // The same files wrangler applies; wrangler.jsonc explains the pattern.
 const migrations = await readD1Migrations({
