@@ -1,6 +1,8 @@
 import { env } from "cloudflare:test";
+import { http } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
+import { network } from "./network";
 import {
   openTokens,
   playInputs,
@@ -81,6 +83,13 @@ function apiFetch(pages: Record<string, () => Response>) {
   };
 }
 
+// The same pages answered on the network, for the routes that fetch through
+// the global fetch.
+const serve = (pages: Record<string, () => Response>) =>
+  network.use(
+    ...Object.entries(pages).map(([url, make]) => http.all(url, () => make())),
+  );
+
 const tokenOk = (refresh = "refresh-1") =>
   new Response(
     JSON.stringify({
@@ -118,14 +127,11 @@ describe("connect", () => {
 
   it("stores a sealed source on a good callback", async () => {
     await seedUser();
-    vi.stubGlobal(
-      "fetch",
-      apiFetch({
-        "https://accounts.spotify.com/api/token": () => tokenOk(),
-        "https://api.spotify.com/v1/me": () =>
-          new Response(JSON.stringify({ id: "spotify-user" }), { status: 200 }),
-      }),
-    );
+    serve({
+      "https://accounts.spotify.com/api/token": () => tokenOk(),
+      "https://api.spotify.com/v1/me": () =>
+        new Response(JSON.stringify({ id: "spotify-user" }), { status: 200 }),
+    });
     const response = await app.fetch(
       new Request(`${origin}/auth/spotify/callback?code=c&state=good`, {
         headers: { cookie: `${cookie}; __Host-spotify-state=good` },
@@ -152,16 +158,13 @@ describe("connect", () => {
   it("names the allow list when Spotify refuses an unregistered account", async () => {
     await seedUser();
     vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.stubGlobal(
-      "fetch",
-      apiFetch({
-        "https://accounts.spotify.com/api/token": () => tokenOk(),
-        "https://api.spotify.com/v1/me": () =>
-          new Response("The user is not registered for this application.", {
-            status: 403,
-          }),
-      }),
-    );
+    serve({
+      "https://accounts.spotify.com/api/token": () => tokenOk(),
+      "https://api.spotify.com/v1/me": () =>
+        new Response("The user is not registered for this application.", {
+          status: 403,
+        }),
+    });
     const response = await callback("code=c&state=good", "good");
     expect(response.status).toBe(403);
     expect(await response.text()).toContain("allowed list");

@@ -1,7 +1,9 @@
 import { env } from "cloudflare:test";
+import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
+import { network } from "./network";
 import { eraMinTracks } from "../src/play/pool";
 import {
   advance,
@@ -41,20 +43,14 @@ const appleChartEntry = (i: number) => ({
 function stubFetch(
   handlers: Array<[RegExp, unknown | ((url: string) => unknown)]>,
 ) {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (input: RequestInfo | URL) => {
-      const url = typeof input === "string" ? input : input.toString();
-      for (const [pattern, body] of handlers) {
-        if (pattern.test(url)) {
-          const data = typeof body === "function" ? body(url) : body;
-          return new Response(JSON.stringify(data), {
-            headers: { "content-type": "application/json" },
-          });
-        }
-      }
-      return new Response("not found", { status: 404 });
-    }),
+  network.use(
+    ...handlers.map(([pattern, body]) =>
+      http.get(pattern, ({ request }) =>
+        HttpResponse.json(
+          (typeof body === "function" ? body(request.url) : body) as never,
+        ),
+      ),
+    ),
   );
 }
 
@@ -131,7 +127,6 @@ const get = (path: string) =>
   app.fetch(new Request(`${origin}${path}`), testEnv() as never);
 
 afterEach(() => {
-  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
@@ -217,10 +212,9 @@ describe("the play hub", () => {
     expect(names).toContain("K-pop");
     expect(names).not.toContain("From my listening");
 
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () =>
-        Response.json({
+    network.use(
+      http.get("https://api.deezer.com/search/artist", () =>
+        HttpResponse.json({
           data: [
             { id: 2, name: "Twin", nb_fan: 30 },
             { id: 1, name: "TWICE", nb_fan: 1_365_284, picture_medium: "p" },
@@ -666,22 +660,18 @@ describe("the play hub", () => {
 
   it("serves an Apple chart track through a Deezer search preview", async () => {
     const calls: string[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        calls.push(url);
-        if (url.includes("rss.marketingtools.apple.com"))
-          return Response.json({
-            feed: { results: [1, 2, 3, 4, 5].map(appleChartEntry) },
-          });
-        if (url.includes("api.deezer.com/search"))
-          return Response.json({
-            data: [
-              { ...deezerTrack(42, "x"), artist: { name: "Chart Artist" } },
-            ],
-          });
-        return new Response("not found", { status: 404 });
+    network.use(
+      http.get("https://rss.marketingtools.apple.com/*", ({ request }) => {
+        calls.push(request.url);
+        return HttpResponse.json({
+          feed: { results: [1, 2, 3, 4, 5].map(appleChartEntry) },
+        });
+      }),
+      http.get("https://api.deezer.com/search", ({ request }) => {
+        calls.push(request.url);
+        return HttpResponse.json({
+          data: [{ ...deezerTrack(42, "x"), artist: { name: "Chart Artist" } }],
+        });
       }),
     );
     const id = await startGame("top-50-japan", "hard");
@@ -693,16 +683,16 @@ describe("the play hub", () => {
   });
 
   it("shows the category-unavailable page when no candidate resolves", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        if (url.includes("rss.marketingtools.apple.com"))
-          return Response.json({
-            feed: { results: [1, 2, 3, 4, 5].map(appleChartEntry) },
-          });
-        return new Response("upstream down", { status: 502 });
-      }),
+    network.use(
+      http.get("https://rss.marketingtools.apple.com/*", () =>
+        HttpResponse.json({
+          feed: { results: [1, 2, 3, 4, 5].map(appleChartEntry) },
+        }),
+      ),
+      http.get(
+        "https://api.deezer.com/*",
+        () => new HttpResponse("upstream down", { status: 502 }),
+      ),
     );
     const id = await startGame("top-50-japan", "hard");
     const response = await get(`/play/${id}`);
@@ -804,21 +794,13 @@ describe("the round clock", () => {
       "pop",
       [1, 2, 3, 4].map((i) => ({ id: i, title: `Song ${i}` })),
     );
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = input.toString();
-        if (/api\.deezer\.com\/track\/\d+/.test(url)) {
-          trackCalls += 1;
-          // The second lookup is prepare's (the first served round 1);
-          // it hangs so /next's own resolve finishes first.
-          if (trackCalls === 2) await gate;
-          const n = Number(/track\/(\d+)/.exec(url)![1]);
-          return new Response(JSON.stringify(deezerTrack(n, "x")), {
-            headers: { "content-type": "application/json" },
-          });
-        }
-        return new Response("not found", { status: 404 });
+    network.use(
+      http.get("https://api.deezer.com/track/:id", async ({ params }) => {
+        trackCalls += 1;
+        // The second lookup is prepare's (the first served round 1);
+        // it hangs so /next's own resolve finishes first.
+        if (trackCalls === 2) await gate;
+        return HttpResponse.json(deezerTrack(Number(params.id), "x"));
       }),
     );
     const id = await startGame("pop", "normal");
@@ -883,18 +865,16 @@ describe("preview resolution", () => {
 
   it("lets an ISRC hit win over search", async () => {
     const calls: string[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        calls.push(url);
-        if (url.includes("isrc:"))
-          return Response.json({
+    network.use(
+      http.get("https://api.deezer.com/*", ({ request }) => {
+        calls.push(request.url);
+        if (decodeURIComponent(request.url).includes("isrc:"))
+          return HttpResponse.json({
             ...deezerTrack(7, "Track"),
             preview: "https://cdn.example/isrc.mp3",
             artist: { name: "Real Artist" },
           });
-        return Response.json({ data: [] });
+        return HttpResponse.json({ data: [] });
       }),
     );
     const built = await game([
@@ -973,10 +953,13 @@ describe("preview resolution", () => {
   ])(
     "holds the round unserved when the $name answers quota",
     async ({ candidate, url }) => {
-      vi.stubGlobal(
-        "fetch",
-        vi.fn(async (input: RequestInfo | URL) =>
-          Response.json(String(input).includes(url) ? quotaBody : { data: [] }),
+      network.use(
+        http.get("https://api.deezer.com/*", ({ request }) =>
+          HttpResponse.json(
+            decodeURIComponent(request.url).includes(url)
+              ? quotaBody
+              : { data: [] },
+          ),
         ),
       );
       const built = await game([candidate]);
@@ -991,14 +974,13 @@ describe("preview resolution", () => {
 
   it("serves the held candidate on a retry after the quota lifts", async () => {
     let limited = true;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        if (url.includes("api.deezer.com/track/"))
-          return Response.json(limited ? quotaBody : deezerTrack(7, "x"));
-        return Response.json({ data: [] });
-      }),
+    network.use(
+      http.get("https://api.deezer.com/track/:id", () =>
+        HttpResponse.json(limited ? quotaBody : deezerTrack(7, "x")),
+      ),
+      http.get("https://api.deezer.com/*", () =>
+        HttpResponse.json({ data: [] }),
+      ),
     );
     const built = await game([
       {

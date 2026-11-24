@@ -196,7 +196,6 @@ async function playsCount(userId = 1) {
 }
 
 afterEach(() => {
-  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 

@@ -5,6 +5,7 @@
 import { env, runDurableObjectAlarm, SELF } from "cloudflare:test";
 import { expect, vi } from "vitest";
 import { seedCatalog } from "./catalog";
+import { deezerTracks, network } from "./network";
 
 export type Message = Record<string, unknown>;
 
@@ -23,21 +24,7 @@ export async function stubChart(count: number) {
     "rock",
     titles.map(({ id, title }) => ({ id: id + 100, title })),
   );
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (input: RequestInfo | URL) => {
-      const id = /track\/(\d+)/.exec(String(input))?.[1];
-      if (id === undefined) return Response.json({ data: [] });
-      return Response.json({
-        id: Number(id),
-        title: "x",
-        link: `https://www.deezer.com/track/${id}`,
-        preview: `https://cdn.example/${id}.mp3`,
-        artist: { name: "Artist" },
-        album: { cover_medium: `https://cdn.example/${id}.jpg` },
-      });
-    }),
-  );
+  network.use(deezerTracks());
 }
 
 export const titleOfClip = (state: Message) => {

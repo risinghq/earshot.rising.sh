@@ -1,7 +1,8 @@
 import { env } from "cloudflare:test";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
+import { deezerTracks, network } from "./network";
 import { sha256Bytes } from "../src/auth";
 import { forYouCold, forYouMix } from "../src/play/foryou";
 import { getGame, putGame, type Game } from "../src/play/game";
@@ -9,27 +10,6 @@ import type { Env } from "../src/types";
 
 const origin = "https://earshot.rising.sh";
 const testEnv = () => ({ DB: env.DB, CACHE: env.CACHE, SOLO: env.SOLO }) as Env;
-
-const deezerTrack = (id: number, title: string) => ({
-  id,
-  title,
-  link: `https://www.deezer.com/track/${id}`,
-  preview: `https://cdn.example/${id}.mp3`,
-  artist: { name: "Artist" },
-  album: { cover_medium: `https://cdn.example/${id}.jpg` },
-});
-
-function stubPreviews() {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (input: RequestInfo | URL) => {
-      const id = Number(/track\/(\d+)/.exec(String(input))?.[1]);
-      return new Response(JSON.stringify(deezerTrack(id, "x")), {
-        headers: { "content-type": "application/json" },
-      });
-    }),
-  );
-}
 
 async function outcome(
   playerKey: string,
@@ -100,10 +80,6 @@ async function seedSession(githubId: number, name: string) {
     .run();
   return `__Host-session=${session}`;
 }
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
 
 describe("the For you mix", () => {
   it("draws mostly from the cell a player's outcomes concentrate in", async () => {
@@ -245,7 +221,7 @@ describe("the For you mix", () => {
       })),
       1980,
     );
-    stubPreviews();
+    network.use(deezerTracks());
     const id = await startForYou();
     const game = await getGame(testEnv(), id);
     expect(game).not.toBeNull();

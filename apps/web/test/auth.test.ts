@@ -1,6 +1,8 @@
 import { env } from "cloudflare:test";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { http, HttpResponse } from "msw";
+import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
+import { network } from "./network";
 
 const now = Math.floor(Date.now() / 1000);
 const origin = "https://earshot.rising.sh";
@@ -20,19 +22,21 @@ function cookieValue(response: Response, name: string) {
   return match?.[1];
 }
 
-function githubMock(user: { id: number; login: string }) {
-  return vi.fn(async (input: RequestInfo | URL) => {
-    const url = typeof input === "string" ? input : input.toString();
-    if (url === "https://github.com/login/oauth/access_token")
-      return new Response(JSON.stringify({ access_token: "gh-token" }), {
-        headers: { "content-type": "application/json" },
-      });
-    if (url === "https://api.github.com/user")
-      return new Response(JSON.stringify(user), {
-        headers: { "content-type": "application/json" },
-      });
-    return new Response("unexpected", { status: 500 });
-  });
+// GitHub answers the code exchange and the user lookup; `asked` lists the
+// URLs the Worker requested.
+function githubAnswers(user: { id: number; login: string }) {
+  const asked: string[] = [];
+  network.use(
+    http.post("https://github.com/login/oauth/access_token", ({ request }) => {
+      asked.push(request.url);
+      return HttpResponse.json({ access_token: "gh-token" });
+    }),
+    http.get("https://api.github.com/user", ({ request }) => {
+      asked.push(request.url);
+      return HttpResponse.json(user);
+    }),
+  );
+  return asked;
 }
 
 async function begin() {
@@ -48,8 +52,7 @@ async function begin() {
 
 async function signIn(user: { id: number; login: string }) {
   const { state } = await begin();
-  const fetcher = githubMock(user);
-  vi.stubGlobal("fetch", fetcher);
+  const asked = githubAnswers(user);
   const response = await app.fetch(
     new Request(`${origin}/auth/github/callback?code=code-1&state=${state}`, {
       headers: { cookie: `__Host-oauth-state=${state}` },
@@ -58,15 +61,10 @@ async function signIn(user: { id: number; login: string }) {
   );
   return {
     response,
-    fetcher,
+    asked,
     session: cookieValue(response, "__Host-session"),
   };
 }
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-  vi.restoreAllMocks();
-});
 
 describe("home page", () => {
   it("leads with the games and invites a signed-out visitor to sign in", async () => {
@@ -147,13 +145,16 @@ describe("/auth/github/callback", () => {
   });
 
   it("creates the user, stores github_id and discards the token", async () => {
-    const { response, fetcher, session } = await signIn({
+    const { response, asked, session } = await signIn({
       id: 12345,
       login: "OctoCat",
     });
     expect(response.status).toBe(303);
     expect(response.headers.get("location")).toBe("/settings");
-    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(asked).toEqual([
+      "https://github.com/login/oauth/access_token",
+      "https://api.github.com/user",
+    ]);
     expect(session).toBeTruthy();
     expect(response.headers.get("set-cookie")).toContain("__Host-session=");
     expect(response.headers.get("set-cookie")).toContain("SameSite=Lax");
@@ -210,9 +211,11 @@ describe("/auth/github/callback", () => {
 
   it("answers 502 when the code exchange fails", async () => {
     const { state } = await begin();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response("denied", { status: 403 })),
+    network.use(
+      http.post(
+        "https://github.com/login/oauth/access_token",
+        () => new HttpResponse("denied", { status: 403 }),
+      ),
     );
     const response = await app.fetch(
       new Request(`${origin}/auth/github/callback?code=bad&state=${state}`, {
@@ -230,24 +233,24 @@ const encode = (value: unknown) =>
     .replaceAll("/", "_")
     .replaceAll("=", "");
 
-function googleMock(claims: Record<string, unknown>) {
+// Google's token endpoint answers only the app's own secret and callback.
+function googleAnswers(claims: Record<string, unknown>) {
   const token = `${encode({ alg: "RS256" })}.${encode({
     iss: "https://accounts.google.com",
     aud: "google-client-id",
     ...claims,
   })}.signature`;
-  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = typeof input === "string" ? input : input.toString();
-    if (url === "https://oauth2.googleapis.com/token") {
-      const body = new URLSearchParams(String(init?.body));
-      expect(body.get("client_secret")).toBe("google-client-secret");
-      expect(body.get("redirect_uri")).toBe(`${origin}/auth/google/callback`);
-      return new Response(JSON.stringify({ id_token: token }), {
-        headers: { "content-type": "application/json" },
-      });
-    }
-    return new Response("unexpected", { status: 500 });
-  });
+  network.use(
+    http.post("https://oauth2.googleapis.com/token", async ({ request }) => {
+      const body = new URLSearchParams(await request.text());
+      if (
+        body.get("client_secret") !== "google-client-secret" ||
+        body.get("redirect_uri") !== `${origin}/auth/google/callback`
+      )
+        return new HttpResponse("bad client", { status: 401 });
+      return HttpResponse.json({ id_token: token });
+    }),
+  );
 }
 
 async function googleSignIn(claims: Record<string, unknown>, cookie = "") {
@@ -258,7 +261,7 @@ async function googleSignIn(claims: Record<string, unknown>, cookie = "") {
   const state = new URL(begin.headers.get("location") ?? "").searchParams.get(
     "state",
   );
-  vi.stubGlobal("fetch", googleMock(claims));
+  googleAnswers(claims);
   return app.fetch(
     new Request(`${origin}/auth/google/callback?code=c&state=${state}`, {
       headers: { cookie: `__Host-oauth-state=${state}${cookie}` },
@@ -316,7 +319,6 @@ describe("Google sign-in", () => {
 
   it("links Google to the signed-in GitHub account, once", async () => {
     const { session } = await signIn({ id: 7, login: "octo" });
-    vi.unstubAllGlobals();
     const linked = await googleSignIn(
       { sub: "g-7", email: "octo@example.com" },
       `; __Host-session=${session}`,

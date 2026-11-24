@@ -1,6 +1,8 @@
 import { env } from "cloudflare:test";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { http, HttpResponse } from "msw";
+import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
+import { network } from "./network";
 import { sourceRemovalStatements } from "../src/settings";
 
 const now = Math.floor(Date.now() / 1000);
@@ -80,11 +82,6 @@ async function count(table: string, where = "1 = 1") {
   ).first<{ n: number }>();
   return row?.n ?? -1;
 }
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-  vi.restoreAllMocks();
-});
 
 describe("session and origin", () => {
   it("shows anonymous visitors a sign-in card that returns to settings", async () => {
@@ -523,20 +520,13 @@ describe("deletion", () => {
   });
 
   it("a new person signs in, connects a source, and deletes the account, and no row of theirs remains", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = input.toString();
-        if (url === "https://github.com/login/oauth/access_token")
-          return new Response(JSON.stringify({ access_token: "t" }), {
-            headers: { "content-type": "application/json" },
-          });
-        if (url === "https://api.github.com/user")
-          return new Response(JSON.stringify({ id: 77, login: "NewPerson" }), {
-            headers: { "content-type": "application/json" },
-          });
-        return new Response("unexpected", { status: 500 });
-      }),
+    network.use(
+      http.post("https://github.com/login/oauth/access_token", () =>
+        HttpResponse.json({ access_token: "t" }),
+      ),
+      http.get("https://api.github.com/user", () =>
+        HttpResponse.json({ id: 77, login: "NewPerson" }),
+      ),
     );
     const beginResponse = await app.fetch(
       new Request(`${origin}/auth/github`),
