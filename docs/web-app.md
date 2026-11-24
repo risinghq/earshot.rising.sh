@@ -104,8 +104,24 @@ dark theme is a second set of the same names under
 transition off. Bricolage Grotesque is self-hosted as a variable woff2 (weight
 and optical size) in `client/fonts/` with its OFL licence. The site pages' only
 script is `client/site.ts`: it closes the account menu, copies an issued token,
-and posts a `data-inline` form over fetch. All three are progressive enhancement
-over working markup.
+and posts a `data-inline` form over fetch. Through `client/swap.ts` it follows a
+link inside `data-swap="ID"` by fetching the page and swapping in its element
+with that id. The profile's periods, the board's periods and the genre chips
+swap `#main` this way: the page keeps its header and scroll, the address and
+title change, and Back swaps the old view in. A pointer over such a link, a
+press, focus or an idle page (for a period control's choices) starts the fetch,
+so the click usually finds the page ready. All of these are progressive
+enhancement over working markup.
+
+Every site page carries speculation rules (`src/ui/shell.tsx`). Chromium
+prefetches a linked page eagerly (a 10 ms hover, or 50 ms on a phone's screen)
+and prerenders it on intent (a 200 ms hover or a press), so the next page shows
+at once. Only pages whose GET changes nothing are listed: game, room and match
+pages, `/auth`, `/admin` and the `.json`/`.svg` exports are not. Safari and
+Firefox ignore the rules and load the page on click. Cross-document view
+transitions (`@view-transition` in `client/styles/shell.css`) fade between site
+pages while the header and the tab bar stay put, except under
+`prefers-reduced-motion`.
 
 ### Browser assets
 

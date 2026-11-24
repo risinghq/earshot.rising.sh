@@ -339,6 +339,7 @@ function profilePage(
             <Segmented
               label="Time period"
               stage
+              swap="main"
               options={periods.map((period) => ({
                 label: periodNames[period],
                 href: `?period=${period}`,
@@ -354,7 +355,7 @@ function profilePage(
                     " A longer period may hold some."}
                 </p>
                 {snapshot.period !== "all" && (
-                  <div class="actions">
+                  <div class="actions" data-swap="main">
                     {snapshot.period === "week" && (
                       <a class="btn is-stage" href="?period=month">
                         See Month

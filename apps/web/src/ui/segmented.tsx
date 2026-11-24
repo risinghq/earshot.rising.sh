@@ -7,18 +7,25 @@ export interface SegmentOption {
   badge?: Child;
 }
 
-// stage sets the control on the dark stage card.
+// stage sets the control on the dark stage card. swap names the element that
+// a choice replaces in place, through client/swap.ts.
 export function Segmented({
   label,
   options,
   stage = false,
+  swap,
 }: {
   label: string;
   options: SegmentOption[];
   stage?: boolean;
+  swap?: string;
 }) {
   return (
-    <nav class={stage ? "segmented is-stage" : "segmented"} aria-label={label}>
+    <nav
+      class={stage ? "segmented is-stage" : "segmented"}
+      aria-label={label}
+      data-swap={swap}
+    >
       {options.map((option) => (
         <a
           href={option.href}

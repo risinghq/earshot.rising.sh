@@ -550,6 +550,32 @@ describe("profile API", () => {
     expect(html).toContain('aria-current="page"');
   });
 
+  it("swaps periods in place and speculates only pages a GET leaves alone", async () => {
+    await seedUser();
+    const html = await (
+      await SELF.fetch("https://earshot.rising.sh/u/alice?period=week")
+    ).text();
+    expect(html).toMatch(
+      /<nav class="segmented is-stage" aria-label="Time period" data-swap="main">/,
+    );
+    expect(html).toContain('<main class="wrap shell" id="main">');
+    const rules = JSON.parse(
+      html.match(/<script type="speculationrules">(.*?)<\/script>/s)![1],
+    );
+    expect(rules.prefetch[0].eagerness).toBe("eager");
+    expect(rules.prerender[0].eagerness).toBe("moderate");
+    const [allowed, ...excluded] = rules.prerender[0].where.and;
+    expect(allowed.href_matches).toContain("/u/*");
+    for (const pattern of allowed.href_matches as string[])
+      expect(pattern).not.toMatch(
+        /room|match|auth|admin|\/play\/(?!board|artist)/,
+      );
+    expect(excluded).toContainEqual({ not: { href_matches: "/u/*.*" } });
+    expect(excluded).toContainEqual({
+      not: { selector_matches: "[data-swap] a" },
+    });
+  });
+
   it("pins the snapshot JSON for a fixed set of plays", async () => {
     const pinnedNow = 1_700_000_000;
     await seedUser();

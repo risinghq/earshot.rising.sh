@@ -182,7 +182,7 @@ function GenreRail({
         </div>
         {current === null && <p class="is-wide">{bestGameNote}</p>}
       </header>
-      <nav class="genre-chips">
+      <nav class="genre-chips" data-swap="main">
         {ordered.map((category) => (
           <a
             class="chip-genre"
@@ -293,6 +293,7 @@ export function boardPage(
             </div>
             <Segmented
               label="Board period"
+              swap="main"
               options={(["week", "all"] as const).map((value) => ({
                 label: boardNames[value],
                 href: `/play/board?period=${value}`,
