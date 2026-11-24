@@ -3,6 +3,7 @@ import type { Context } from "hono";
 import { eq } from "drizzle-orm";
 import { base64url } from "../../account/auth";
 import { batchWrites, database, t, type Db } from "../../platform/db";
+import { updateRatings } from "./rating";
 import { normalizeText } from "../../listening/normalize";
 import type { Env } from "../../env";
 import { trackDecade } from "../catalog/pool";
@@ -123,6 +124,17 @@ export async function recordOutcomes(
         artist: row.track.artist,
       }),
     ),
+  );
+  await updateRatings(
+    db,
+    rows.map((row) => ({
+      playerKey: row.playerKey,
+      trackKey: trackKeyFor(row.track),
+      category: row.category,
+      mode: row.mode,
+      correct: row.correct,
+    })),
+    now,
   );
 }
 

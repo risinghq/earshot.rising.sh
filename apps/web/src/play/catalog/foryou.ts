@@ -25,6 +25,8 @@ import {
   type PoolRow,
 } from "./pool";
 import { answerKey, roundSeconds, roundsPerGame } from "../game/quiz";
+import { drawWeights, weightedShuffle } from "../game/rating";
+import type { Mode } from "../game/rules";
 import { workLabel } from "../game/rules";
 import type { Candidate } from "./sources";
 
@@ -361,9 +363,11 @@ export async function forYouMix(
   env: Env,
   playerKey: string,
   userId: number | null,
+  mode: Mode,
+  rand?: () => number,
 ): Promise<Candidate[]> {
   const db = database(env.DB);
-  const key = `play:foryou:${playerKey}`;
+  const key = `play:foryou:${playerKey}:${mode}`;
   const cached = await env.CACHE.get<Candidate[]>(key, "json").catch(
     () => null,
   );
@@ -394,14 +398,45 @@ export async function forYouMix(
           since,
         ),
   ]);
+  // The draw favours tracks the player's predicted chance puts nearest the
+  // target: likely to know, not certain.
+  const pools = [knownPool, newPool, fallback].filter(
+    (pool) => pool.length > 0,
+  );
+  const items = pools.flat().map((track) => ({
+    key: trackKeyFor(track),
+    category: track.category ?? forYouSlug,
+  }));
+  const weights = await drawWeights(db, [playerKey], items, mode);
+  const weightOf = new Map(
+    items.map((item, index) => [item.key, weights[index]]),
+  );
+  const draw = (pool: Candidate[]) =>
+    weightedShuffle(
+      pool,
+      (track) => weightOf.get(trackKeyFor(track)) ?? 1,
+      rand,
+    );
   const seen = new Set<string>();
   let tracks: Candidate[];
   if (cold) {
-    tracks = takeDistinct([fallback], roundsPerGame + spare, seen);
+    tracks = takeDistinct([draw(fallback)], roundsPerGame + spare, seen);
   } else {
-    const known = takeDistinct([knownPool, fallback], knownTarget, seen);
-    const fresh = takeDistinct([newPool, knownPool, fallback], newTarget, seen);
-    const extra = takeDistinct([knownPool, newPool, fallback], spare, seen);
+    const known = takeDistinct(
+      [draw(knownPool), draw(fallback)],
+      knownTarget,
+      seen,
+    );
+    const fresh = takeDistinct(
+      [draw(newPool), draw(knownPool), draw(fallback)],
+      newTarget,
+      seen,
+    );
+    const extra = takeDistinct(
+      [draw(knownPool), draw(newPool), draw(fallback)],
+      spare,
+      seen,
+    );
     tracks = interleave([known, fresh, extra]);
   }
   if (tracks.length > 0)

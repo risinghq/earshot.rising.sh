@@ -10,6 +10,7 @@ export async function seedCatalog(
     title: string;
     artist?: string;
     year?: number;
+    streams?: number;
   }>,
   decade?: number,
 ) {
@@ -33,8 +34,8 @@ export async function seedCatalog(
         .prepare(
           `INSERT OR REPLACE INTO catalog_tracks
              (track_key, deezer_id, title, artist, cover, link, year,
-              updated_at)
-           VALUES (?1, ?2, ?3, ?4, NULL, NULL, ?5, 0)`,
+              streams, updated_at)
+           VALUES (?1, ?2, ?3, ?4, NULL, NULL, ?5, ?6, 0)`,
         )
         .bind(
           `dz:${track.id}`,
@@ -42,6 +43,7 @@ export async function seedCatalog(
           track.title,
           track.artist ?? "Artist",
           track.year ?? null,
+          track.streams ?? null,
         ),
       db
         .prepare(

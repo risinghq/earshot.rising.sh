@@ -88,6 +88,8 @@ export interface CuratedTrack {
   year: number;
   work?: string;
   theme?: string;
+  // All-time Spotify streams from kworb; absent when the count is unknown.
+  streams?: number;
 }
 
 const root = new URL("..", import.meta.url).pathname;
@@ -916,8 +918,8 @@ async function main() {
     previous[slug] = Object.fromEntries(
       [...byDecade].map(([decade, tracks]) => [
         String(decade),
-        tracks.map(
-          ({ streams, rank, yearFrom, how, listed, ...track }) => track,
+        tracks.map(({ streams, rank, yearFrom, how, listed, ...track }) =>
+          streams === null ? track : { ...track, streams },
         ),
       ]),
     );

@@ -106,7 +106,7 @@ describe("the For you mix", () => {
     const key = "a:listener";
     for (let i = 0; i < 12; i += 1)
       await outcome(key, 500 + i, "pop", 1990, false);
-    const tracks = await forYouMix(testEnv(), key, null);
+    const tracks = await forYouMix(testEnv(), key, null, "normal");
     expect(tracks).toHaveLength(14);
     const inCell = tracks.filter(
       (track) => track.category === "pop" && track.decade === 1990,
@@ -141,7 +141,7 @@ describe("the For you mix", () => {
     const key = "a:fan";
     for (let i = 0; i < 10; i += 1)
       await outcome(key, 1 + i, "pop", 1990, true);
-    const tracks = await forYouMix(testEnv(), key, null);
+    const tracks = await forYouMix(testEnv(), key, null, "normal");
     const fresh = tracks.filter((track) =>
       [11, 12, 13, 14].includes(track.deezerId!),
     );
@@ -168,7 +168,7 @@ describe("the For you mix", () => {
     const key = "a:regular";
     for (let i = 0; i < 12; i += 1)
       await outcome(key, 300 + i, "pop", 1990, false);
-    const tracks = await forYouMix(testEnv(), key, null);
+    const tracks = await forYouMix(testEnv(), key, null, "normal");
     expect(tracks.some((track) => track.deezerId === 5)).toBe(false);
     expect(tracks.length).toBeGreaterThanOrEqual(10);
   });
@@ -188,7 +188,7 @@ describe("the For you mix", () => {
     // mix must fall back instead of repeating them.
     for (let i = 0; i < 10; i += 1)
       await outcome(key, 1 + i, "pop", 1990, false);
-    const tracks = await forYouMix(testEnv(), key, null);
+    const tracks = await forYouMix(testEnv(), key, null, "normal");
     expect(tracks.some((track) => (track.deezerId ?? 0) <= 10)).toBe(false);
   });
 

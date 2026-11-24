@@ -1124,7 +1124,10 @@ stops when the next round loads or the game ends.
   removes an `Artist|Title`, `years` sets one, and an artist's `only` names its
   songs (anime singers' top songs are not all themes). Popularity is the Spotify
   stream total kworb.net publishes for the top 3000 artists, with Deezer's
-  artist top as the fallback.
+  artist top as the fallback. A track keeps its kworb count as `streams`, which
+  the refresh stores on `catalog_tracks` as the prior for
+  [adaptive difficulty](#adaptive-difficulty); a Deezer-top pick and most anime
+  have none.
   - Artist seeds alone miss many hits people know: against Spotify's All Out
     decade playlists the artist-only Pop list shared a quarter to a half of its
     songs. A seed's `songs` therefore lists `Artist|Title` from editorial
@@ -1190,7 +1193,8 @@ stops when the next round loads or the game ends.
   excluding every answered track. A player with fewer than ten rounds and no
   listening is cold: the pool is the most-played categories' catalogs across all
   eras, and the tile says it learns their taste. The mix is computed per request
-  and held in KV for ten minutes under `play:foryou:{playerKey}`. Its rounds
+  and held in KV for ten minutes under `play:foryou:{playerKey}:{mode}`, since
+  the [adaptive draw](#adaptive-difficulty) depends on the mode. Its rounds
   record `round_outcomes` with the track's own source category, so every For you
   game refines the next mix; it is solo only, since a shared game would play one
   person's taste.
@@ -1410,6 +1414,42 @@ the last 15 days, top 10, read through the `game_results_category` index added
 in migration `0010`. It shows at `/play/board?category=SLUG`, linked from
 `/play/board`, on `/play/artist/IDS` and on the game-over page, and sits in KV
 for five minutes under `play:catboard:SLUG`.
+
+### Adaptive difficulty
+
+For you and rooms draw songs a player is likely, but not certain, to know.
+Category, era and artist solo games and matches keep the plain shuffle. The code
+is `src/play/game/rating.ts`.
+
+- **Model.** Each player has a skill and each track a difficulty, in
+  `player_ratings` and `track_ratings`. The chance of a right answer is
+  `σ(skill − difficulty + modeOffset)`. The offset is +0.5 for easy, 0 for
+  normal and −1.2 for hard, because a choice of titles with artists is easier
+  than titles alone and typing is harder than both. A mean player meets a mean
+  track at 0.61, the hit rate `round_outcomes` showed on 2026-11-24.
+- **Prior.** One answer cannot rate a track, and on 2026-11-24 575 of 974
+  answered tracks had one, so a track starts from its popularity. Its difficulty
+  falls half a logit per standard deviation of log `streams` within the category
+  it is drawn from, clamped at 2.5 deviations. A track with no count starts at
+  the mean.
+- **Update.** `recordOutcomes` moves both ratings by the miss, the result minus
+  the predicted chance. The player's step is 0.4. The track's step starts at 0.6
+  and halves after eight answers, so a well-answered track settles. A new player
+  starts at skill 0.
+- **Backfill.** The minutely cron walks `round_outcomes` in id order, 400 rows a
+  run, and records its place in `rating_state`. Until it marks itself done,
+  `recordOutcomes` leaves the ratings alone and the walk counts the new rows
+  too, so no answer is counted twice.
+- **Draw.** A track's weight is a Gaussian of its predicted chance around 0.7,
+  width 0.2. That target sits above 0.61 so a game feels winnable, and below 1
+  so it still tests. The draw is a weighted shuffle (Efraimidis–Spirakis): every
+  track can still come up, and a weight decides how early it lands. For you
+  weights its known, new and fallback pools for the player. A room weights its
+  candidates when the game begins, for the median seated player, and falls back
+  to the plain shuffle when D1 fails.
+- **Boards.** A room's score still goes to its category board, so a room aimed
+  at a weak table can post a score a solo game would not. A room is a social
+  game; the category board keeps both kinds.
 
 ### Game log
 

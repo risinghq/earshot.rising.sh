@@ -10,7 +10,7 @@ import type { readClientMessage } from "./messages";
 import type { Mode } from "../game/rules";
 import { QuotaError, type Candidate, type Preview } from "../catalog/sources";
 import * as game from "./game";
-import type { Presence, RoomInit, RoomTarget, Stored } from "./game";
+import type { Presence, Player, RoomInit, RoomTarget, Stored } from "./game";
 
 export type ClientMessage = NonNullable<ReturnType<typeof readClientMessage>>;
 
@@ -44,6 +44,14 @@ export interface RoomPorts {
   category(slug: string): Promise<Category | null>;
   recordGameStart(start: GameStart, nowSec: number): Promise<void>;
   recordOutcomes(rows: Outcome[], nowSec: number): Promise<void>;
+  // The candidates ordered so the draw favours the tracks the median seated
+  // player is likely, not certain, to know. Null keeps the plain shuffle.
+  weightedDraw(
+    players: Player[],
+    candidates: Candidate[],
+    mode: Mode,
+    category: string,
+  ): Promise<Candidate[] | null>;
   recordResults(rows: ResultRow[]): Promise<void>;
   readBoard(slug: string): Promise<CategoryBoardEntry[]>;
 }
@@ -303,12 +311,21 @@ export class RoomHost {
 
   private async begin(now: number, picked?: "pick") {
     const s = this.s!;
+    // A room aims its draw at the median seated player; a match keeps the
+    // plain shuffle, like a solo category game.
+    const order =
+      s.kind === "room" && s.categorySlug !== ""
+        ? await this.ports
+            .weightedDraw(s.players, s.candidates, s.mode, s.categorySlug)
+            .catch(() => null)
+        : null;
     const started = game.begin(
       s,
       now,
       this.presence(),
       this.ports.newId(),
       picked,
+      order === null ? undefined : () => order,
     );
     if (started === null) return;
     await this.commit();
