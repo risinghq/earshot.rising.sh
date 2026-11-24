@@ -1000,4 +1000,23 @@ describe("chart warming", () => {
       "https://art.example/jp-1.jpg",
     );
   });
+
+  it("drops a chart entry with a malformed field and keeps the rest", async () => {
+    network.use(
+      http.get(/\/api\/v2\/\w+\//, () =>
+        HttpResponse.json({
+          feed: {
+            results: [
+              { name: "Kept", artistName: "Artist 1" },
+              { name: "Broken", artistName: "Artist 2", artworkUrl100: {} },
+            ],
+          },
+        }),
+      ),
+    );
+    await warmChartCache(testEnv() as never);
+    const pool = await env.CACHE.get("play:cat:top-50-japan");
+    expect(pool).toContain("Kept");
+    expect(pool).not.toContain("Broken");
+  });
 });

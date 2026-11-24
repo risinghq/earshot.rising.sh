@@ -228,6 +228,23 @@ describe("/auth/github/callback", () => {
     );
     expect(response.status).toBe(502);
   });
+
+  it("answers 502 when GitHub answers the exchange with a page", async () => {
+    const { state } = await begin();
+    network.use(
+      http.post(
+        "https://github.com/login/oauth/access_token",
+        () => new HttpResponse("<html>busy</html>", { status: 200 }),
+      ),
+    );
+    const response = await app.fetch(
+      new Request(`${origin}/auth/github/callback?code=c&state=${state}`, {
+        headers: { cookie: `__Host-oauth-state=${state}` },
+      }),
+      testEnv() as never,
+    );
+    expect(response.status).toBe(502);
+  });
 });
 
 const encode = (value: unknown) =>

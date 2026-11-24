@@ -6,6 +6,7 @@ import { base64url, cookieClear, sessionUser } from "../account/auth";
 import { database, t, type Db, type SourceRow } from "../platform/db";
 import { markDuplicates } from "./duplicates";
 import { storeListens } from "./matching";
+import { readJson } from "../platform/fetch-json";
 import { openSecret, sealSecret } from "../platform/secret";
 import { idlePullDelay } from "./pull";
 import type { Env } from "../env";
@@ -95,12 +96,15 @@ export async function beginSpotify(context: Context<{ Bindings: Env }>) {
   return context.redirect(target.toString(), 302);
 }
 
-interface TokenResponse {
-  access_token?: string;
-  expires_in?: number;
-  refresh_token?: string;
-  error?: string;
-}
+// A failed exchange carries only `error`, so every field is optional and the
+// callers check for the access token.
+const TokenResponse = v.object({
+  access_token: v.optional(v.string()),
+  expires_in: v.optional(v.number()),
+  refresh_token: v.optional(v.string()),
+  error: v.optional(v.string()),
+});
+const Profile = v.object({ id: v.string() });
 
 async function tokenRequest(
   env: Env,
@@ -119,7 +123,7 @@ async function tokenRequest(
   });
   return {
     status: response.status,
-    body: (await response.json()) as TokenResponse,
+    body: (await readJson(response, TokenResponse)) ?? {},
   };
 }
 
@@ -176,8 +180,8 @@ export async function spotifyCallback(
       "This Spotify account is not on Earshot's allowed list yet. Ask the site owner to add it, then connect again.",
     );
   if (!me.ok) return failed("me", me.status, await me.text());
-  const profile = (await me.json()) as { id?: string };
-  if (typeof profile.id !== "string") return failed("me", me.status, "no id");
+  const profile = await readJson(me, Profile);
+  if (profile === null) return failed("me", me.status, "no id");
 
   const now = Math.floor(Date.now() / 1000);
   const secret = await sealTokens(context.env, {
@@ -310,11 +314,11 @@ export async function pullSpotify(
     return { inserted: 0, cursor: source.cursor };
   }
   if (!response.ok) throw new Error(`Spotify returned ${response.status}`);
-  const parsed = v.safeParse(RecentlyPlayedSchema, await response.json());
-  if (!parsed.success) throw new Error("Spotify returned an invalid response");
+  const recent = await readJson(response, RecentlyPlayedSchema);
+  if (recent === null) throw new Error("Spotify returned an invalid response");
 
   const plays: SpotifyPlay[] = [];
-  for (const item of parsed.output.items) {
+  for (const item of recent.items) {
     if (item.track.type === "episode") continue;
     const at = Date.parse(item.played_at);
     if (Number.isNaN(at)) continue;

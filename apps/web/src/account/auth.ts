@@ -1,6 +1,8 @@
 import { and, eq, gt, isNull, lt, lte, sql } from "drizzle-orm";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import * as v from "valibot";
 import { database, t, type Db } from "../platform/db";
+import { readJson } from "../platform/fetch-json";
 import { mergeAnonOutcomes } from "../play/game/outcomes";
 import type { Context } from "hono";
 import type { Env } from "../env";
@@ -334,8 +336,8 @@ async function githubIdentity(
     }).toString(),
   });
   if (!exchange.ok) return null;
-  const token = (await exchange.json()) as { access_token?: string };
-  if (typeof token.access_token !== "string") return null;
+  const token = await readJson(exchange, GitHubToken);
+  if (token === null) return null;
   const response = await fetch("https://api.github.com/user", {
     headers: {
       authorization: `Bearer ${token.access_token}`,
@@ -344,9 +346,8 @@ async function githubIdentity(
     },
   });
   if (!response.ok) return null;
-  const user = (await response.json()) as { id?: unknown; login?: unknown };
-  if (typeof user.id !== "number" || typeof user.login !== "string")
-    return null;
+  const user = await readJson(response, GitHubUser);
+  if (user === null) return null;
   return {
     provider: "github",
     id: user.id,
@@ -355,19 +356,31 @@ async function githubIdentity(
   };
 }
 
-function jwtPayload(token: string) {
+const GitHubToken = v.object({ access_token: v.string() });
+const GitHubUser = v.object({ id: v.number(), login: v.string() });
+const GoogleToken = v.object({ id_token: v.string() });
+const GoogleClaims = v.object({
+  aud: v.string(),
+  iss: v.picklist(["https://accounts.google.com", "accounts.google.com"]),
+  sub: v.string(),
+  email: v.string(),
+  given_name: v.optional(v.string()),
+  name: v.optional(v.string()),
+});
+
+function jwtClaims(token: string) {
   const part = token.split(".")[1];
   if (part === undefined) return null;
+  let payload: unknown;
   try {
     const text = atob(part.replaceAll("-", "+").replaceAll("_", "/"));
     const bytes = Uint8Array.from(text, (character) => character.charCodeAt(0));
-    return JSON.parse(new TextDecoder().decode(bytes)) as Record<
-      string,
-      unknown
-    >;
+    payload = JSON.parse(new TextDecoder().decode(bytes));
   } catch {
     return null;
   }
+  const parsed = v.safeParse(GoogleClaims, payload);
+  return parsed.success ? parsed.output : null;
 }
 
 // The ID token comes straight from Google's token endpoint over TLS in
@@ -390,24 +403,11 @@ async function googleIdentity(
     }).toString(),
   });
   if (!exchange.ok) return null;
-  const token = (await exchange.json()) as { id_token?: unknown };
-  if (typeof token.id_token !== "string") return null;
-  const claims = jwtPayload(token.id_token);
-  if (
-    claims === null ||
-    claims.aud !== client.id ||
-    (claims.iss !== "https://accounts.google.com" &&
-      claims.iss !== "accounts.google.com") ||
-    typeof claims.sub !== "string" ||
-    typeof claims.email !== "string"
-  )
-    return null;
-  const name =
-    typeof claims.given_name === "string"
-      ? claims.given_name
-      : typeof claims.name === "string"
-        ? claims.name
-        : "user";
+  const token = await readJson(exchange, GoogleToken);
+  if (token === null) return null;
+  const claims = jwtClaims(token.id_token);
+  if (claims === null || claims.aud !== client.id) return null;
+  const name = claims.given_name ?? claims.name ?? "user";
   return { provider: "google", sub: claims.sub, email: claims.email, name };
 }
 
