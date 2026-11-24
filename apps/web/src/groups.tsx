@@ -1,6 +1,7 @@
 import { Hono, type Context } from "hono";
 import { csrf } from "hono/csrf";
 import type { SignedInUser } from "./auth";
+import { database } from "./db";
 import { incomingRequests, PeopleSwitch } from "./friends";
 import {
   blend,
@@ -662,7 +663,7 @@ async function listData(context: GroupsContext) {
       names: byGroup.get(group.id) ?? [],
     })),
     friends: friends.results as unknown as Member[],
-    requests: await incomingRequests(db, user.id),
+    requests: await incomingRequests(database(db), user.id),
   };
 }
 

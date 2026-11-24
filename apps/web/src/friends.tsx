@@ -7,6 +7,9 @@ import {
   validName,
   type SignedInUser,
 } from "./auth";
+import { and, eq, isNull, lt, or, sql } from "drizzle-orm";
+import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
+import { database, t, type Db } from "./db";
 import { memberOnly } from "./sign-in";
 import type { Env } from "./types";
 import { EmptyState } from "./ui/empty";
@@ -18,11 +21,7 @@ import { CopyButton, TokenDisplay, TokenField } from "./ui/token";
 
 const pendingLimit = 20;
 
-interface FriendRow {
-  id: number;
-  name: string;
-  is_public: number;
-}
+type FriendRow = Pick<typeof t.users.$inferSelect, "id" | "name" | "isPublic">;
 
 interface RequestRow {
   id: number;
@@ -50,54 +49,48 @@ type FriendsContext = Context<{
 
 async function pageData(context: FriendsContext): Promise<PageData> {
   const user = context.get("user");
-  const db = context.env.DB;
+  const db = database(context.env.DB);
+  const requestsWith = (other: typeof t.friendRequests.fromUser) =>
+    db
+      .select({ id: t.friendRequests.id, name: t.users.name })
+      .from(t.friendRequests)
+      .innerJoin(t.users, eq(t.users.id, other))
+      .orderBy(t.friendRequests.id);
   // First visit sets the link only if it is still unset, so concurrent
   // visits cannot each mint a different token; the read-back holds the
   // canonical one.
-  await db
-    .prepare(
-      "UPDATE users SET friend_link = ?1 WHERE id = ?2 AND friend_link IS NULL",
-    )
-    .bind(base64url(crypto.getRandomValues(new Uint8Array(24))), user.id)
-    .run();
-  const link = (
-    await db
-      .prepare("SELECT friend_link FROM users WHERE id = ?1")
-      .bind(user.id)
-      .first<{ friend_link: string | null }>()
-  )?.friend_link;
+  const [, [stored], friends, incoming, outgoing] = await db.batch([
+    db
+      .update(t.users)
+      .set({
+        friendLink: base64url(crypto.getRandomValues(new Uint8Array(24))),
+      })
+      .where(and(eq(t.users.id, user.id), isNull(t.users.friendLink))),
+    db
+      .select({ link: t.users.friendLink })
+      .from(t.users)
+      .where(eq(t.users.id, user.id)),
+    db
+      .select({
+        id: t.users.id,
+        name: t.users.name,
+        isPublic: t.users.isPublic,
+      })
+      .from(t.friendships)
+      .innerJoin(t.users, eq(t.users.id, t.friendships.friendId))
+      .where(eq(t.friendships.userId, user.id))
+      .orderBy(t.users.name),
+    requestsWith(t.friendRequests.fromUser).where(
+      eq(t.friendRequests.toUser, user.id),
+    ),
+    requestsWith(t.friendRequests.toUser).where(
+      eq(t.friendRequests.fromUser, user.id),
+    ),
+  ]);
+  const link = stored?.link;
   if (link === null || link === undefined)
     throw new Error("friend link was not stored");
-  const [friends, incoming, outgoing] = await db.batch([
-    db
-      .prepare(
-        `SELECT users.id, users.name, users.is_public
-         FROM friendships JOIN users ON users.id = friendships.friend_id
-         WHERE friendships.user_id = ?1 ORDER BY users.name`,
-      )
-      .bind(user.id),
-    db
-      .prepare(
-        `SELECT friend_requests.id, users.name
-         FROM friend_requests JOIN users ON users.id = friend_requests.from_user
-         WHERE friend_requests.to_user = ?1 ORDER BY friend_requests.id`,
-      )
-      .bind(user.id),
-    db
-      .prepare(
-        `SELECT friend_requests.id, users.name
-         FROM friend_requests JOIN users ON users.id = friend_requests.to_user
-         WHERE friend_requests.from_user = ?1 ORDER BY friend_requests.id`,
-      )
-      .bind(user.id),
-  ]);
-  return {
-    user,
-    link,
-    friends: friends.results as unknown as FriendRow[],
-    incoming: incoming.results as unknown as RequestRow[],
-    outgoing: outgoing.results as unknown as RequestRow[],
-  };
+  return { user, link, friends, incoming, outgoing };
 }
 
 function friendsPage(data: PageData, options: PageOptions, origin: string) {
@@ -347,7 +340,7 @@ function FriendWho({ friend }: { friend: FriendRow }) {
       </span>
     </>
   );
-  return friend.is_public === 1 ? (
+  return friend.isPublic === 1 ? (
     <a class="who" href={`/u/${encodeURIComponent(friend.name)}`}>
       {inner}
     </a>
@@ -389,12 +382,8 @@ export function PeopleSwitch({
   );
 }
 
-export async function incomingRequests(db: D1Database, userId: number) {
-  const row = await db
-    .prepare("SELECT COUNT(*) AS n FROM friend_requests WHERE to_user = ?1")
-    .bind(userId)
-    .first<{ n: number }>();
-  return row?.n ?? 0;
+export function incomingRequests(db: Db, userId: number) {
+  return db.$count(t.friendRequests, eq(t.friendRequests.toUser, userId));
 }
 
 function render(
@@ -428,48 +417,63 @@ function back(context: FriendsContext) {
   }
 }
 
-async function findRequest(db: D1Database, id: number) {
+function findRequest(db: Db, id: number) {
   return db
-    .prepare("SELECT id, from_user, to_user FROM friend_requests WHERE id = ?1")
-    .bind(id)
-    .first<{ id: number; from_user: number; to_user: number }>();
+    .select({
+      fromUser: t.friendRequests.fromUser,
+      toUser: t.friendRequests.toUser,
+    })
+    .from(t.friendRequests)
+    .where(eq(t.friendRequests.id, id))
+    .get();
 }
 
-async function makeFriends(db: D1Database, a: number, b: number, now: number) {
-  // A friendship is mutual, so each direction gets a row; requests between
-  // the pair are spent.
+// The request from one user to another, if any.
+function requestBetween(db: Db, from: number, to: number) {
+  return db
+    .select({ id: t.friendRequests.id })
+    .from(t.friendRequests)
+    .where(
+      and(eq(t.friendRequests.fromUser, from), eq(t.friendRequests.toUser, to)),
+    )
+    .get();
+}
+
+// Both directions of a pair: a friendship is mutual, and a row exists for each.
+const eitherWay = <A extends SQLiteColumn, B extends SQLiteColumn>(
+  one: A,
+  other: B,
+  a: number,
+  b: number,
+) => or(and(eq(one, a), eq(other, b)), and(eq(one, b), eq(other, a)));
+
+async function makeFriends(db: Db, a: number, b: number, now: number) {
+  // Requests between the pair are spent.
   await db.batch([
     db
-      .prepare(
-        `INSERT OR IGNORE INTO friendships (user_id, friend_id, created_at)
-         VALUES (?1, ?2, ?3)`,
-      )
-      .bind(a, b, now),
+      .insert(t.friendships)
+      .values([
+        { userId: a, friendId: b, createdAt: now },
+        { userId: b, friendId: a, createdAt: now },
+      ])
+      .onConflictDoNothing(),
     db
-      .prepare(
-        `INSERT OR IGNORE INTO friendships (user_id, friend_id, created_at)
-         VALUES (?1, ?2, ?3)`,
-      )
-      .bind(b, a, now),
-    db
-      .prepare(
-        `DELETE FROM friend_requests
-         WHERE (from_user = ?1 AND to_user = ?2)
-            OR (from_user = ?2 AND to_user = ?1)`,
-      )
-      .bind(a, b),
+      .delete(t.friendRequests)
+      .where(
+        eitherWay(t.friendRequests.fromUser, t.friendRequests.toUser, a, b),
+      ),
   ]);
 }
 
-async function isFriend(db: D1Database, user: number, friend: number) {
-  return (
-    (await db
-      .prepare(
-        "SELECT 1 AS yes FROM friendships WHERE user_id = ?1 AND friend_id = ?2",
-      )
-      .bind(user, friend)
-      .first()) !== null
-  );
+async function isFriend(db: Db, user: number, friend: number) {
+  const row = await db
+    .select({ friendId: t.friendships.friendId })
+    .from(t.friendships)
+    .where(
+      and(eq(t.friendships.userId, user), eq(t.friendships.friendId, friend)),
+    )
+    .get();
+  return row !== undefined;
 }
 
 export const friendsApp = new Hono<{
@@ -499,7 +503,7 @@ friendsApp.get("/", async (context) => {
 
 friendsApp.post("/request", async (context) => {
   const user = context.get("user");
-  const db = context.env.DB;
+  const db = database(context.env.DB);
   const now = Math.floor(Date.now() / 1000);
   const name = await form(context, "name");
   const body = await context.req.parseBody();
@@ -516,50 +520,52 @@ friendsApp.post("/request", async (context) => {
       "The name needs 1 to 39 lowercase letters, digits or hyphens, with no hyphen at either end.",
     );
   const target = await db
-    .prepare("SELECT id, name FROM users WHERE name = ?1 COLLATE NOCASE")
-    .bind(name)
-    .first<{ id: number; name: string }>();
-  if (target !== null && target.id === user.id)
+    .select({ id: t.users.id, name: t.users.name })
+    .from(t.users)
+    .where(sql`${t.users.name} = ${name} COLLATE NOCASE`)
+    .get();
+  if (target !== undefined && target.id === user.id)
     return fail("That is your own profile.");
-  if (target !== null) {
+  if (target !== undefined) {
     if (await isFriend(db, user.id, target.id))
       return render(context, await pageData(context), {
         notice: `You are already friends with ${target.name}.`,
       });
-    const asked = await db
-      .prepare(
-        `SELECT id FROM friend_requests
-         WHERE from_user = ?1 AND to_user = ?2`,
-      )
-      .bind(target.id, user.id)
-      .first();
-    if (asked !== null) {
+    if ((await requestBetween(db, target.id, user.id)) !== undefined) {
       await makeFriends(db, user.id, target.id, now);
       return render(context, await pageData(context), {
         notice: `${target.name} had already asked. You are friends now.`,
       });
     }
     // The cap lives inside the insert so two requests cannot both pass a
-    // count taken before either wrote.
+    // count taken before either wrote. The sender's own row is the one row
+    // the insert selects from.
     const sent = await db
-      .prepare(
-        `INSERT OR IGNORE INTO friend_requests
-           (from_user, to_user, created_at)
-         SELECT ?1, ?2, ?3
-         WHERE (SELECT COUNT(*) FROM friend_requests
-                WHERE from_user = ?1) < ?4`,
+      .insert(t.friendRequests)
+      .select(
+        db
+          .select({
+            fromUser: t.users.id,
+            toUser: sql<number>`${target.id}`.as("to_user"),
+            createdAt: sql<number>`${now}`.as("created_at"),
+          })
+          .from(t.users)
+          .where(
+            and(
+              eq(t.users.id, user.id),
+              lt(
+                db.$count(
+                  t.friendRequests,
+                  eq(t.friendRequests.fromUser, user.id),
+                ),
+                pendingLimit,
+              ),
+            ),
+          ),
       )
-      .bind(user.id, target.id, now, pendingLimit)
-      .run();
+      .onConflictDoNothing();
     if (sent.meta.changes === 0) {
-      const already = await db
-        .prepare(
-          `SELECT id FROM friend_requests
-           WHERE from_user = ?1 AND to_user = ?2`,
-        )
-        .bind(user.id, target.id)
-        .first();
-      if (already === null)
+      if ((await requestBetween(db, user.id, target.id)) === undefined)
         return render(
           context,
           await pageData(context),
@@ -581,10 +587,10 @@ friendsApp.post("/request", async (context) => {
 
 friendsApp.post("/requests/accept", async (context) => {
   const user = context.get("user");
-  const db = context.env.DB;
+  const db = database(context.env.DB);
   const id = Number(await form(context, "id"));
   const request = await findRequest(db, id);
-  if (request === null || request.to_user !== user.id)
+  if (request === undefined || request.toUser !== user.id)
     return render(
       context,
       await pageData(context),
@@ -594,7 +600,7 @@ friendsApp.post("/requests/accept", async (context) => {
   await makeFriends(
     db,
     user.id,
-    request.from_user,
+    request.fromUser,
     Math.floor(Date.now() / 1000),
   );
   return context.redirect(back(context), 303);
@@ -602,39 +608,39 @@ friendsApp.post("/requests/accept", async (context) => {
 
 friendsApp.post("/requests/decline", async (context) => {
   const user = context.get("user");
-  const db = context.env.DB;
+  const db = database(context.env.DB);
   const id = Number(await form(context, "id"));
   const request = await findRequest(db, id);
-  if (request === null || request.to_user !== user.id)
+  if (request === undefined || request.toUser !== user.id)
     return render(
       context,
       await pageData(context),
       { error: "That request is not yours to answer." },
       400,
     );
-  await db.prepare("DELETE FROM friend_requests WHERE id = ?1").bind(id).run();
+  await db.delete(t.friendRequests).where(eq(t.friendRequests.id, id));
   return context.redirect(back(context), 303);
 });
 
 friendsApp.post("/requests/cancel", async (context) => {
   const user = context.get("user");
-  const db = context.env.DB;
+  const db = database(context.env.DB);
   const id = Number(await form(context, "id"));
   const request = await findRequest(db, id);
-  if (request === null || request.from_user !== user.id)
+  if (request === undefined || request.fromUser !== user.id)
     return render(
       context,
       await pageData(context),
       { error: "That request is not yours to cancel." },
       400,
     );
-  await db.prepare("DELETE FROM friend_requests WHERE id = ?1").bind(id).run();
+  await db.delete(t.friendRequests).where(eq(t.friendRequests.id, id));
   return context.redirect(back(context), 303);
 });
 
 friendsApp.post("/remove", async (context) => {
   const user = context.get("user");
-  const db = context.env.DB;
+  const db = database(context.env.DB);
   const id = Number(await form(context, "id"));
   if (!(await isFriend(db, user.id, id)))
     return render(
@@ -643,25 +649,20 @@ friendsApp.post("/remove", async (context) => {
       { error: "You are not friends." },
       400,
     );
-  await db.batch([
-    db
-      .prepare("DELETE FROM friendships WHERE user_id = ?1 AND friend_id = ?2")
-      .bind(user.id, id),
-    db
-      .prepare("DELETE FROM friendships WHERE user_id = ?1 AND friend_id = ?2")
-      .bind(id, user.id),
-  ]);
+  await db
+    .delete(t.friendships)
+    .where(
+      eitherWay(t.friendships.userId, t.friendships.friendId, user.id, id),
+    );
   return context.redirect("/friends", 303);
 });
 
 friendsApp.post("/link/reset", async (context) => {
   const user = context.get("user");
-  const link = base64url(crypto.getRandomValues(new Uint8Array(24)));
-  await context.env.DB.prepare(
-    "UPDATE users SET friend_link = ?1 WHERE id = ?2",
-  )
-    .bind(link, user.id)
-    .run();
+  await database(context.env.DB)
+    .update(t.users)
+    .set({ friendLink: base64url(crypto.getRandomValues(new Uint8Array(24))) })
+    .where(eq(t.users.id, user.id));
   return context.redirect("/friends", 303);
 });
 
@@ -679,11 +680,12 @@ function linkPage(
 
 async function linkOwner(context: FriendsContext) {
   const token = context.req.param("token");
-  return context.env.DB.prepare(
-    "SELECT id, name FROM users WHERE friend_link = ?1",
-  )
-    .bind(token)
-    .first<{ id: number; name: string }>();
+  if (token === undefined) return undefined;
+  return database(context.env.DB)
+    .select({ id: t.users.id, name: t.users.name })
+    .from(t.users)
+    .where(eq(t.users.friendLink, token))
+    .get();
 }
 
 function deadLink(context: FriendsContext, user: SignedInUser | null) {
@@ -704,7 +706,7 @@ function deadLink(context: FriendsContext, user: SignedInUser | null) {
 async function addLanding(context: FriendsContext) {
   const user = await sessionUser(context);
   const owner = await linkOwner(context);
-  if (owner === null) return deadLink(context, user);
+  if (owner === undefined) return deadLink(context, user);
   if (user !== null && owner.id === user.id)
     return context.html(
       linkPage(
@@ -717,7 +719,10 @@ async function addLanding(context: FriendsContext) {
         />,
       ),
     );
-  if (user !== null && (await isFriend(context.env.DB, user.id, owner.id)))
+  if (
+    user !== null &&
+    (await isFriend(database(context.env.DB), user.id, owner.id))
+  )
     return context.html(
       linkPage(
         user,
@@ -756,10 +761,10 @@ async function addLanding(context: FriendsContext) {
 friendsApp.post("/add/:token", async (context) => {
   const user = context.get("user");
   const owner = await linkOwner(context);
-  if (owner === null) return deadLink(context, user);
+  if (owner === undefined) return deadLink(context, user);
   if (owner.id !== user.id)
     await makeFriends(
-      context.env.DB,
+      database(context.env.DB),
       user.id,
       owner.id,
       Math.floor(Date.now() / 1000),
