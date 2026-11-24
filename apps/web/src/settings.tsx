@@ -12,6 +12,8 @@ import {
   validName,
   type SignedInUser,
 } from "./auth";
+import { and, count, eq, inArray, isNull, notExists, sql } from "drizzle-orm";
+import { database, t, type Db } from "./db";
 import { ingestPage, type PageSource } from "./ingest";
 import { sourceNames } from "./names";
 import { sealSecret } from "./secret";
@@ -84,40 +86,10 @@ exportAll?.addEventListener("click", async (event) => {
 });
 `;
 
-interface SourceInfo {
-  id: number;
-  kind: string;
-  account: string | null;
-  status: string;
-  error: string | null;
-  maybe_missing: number;
-  last_ok_at: number | null;
-  has_secret: number;
-  tz: string | null;
-}
-
-// The GitHub login and Google address that sign this user in, or null.
-interface Logins {
-  github: string | null;
-  google: string | null;
-}
-
-interface TokenInfo {
-  id: number;
-  hint: string;
-  created_at: number;
-  last_used_at: number | null;
-  kind: string;
-}
-
-interface ExportRow {
-  played_at: number;
-  source_id: number;
-  source: string;
-  ref: string;
-  artist: string;
-  title: string;
-}
+type PageData = Awaited<ReturnType<typeof pageData>>;
+type SourceInfo = PageData["sources"][number];
+type TokenInfo = PageData["tokens"][number];
+type Logins = PageData["logins"];
 
 function dayText(timestamp: number | null) {
   if (timestamp === null) return "never";
@@ -163,9 +135,9 @@ function SourceProblems({ source }: { source?: SourceInfo }) {
       {source.status === "error" && (
         <p class="form-error">{source.error ?? "The last pull failed."}</p>
       )}
-      {source.maybe_missing > 0 && (
+      {source.maybeMissing > 0 && (
         <p>
-          Up to {source.maybe_missing} plays of repeated songs may be missing.
+          Up to {source.maybeMissing} plays of repeated songs may be missing.
         </p>
       )}
     </>
@@ -194,8 +166,7 @@ function TokenList({ tokens }: { tokens: TokenInfo[] }) {
         <li class="row" key={token.id}>
           <span>
             <code class="code-chip">…{token.hint}</code> created{" "}
-            {dayText(token.created_at)} · last used{" "}
-            {dayText(token.last_used_at)}
+            {dayText(token.createdAt)} · last used {dayText(token.lastUsedAt)}
           </span>
           <form method="post" action="/settings/tokens/revoke" class="inline">
             <input type="hidden" name="id" value={token.id} />
@@ -258,7 +229,7 @@ function settingsPage(
   const spotify = sources.find((item) => item.kind === "spotify");
   const ytmusic = sources.find((item) => item.kind === "ytmusic");
   const phone = sources.find((item) => item.kind === "listenbrainz");
-  const cookieConnected = ytmusic !== undefined && ytmusic.has_secret === 1;
+  const cookieConnected = ytmusic !== undefined && ytmusic.hasSecret;
   const issuedHere = (kind: string) =>
     issuedToken !== undefined && (issuedKind ?? "ytmusic") === kind;
   const issued = (kind: string, label: string) =>
@@ -646,76 +617,102 @@ function settingsPage(
   });
 }
 
-function recountStatements(db: D1Database, userId: number) {
+// Counted plays: a duplicate stays in plays but in no total.
+const countedPlays = (userId: number) =>
+  and(eq(t.plays.userId, userId), eq(t.plays.dup, 0));
+
+const playDay = sql<number>`${t.plays.playedAt} / 86400`;
+
+function recountStatements(db: Db, userId: number) {
   return [
-    db.prepare("DELETE FROM track_totals WHERE user_id = ?1").bind(userId),
-    db
-      .prepare(
-        `INSERT INTO track_totals (user_id, track_id, plays, last_played_at)
-         SELECT user_id, track_id, COUNT(*), MAX(played_at)
-         FROM plays WHERE user_id = ?1 AND dup = 0 GROUP BY track_id`,
-      )
-      .bind(userId),
-    db.prepare("DELETE FROM daily_totals WHERE user_id = ?1").bind(userId),
-    db
-      .prepare(
-        `INSERT INTO daily_totals (user_id, day, plays)
-         SELECT user_id, played_at / 86400, COUNT(*)
-         FROM plays WHERE user_id = ?1 AND dup = 0
-         GROUP BY played_at / 86400`,
-      )
-      .bind(userId),
-    db.prepare("DELETE FROM artist_totals WHERE user_id = ?1").bind(userId),
-    db
-      .prepare(
-        `INSERT INTO artist_totals (user_id, artist_id, plays)
-         SELECT plays.user_id, tracks.artist_id, COUNT(*)
-         FROM plays JOIN tracks ON tracks.id = plays.track_id
-         WHERE plays.user_id = ?1 AND plays.dup = 0
-         GROUP BY tracks.artist_id`,
-      )
-      .bind(userId),
-  ];
+    db.delete(t.trackTotals).where(eq(t.trackTotals.userId, userId)),
+    db.insert(t.trackTotals).select(
+      db
+        .select({
+          userId: t.plays.userId,
+          trackId: t.plays.trackId,
+          plays: count().as("plays"),
+          lastPlayedAt: sql<number>`max(${t.plays.playedAt})`.as(
+            "last_played_at",
+          ),
+        })
+        .from(t.plays)
+        .where(countedPlays(userId))
+        .groupBy(t.plays.trackId),
+    ),
+    db.delete(t.dailyTotals).where(eq(t.dailyTotals.userId, userId)),
+    db.insert(t.dailyTotals).select(
+      db
+        .select({
+          userId: t.plays.userId,
+          day: playDay.as("day"),
+          plays: count().as("plays"),
+        })
+        .from(t.plays)
+        .where(countedPlays(userId))
+        .groupBy(playDay),
+    ),
+    db.delete(t.artistTotals).where(eq(t.artistTotals.userId, userId)),
+    db.insert(t.artistTotals).select(
+      db
+        .select({
+          userId: t.plays.userId,
+          artistId: t.tracks.artistId,
+          plays: count().as("plays"),
+        })
+        .from(t.plays)
+        .innerJoin(t.tracks, eq(t.tracks.id, t.plays.trackId))
+        .where(countedPlays(userId))
+        .groupBy(t.tracks.artistId),
+    ),
+  ] as const;
 }
 
 export function sourceRemovalStatements(
-  db: D1Database,
+  db: Db,
   userId: number,
   sourceId: number,
 ) {
   return [
     db
-      .prepare("DELETE FROM plays WHERE user_id = ?1 AND source_id = ?2")
-      .bind(userId, sourceId),
-    db.prepare("DELETE FROM tokens WHERE source_id = ?1").bind(sourceId),
+      .delete(t.plays)
+      .where(and(eq(t.plays.userId, userId), eq(t.plays.sourceId, sourceId))),
+    db.delete(t.tokens).where(eq(t.tokens.sourceId, sourceId)),
     db
-      .prepare("DELETE FROM sources WHERE id = ?1 AND user_id = ?2")
-      .bind(sourceId, userId),
+      .delete(t.sources)
+      .where(and(eq(t.sources.id, sourceId), eq(t.sources.userId, userId))),
     ...recountStatements(db, userId),
-  ];
+  ] as const;
 }
 
-export function deletionStatements(db: D1Database, userId: number) {
+const sourcesOf = (db: Db, userId: number) =>
+  db
+    .select({ id: t.sources.id })
+    .from(t.sources)
+    .where(eq(t.sources.userId, userId));
+
+export function deletionStatements(db: Db, userId: number) {
   return [
-    db.prepare("DELETE FROM plays WHERE user_id = ?1").bind(userId),
-    db.prepare("DELETE FROM track_totals WHERE user_id = ?1").bind(userId),
-    db.prepare("DELETE FROM daily_totals WHERE user_id = ?1").bind(userId),
-    db.prepare("DELETE FROM artist_totals WHERE user_id = ?1").bind(userId),
+    db.delete(t.plays).where(eq(t.plays.userId, userId)),
+    db.delete(t.trackTotals).where(eq(t.trackTotals.userId, userId)),
+    db.delete(t.dailyTotals).where(eq(t.dailyTotals.userId, userId)),
+    db.delete(t.artistTotals).where(eq(t.artistTotals.userId, userId)),
     db
-      .prepare(
-        `DELETE FROM tokens WHERE source_id IN
-         (SELECT id FROM sources WHERE user_id = ?1)`,
-      )
-      .bind(userId),
-    db.prepare("DELETE FROM sources WHERE user_id = ?1").bind(userId),
-    db.prepare("DELETE FROM sessions WHERE user_id = ?1").bind(userId),
-    db.prepare("DELETE FROM users WHERE id = ?1").bind(userId),
+      .delete(t.tokens)
+      .where(inArray(t.tokens.sourceId, sourcesOf(db, userId))),
+    db.delete(t.sources).where(eq(t.sources.userId, userId)),
+    db.delete(t.sessions).where(eq(t.sessions.userId, userId)),
+    db.delete(t.users).where(eq(t.users.id, userId)),
     // The cascade above can empty a group the deleted user did not make.
-    db.prepare(
-      `DELETE FROM friend_groups WHERE NOT EXISTS
-       (SELECT 1 FROM group_members WHERE group_id = friend_groups.id)`,
+    db.delete(t.friendGroups).where(
+      notExists(
+        db
+          .select({ one: sql`1` })
+          .from(t.groupMembers)
+          .where(eq(t.groupMembers.groupId, t.friendGroups.id)),
+      ),
     ),
-  ];
+  ] as const;
 }
 
 function newUploadToken() {
@@ -729,41 +726,57 @@ type SettingsContext = Context<{
 
 async function pageData(context: SettingsContext) {
   const user = context.get("user");
-  const [sources, tokens, logins] = await context.env.DB.batch([
-    context.env.DB.prepare(
-      `SELECT id, kind, account, status, error, maybe_missing, last_ok_at,
-              secret IS NOT NULL AS has_secret, tz
-       FROM sources WHERE user_id = ?1 ORDER BY kind, id`,
-    ).bind(user.id),
-    context.env.DB.prepare(
-      `SELECT tokens.id, tokens.hint, tokens.created_at, tokens.last_used_at,
-              sources.kind
-       FROM tokens
-       JOIN sources ON sources.id = tokens.source_id
-       WHERE sources.user_id = ?1 AND tokens.revoked_at IS NULL
-       ORDER BY tokens.id`,
-    ).bind(user.id),
-    context.env.DB.prepare(
-      `SELECT CASE WHEN github_id > 0
-                   THEN coalesce(github_login, 'id ' || github_id) END AS github,
-              google_email AS google
-       FROM users WHERE id = ?1`,
-    ).bind(user.id),
+  const db = database(context.env.DB);
+  const [sources, tokens, logins] = await db.batch([
+    db
+      .select({
+        id: t.sources.id,
+        kind: t.sources.kind,
+        account: t.sources.account,
+        status: t.sources.status,
+        error: t.sources.error,
+        maybeMissing: t.sources.maybeMissing,
+        hasSecret: sql<boolean>`${t.sources.secret} IS NOT NULL`.mapWith(
+          Boolean,
+        ),
+        tz: t.sources.tz,
+      })
+      .from(t.sources)
+      .where(eq(t.sources.userId, user.id))
+      .orderBy(t.sources.kind, t.sources.id),
+    db
+      .select({
+        id: t.tokens.id,
+        hint: t.tokens.hint,
+        createdAt: t.tokens.createdAt,
+        lastUsedAt: t.tokens.lastUsedAt,
+        kind: t.sources.kind,
+      })
+      .from(t.tokens)
+      .innerJoin(t.sources, eq(t.sources.id, t.tokens.sourceId))
+      .where(and(eq(t.sources.userId, user.id), isNull(t.tokens.revokedAt)))
+      .orderBy(t.tokens.id),
+    // The GitHub login and Google address that sign this user in, or null.
+    db
+      .select({
+        github: sql<string | null>`CASE WHEN ${t.users.githubId} > 0
+          THEN coalesce(${t.users.githubLogin}, 'id ' || ${t.users.githubId}) END`,
+        google: t.users.googleEmail,
+      })
+      .from(t.users)
+      .where(eq(t.users.id, user.id)),
   ]);
   return {
     user,
-    sources: sources.results as unknown as SourceInfo[],
-    tokens: tokens.results as unknown as TokenInfo[],
-    logins: (logins.results[0] ?? {
-      github: null,
-      google: null,
-    }) as unknown as Logins,
+    sources,
+    tokens,
+    logins: logins[0] ?? { github: null, google: null },
   };
 }
 
 function render(
   context: SettingsContext,
-  data: Awaited<ReturnType<typeof pageData>>,
+  data: PageData,
   options: PageOptions,
   status: 200 | 400 = 200,
 ) {
@@ -839,11 +852,10 @@ settingsApp.post("/profile", async (context) => {
       400,
     );
   try {
-    await context.env.DB.prepare(
-      "UPDATE users SET name = ?1, is_public = ?2 WHERE id = ?3",
-    )
-      .bind(name, isPublic, user.id)
-      .run();
+    await database(context.env.DB)
+      .update(t.users)
+      .set({ name, isPublic })
+      .where(eq(t.users.id, user.id));
   } catch {
     return render(
       context,
@@ -867,47 +879,46 @@ settingsApp.post("/sources/remove", async (context) => {
       { error: "That source is not connected." },
       400,
     );
-  const db = context.env.DB;
+  const db = database(context.env.DB);
   await db.batch(sourceRemovalStatements(db, user.id, id));
   return context.redirect("/settings", 303);
 });
 
-const tokenKinds = new Set(["ytmusic", "listenbrainz"]);
-
-const sourceByKindSql = `SELECT id FROM sources
-  WHERE user_id = ?1 AND kind = ?2`;
+const tokenKinds = ["ytmusic", "listenbrainz"] as const;
+type TokenKind = (typeof tokenKinds)[number];
+const isTokenKind = (kind: string): kind is TokenKind =>
+  (tokenKinds as readonly string[]).includes(kind);
 
 settingsApp.post("/tokens", async (context) => {
   const user = context.get("user");
   const now = Math.floor(Date.now() / 1000);
-  const db = context.env.DB;
+  const db = database(context.env.DB);
   const kind = await form(context, "kind");
-  if (!tokenKinds.has(kind))
+  if (!isTokenKind(kind))
     return render(
       context,
       await pageData(context),
       { error: "Unknown token kind." },
       400,
     );
-  await db
-    .prepare(
-      `INSERT INTO sources (user_id, kind) VALUES (?1, ?2)
-       ON CONFLICT (user_id, kind) DO NOTHING`,
-    )
-    .bind(user.id, kind)
-    .run();
-  const source = await db
-    .prepare(sourceByKindSql)
-    .bind(user.id, kind)
-    .first<{ id: number }>();
-  if (source === null) throw new Error("could not create the source");
+  const [, [source]] = await db.batch([
+    db
+      .insert(t.sources)
+      .values({ userId: user.id, kind })
+      .onConflictDoNothing({ target: [t.sources.userId, t.sources.kind] }),
+    db
+      .select({ id: t.sources.id })
+      .from(t.sources)
+      .where(and(eq(t.sources.userId, user.id), eq(t.sources.kind, kind))),
+  ]);
+  if (source === undefined) throw new Error("could not create the source");
   const token = newUploadToken();
-  await db
-    .prepare(
-      "INSERT INTO tokens (source_id, hash, hint, created_at) VALUES (?1, ?2, ?3, ?4)",
-    )
-    .bind(source.id, await sha256Bytes(token), token.slice(-4), now)
-    .run();
+  await db.insert(t.tokens).values({
+    sourceId: source.id,
+    hash: await sha256Bytes(token),
+    hint: token.slice(-4),
+    createdAt: now,
+  });
   setCookie(context, "issued-token-kind", kind, {
     prefix: "host",
     httpOnly: true,
@@ -929,21 +940,26 @@ settingsApp.post("/tokens/revoke", async (context) => {
   const user = context.get("user");
   const id = Number(await form(context, "id"));
   const now = Math.floor(Date.now() / 1000);
-  await context.env.DB.prepare(
-    `UPDATE tokens SET revoked_at = ?1 WHERE id = ?2 AND source_id IN
-     (SELECT id FROM sources WHERE user_id = ?3) AND revoked_at IS NULL`,
-  )
-    .bind(now, id, user.id)
-    .run();
+  const db = database(context.env.DB);
+  await db
+    .update(t.tokens)
+    .set({ revokedAt: now })
+    .where(
+      and(
+        eq(t.tokens.id, id),
+        inArray(t.tokens.sourceId, sourcesOf(db, user.id)),
+        isNull(t.tokens.revokedAt),
+      ),
+    );
   return context.redirect("/settings", 303);
 });
 
-const connectedSourceSql = `SELECT id, user_id, status, last_page, play_seq,
-  gap_at FROM sources WHERE user_id = ?1 AND kind = 'ytmusic'`;
+const ytmusicOf = (userId: number) =>
+  and(eq(t.sources.userId, userId), eq(t.sources.kind, "ytmusic"));
 
 settingsApp.post("/ytmusic", async (context) => {
   const user = context.get("user");
-  const db = context.env.DB;
+  const db = database(context.env.DB);
   const cookie = await form(context, "cookie");
   const tzInput = (await form(context, "tz")) || "UTC";
   const data = await pageData(context);
@@ -991,24 +1007,41 @@ settingsApp.post("/ytmusic", async (context) => {
 
   const now = Math.floor(Date.now() / 1000);
   const secret = await sealSecret(context.env, cookie);
-  await db
-    .prepare(
-      `INSERT INTO sources (user_id, kind, secret, tz, next_pull_at)
-       VALUES (?1, 'ytmusic', ?2, ?3, ?4)
-       ON CONFLICT (user_id, kind) DO UPDATE SET
-         secret = excluded.secret, tz = excluded.tz,
-         next_pull_at = excluded.next_pull_at, error = NULL`,
-    )
-    .bind(user.id, secret, tz, now + pullIntervalSeconds)
-    .run();
-  const source = await db
-    .prepare(connectedSourceSql)
-    .bind(user.id)
-    .first<PageSource>();
+  const [, [source]] = await db.batch([
+    db
+      .insert(t.sources)
+      .values({
+        userId: user.id,
+        kind: "ytmusic",
+        secret,
+        tz,
+        nextPullAt: now + pullIntervalSeconds,
+      })
+      .onConflictDoUpdate({
+        target: [t.sources.userId, t.sources.kind],
+        set: {
+          secret: sql`excluded.secret`,
+          tz: sql`excluded.tz`,
+          nextPullAt: sql`excluded.next_pull_at`,
+          error: null,
+        },
+      }),
+    db
+      .select({
+        id: t.sources.id,
+        user_id: t.sources.userId,
+        status: t.sources.status,
+        last_page: t.sources.lastPage,
+        play_seq: t.sources.playSeq,
+        gap_at: t.sources.gapAt,
+      } satisfies Record<keyof PageSource, unknown>)
+      .from(t.sources)
+      .where(ytmusicOf(user.id)),
+  ]);
   let inserted = 0;
-  if (source !== null) {
+  if (source !== undefined) {
     const result = await ingestPage(
-      db,
+      context.env.DB,
       source,
       plays
         .filter(
@@ -1035,28 +1068,44 @@ settingsApp.post("/ytmusic", async (context) => {
 
 settingsApp.post("/ytmusic/disconnect", async (context) => {
   const user = context.get("user");
-  await context.env.DB.prepare(
-    `UPDATE sources SET secret = NULL, next_pull_at = NULL, error = NULL,
-       status = CASE WHEN status = 'error' THEN 'active' ELSE status END
-     WHERE user_id = ?1 AND kind = 'ytmusic'`,
-  )
-    .bind(user.id)
-    .run();
+  await database(context.env.DB)
+    .update(t.sources)
+    .set({
+      secret: null,
+      nextPullAt: null,
+      error: null,
+      status: sql`CASE WHEN ${t.sources.status} = 'error' THEN 'active' ELSE ${t.sources.status} END`,
+    })
+    .where(ytmusicOf(user.id));
   return context.redirect("/settings", 303);
 });
 
-const exportSql = `
-  SELECT plays.played_at, plays.source_id, sources.kind AS source,
-         plays.ref, artists.name AS artist, tracks.title
-  FROM plays
-  JOIN sources ON sources.id = plays.source_id
-  JOIN tracks ON tracks.id = plays.track_id
-  JOIN artists ON artists.id = tracks.artist_id
-  WHERE plays.user_id = ?1
-    AND (plays.played_at, plays.source_id, plays.ref) > (?2, ?3, ?4)
-  ORDER BY plays.played_at, plays.source_id, plays.ref
-  LIMIT ${exportPageSize}
-`;
+// One page of the export, after a (played_at, source_id, ref) key. The keys
+// are the export file's field names; source_id only orders the pages.
+function exportPage(db: Db, userId: number, after: [number, number, string]) {
+  const [playedAt, sourceId, ref] = after;
+  return db
+    .select({
+      played_at: t.plays.playedAt,
+      source_id: t.plays.sourceId,
+      source: t.sources.kind,
+      ref: t.plays.ref,
+      artist: t.artists.name,
+      title: t.tracks.title,
+    })
+    .from(t.plays)
+    .innerJoin(t.sources, eq(t.sources.id, t.plays.sourceId))
+    .innerJoin(t.tracks, eq(t.tracks.id, t.plays.trackId))
+    .innerJoin(t.artists, eq(t.artists.id, t.tracks.artistId))
+    .where(
+      and(
+        eq(t.plays.userId, userId),
+        sql`(${t.plays.playedAt}, ${t.plays.sourceId}, ${t.plays.ref}) > (${playedAt}, ${sourceId}, ${ref})`,
+      ),
+    )
+    .orderBy(t.plays.playedAt, t.plays.sourceId, t.plays.ref)
+    .limit(exportPageSize);
+}
 
 settingsApp.get("/export", async (context) => {
   const user = context.get("user");
@@ -1071,21 +1120,19 @@ settingsApp.get("/export", async (context) => {
     (!Number.isFinite(after[0]) || !Number.isFinite(after[1]))
   )
     return context.text("Bad after key", 400);
-  const page = await context.env.DB.prepare(exportSql)
-    .bind(user.id, ...after)
-    .all<ExportRow>();
-  const body = page.results
+  const rows = await exportPage(database(context.env.DB), user.id, after);
+  const body = rows
     .map((row) => {
       const { source_id: _sourceId, ...line } = row;
       return `${JSON.stringify(line)}\n`;
     })
     .join("");
-  const last = page.results[page.results.length - 1];
+  const last = rows.at(-1);
   const headers: Record<string, string> = {
     "content-type": "application/x-ndjson; charset=utf-8",
     "content-disposition": `attachment; filename="${user.name}-plays.ndjson"`,
   };
-  if (last !== undefined && page.results.length === exportPageSize) {
+  if (last !== undefined && rows.length === exportPageSize) {
     const key = `${last.played_at},${last.source_id},${encodeURIComponent(last.ref)}`;
     headers.link = `</settings/export?after=${key}>; rel="next"`;
   }
@@ -1106,7 +1153,8 @@ settingsApp.post("/delete", async (context) => {
       },
       400,
     );
-  await context.env.DB.batch(deletionStatements(context.env.DB, user.id));
+  const db = database(context.env.DB);
+  await db.batch(deletionStatements(db, user.id));
   deleteCookie(context, "session", cookieClear);
   return context.redirect("/", 303);
 });
