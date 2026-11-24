@@ -56,19 +56,11 @@ async function getSnapshot(
   now: number,
 ) {
   const key = `snap:${user.id}:${period}`;
-  if (env.CACHE) {
-    let cached: PeriodStats | null = null;
-    try {
-      cached = await env.CACHE.get<PeriodStats>(key, "json");
-    } catch {
-      cached = null;
-    }
-    if (
-      cached &&
-      cached.updated_at > now - (period === "all" ? 6 * 3600 : 15 * 60)
-    )
-      return cached;
-  }
+  const ttl = period === "all" ? 6 * 3600 : 15 * 60;
+  const cached = await env.CACHE.get<PeriodStats>(key, "json").catch(
+    () => null,
+  );
+  if (cached && cached.updated_at > now - ttl) return cached;
   const snapshot = await getStats(
     database(env.DB),
     user.id,
@@ -76,11 +68,9 @@ async function getSnapshot(
     period,
     now,
   );
-  if (env.CACHE) {
-    await env.CACHE.put(key, JSON.stringify(snapshot), {
-      expirationTtl: period === "all" ? 6 * 3600 : 15 * 60,
-    }).catch(() => undefined);
-  }
+  await env.CACHE.put(key, JSON.stringify(snapshot), {
+    expirationTtl: ttl,
+  }).catch(() => undefined);
   return snapshot;
 }
 

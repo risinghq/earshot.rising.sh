@@ -23,16 +23,8 @@ export class Matchmaker extends DurableObject<Env> {
       now: () => Date.now(),
       sockets: () => this.ctx.getWebSockets().map(matchSocket),
       pool: (slug, era) => this.pool(slug, era),
-      openRoom: async (init) => {
-        const room = this.env.ROOMS.get(this.env.ROOMS.idFromName(init.code));
-        const response = await room.fetch(
-          new Request("https://room/init", {
-            method: "POST",
-            body: JSON.stringify(init),
-          }),
-        );
-        return response.ok;
-      },
+      openRoom: (init) =>
+        this.env.ROOMS.get(this.env.ROOMS.idFromName(init.code)).init(init),
       newCode: newRoomCode,
       newSecret: newRoomSecret,
     };

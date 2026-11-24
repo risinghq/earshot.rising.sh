@@ -25,7 +25,7 @@ export async function pullDueSources(
   env: Env,
   now = Math.floor(Date.now() / 1000),
 ) {
-  if (await env.CACHE?.get(d1CapKey)) return;
+  if (await env.CACHE.get(d1CapKey)) return;
   const db = database(env.DB);
   let due: SourceRow[];
   try {
@@ -37,10 +37,9 @@ export async function pullDueSources(
       .limit(maxSourcesPerPull);
   } catch (error) {
     if (isDailyLimit(error)) {
-      if (env.CACHE)
-        await env.CACHE.put(d1CapKey, "1", {
-          expiration: nextUtcMidnight(now),
-        });
+      await env.CACHE.put(d1CapKey, "1", {
+        expiration: nextUtcMidnight(now),
+      });
       return;
     }
     throw error;
@@ -52,10 +51,9 @@ export async function pullDueSources(
       await pull(env, source, now);
     } catch (error) {
       if (isDailyLimit(error)) {
-        if (env.CACHE)
-          await env.CACHE.put(d1CapKey, "1", {
-            expiration: nextUtcMidnight(now),
-          });
+        await env.CACHE.put(d1CapKey, "1", {
+          expiration: nextUtcMidnight(now),
+        });
         return;
       }
       await db

@@ -34,7 +34,7 @@ async function factsOf(
       return { eras: poolEras(tracks), covers: distinctCovers(tracks) };
     }
     if (category.feed === "deezer_chart" || category.feed === "apple_chart") {
-      const cached = await env.CACHE?.get<Candidate[]>(
+      const cached = await env.CACHE.get<Candidate[]>(
         `play:cat:${category.slug}`,
         "json",
       );
@@ -59,7 +59,7 @@ const hubTilesTtlSeconds = 600;
 // reaches the tiles within the entry's lifetime; a category edit in the admin
 // deletes the entry.
 export async function hubTiles(env: Env): Promise<HubTiles> {
-  const cached = await env.CACHE?.get<HubTiles>(hubTilesKey, "json").catch(
+  const cached = await env.CACHE.get<HubTiles>(hubTilesKey, "json").catch(
     () => null,
   );
   if (cached) return cached;
@@ -78,7 +78,7 @@ export async function hubTiles(env: Env): Promise<HubTiles> {
       ]),
     ),
   };
-  if (env.CACHE && !facts.includes(null))
+  if (!facts.includes(null))
     await env.CACHE.put(hubTilesKey, JSON.stringify(tiles), {
       expirationTtl: hubTilesTtlSeconds,
     }).catch(() => undefined);

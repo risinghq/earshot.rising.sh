@@ -898,7 +898,7 @@ adminApp.post("/categories", async (context) => {
   } catch {
     return context.text("That slug is taken.", 400);
   }
-  await context.env.CACHE?.delete(hubTilesKey).catch(() => undefined);
+  await context.env.CACHE.delete(hubTilesKey).catch(() => undefined);
   await logAction(context.env, admin, "category.create", slug, name);
   return context.redirect(`/admin/categories/${slug}`, 303);
 });
@@ -917,7 +917,7 @@ adminApp.post("/categories/save", async (context) => {
     .where(eq(t.categories.slug, slug));
   await Promise.all(
     [`play:cat:${slug}`, hubTilesKey].map((key) =>
-      context.env.CACHE?.delete(key).catch(() => undefined),
+      context.env.CACHE.delete(key).catch(() => undefined),
     ),
   );
   await logAction(
@@ -1024,7 +1024,7 @@ adminApp.post("/sources/remove", async (context) => {
   await database(context.env.DB)
     .delete(t.categorySources)
     .where(eq(t.categorySources.id, id));
-  await context.env.CACHE?.delete(`play:cat:${slug}`).catch(() => undefined);
+  await context.env.CACHE.delete(`play:cat:${slug}`).catch(() => undefined);
   await logAction(context.env, admin, "source.remove", slug, String(id));
   return context.redirect(`/admin/categories/${slug}`, 303);
 });
@@ -1164,7 +1164,7 @@ adminApp.post("/users/hide", async (context) => {
     .where(eq(t.gameResults.userId, userId));
   boards.push(...cats.map((c) => `play:catboard:${c.category}`));
   for (const key of boards)
-    await context.env.CACHE?.delete(key).catch(() => undefined);
+    await context.env.CACHE.delete(key).catch(() => undefined);
   await logAction(
     context.env,
     admin,
