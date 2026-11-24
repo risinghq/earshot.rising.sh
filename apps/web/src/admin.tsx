@@ -9,6 +9,7 @@ import {
   refreshCategorySources,
   type CategorySource,
 } from "./play/refresh";
+import { hubTilesKey } from "./play/hub";
 import { deezerPlaylistInfo } from "./play/sources";
 import type { Env } from "./types";
 import { PillButton } from "./ui/pill";
@@ -830,6 +831,7 @@ adminApp.post("/categories", async (context) => {
   } catch {
     return context.text("That slug is taken.", 400);
   }
+  await context.env.CACHE?.delete(hubTilesKey).catch(() => undefined);
   await logAction(context.env.DB, admin, "category.create", slug, name);
   return context.redirect(`/admin/categories/${slug}`, 303);
 });
@@ -847,7 +849,11 @@ adminApp.post("/categories/save", async (context) => {
   )
     .bind(name, position, hidden, slug)
     .run();
-  await context.env.CACHE?.delete(`play:cat:${slug}`).catch(() => undefined);
+  await Promise.all(
+    [`play:cat:${slug}`, hubTilesKey].map((key) =>
+      context.env.CACHE?.delete(key).catch(() => undefined),
+    ),
+  );
   await logAction(
     context.env.DB,
     admin,

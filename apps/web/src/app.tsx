@@ -137,6 +137,31 @@ const trackSeed = (track: { title: string; artist: string }) =>
 
 type Relation = "friends" | "sent" | "none" | "self" | "out";
 
+async function relationTo(
+  db: D1Database,
+  viewer: SignedInUser | null,
+  userId: number,
+): Promise<Relation> {
+  if (viewer === null) return "out";
+  if (viewer.id === userId) return "self";
+  const [friends, sent] = await db.batch([
+    db
+      .prepare(
+        `SELECT 1 AS yes FROM friendships
+         WHERE user_id = ?1 AND friend_id = ?2`,
+      )
+      .bind(viewer.id, userId),
+    db
+      .prepare(
+        `SELECT 1 AS yes FROM friend_requests
+         WHERE from_user = ?1 AND to_user = ?2`,
+      )
+      .bind(viewer.id, userId),
+  ]);
+  if (friends.results.length > 0) return "friends";
+  return sent.results.length > 0 ? "sent" : "none";
+}
+
 function ProfileActions({
   name,
   period,
@@ -527,39 +552,22 @@ app.get("/u/:path", async (context) => {
     return format === "json"
       ? context.json({ error: "not found" }, 404)
       : context.html(notFoundPage(await sessionUser(context)), 404);
-  const user = await findUser(context.env.DB, name);
+  // Each D1 read is a round trip to the database's region, so reads that do
+  // not depend on each other run together.
+  const [user, viewer] = await Promise.all([
+    findUser(context.env.DB, name),
+    format === "html" ? sessionUser(context) : null,
+  ]);
   if (!user)
     return format === "json"
       ? context.json({ error: "not found" }, 404)
-      : context.html(notFoundPage(await sessionUser(context)), 404);
-  const snapshot = await getSnapshot(
-    context.env,
-    user,
-    period,
-    Math.floor(Date.now() / 1000),
-  );
+      : context.html(notFoundPage(viewer), 404);
+  const now = Math.floor(Date.now() / 1000);
   if (format === "html") {
-    const viewer = await sessionUser(context);
-    let relation: "friends" | "sent" | "none" | "self" | "out" = "out";
-    if (viewer !== null && viewer.id === user.id) relation = "self";
-    else if (viewer !== null) {
-      const [friends, sent] = await context.env.DB.batch([
-        context.env.DB.prepare(
-          `SELECT 1 AS yes FROM friendships
-           WHERE user_id = ?1 AND friend_id = ?2`,
-        ).bind(viewer.id, user.id),
-        context.env.DB.prepare(
-          `SELECT 1 AS yes FROM friend_requests
-           WHERE from_user = ?1 AND to_user = ?2`,
-        ).bind(viewer.id, user.id),
-      ]);
-      relation =
-        friends.results.length > 0
-          ? "friends"
-          : sent.results.length > 0
-            ? "sent"
-            : "none";
-    }
+    const [snapshot, relation] = await Promise.all([
+      getSnapshot(context.env, user, period, now),
+      relationTo(context.env.DB, viewer, user.id),
+    ]);
     return context.html(
       profilePage(
         snapshot,
@@ -570,6 +578,7 @@ app.get("/u/:path", async (context) => {
       ),
     );
   }
+  const snapshot = await getSnapshot(context.env, user, period, now);
   context.header(
     "Content-Security-Policy",
     "default-src 'none'; style-src 'unsafe-inline'",

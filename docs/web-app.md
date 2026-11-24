@@ -1086,8 +1086,11 @@ stops when the next round loads or the game ends.
 - **Hub tiles.** A tile shows four distinct covers from its pool, or one when
   fewer exist. A playlist category reads its pool, which the era chips need
   anyway; a chart category shows covers only when `play:cat:SLUG` is already in
-  KV, so rendering the hub never fetches from Deezer or Apple. The code is
-  `src/play/hub.ts`.
+  KV, so rendering the hub never fetches from Deezer or Apple. The visible
+  categories and every tile's covers and eras are kept together in KV under
+  `play:hub` for ten minutes, so a visit reads one small entry instead of every
+  pool; an admin category edit deletes it, and a run with a failed pool is not
+  kept. The code is `src/play/hub.ts`.
 - **For you.** The first tile on `/` starts a solo game whose pool is scored per
   player from D1 alone, in `src/play/foryou.ts`. An affinity per (category,
   decade) comes from the player's `round_outcomes` — rounds played, correct rate

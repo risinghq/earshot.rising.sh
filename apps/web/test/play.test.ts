@@ -180,6 +180,23 @@ describe("the play hub", () => {
     expect(body.match(/src="https:\/\/cdn\.test\/\d+\.jpg"/g)).toHaveLength(4);
   });
 
+  it("draws the hub's tiles from one cached entry", async () => {
+    expect(await get("/")).toHaveProperty("status", 200);
+    const cached = await env.CACHE.get<{ categories: { slug: string }[] }>(
+      "play:hub",
+      "json",
+    );
+    expect(cached?.categories.map((category) => category.slug)).toContain(
+      "rock",
+    );
+    await env.DB.prepare(
+      "UPDATE categories SET hidden = 1 WHERE slug = 'rock'",
+    ).run();
+    expect(await (await get("/")).text()).toContain('value="rock"');
+    await env.CACHE.delete("play:hub");
+    expect(await (await get("/")).text()).not.toContain('value="rock"');
+  });
+
   it("lists the seeded categories", async () => {
     const response = await get("/");
     expect(response.status).toBe(200);

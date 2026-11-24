@@ -3,7 +3,7 @@ import { csrf } from "hono/csrf";
 import { notFoundPage } from "../app";
 import { sessionUser } from "../auth";
 import type { Env } from "../types";
-import type { ArtistHit, Candidate } from "./sources";
+import type { Candidate } from "./sources";
 import { defaultMode, parseMode } from "./quiz";
 import {
   artistProfile,
@@ -31,7 +31,7 @@ import { boardPage, categoryBoardPage } from "./board-page";
 import { gamePage } from "./game-page";
 import { feedErrorPage, hubPage } from "./hub-page";
 import { matchPage } from "./match-page";
-import { tileFacts } from "./hub";
+import { hubTiles } from "./hub";
 import { claimGame, readBoard, readCategoryBoard, recordGame } from "./results";
 import { forYouCategory, forYouCold, forYouMix, forYouSlug } from "./foryou";
 import { deezerSearchArtists } from "./sources";
@@ -255,20 +255,21 @@ playApp.get("/match/:slug", async (context) => {
 });
 
 playApp.get("/board", async (context) => {
-  const user = await sessionUser(context);
   const slug = context.req.query("category");
-  const categories = await listCategories(context.env.DB);
-  if (slug !== undefined) {
-    const category = await getCategory(context.env, slug);
-    if (category !== null) {
-      const entries = await readCategoryBoard(context.env, slug);
-      return context.html(
-        categoryBoardPage(category, entries, user, categories),
-      );
-    }
-  }
   const period = context.req.query("period") === "all" ? "all" : "week";
-  const entries = await readBoard(context.env, period);
+  // Independent reads run together. A category's board waits for the
+  // category, because reading it caches the board under the slug.
+  const [user, categories, category, points] = await Promise.all([
+    sessionUser(context),
+    listCategories(context.env.DB),
+    slug === undefined ? null : getCategory(context.env, slug),
+    slug === undefined ? readBoard(context.env, period) : null,
+  ]);
+  if (category !== null) {
+    const entries = await readCategoryBoard(context.env, category.slug);
+    return context.html(categoryBoardPage(category, entries, user, categories));
+  }
+  const entries = points ?? (await readBoard(context.env, period));
   return context.html(boardPage(entries, period, user, categories));
 });
 
@@ -346,21 +347,22 @@ playApp.get("/picks", async (context) => {
 // The pick for a blend travels in the query: `with` holds the first artist's
 // id and `n` its name, so choosing the second needs no stored state.
 playApp.get("/artists", async (context) => {
-  const user = await sessionUser(context);
   const query = context.req.query("q")?.trim() ?? "";
   const withParam = context.req.query("with") ?? "";
   const withName = context.req.query("n")?.trim() ?? "";
   const picked = /^\d{1,10}$/.test(withParam)
     ? { id: Number(withParam), name: withName || `Artist ${withParam}` }
     : null;
+  const search =
+    query === ""
+      ? Promise.resolve([])
+      : deezerSearchArtists(query).catch((error: unknown) => {
+          console.error("artist search failed", error);
+          return null;
+        });
+  const [user, results] = await Promise.all([sessionUser(context), search]);
   if (query === "")
     return context.html(artistsPage(query, [], picked, [], user));
-  let results: ArtistHit[] | null = null;
-  try {
-    results = await deezerSearchArtists(query);
-  } catch (error) {
-    console.error("artist search failed", error);
-  }
   // Genres are offered only when the search found nothing, so a good search
   // costs no D1 read.
   const genres =
@@ -469,13 +471,12 @@ playApp.post("/report", async (context) => {
 
 // The play hub is the home page, at GET /.
 export async function renderHub(context: PlayContext) {
-  const user = await sessionUser(context);
-  const categories = await listCategories(context.env.DB);
-  const playerKey = playerKeyOf(user?.id ?? null, anonOf(context));
-  const [facts, cold] = await Promise.all([
-    tileFacts(context.env, categories),
-    forYouCold(context.env.DB, playerKey, user?.id ?? null),
+  const [user, { categories, facts }] = await Promise.all([
+    sessionUser(context),
+    hubTiles(context.env),
   ]);
+  const playerKey = playerKeyOf(user?.id ?? null, anonOf(context));
+  const cold = await forYouCold(context.env.DB, playerKey, user?.id ?? null);
   const who = context.req.query("who");
   const mode = context.req.query("mode");
   const room = context.req.query("room")?.toUpperCase();

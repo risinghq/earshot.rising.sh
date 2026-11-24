@@ -1,5 +1,5 @@
 import type { Env } from "../types";
-import { catalog, type Category } from "./catalog";
+import { catalog, listCategories, type Category } from "./catalog";
 import { poolEras } from "./pool";
 import type { Candidate } from "./sources";
 
@@ -22,7 +22,11 @@ function distinctCovers(tracks: Candidate[]) {
 // A pool category reads its pool from D1 (or the cache), which the era chips
 // need anyway. A chart category would cost an outside fetch, so its tile shows
 // covers only when the chart is already cached.
-async function factsOf(env: Env, category: Category): Promise<TileFacts> {
+// A null is a pool that failed to load.
+async function factsOf(
+  env: Env,
+  category: Category,
+): Promise<TileFacts | null> {
   try {
     if (category.feed === "deezer_playlist") {
       const tracks = await catalog(env, category, null);
@@ -35,19 +39,47 @@ async function factsOf(env: Env, category: Category): Promise<TileFacts> {
       );
       return { eras: [], covers: distinctCovers(cached ?? []) };
     }
+    return { eras: [], covers: [] };
   } catch {
-    // A tile without covers or eras still starts a game.
+    return null;
   }
-  return { eras: [], covers: [] };
 }
 
-export async function tileFacts(env: Env, categories: Category[]) {
-  return Object.fromEntries(
-    await Promise.all(
-      categories.map(async (category): Promise<[string, TileFacts]> => [
+export interface HubTiles {
+  categories: Category[];
+  facts: Record<string, TileFacts>;
+}
+
+export const hubTilesKey = "play:hub";
+const hubTilesTtlSeconds = 600;
+
+// The tiles' facts read every category's whole pool to keep four covers and
+// a few eras, so the hub keeps the result as one small entry. A pool refresh
+// reaches the tiles within the entry's lifetime; a category edit in the admin
+// deletes the entry.
+export async function hubTiles(env: Env): Promise<HubTiles> {
+  const cached = await env.CACHE?.get<HubTiles>(hubTilesKey, "json").catch(
+    () => null,
+  );
+  if (cached) return cached;
+  const categories = await listCategories(env.DB);
+  const facts = await Promise.all(
+    categories.map((category) => factsOf(env, category)),
+  );
+  // A tile without covers or eras still starts a game, but a failed pool is
+  // not kept for the entry's lifetime.
+  const tiles: HubTiles = {
+    categories,
+    facts: Object.fromEntries(
+      categories.map((category, i) => [
         category.slug,
-        await factsOf(env, category),
+        facts[i] ?? { eras: [], covers: [] },
       ]),
     ),
-  );
+  };
+  if (env.CACHE && !facts.includes(null))
+    await env.CACHE.put(hubTilesKey, JSON.stringify(tiles), {
+      expirationTtl: hubTilesTtlSeconds,
+    }).catch(() => undefined);
+  return tiles;
 }

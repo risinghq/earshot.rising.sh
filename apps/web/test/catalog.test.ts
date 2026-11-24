@@ -773,6 +773,7 @@ describe("admin", () => {
       testEnv(adminEnv) as never,
     );
     expect(home.status).toBe(200);
+    await env.CACHE.put("play:hub", "{}");
     const saved = await app.fetch(
       new Request(`${origin}/admin/categories/save`, {
         method: "POST",
@@ -802,6 +803,8 @@ describe("admin", () => {
       "SELECT name FROM categories WHERE slug = 'pop'",
     ).first<{ name: string }>();
     expect(name!.name).toBe("Pop Music");
+    // The hub's tiles show the new name on the next visit.
+    expect(await env.CACHE.get("play:hub")).toBeNull();
   });
 });
 
