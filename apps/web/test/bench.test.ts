@@ -13,7 +13,6 @@ import {
   RecentlyPlayedSchema,
   sealTokens,
 } from "../src/listening/spotify";
-// @ts-expect-error vite ?raw import
 import fixtureRaw from "./fixtures/spotify-recently-played.json?raw";
 
 const ResponseSchema = RecentlyPlayedSchema;

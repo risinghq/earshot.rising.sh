@@ -169,11 +169,14 @@ describe("data-export-all", () => {
       return "blob:export";
     });
     vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
-    let downloaded = "";
+    let downloaded!: (name: string) => void;
+    const download = new Promise<string>((resolve) => {
+      downloaded = resolve;
+    });
     vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
       this: HTMLAnchorElement,
     ) {
-      downloaded = this.download;
+      downloaded(this.download);
     });
     show(
       `<a id="export" href="/settings/export" data-export-all="ada">Download</a>`,
@@ -181,7 +184,7 @@ describe("data-export-all", () => {
     const press = new MouseEvent("click", { bubbles: true, cancelable: true });
     byId("export").dispatchEvent(press);
     expect(press.defaultPrevented).toBe(true);
-    await vi.waitFor(() => expect(downloaded).toBe("music-stats-ada.ndjson"));
+    expect(await download).toBe("music-stats-ada.ndjson");
     expect(await saved!.text()).toBe('{"n":1}\n{"n":2}\n');
   });
 });

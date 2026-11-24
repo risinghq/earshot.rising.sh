@@ -165,7 +165,7 @@ describe("a room in the runtime", () => {
     await ann.state("lobby");
     setClock(Date.now() + idleMs + 1);
     expect(await runDurableObjectAlarm(roomStub(code))).toBe(true);
-    await vi.waitFor(() => expect(ann.closedWith).toBe(1001));
+    expect(await ann.closed).toBe(1001);
     const late = await connect(code);
     late.send({ type: "join", name: "Late" });
     expect(await late.next((m) => m.type === "error")).toMatchObject({

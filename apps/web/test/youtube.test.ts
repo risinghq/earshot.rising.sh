@@ -9,7 +9,6 @@ import {
   SignedOutError,
   todayIn,
 } from "../src/listening/youtube";
-// @ts-expect-error vite ?raw import
 import fixture from "./fixtures/history.html?raw";
 
 const now = Math.floor(Date.now() / 1000);

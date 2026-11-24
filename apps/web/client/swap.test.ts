@@ -19,6 +19,10 @@ const fetchPage = vi.fn(async (input: RequestInfo | URL) => {
 });
 const assign = vi.fn();
 const swapped = vi.fn();
+const nextSwap = () =>
+  new Promise<void>((resolve) => swapped.mockImplementationOnce(resolve));
+const nextNavigation = () =>
+  new Promise<void>((resolve) => assign.mockImplementationOnce(resolve));
 
 const link = (name: string) =>
   [...document.querySelectorAll<HTMLAnchorElement>("[data-swap] a")].find(
@@ -47,12 +51,10 @@ describe("a [data-swap] link", () => {
   });
 
   it("swaps the region, the address and the title without a reload", async () => {
+    const swap = nextSwap();
     link("Month").click();
-    await vi.waitFor(() =>
-      expect(document.getElementById("figure")!.textContent).toBe(
-        "month plays",
-      ),
-    );
+    await swap;
+    expect(document.getElementById("figure")!.textContent).toBe("month plays");
     expect(location.search).toBe("?period=month");
     expect(document.title).toBe("month · Earshot");
     expect(document.activeElement).toBe(link("Month"));
@@ -65,21 +67,19 @@ describe("a [data-swap] link", () => {
     // what the browser does: restore the entry, then announce it.
     const state = { swap: "main" };
     history.replaceState(state, "", "/u/ada?period=week");
+    const swap = nextSwap();
     dispatchEvent(new PopStateEvent("popstate", { state }));
-    await vi.waitFor(() =>
-      expect(document.getElementById("figure")!.textContent).toBe("week plays"),
-    );
+    await swap;
+    expect(document.getElementById("figure")!.textContent).toBe("week plays");
     expect(location.search).toBe("?period=week");
   });
 
   it("fetches the page once when the pointer rests on the link first", async () => {
     link("Month").dispatchEvent(new Event("pointerover", { bubbles: true }));
+    const swap = nextSwap();
     link("Month").click();
-    await vi.waitFor(() =>
-      expect(document.getElementById("figure")!.textContent).toBe(
-        "month plays",
-      ),
-    );
+    await swap;
+    expect(document.getElementById("figure")!.textContent).toBe("month plays");
     expect(fetchPage).toHaveBeenCalledTimes(0);
   });
 
@@ -88,12 +88,10 @@ describe("a [data-swap] link", () => {
     broken.href = "/u/ada?period=gone";
     broken.textContent = "Broken";
     document.querySelector("[data-swap]")!.append(broken);
+    const navigation = nextNavigation();
     broken.click();
-    await vi.waitFor(() =>
-      expect(assign).toHaveBeenCalledWith(
-        `${location.origin}/u/ada?period=gone`,
-      ),
-    );
+    await navigation;
+    expect(assign).toHaveBeenCalledWith(`${location.origin}/u/ada?period=gone`);
   });
 
   it("leaves a modified click to the browser", () => {

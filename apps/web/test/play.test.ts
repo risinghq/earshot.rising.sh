@@ -823,6 +823,10 @@ describe("the round clock", () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
+    let held!: () => void;
+    const prepareAsked = new Promise<void>((resolve) => {
+      held = resolve;
+    });
     let trackCalls = 0;
     await seedCatalog(
       env.DB,
@@ -834,7 +838,10 @@ describe("the round clock", () => {
         trackCalls += 1;
         // The second lookup is prepare's (the first served round 1);
         // it hangs so /next's own resolve finishes first.
-        if (trackCalls === 2) await gate;
+        if (trackCalls === 2) {
+          held();
+          await gate;
+        }
         return HttpResponse.json(deezerTrack(Number(params.id), "x"));
       }),
     );
@@ -846,7 +853,7 @@ describe("the round clock", () => {
     const revealed = (await getGame(testEnv() as never, id))!;
     expect(revealed.phase).toBe("reveal");
     const prep = prepareNext(testEnv() as never, revealed);
-    await vi.waitFor(() => expect(trackCalls).toBe(2));
+    await prepareAsked;
     const served = await next(id);
     expect(served.status).toBe(303);
     // The GET serves the round while prepare's lookup is still held.
