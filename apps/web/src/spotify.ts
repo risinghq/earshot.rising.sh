@@ -1,7 +1,9 @@
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import type { Context } from "hono";
 import * as v from "valibot";
+import { eq, sql } from "drizzle-orm";
 import { base64url, cookieClear, sessionUser } from "./auth";
+import { database, t, type Db } from "./db";
 import { markDuplicates } from "./duplicates";
 import { storeListens } from "./matching";
 import { openSecret, sealSecret } from "./secret";
@@ -184,16 +186,26 @@ export async function spotifyCallback(
     e: now + (token.expires_in ?? 3600),
   });
   if (secret === undefined) return failed("seal", 0);
-  await context.env.DB.prepare(
-    `INSERT INTO sources (user_id, kind, account, secret, next_pull_at)
-     VALUES (?1, 'spotify', ?2, ?3, ?4)
-     ON CONFLICT (user_id, kind) DO UPDATE SET
-       account = excluded.account, secret = excluded.secret,
-       next_pull_at = excluded.next_pull_at,
-       status = 'active', error = NULL, idle_pulls = 0`,
-  )
-    .bind(user.id, profile.id, secret, now)
-    .run();
+  await database(context.env.DB)
+    .insert(t.sources)
+    .values({
+      userId: user.id,
+      kind: "spotify",
+      account: profile.id,
+      secret,
+      nextPullAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [t.sources.userId, t.sources.kind],
+      set: {
+        account: profile.id,
+        secret,
+        nextPullAt: now,
+        status: "active",
+        error: null,
+        idlePulls: 0,
+      },
+    });
   return context.redirect("/settings", 303);
 }
 
@@ -210,6 +222,7 @@ function retryAfterSeconds(response: Response) {
 
 async function refreshedTokens(
   env: Env,
+  db: Db,
   source: SourceRow,
   tokens: StoredTokens,
   now: number,
@@ -225,13 +238,15 @@ async function refreshedTokens(
     fetcher,
   );
   if (response.body.error === "invalid_grant") {
-    await env.DB.prepare(
-      `UPDATE sources SET status = 'error', next_pull_at = NULL,
-       error = 'Spotify access was revoked. Remove the source and connect Spotify again.'
-       WHERE id = ?1`,
-    )
-      .bind(source.id)
-      .run();
+    await db
+      .update(t.sources)
+      .set({
+        status: "error",
+        nextPullAt: null,
+        error:
+          "Spotify access was revoked. Remove the source and connect Spotify again.",
+      })
+      .where(eq(t.sources.id, source.id));
     return null;
   }
   if (response.status !== 200 || typeof response.body.access_token !== "string")
@@ -242,9 +257,10 @@ async function refreshedTokens(
     e: now + (response.body.expires_in ?? 3600),
   };
   if (next.r !== tokens.r || next.a !== tokens.a) {
-    await env.DB.prepare("UPDATE sources SET secret = ?1 WHERE id = ?2")
-      .bind(await sealTokens(env, next), source.id)
-      .run();
+    await db
+      .update(t.sources)
+      .set({ secret: await sealTokens(env, next) })
+      .where(eq(t.sources.id, source.id));
   }
   return next;
 }
@@ -274,8 +290,9 @@ export async function pullSpotify(
 ) {
   if (!source.secret)
     throw new Error("Spotify source has no token; reconnect it in settings");
-  const stored = await openTokens(env, source.secret as Uint8Array);
-  const tokens = await refreshedTokens(env, source, stored, now, fetcher);
+  const db = database(env.DB);
+  const stored = await openTokens(env, source.secret);
+  const tokens = await refreshedTokens(env, db, source, stored, now, fetcher);
   if (tokens === null) return { inserted: 0, cursor: source.cursor };
 
   const url = new URL(`${apiBase}/v1/me/player/recently-played`);
@@ -286,9 +303,10 @@ export async function pullSpotify(
     headers: { authorization: `Bearer ${tokens.a}` },
   });
   if (response.status === 429) {
-    await env.DB.prepare("UPDATE sources SET next_pull_at = ?1 WHERE id = ?2")
-      .bind(now + retryAfterSeconds(response), source.id)
-      .run();
+    await db
+      .update(t.sources)
+      .set({ nextPullAt: now + retryAfterSeconds(response) })
+      .where(eq(t.sources.id, source.id));
     return { inserted: 0, cursor: source.cursor };
   }
   if (!response.ok) throw new Error(`Spotify returned ${response.status}`);
@@ -303,16 +321,15 @@ export async function pullSpotify(
     plays.push({ at: Math.floor(at / 1000), track: item.track });
   }
 
-  const stored_ = await storeListens(
-    env.DB,
-    playInputs(plays, source.user_id, source.id),
+  const inserted = await storeListens(
+    db,
+    playInputs(plays, source.userId, source.id),
     "spotify",
   );
-  const inserted = stored_.inserted;
   if (plays.length > 0)
     await markDuplicates(
-      env.DB,
-      source.user_id,
+      db,
+      source.userId,
       Math.min(...plays.map((play) => play.at)),
       Math.max(...plays.map((play) => play.at)),
     );
@@ -321,17 +338,22 @@ export async function pullSpotify(
     plays.length === 0
       ? source.cursor
       : Math.max(source.cursor ?? 0, ...plays.map((play) => play.at));
-  const idlePulls = inserted > 0 ? 0 : source.idle_pulls + 1;
+  const idlePulls = inserted > 0 ? 0 : source.idlePulls + 1;
   const delay =
     inserted > 0
       ? playsFoundDelay
       : Math.min(idleCap, idlePullDelay(idlePulls));
-  await env.DB.prepare(
-    `UPDATE sources SET cursor = ?1, idle_pulls = ?2, next_pull_at = ?3,
-       status = 'active', error = NULL, last_ok_at = ?4,
-       play_count = play_count + ?5 WHERE id = ?6`,
-  )
-    .bind(cursor, idlePulls, now + delay, now, inserted, source.id)
-    .run();
+  await db
+    .update(t.sources)
+    .set({
+      cursor,
+      idlePulls,
+      nextPullAt: now + delay,
+      status: "active",
+      error: null,
+      lastOkAt: now,
+      playCount: sql`${t.sources.playCount} + ${inserted}`,
+    })
+    .where(eq(t.sources.id, source.id));
   return { inserted, cursor };
 }

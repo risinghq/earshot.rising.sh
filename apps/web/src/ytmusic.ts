@@ -1,4 +1,6 @@
-import { ingestPage, type PagePlay, type PageSource } from "./ingest";
+import { eq } from "drizzle-orm";
+import { database, t, type Db } from "./db";
+import { ingestPage, type PagePlay } from "./ingest";
 import { openSecret } from "./secret";
 import type { Env, SourceRow } from "./types";
 import {
@@ -33,14 +35,11 @@ function toPagePlays(plays: ReturnType<typeof parseHistoryPage>) {
   return accepted;
 }
 
-async function stopPulls(db: D1Database, sourceId: number, error: string) {
+async function stopPulls(db: Db, sourceId: number, error: string) {
   await db
-    .prepare(
-      `UPDATE sources SET status = 'error', error = ?1, next_pull_at = NULL
-       WHERE id = ?2`,
-    )
-    .bind(error, sourceId)
-    .run();
+    .update(t.sources)
+    .set({ status: "error", error, nextPullAt: null })
+    .where(eq(t.sources.id, sourceId));
 }
 
 export async function pullYouTube(
@@ -49,9 +48,9 @@ export async function pullYouTube(
   fetcher: YouTubeFetcher = fetch,
   now = Math.floor(Date.now() / 1000),
 ) {
-  const page = source as PageSource;
+  const db = database(env.DB);
   if (!source.secret) {
-    await stopPulls(env.DB, source.id, signedOutMessage);
+    await stopPulls(db, source.id, signedOutMessage);
     return { inserted: 0 };
   }
   const cookie = await openSecret(env, source.secret);
@@ -63,17 +62,17 @@ export async function pullYouTube(
     plays = parseHistoryPage(html, today);
   } catch (error) {
     if (error instanceof SignedOutError) {
-      await stopPulls(env.DB, source.id, signedOutMessage);
+      await stopPulls(db, source.id, signedOutMessage);
       return { inserted: 0 };
     }
     if (error instanceof HistoryPageError) {
-      await stopPulls(env.DB, source.id, parseMessage);
+      await stopPulls(db, source.id, parseMessage);
       return { inserted: 0 };
     }
     throw error;
   }
 
-  const result = await ingestPage(env.DB, page, toPagePlays(plays), {
+  const result = await ingestPage(db, source, toPagePlays(plays), {
     now,
     pullNextAt: now + pullIntervalSeconds,
   });

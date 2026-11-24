@@ -1,5 +1,7 @@
 import type { Context } from "hono";
 import * as v from "valibot";
+import { and, eq, isNull, sql } from "drizzle-orm";
+import { database, t } from "./db";
 import { markDuplicates } from "./duplicates";
 import { storeListens } from "./matching";
 import type { Env } from "./types";
@@ -14,32 +16,6 @@ const tokenPattern = /^msu_[A-Za-z0-9_-]{43}$/;
 // the token as "Authorization: token <key>" (api/listenbrainz/ListenBrainz.kt,
 // commonReq). Other clients send "Token" or "Bearer".
 const authorizationPattern = /^(?:token|bearer)\s+(\S+)\s*$/i;
-
-interface ScrobblerSource {
-  token_id: number;
-  source_id: number;
-  user_id: number;
-  user_name: string;
-}
-
-const tokenSql = `
-  SELECT tokens.id AS token_id,
-    sources.id AS source_id,
-    sources.user_id,
-    users.name AS user_name
-  FROM tokens
-  JOIN sources ON sources.id = tokens.source_id
-  JOIN users ON users.id = sources.user_id
-  WHERE tokens.hash = ?1 AND tokens.revoked_at IS NULL
-    AND sources.kind = 'listenbrainz'
-`;
-
-const touchSql = `
-  UPDATE sources SET last_ok_at = ?1,
-    play_count = play_count + ?2 WHERE id = ?3
-`;
-
-const touchTokenSql = "UPDATE tokens SET last_used_at = ?1 WHERE id = ?2";
 
 const textField = v.pipe(
   v.string(),
@@ -101,9 +77,25 @@ async function authenticate(context: Context<{ Bindings: Env }>) {
     "SHA-256",
     new TextEncoder().encode(token),
   );
-  return context.env.DB.prepare(tokenSql)
-    .bind(new Uint8Array(digest))
-    .first<ScrobblerSource>();
+  const source = await database(context.env.DB)
+    .select({
+      tokenId: t.tokens.id,
+      sourceId: t.sources.id,
+      userId: t.sources.userId,
+      userName: t.users.name,
+    })
+    .from(t.tokens)
+    .innerJoin(t.sources, eq(t.sources.id, t.tokens.sourceId))
+    .innerJoin(t.users, eq(t.users.id, t.sources.userId))
+    .where(
+      and(
+        eq(t.tokens.hash, new Uint8Array(digest)),
+        isNull(t.tokens.revokedAt),
+        eq(t.sources.kind, "listenbrainz"),
+      ),
+    )
+    .get();
+  return source ?? null;
 }
 
 export async function validateToken(context: Context<{ Bindings: Env }>) {
@@ -116,7 +108,7 @@ export async function validateToken(context: Context<{ Bindings: Env }>) {
   return context.json({
     code: 200,
     message: "Token valid.",
-    user_name: source.user_name,
+    user_name: source.userName,
     valid: true,
   });
 }
@@ -187,25 +179,34 @@ export async function submitListens(context: Context<{ Bindings: Env }>) {
   const body = await readListens(context, now);
   if (body instanceof Response) return body;
 
+  const db = database(context.env.DB);
   let inserted = 0;
   if (body.listens.length > 0) {
     const inputs = body.listens.map((listen) => ({
       ...listen,
-      userId: source.user_id,
-      sourceId: source.source_id,
+      userId: source.userId,
+      sourceId: source.sourceId,
     }));
-    inserted = (await storeListens(context.env.DB, inputs, "listenbrainz"))
-      .inserted;
+    inserted = await storeListens(db, inputs, "listenbrainz");
     await markDuplicates(
-      context.env.DB,
-      source.user_id,
+      db,
+      source.userId,
       Math.min(...body.listens.map((listen) => listen.listenedAt)),
       Math.max(...body.listens.map((listen) => listen.listenedAt)),
     );
   }
-  await context.env.DB.batch([
-    context.env.DB.prepare(touchSql).bind(now, inserted, source.source_id),
-    context.env.DB.prepare(touchTokenSql).bind(now, source.token_id),
+  await db.batch([
+    db
+      .update(t.sources)
+      .set({
+        lastOkAt: now,
+        playCount: sql`${t.sources.playCount} + ${inserted}`,
+      })
+      .where(eq(t.sources.id, source.sourceId)),
+    db
+      .update(t.tokens)
+      .set({ lastUsedAt: now })
+      .where(eq(t.tokens.id, source.tokenId)),
   ]);
   return context.json({ status: "ok" });
 }

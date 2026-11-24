@@ -2,10 +2,11 @@ import { env, SELF } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getStats } from "../src/aggregate";
 import { app } from "../src/app";
+import { database } from "../src/db";
 import {
-  readTrackSql,
   resolvePageTracks,
   storeListens,
+  trackCandidates,
   type ExistingTrack,
 } from "../src/matching";
 import { normalizeText, trackKey } from "../src/normalize";
@@ -121,15 +122,11 @@ describe("ListenBrainz ingestion", () => {
       .bind(artist?.id)
       .run();
 
-    const payload = JSON.stringify([
-      {
-        normalizedKey: "page\u001ftrack",
-        mbid: "page-mbid",
-        isrc: null,
-      },
-    ]);
-    const plan = await env.DB.prepare(`EXPLAIN QUERY PLAN ${readTrackSql}`)
-      .bind(payload)
+    const query = trackCandidates(database(env.DB), [
+      { normalizedKey: "page\u001ftrack", mbid: "page-mbid", isrc: null },
+    ]).toSQL();
+    const plan = await env.DB.prepare(`EXPLAIN QUERY PLAN ${query.sql}`)
+      .bind(...query.params)
       .all<{ detail: string }>();
     const details = plan.results.map((row) => row.detail);
 
@@ -244,42 +241,40 @@ describe("ListenBrainz ingestion", () => {
       .run();
 
     expect(
-      (
-        await storeListens(
-          env.DB,
-          [
-            {
-              kind: "listenbrainz",
-              sourceKey: "alias-source",
-              artist: "Changed Artist",
-              title: "Changed Title",
-              listenedAt: now - 400,
-              userId: 1,
-              sourceId: 10,
-            },
-            {
-              kind: "listenbrainz",
-              sourceKey: "mbid-source",
-              artist: "Mbid Artist",
-              title: "Mbid Song",
-              mbid: "mbid-1",
-              listenedAt: now - 500,
-              userId: 1,
-              sourceId: 10,
-            },
-            {
-              kind: "listenbrainz",
-              sourceKey: "key-source",
-              artist: "Key Artist",
-              title: "Key Song",
-              listenedAt: now - 600,
-              userId: 1,
-              sourceId: 10,
-            },
-          ],
-          "listenbrainz",
-        )
-      ).inserted,
+      await storeListens(
+        database(env.DB),
+        [
+          {
+            kind: "listenbrainz",
+            sourceKey: "alias-source",
+            artist: "Changed Artist",
+            title: "Changed Title",
+            listenedAt: now - 400,
+            userId: 1,
+            sourceId: 10,
+          },
+          {
+            kind: "listenbrainz",
+            sourceKey: "mbid-source",
+            artist: "Mbid Artist",
+            title: "Mbid Song",
+            mbid: "mbid-1",
+            listenedAt: now - 500,
+            userId: 1,
+            sourceId: 10,
+          },
+          {
+            kind: "listenbrainz",
+            sourceKey: "key-source",
+            artist: "Key Artist",
+            title: "Key Song",
+            listenedAt: now - 600,
+            userId: 1,
+            sourceId: 10,
+          },
+        ],
+        "listenbrainz",
+      ),
     ).toBe(3);
     expect(await count("plays")).toBe(3);
   });
@@ -297,7 +292,7 @@ describe("ListenBrainz ingestion", () => {
       sourceId: 10,
     };
     expect(
-      (await storeListens(env.DB, [knownInput], "listenbrainz")).inserted,
+      await storeListens(database(env.DB), [knownInput], "listenbrainz"),
     ).toBe(1);
     expect(
       await env.DB.prepare(
@@ -314,45 +309,43 @@ describe("ListenBrainz ingestion", () => {
     ).first<{ track_id: number }>();
 
     expect(
-      (
-        await storeListens(
-          env.DB,
-          [
-            {
-              kind: "listenbrainz",
-              sourceKey: "recording-shared-a",
-              artist: "Artist One",
-              title: "Shared Song",
-              mbid: "shared-mbid",
-              listenedAt: now - 100,
-              userId: 1,
-              sourceId: 10,
-            },
-            {
-              kind: "listenbrainz",
-              sourceKey: "recording-shared-b",
-              artist: "Artist Two",
-              title: "Shared Song",
-              mbid: "shared-mbid",
-              listenedAt: now - 200,
-              userId: 1,
-              sourceId: 10,
-            },
-            {
-              kind: "listenbrainz",
-              sourceKey: "recording-shared-a",
-              artist: "Artist Three",
-              title: "Different Song",
-              mbid: "shared-mbid",
-              listenedAt: now - 250,
-              userId: 1,
-              sourceId: 10,
-            },
-            { ...knownInput, listenedAt: now - 400, artist: "Changed Artist" },
-          ],
-          "listenbrainz",
-        )
-      ).inserted,
+      await storeListens(
+        database(env.DB),
+        [
+          {
+            kind: "listenbrainz",
+            sourceKey: "recording-shared-a",
+            artist: "Artist One",
+            title: "Shared Song",
+            mbid: "shared-mbid",
+            listenedAt: now - 100,
+            userId: 1,
+            sourceId: 10,
+          },
+          {
+            kind: "listenbrainz",
+            sourceKey: "recording-shared-b",
+            artist: "Artist Two",
+            title: "Shared Song",
+            mbid: "shared-mbid",
+            listenedAt: now - 200,
+            userId: 1,
+            sourceId: 10,
+          },
+          {
+            kind: "listenbrainz",
+            sourceKey: "recording-shared-a",
+            artist: "Artist Three",
+            title: "Different Song",
+            mbid: "shared-mbid",
+            listenedAt: now - 250,
+            userId: 1,
+            sourceId: 10,
+          },
+          { ...knownInput, listenedAt: now - 400, artist: "Changed Artist" },
+        ],
+        "listenbrainz",
+      ),
     ).toBe(4);
 
     expect(
@@ -419,7 +412,7 @@ describe("ListenBrainz ingestion", () => {
       },
     ];
 
-    expect((await storeListens(env.DB, inputs, "listenbrainz")).inserted).toBe(
+    expect(await storeListens(database(env.DB), inputs, "listenbrainz")).toBe(
       3,
     );
     expect(

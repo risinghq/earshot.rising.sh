@@ -1,3 +1,6 @@
+import { and, between, eq, sql } from "drizzle-orm";
+import { jsonField, jsonRows, t, type Db } from "./db";
+
 export const daySeconds = 86400;
 export const pairWindowSeconds = 600;
 
@@ -17,28 +20,7 @@ interface PlayRow {
   kind: string;
 }
 
-const sourcesSql = `
-  SELECT id, kind FROM sources WHERE user_id = ?1
-`;
-
-const spanSql = `
-  SELECT played_at AS at, source_id AS sourceId, ref,
-    track_id AS trackId, dup
-  FROM plays
-  WHERE user_id = ?1 AND played_at BETWEEN ?2 AND ?3
-  ORDER BY played_at, source_id, ref
-`;
-
-const markSql = `
-  UPDATE plays SET dup = 1
-  WHERE user_id = ?1 AND dup = 0
-    AND (played_at, source_id, ref) IN (
-      SELECT json_extract(item.value, '$.a'),
-        json_extract(item.value, '$.s'),
-        json_extract(item.value, '$.r')
-      FROM json_each(?2) AS item
-    )
-`;
+const p = t.plays;
 
 const dayFloor = (at: number) => Math.floor(at / daySeconds) * daySeconds;
 const dayEnd = (at: number) =>
@@ -172,22 +154,29 @@ export interface MarkResult {
 }
 
 export async function markDuplicates(
-  db: D1Database,
+  db: Db,
   userId: number,
   from: number,
   to: number,
 ): Promise<MarkResult> {
   const sourceKinds = new Map<number, string>();
-  for (const row of (
-    await db
-      .prepare(sourcesSql)
-      .bind(userId)
-      .all<{ id: number; kind: string }>()
-  ).results)
+  for (const row of await db
+    .select({ id: t.sources.id, kind: t.sources.kind })
+    .from(t.sources)
+    .where(eq(t.sources.userId, userId)))
     sourceKinds.set(row.id, row.kind);
   const read = async (lo: number, hi: number) => {
-    const rows = (await db.prepare(spanSql).bind(userId, lo, hi).all<PlayRow>())
-      .results;
+    const rows = await db
+      .select({
+        at: p.playedAt,
+        sourceId: p.sourceId,
+        ref: p.ref,
+        trackId: p.trackId,
+        dup: p.dup,
+      })
+      .from(p)
+      .where(and(eq(p.userId, userId), between(p.playedAt, lo, hi)))
+      .orderBy(p.playedAt, p.sourceId, p.ref);
     const plays: PlayRow[] = [];
     for (const row of rows) {
       const kind = sourceKinds.get(row.sourceId);
@@ -300,12 +289,26 @@ export async function markDuplicates(
   }
   const unmarked = [...losers].filter((play) => play.dup === 0);
   if (unmarked.length === 0) return { marked: 0, rowsWritten: 0 };
-  const payload = JSON.stringify(
-    unmarked.map((play) => ({ a: play.at, s: play.sourceId, r: play.ref })),
-  );
-  const result = await db.prepare(markSql).bind(userId, payload).run();
-  return {
-    marked: unmarked.length,
-    rowsWritten: result.meta?.rows_written ?? 0,
-  };
+  const marks = db
+    .select({
+      at: jsonField<number>("a"),
+      sourceId: jsonField<number>("s"),
+      ref: jsonField<string>("r"),
+    })
+    .from(
+      jsonRows(
+        unmarked.map((play) => ({ a: play.at, s: play.sourceId, r: play.ref })),
+      ),
+    );
+  const result = await db
+    .update(p)
+    .set({ dup: 1 })
+    .where(
+      and(
+        eq(p.userId, userId),
+        eq(p.dup, 0),
+        sql`(${p.playedAt}, ${p.sourceId}, ${p.ref}) IN ${marks}`,
+      ),
+    );
+  return { marked: unmarked.length, rowsWritten: result.meta.rows_written };
 }
