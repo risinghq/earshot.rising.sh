@@ -1,8 +1,23 @@
 import { Hono, type Context } from "hono";
 import { csrf } from "hono/csrf";
+import {
+  and,
+  count as rowCount,
+  desc,
+  eq,
+  gte,
+  inArray,
+  max,
+  min,
+  notExists,
+  notInArray,
+  sql,
+  type SQL,
+} from "drizzle-orm";
+import { alias, type SQLiteColumn } from "drizzle-orm/sqlite-core";
 import type { SignedInUser } from "./auth";
-import { database } from "./db";
-import { incomingRequests, PeopleSwitch } from "./friends";
+import { database, t, type Db } from "./db";
+import { incomingRequests, isFriend, PeopleSwitch } from "./friends";
 import {
   blend,
   youtubePlaylistUrl,
@@ -30,56 +45,21 @@ const nameLength = 60;
 const stackSize = 3;
 const foldRows = 8;
 
-interface CandidateRow {
-  track_id: number;
-  title: string;
-  artist: string;
-  artist_id: number;
-  plays: number;
-  video_id: string | null;
-  image: string | null;
-}
+const memberFields = {
+  id: t.users.id,
+  name: t.users.name,
+  isPublic: t.users.isPublic,
+};
 
-const recentSql = `
-  SELECT plays.track_id, tracks.title, artists.name AS artist,
-         tracks.artist_id, COUNT(*) AS plays, tracks.image,
-         (SELECT MIN(alias.source_key) FROM track_aliases AS alias
-          WHERE alias.kind = 'ytmusic'
-            AND alias.track_id = plays.track_id) AS video_id
-  FROM plays
-  JOIN tracks ON tracks.id = plays.track_id
-  JOIN artists ON artists.id = tracks.artist_id
-  WHERE plays.user_id = ?1 AND plays.dup = 0 AND plays.played_at >= ?2
-  GROUP BY plays.track_id
-  ORDER BY plays DESC, plays.track_id
-  LIMIT ?3
-`;
+type Member = Pick<typeof t.users.$inferSelect, keyof typeof memberFields>;
 
-const allTimeSql = `
-  SELECT totals.track_id, tracks.title, artists.name AS artist,
-         tracks.artist_id, totals.plays, tracks.image,
-         (SELECT MIN(alias.source_key) FROM track_aliases AS alias
-          WHERE alias.kind = 'ytmusic'
-            AND alias.track_id = totals.track_id) AS video_id
-  FROM track_totals AS totals
-  JOIN tracks ON tracks.id = totals.track_id
-  JOIN artists ON artists.id = tracks.artist_id
-  WHERE totals.user_id = ?1
-  ORDER BY totals.plays DESC, totals.track_id
-  LIMIT ?2
-`;
+const groupFields = {
+  id: t.friendGroups.id,
+  name: t.friendGroups.name,
+  creatorId: t.friendGroups.creatorId,
+};
 
-interface Member {
-  id: number;
-  name: string;
-  is_public: number;
-}
-
-interface Group {
-  id: number;
-  name: string;
-  creator_id: number;
-}
+type Group = Pick<typeof t.friendGroups.$inferSelect, keyof typeof groupFields>;
 
 interface GroupCard extends Group {
   names: string[];
@@ -90,49 +70,99 @@ type GroupsContext = Context<{
   Variables: { user: SignedInUser };
 }>;
 
-async function membership(db: D1Database, groupId: number, userId: number) {
-  const group = await db
-    .prepare(
-      `SELECT friend_groups.id, friend_groups.name, friend_groups.creator_id,
-              group_members.user_id IS NOT NULL AS member
-       FROM friend_groups
-       LEFT JOIN group_members
-         ON group_members.group_id = friend_groups.id
-        AND group_members.user_id = ?2
-       WHERE friend_groups.id = ?1`,
+// A group the user is not in answers the same as a group that does not exist.
+function membership(db: Db, groupId: number, userId: number) {
+  return db
+    .select(groupFields)
+    .from(t.friendGroups)
+    .innerJoin(
+      t.groupMembers,
+      and(
+        eq(t.groupMembers.groupId, t.friendGroups.id),
+        eq(t.groupMembers.userId, userId),
+      ),
     )
-    .bind(groupId, userId)
-    .first<Group & { member: number }>();
-  return group;
+    .where(eq(t.friendGroups.id, groupId))
+    .get();
 }
 
-async function buildPlaylist(db: D1Database, members: Member[], now: number) {
+function candidateFields(trackId: SQLiteColumn) {
+  return {
+    title: t.tracks.title,
+    artist: t.artists.name,
+    artistId: t.tracks.artistId,
+    image: t.tracks.image,
+    videoId: sql<string | null>`(SELECT ${min(t.trackAliases.sourceKey)}
+      FROM ${t.trackAliases}
+      WHERE ${t.trackAliases.kind} = 'ytmusic'
+        AND ${t.trackAliases.trackId} = ${trackId})`,
+  };
+}
+
+function recentTracks(db: Db, userId: number, since: number) {
+  const plays = rowCount();
+  return db
+    .select({
+      trackId: t.plays.trackId,
+      plays,
+      ...candidateFields(t.plays.trackId),
+    })
+    .from(t.plays)
+    .innerJoin(t.tracks, eq(t.tracks.id, t.plays.trackId))
+    .innerJoin(t.artists, eq(t.artists.id, t.tracks.artistId))
+    .where(
+      and(
+        eq(t.plays.userId, userId),
+        eq(t.plays.dup, 0),
+        gte(t.plays.playedAt, since),
+      ),
+    )
+    .groupBy(t.plays.trackId)
+    .orderBy(desc(plays), t.plays.trackId)
+    .limit(playlistLength);
+}
+
+function allTimeTracks(db: Db, userId: number) {
+  return db
+    .select({
+      trackId: t.trackTotals.trackId,
+      plays: t.trackTotals.plays,
+      ...candidateFields(t.trackTotals.trackId),
+    })
+    .from(t.trackTotals)
+    .innerJoin(t.tracks, eq(t.tracks.id, t.trackTotals.trackId))
+    .innerJoin(t.artists, eq(t.artists.id, t.tracks.artistId))
+    .where(eq(t.trackTotals.userId, userId))
+    .orderBy(desc(t.trackTotals.plays), t.trackTotals.trackId)
+    .limit(playlistLength);
+}
+
+async function buildPlaylist(db: Db, members: Member[], now: number) {
   const since = now - recentDays * 86400;
-  const results = await db.batch(
-    members.flatMap((member) => [
-      db.prepare(recentSql).bind(member.id, since, playlistLength),
-      db.prepare(allTimeSql).bind(member.id, playlistLength),
-    ]),
-  );
+  const [first, ...rest] = members.flatMap((member) => [
+    recentTracks(db, member.id, since),
+    allTimeTracks(db, member.id),
+  ]);
+  if (first === undefined) return [];
+  const results = await db.batch([first, ...rest]);
   const users: PartyUser[] = members.map((member, index) => {
-    const recent = results[2 * index]?.results as unknown as CandidateRow[];
-    const allTime = results[2 * index + 1]
-      ?.results as unknown as CandidateRow[];
-    const seen = new Set(recent.map((row) => row.track_id));
+    const recent = results[2 * index] ?? [];
+    const allTime = results[2 * index + 1] ?? [];
+    const seen = new Set(recent.map((row) => row.trackId));
     const tracks = [
       ...recent,
-      ...allTime.filter((row) => !seen.has(row.track_id)),
+      ...allTime.filter((row) => !seen.has(row.trackId)),
     ]
       .slice(0, playlistLength)
-      .map((row, index2) => ({
-        trackId: row.track_id,
+      .map((row, rank) => ({
+        trackId: row.trackId,
         title: row.title,
         artist: row.artist,
-        artistKey: String(row.artist_id),
-        videoId: row.video_id,
+        artistKey: String(row.artistId),
+        videoId: row.videoId,
         image: row.image,
         // Shared ranking sums 90-day counts, so fill rows count as 0.
-        plays: index2 < recent.length ? row.plays : 0,
+        plays: rank < recent.length ? row.plays : 0,
       }));
     return { name: member.name, tracks };
   });
@@ -154,7 +184,11 @@ async function cachedPlaylist(env: Env, group: Group, members: Member[]) {
     }
   }
   if (items === null) {
-    items = await buildPlaylist(env.DB, members, Math.floor(Date.now() / 1000));
+    items = await buildPlaylist(
+      database(env.DB),
+      members,
+      Math.floor(Date.now() / 1000),
+    );
     await env.CACHE?.put(key, JSON.stringify(items), {
       expirationTtl: cacheSeconds,
     }).catch(() => undefined);
@@ -309,7 +343,7 @@ function MemberWho({ member }: { member: Member }) {
       </span>
     </>
   );
-  return member.is_public === 1 ? (
+  return member.isPublic === 1 ? (
     <a class="who" href={`/u/${encodeURIComponent(member.name)}`}>
       {inner}
     </a>
@@ -561,7 +595,7 @@ function groupPage(
               {members.map((member) => (
                 <li class="prow" key={member.id}>
                   <MemberWho member={member} />
-                  {member.id === group.creator_id && (
+                  {member.id === group.creatorId && (
                     <span class="tag">Made the group</span>
                   )}
                 </li>
@@ -619,52 +653,45 @@ groupsApp.use(
 
 async function listData(context: GroupsContext) {
   const user = context.get("user");
-  const db = context.env.DB;
-  const [groups, names, friends] = await db.batch([
+  const db = database(context.env.DB);
+  const mine = alias(t.groupMembers, "mine");
+  const [groups, names, friends, [requests]] = await db.batch([
     db
-      .prepare(
-        `SELECT friend_groups.id, friend_groups.name, friend_groups.creator_id
-         FROM group_members
-         JOIN friend_groups ON friend_groups.id = group_members.group_id
-         WHERE group_members.user_id = ?1
-         ORDER BY friend_groups.name`,
-      )
-      .bind(user.id),
+      .select(groupFields)
+      .from(t.groupMembers)
+      .innerJoin(t.friendGroups, eq(t.friendGroups.id, t.groupMembers.groupId))
+      .where(eq(t.groupMembers.userId, user.id))
+      .orderBy(t.friendGroups.name),
     db
-      .prepare(
-        `SELECT everyone.group_id, users.name
-         FROM group_members AS mine
-         JOIN group_members AS everyone ON everyone.group_id = mine.group_id
-         JOIN users ON users.id = everyone.user_id
-         WHERE mine.user_id = ?1
-         ORDER BY users.name`,
-      )
-      .bind(user.id),
-    db
-      .prepare(
-        `SELECT users.id, users.name, users.is_public
-         FROM friendships JOIN users ON users.id = friendships.friend_id
-         WHERE friendships.user_id = ?1 ORDER BY users.name`,
-      )
-      .bind(user.id),
+      .select({ groupId: t.groupMembers.groupId, name: t.users.name })
+      .from(mine)
+      .innerJoin(t.groupMembers, eq(t.groupMembers.groupId, mine.groupId))
+      .innerJoin(t.users, eq(t.users.id, t.groupMembers.userId))
+      .where(eq(mine.userId, user.id))
+      .orderBy(t.users.name),
+    friendsOf(db, user.id),
+    incomingRequests(db, user.id),
   ]);
   const byGroup = new Map<number, string[]>();
-  for (const row of names.results as unknown as Array<{
-    group_id: number;
-    name: string;
-  }>) {
-    const list = byGroup.get(row.group_id) ?? [];
-    list.push(row.name);
-    byGroup.set(row.group_id, list);
-  }
+  for (const row of names)
+    byGroup.set(row.groupId, [...(byGroup.get(row.groupId) ?? []), row.name]);
   return {
-    groups: (groups.results as unknown as Group[]).map((group) => ({
+    groups: groups.map((group) => ({
       ...group,
       names: byGroup.get(group.id) ?? [],
     })),
-    friends: friends.results as unknown as Member[],
-    requests: await incomingRequests(database(db), user.id),
+    friends,
+    requests: requests?.count ?? 0,
   };
+}
+
+function friendsOf(db: Db, userId: number, also?: SQL) {
+  return db
+    .select(memberFields)
+    .from(t.friendships)
+    .innerJoin(t.users, eq(t.users.id, t.friendships.friendId))
+    .where(and(eq(t.friendships.userId, userId), also))
+    .orderBy(t.users.name);
 }
 
 groupsApp.get("/", async (context) => {
@@ -674,7 +701,7 @@ groupsApp.get("/", async (context) => {
 
 groupsApp.post("/", async (context) => {
   const user = context.get("user");
-  const db = context.env.DB;
+  const db = database(context.env.DB);
   const now = Math.floor(Date.now() / 1000);
   const body = await context.req.parseBody();
   const name = readName(body);
@@ -692,34 +719,38 @@ groupsApp.post("/", async (context) => {
   if (picks.some((pick) => !Number.isInteger(pick)))
     return context.text("Forbidden", 403);
   if (picks.length > 0) {
-    const slots = picks.map(() => "?").join(", ");
-    const found = await db
-      .prepare(
-        `SELECT COUNT(*) AS n FROM friendships
-         WHERE user_id = ?1 AND friend_id IN (${slots})`,
-      )
-      .bind(user.id, ...picks)
-      .first<{ n: number }>();
-    if ((found?.n ?? 0) !== picks.length) return context.text("Forbidden", 403);
+    const found = await db.$count(
+      t.friendships,
+      and(
+        eq(t.friendships.userId, user.id),
+        inArray(t.friendships.friendId, picks),
+      ),
+    );
+    if (found !== picks.length) return context.text("Forbidden", 403);
   }
-  const group = await db
-    .prepare(
-      `INSERT INTO friend_groups (name, creator_id, created_at)
-       VALUES (?1, ?2, ?3) RETURNING id`,
-    )
-    .bind(name, user.id, now)
-    .first<{ id: number }>();
-  if (group === null) throw new Error("could not create the group");
-  await db.batch(
-    [user.id, ...picks].map((member) =>
+  // The batch is one transaction, so the creator's newest group is the one
+  // its first statement inserted.
+  const newest = db
+    .select({ id: max(t.friendGroups.id) })
+    .from(t.friendGroups)
+    .where(eq(t.friendGroups.creatorId, user.id));
+  const [[group]] = await db.batch([
+    db
+      .insert(t.friendGroups)
+      .values({ name, creatorId: user.id, createdAt: now })
+      .returning({ id: t.friendGroups.id }),
+    db.insert(t.groupMembers).select(
       db
-        .prepare(
-          `INSERT INTO group_members (group_id, user_id, created_at)
-           VALUES (?1, ?2, ?3)`,
-        )
-        .bind(group.id, member, now),
+        .select({
+          groupId: sql<number>`(${newest})`.as("group_id"),
+          userId: t.users.id,
+          createdAt: sql<number>`${now}`.as("created_at"),
+        })
+        .from(t.users)
+        .where(inArray(t.users.id, [user.id, ...picks])),
     ),
-  );
+  ]);
+  if (group === undefined) throw new Error("could not create the group");
   return context.redirect(`/groups/${group.id}`, 303);
 });
 
@@ -728,73 +759,72 @@ async function groupData(
   group: Group,
 ): Promise<GroupPageData> {
   const user = context.get("user");
-  const [members, friends] = await context.env.DB.batch([
-    context.env.DB.prepare(
-      `SELECT users.id, users.name, users.is_public
-       FROM group_members JOIN users ON users.id = group_members.user_id
-       WHERE group_members.group_id = ?1 ORDER BY users.name`,
-    ).bind(group.id),
-    context.env.DB.prepare(
-      `SELECT users.id, users.name, users.is_public
-       FROM friendships JOIN users ON users.id = friendships.friend_id
-       WHERE friendships.user_id = ?1
-         AND users.id NOT IN
-           (SELECT user_id FROM group_members WHERE group_id = ?2)
-       ORDER BY users.name`,
-    ).bind(user.id, group.id),
+  const db = database(context.env.DB);
+  const [members, friends] = await db.batch([
+    db
+      .select(memberFields)
+      .from(t.groupMembers)
+      .innerJoin(t.users, eq(t.users.id, t.groupMembers.userId))
+      .where(eq(t.groupMembers.groupId, group.id))
+      .orderBy(t.users.name),
+    friendsOf(
+      db,
+      user.id,
+      notInArray(
+        t.users.id,
+        db
+          .select({ userId: t.groupMembers.userId })
+          .from(t.groupMembers)
+          .where(eq(t.groupMembers.groupId, group.id)),
+      ),
+    ),
   ]);
-  const memberRows = members.results as unknown as Member[];
-  const items = await cachedPlaylist(context.env, group, memberRows);
+  const items = await cachedPlaylist(context.env, group, members);
   return {
     group,
-    members: memberRows,
-    friends: friends.results as unknown as Member[],
+    members,
+    friends,
     items,
-    mine: group.creator_id === user.id,
+    mine: group.creatorId === user.id,
   };
 }
 
-groupsApp.get("/:id", async (context) => {
-  const user = context.get("user");
+function groupOf(context: GroupsContext) {
   const id = Number(context.req.param("id"));
-  const group = await membership(context.env.DB, id, user.id);
-  if (group === null || group.member !== 1) return missing(context);
-  return context.html(groupPage(user, await groupData(context, group), {}));
+  return membership(database(context.env.DB), id, context.get("user").id);
+}
+
+groupsApp.get("/:id", async (context) => {
+  const group = await groupOf(context);
+  if (group === undefined) return missing(context);
+  const data = await groupData(context, group);
+  return context.html(groupPage(context.get("user"), data, {}));
 });
 
 groupsApp.post("/:id/members", async (context) => {
   const user = context.get("user");
-  const db = context.env.DB;
-  const id = Number(context.req.param("id"));
-  const group = await membership(db, id, user.id);
-  if (group === null || group.member !== 1) return missing(context);
+  const db = database(context.env.DB);
+  const group = await groupOf(context);
+  if (group === undefined) return missing(context);
   const friend = Number((await context.req.parseBody()).user ?? Number.NaN);
-  const isFriend =
-    (await db
-      .prepare(
-        `SELECT 1 AS yes FROM friendships
-         WHERE user_id = ?1 AND friend_id = ?2`,
-      )
-      .bind(user.id, friend)
-      .first()) !== null;
-  if (!isFriend) return context.text("Forbidden", 403);
+  if (!(await isFriend(db, user.id, friend)))
+    return context.text("Forbidden", 403);
   await db
-    .prepare(
-      `INSERT OR IGNORE INTO group_members (group_id, user_id, created_at)
-       VALUES (?1, ?2, ?3)`,
-    )
-    .bind(id, friend, Math.floor(Date.now() / 1000))
-    .run();
-  return context.redirect(`/groups/${id}`, 303);
+    .insert(t.groupMembers)
+    .values({
+      groupId: group.id,
+      userId: friend,
+      createdAt: Math.floor(Date.now() / 1000),
+    })
+    .onConflictDoNothing();
+  return context.redirect(`/groups/${group.id}`, 303);
 });
 
 groupsApp.post("/:id/rename", async (context) => {
   const user = context.get("user");
-  const db = context.env.DB;
-  const id = Number(context.req.param("id"));
-  const group = await membership(db, id, user.id);
-  if (group === null || group.member !== 1) return missing(context);
-  if (group.creator_id !== user.id) return context.text("Forbidden", 403);
+  const group = await groupOf(context);
+  if (group === undefined) return missing(context);
+  if (group.creatorId !== user.id) return context.text("Forbidden", 403);
   const name = readName(await context.req.parseBody());
   if ([...name].length === 0 || [...name].length > nameLength) {
     const data = await groupData(context, group);
@@ -805,30 +835,41 @@ groupsApp.post("/:id/rename", async (context) => {
       400,
     );
   }
-  await db
-    .prepare("UPDATE friend_groups SET name = ?1 WHERE id = ?2")
-    .bind(name, id)
-    .run();
-  return context.redirect(`/groups/${id}`, 303);
+  await database(context.env.DB)
+    .update(t.friendGroups)
+    .set({ name })
+    .where(eq(t.friendGroups.id, group.id));
+  return context.redirect(`/groups/${group.id}`, 303);
 });
 
 groupsApp.post("/:id/leave", async (context) => {
   const user = context.get("user");
-  const db = context.env.DB;
-  const id = Number(context.req.param("id"));
-  const group = await membership(db, id, user.id);
-  if (group === null || group.member !== 1) return missing(context);
+  const db = database(context.env.DB);
+  const group = await groupOf(context);
+  if (group === undefined) return missing(context);
   await db.batch([
     db
-      .prepare("DELETE FROM group_members WHERE group_id = ?1 AND user_id = ?2")
-      .bind(id, user.id),
+      .delete(t.groupMembers)
+      .where(
+        and(
+          eq(t.groupMembers.groupId, group.id),
+          eq(t.groupMembers.userId, user.id),
+        ),
+      ),
     // A group with nobody in it is gone.
     db
-      .prepare(
-        `DELETE FROM friend_groups WHERE id = ?1 AND NOT EXISTS
-         (SELECT 1 FROM group_members WHERE group_id = ?1)`,
-      )
-      .bind(id),
+      .delete(t.friendGroups)
+      .where(
+        and(
+          eq(t.friendGroups.id, group.id),
+          notExists(
+            db
+              .select({ userId: t.groupMembers.userId })
+              .from(t.groupMembers)
+              .where(eq(t.groupMembers.groupId, group.id)),
+          ),
+        ),
+      ),
   ]);
   return context.redirect("/groups", 303);
 });

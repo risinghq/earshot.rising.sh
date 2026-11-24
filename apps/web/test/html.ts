@@ -8,11 +8,12 @@ export interface PageLink {
   current: boolean;
 }
 
-// A form a visitor can submit: where it posts and the values its fields
-// carry before anyone types.
+// A form a visitor can submit: where it posts, the values its fields
+// carry before anyone types, and the option values each select offers.
 export interface PageForm {
   action: string;
   fields: Record<string, string>;
+  choices: Record<string, string[]>;
 }
 
 export interface ReadPage {
@@ -41,6 +42,7 @@ export async function readPage(html: string, base: string): Promise<ReadPage> {
   const swaps: string[] = [];
   let rules = "";
   let inRules = false;
+  let select: string | null = null;
   await new HTMLRewriter()
     .on("[id]", {
       element(element) {
@@ -58,6 +60,7 @@ export async function readPage(html: string, base: string): Promise<ReadPage> {
         forms.push({
           action: new URL(element.getAttribute("action") ?? "", base).href,
           fields: {},
+          choices: {},
         });
       },
     })
@@ -65,6 +68,21 @@ export async function readPage(html: string, base: string): Promise<ReadPage> {
       element(element) {
         forms.at(-1)!.fields[element.getAttribute("name")!] =
           element.getAttribute("value") ?? "";
+      },
+    })
+    .on("form select[name]", {
+      element(element) {
+        const name = element.getAttribute("name")!;
+        forms.at(-1)!.choices[name] = [];
+        select = name;
+        element.onEndTag(() => void (select = null));
+      },
+    })
+    // The site's options all carry a value attribute.
+    .on("form select option[value]", {
+      element(element) {
+        if (select !== null)
+          forms.at(-1)!.choices[select]!.push(element.getAttribute("value")!);
       },
     })
     .on("a[href]", {

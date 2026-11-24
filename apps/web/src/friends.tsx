@@ -7,7 +7,7 @@ import {
   validName,
   type SignedInUser,
 } from "./auth";
-import { and, eq, isNull, lt, or, sql } from "drizzle-orm";
+import { and, count, eq, isNull, lt, or, sql } from "drizzle-orm";
 import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import { database, t, type Db } from "./db";
 import { memberOnly } from "./sign-in";
@@ -383,7 +383,10 @@ export function PeopleSwitch({
 }
 
 export function incomingRequests(db: Db, userId: number) {
-  return db.$count(t.friendRequests, eq(t.friendRequests.toUser, userId));
+  return db
+    .select({ count: count() })
+    .from(t.friendRequests)
+    .where(eq(t.friendRequests.toUser, userId));
 }
 
 function render(
@@ -465,7 +468,7 @@ async function makeFriends(db: Db, a: number, b: number, now: number) {
   ]);
 }
 
-async function isFriend(db: Db, user: number, friend: number) {
+export async function isFriend(db: Db, user: number, friend: number) {
   const row = await db
     .select({ friendId: t.friendships.friendId })
     .from(t.friendships)
