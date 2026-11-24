@@ -7,9 +7,18 @@ import { readPage } from "./html";
 import { network } from "./network";
 import { sha256Bytes } from "../src/account/auth";
 import { database } from "../src/platform/db";
-import { catalogPool, poolEras, byDecade } from "../src/play/catalog/pool";
+import {
+  catalogPool,
+  poolEras,
+  byDecade,
+  eraMinTracks,
+} from "../src/play/catalog/pool";
 import { catalog, warmChartCache } from "../src/play/catalog/catalog";
-import { refreshCatalog, refreshSource } from "../src/play/catalog/refresh";
+import {
+  refreshCatalog,
+  refreshSource,
+  refreshCategorySources,
+} from "../src/play/catalog/refresh";
 import curated from "../src/play/catalog/curated.json";
 import seeds from "../scripts/curated-seeds.json";
 import { fold, sameArtist } from "../scripts/artist-names";
@@ -412,7 +421,13 @@ describe("curated sources", () => {
         `SELECT COUNT(*) n FROM category_sources
          WHERE kind = 'curated' AND refreshed_at IS NULL`,
       ).first<number>("n");
-    for (let run = 0; run < 20 && ((await unfilled()) ?? 0) > 0; run++)
+    // Each run refills at least one source, so the first count bounds the
+    // runs a fill can take.
+    for (
+      let run = (await unfilled()) ?? 0;
+      run > 0 && ((await unfilled()) ?? 0) > 0;
+      run--
+    )
       await refreshCatalog(testEnv() as never, 1000);
     expect(asked).toEqual([]);
 
@@ -423,7 +438,9 @@ describe("curated sources", () => {
     expect(sources.results.length).toBeGreaterThan(0);
     for (const source of sources.results)
       expect(source, source.ref).toMatchObject({ refreshed_at: 1000 });
-    const empty = sources.results.filter((s) => s.tracks_count < 20);
+    // A themed source can hold fewer tracks than the era floor, which is
+    // poolEras' call to make; every source must still fill with something.
+    const empty = sources.results.filter((s) => s.tracks_count < 1);
     expect(empty.map((s) => s.ref)).toEqual([]);
     expect(
       await poolEras(await catalogPool(database(env.DB), "k-pop")),
@@ -457,6 +474,63 @@ describe("curated sources", () => {
     const pool = await catalogPool(database(env.DB), "anime");
     expect(pool.find((song) => song.title === themed[0].title)?.work).toBe(
       `${themed[0].work} · ${themed[0].theme}`,
+    );
+  });
+});
+
+describe("anime theme categories", () => {
+  // The songs a category's curated refs name, applying each ref's optional
+  // theme prefix to the bundled list, as a count per decade.
+  async function themedCounts(slug: string) {
+    const sources = await env.DB.prepare(
+      "SELECT ref FROM category_sources WHERE category = ?1",
+    )
+      .bind(slug)
+      .all<{ ref: string }>();
+    const counts = new Map<number, number>();
+    const lists = curated as Record<
+      string,
+      Record<string, { theme?: string }[]>
+    >;
+    for (const { ref } of sources.results) {
+      const [list, decade, theme] = ref.split("/");
+      const held = counts.get(Number(decade)) ?? 0;
+      counts.set(
+        Number(decade),
+        held +
+          lists[list][decade].filter(
+            (track) =>
+              theme === undefined ||
+              track.theme?.toLowerCase().startsWith(theme),
+          ).length,
+      );
+    }
+    return counts;
+  }
+
+  it("plays only opening themes in Anime openings", async () => {
+    await refreshCategorySources(testEnv() as never, "anime-openings", 1000);
+    const expected = await themedCounts("anime-openings");
+    const pool = await catalogPool(database(env.DB), "anime-openings");
+    expect(pool).toHaveLength([...expected.values()].reduce((a, b) => a + b));
+    for (const track of pool) expect(track.work).toMatch(/ · OP\d+$/);
+    expect(poolEras(pool)).toEqual(
+      [...expected.entries()]
+        .filter(([, count]) => count >= eraMinTracks)
+        .map(([decade]) => decade),
+    );
+  });
+
+  it("plays only ending themes in Anime endings", async () => {
+    await refreshCategorySources(testEnv() as never, "anime-endings", 1000);
+    const expected = await themedCounts("anime-endings");
+    const pool = await catalogPool(database(env.DB), "anime-endings");
+    expect(pool).toHaveLength([...expected.values()].reduce((a, b) => a + b));
+    for (const track of pool) expect(track.work).toMatch(/ · ED\d+$/);
+    expect(poolEras(pool)).toEqual(
+      [...expected.entries()]
+        .filter(([, count]) => count >= eraMinTracks)
+        .map(([decade]) => decade),
     );
   });
 });
