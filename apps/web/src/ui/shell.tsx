@@ -33,6 +33,39 @@ const caret = (
   </svg>
 );
 
+// Chromium fetches a linked page early and renders it on intent, so it shows
+// at once on release. "eager" prefetches after a 10 ms hover on desktop, or
+// once the link has been on a phone's screen for 50 ms; "moderate"
+// prerenders after a 200 ms hover or on a press, and on a phone for the
+// links near the last tap once scrolling stops. The prerender reuses the
+// prefetched response. Only pages whose GET changes nothing are listed: a
+// game, room or match page would start or join one, and an /auth link starts
+// a sign-in. A [data-swap] link fetches its own page through client/swap.ts.
+const speculatedLinks = {
+  and: [
+    {
+      href_matches: [
+        "/",
+        "/u/*",
+        "/play/board",
+        "/play/artists",
+        "/play/artist/*",
+        "/groups",
+        "/groups/*",
+        "/friends",
+        "/settings",
+        "/sign-in",
+      ],
+    },
+    { not: { href_matches: "/u/*.*" } },
+    { not: { selector_matches: "[data-swap] a" } },
+  ],
+};
+const speculationRules = JSON.stringify({
+  prefetch: [{ where: speculatedLinks, eagerness: "eager" }],
+  prerender: [{ where: speculatedLinks, eagerness: "moderate" }],
+});
+
 // The icons show only where the nav becomes the phone's bottom tab bar.
 const navIcon = (path: string) => (
   <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -139,6 +172,10 @@ export function Page({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <Styles names={styles} />
         <ScriptTag name="site" />
+        <script
+          type="speculationrules"
+          dangerouslySetInnerHTML={{ __html: speculationRules }}
+        />
         <title>{`${title} · Earshot`}</title>
       </head>
       <body

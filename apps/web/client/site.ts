@@ -1,3 +1,5 @@
+import { enableSwap } from "./swap";
+
 // Progressive enhancement only: the <details> account menu already opens and
 // closes with keyboard and pointer. This closes it on outside click, Escape,
 // or after picking an item, which <details> does not do on its own.
@@ -80,3 +82,5 @@ document.addEventListener("submit", async (event) => {
     form.submit();
   }
 });
+
+enableSwap(showCopy);

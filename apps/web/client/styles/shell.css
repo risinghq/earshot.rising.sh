@@ -1,3 +1,25 @@
+/* Moving between site pages, and a swap in client/swap.ts, cross-fades the
+   content while the header and the tab bar hold still. */
+@view-transition {
+  navigation: auto;
+}
+.site-header {
+  view-transition-name: site-header;
+}
+.site-nav {
+  view-transition-name: site-nav;
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--duration-base);
+  animation-timing-function: var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  @view-transition {
+    navigation: none;
+  }
+}
+
 /* Header. Below 900px the nav is a fixed tab bar at the bottom. */
 .site-header > .wrap {
   align-items: center;
