@@ -4,6 +4,7 @@
 import { env, evictDurableObject } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
+import { readPage } from "./html";
 import { connect, openSocket, stubChart, type Message } from "./room-client";
 
 const origin = "https://earshot.rising.sh";
@@ -215,23 +216,25 @@ describe("points board", () => {
       new Request(`${origin}/play/board`),
       testEnv() as never,
     );
-    const body = await response.text();
     expect(response.status).toBe(200);
+    const board = await readPage(await response.text(), origin);
     // Week: ann 5000+3000, bob 2000, shy hidden.
-    const annRow = body.indexOf("/u/ann");
-    const bobRow = body.indexOf("/u/bob");
-    expect(annRow).toBeGreaterThan(-1);
-    expect(bobRow).toBeGreaterThan(annRow);
-    expect(body).toContain("8,000");
+    const players = board.links
+      .map((link) => new URL(link.href).pathname)
+      .filter((path) => path.startsWith("/u/"));
+    expect(players).toEqual(["/u/ann", "/u/bob"]);
+    expect(board.text).toContain("8,000");
     // A one-player room writes points but never a win.
-    expect(body).toContain("0 wins");
-    expect(body).not.toContain("/u/shy");
-    const all = await (
-      await app.fetch(
-        new Request(`${origin}/play/board?period=all`),
-        testEnv() as never,
-      )
-    ).text();
-    expect(all).toContain("17,000");
+    expect(board.text).toContain("0 wins");
+    const all = await readPage(
+      await (
+        await app.fetch(
+          new Request(`${origin}/play/board?period=all`),
+          testEnv() as never,
+        )
+      ).text(),
+      origin,
+    );
+    expect(all.text).toContain("17,000");
   });
 });

@@ -4,12 +4,17 @@ import { app } from "../src/app";
 import { pullDueSources } from "../src/cron";
 import { openSecret, sealSecret } from "../src/secret";
 import { pullIntervalSeconds } from "../src/ytmusic";
+import { readPage } from "./html";
 
 // Noon UTC today: pulls an hour apart must fall on the same civil day, or a
 // page's "Today" heading names two different dates.
 const now = Math.floor(Date.now() / 86_400_000) * 86_400 + 43_200;
 const origin = "https://earshot.rising.sh";
 const session = `sess_${"s".repeat(40)}`;
+
+// The page as a visitor reads it, from a response or its markup.
+const shown = async (page: Response | string) =>
+  readPage(typeof page === "string" ? page : await page.text(), origin);
 const cookie = "__Secure-3PAPISID=fake-sapisid; SID=fake-sid";
 const key = btoa(
   String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))),
@@ -216,7 +221,7 @@ describe("connect", () => {
       tz: "Europe/Berlin",
     });
     expect(response.status).toBe(200);
-    expect(await response.text()).toContain("3 plays stored");
+    expect((await shown(response)).text).toContain("3 plays stored");
 
     const source = await sourceRow(0);
     const secret = source?.secret as ArrayBuffer;
@@ -232,7 +237,8 @@ describe("connect", () => {
     expect(await playsCount()).toBe(3);
 
     const html = await (await get("/settings")).text();
-    expect(html).toContain("cookie");
+    expect((await shown(html)).text).toContain("cookie");
+    // Leak check: the stored cookie must appear nowhere in the markup.
     expect(html).not.toContain(cookie);
     expect(html).not.toContain("fake-sapisid");
   });
@@ -315,7 +321,8 @@ describe("connect", () => {
     });
     expect(response.status).toBe(400);
     const body = await response.text();
-    expect(body).toContain(entry.message);
+    expect((await shown(body)).text).toContain(entry.message);
+    // Leak check: the pasted cookie is not echoed back.
     expect(body).not.toContain(cookie);
     if (entry.page === null) expect(fetcher).not.toHaveBeenCalled();
     const sources = await env.DB.prepare(
@@ -414,8 +421,9 @@ describe("pull", () => {
     await pullDueSources(testEnv() as never, now + 86400);
     expect(fetcher).toHaveBeenCalledTimes(1);
 
-    const html = await (await get("/settings")).text();
-    expect(html).toContain("YouTube signed you out. Paste a new cookie.");
+    expect((await shown(await get("/settings"))).text).toContain(
+      "YouTube signed you out. Paste a new cookie.",
+    );
   });
 
   it("reschedules on an empty page and keeps the stored state", async () => {

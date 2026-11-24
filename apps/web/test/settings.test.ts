@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
 import { database } from "../src/db";
 import { sourceRemovalStatements } from "../src/settings";
+import { readPage, textAt, type ReadPage } from "./html";
 import { network } from "./network";
 
 const now = Math.floor(Date.now() / 1000);
@@ -77,6 +78,12 @@ function post(path: string, fields: Record<string, string>, headers = {}) {
   );
 }
 
+const read = async (response: Response) =>
+  readPage(await response.text(), origin);
+
+const linkTo = (page: ReadPage, path: string) =>
+  page.links.find((link) => link.href === origin + path);
+
 async function count(table: string, where = "1 = 1") {
   const row = await env.DB.prepare(
     `SELECT COUNT(*) AS n FROM ${table} WHERE ${where}`,
@@ -91,9 +98,12 @@ describe("session and origin", () => {
       testEnv() as never,
     );
     expect(response.status).toBe(200);
-    const body = await response.text();
-    expect(body).toContain("Sign in to see your settings");
-    expect(body).toContain("next=%2Fsettings");
+    const page = await read(response);
+    expect(page.text).toContain("Sign in to see your settings");
+    const returns = page.links.filter(
+      (link) => new URL(link.href).searchParams.get("next") === "/settings",
+    );
+    expect(returns.length).toBeGreaterThan(0);
   });
 
   it("rejects an expired session", async () => {
@@ -109,17 +119,22 @@ describe("session and origin", () => {
       .run();
     const response = await get("/settings");
     expect(response.status).toBe(200);
-    expect(await response.text()).toContain("Sign in to see your settings");
+    expect((await read(response)).text).toContain(
+      "Sign in to see your settings",
+    );
   });
 
   it("serves the settings page to a signed-in user", async () => {
     await seedUser();
     const response = await get("/settings");
     expect(response.status).toBe(200);
-    const body = await response.text();
-    expect(body).toContain("Settings");
-    expect(body).toContain("/u/alice");
-    expect(body).toContain('name="is_public"');
+    const page = await read(response);
+    expect(page.text).toContain("Settings");
+    expect(linkTo(page, "/u/alice")).toBeDefined();
+    const profile = page.forms.find(
+      (form) => form.action === `${origin}/settings/profile`,
+    );
+    expect(profile?.fields.name).toBe("alice");
   });
 
   it.each([
@@ -145,12 +160,15 @@ describe("session and origin", () => {
   it("reaches sign out from the account menu on any page", async () => {
     await seedUser();
     for (const path of ["/", "/play/board", "/settings"]) {
-      const body = await (await get(path)).text();
-      expect(body).toContain('details class="account"');
-      expect(body).toContain('action="/settings/sign-out"');
-      expect(body).toContain("Sign out");
-      expect(body).toContain('href="/settings"');
-      expect(body).toContain('href="/u/alice"');
+      const page = await read(await get(path));
+      const signOut = page.forms.find(
+        (form) => form.action === `${origin}/settings/sign-out`,
+      );
+      expect(signOut?.buttons.map((button) => button.label)).toEqual([
+        "Sign out",
+      ]);
+      expect(linkTo(page, "/settings")).toBeDefined();
+      expect(linkTo(page, "/u/alice")).toBeDefined();
     }
   });
 
@@ -192,7 +210,7 @@ describe("profile", () => {
         .run();
     const response = await post("/settings/profile", { name });
     expect(response.status).toBe(400);
-    expect(await response.text()).toContain("name");
+    expect((await read(response)).text).toContain("name");
     expect(
       (
         await env.DB.prepare("SELECT name FROM users WHERE id = 1").first<{
@@ -208,13 +226,16 @@ describe("sources", () => {
     await seedUser();
     const response = await get("/settings");
     expect(response.status).toBe(200);
-    const body = await response.text();
-    expect(body).toContain("/auth/spotify");
-    expect(body).toContain("Connect Spotify");
-    expect(body).toContain("Phone scrobbler");
-    expect(body).toContain("Pano Scrobbler");
-    expect(body).toContain(`<code class="code-chip">${origin}</code>`);
-    expect(body).not.toContain('action="/settings/sources"');
+    const html = await response.text();
+    const page = await readPage(html, origin);
+    expect(linkTo(page, "/auth/spotify")?.label).toBe("Connect Spotify");
+    expect(page.text).toContain("Phone scrobbler");
+    expect(page.text).toContain("Pano Scrobbler");
+    // The server address a scrobbler is pointed at, shown to copy.
+    expect(await textAt(html, "code")).toContain(origin);
+    expect(page.forms.map((form) => form.action)).not.toContain(
+      `${origin}/settings/sources`,
+    );
   });
 
   it("lists a connected Spotify source", async () => {
@@ -222,9 +243,9 @@ describe("sources", () => {
     await env.DB.prepare(
       "INSERT INTO sources (id, user_id, kind, account) VALUES (10, 1, 'spotify', 'spotify-user')",
     ).run();
-    const body = await (await get("/settings")).text();
-    expect(body).toContain("Spotify");
-    expect(body).toContain("spotify-user");
+    const page = await read(await get("/settings"));
+    expect(page.text).toContain("Spotify");
+    expect(page.text).toContain("spotify-user");
   });
 
   it("removes a source and recounts all three totals", async () => {
@@ -334,7 +355,10 @@ describe("upload tokens", () => {
     const flashed = await get("/settings", {
       cookie: `__Host-session=${session}; __Host-issued-token=${issued}`,
     });
-    expect(await flashed.text()).toContain(shown!);
+    expect((await read(flashed)).inputs).toContainEqual({
+      label: "New upload token",
+      value: shown,
+    });
     const source = await env.DB.prepare(
       "SELECT id FROM sources WHERE user_id = 1 AND kind = 'ytmusic'",
     ).first<{ id: number }>();
@@ -346,6 +370,7 @@ describe("upload tokens", () => {
     expect(token?.hint).toBe(shown?.slice(-4));
     expect(new Uint8Array(token?.hash ?? [])).toEqual(await sha256(shown!));
 
+    // Shown once: nowhere in the next response, scripts included.
     const followUp = await (await get("/settings")).text();
     expect(followUp).not.toContain(shown!);
 
@@ -396,9 +421,10 @@ describe("scrobbler tokens", () => {
     const page = await get("/settings", {
       cookie: `__Host-session=${session}; __Host-issued-token=${issued}; __Host-issued-token-kind=listenbrainz`,
     });
-    const body = await page.text();
-    expect(body).toContain(shown!);
-    expect(body).toContain("scrobbler token");
+    expect((await read(page)).inputs).toContainEqual({
+      label: "New scrobbler token",
+      value: shown,
+    });
 
     const valid = await app.fetch(
       new Request(`${origin}/1/validate-token`, {
@@ -493,8 +519,12 @@ describe("export", () => {
   it("rejects a malformed after key and ships the export script", async () => {
     await seedUser();
     expect((await get("/settings/export?after=x,y,z")).status).toBe(400);
-    const page = await get("/settings");
-    expect(await page.text()).toContain('id="export-all"');
+    // Without JavaScript the link downloads the first page; the export script
+    // takes the click over through the link's id.
+    const page = await read(await get("/settings"));
+    const download = linkTo(page, "/settings/export");
+    expect(download?.label).toBe("Download your plays");
+    expect(page.ids).toContain("export-all");
   });
 
   it("streams every play as NDJSON", async () => {

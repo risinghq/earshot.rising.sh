@@ -2,6 +2,7 @@ import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
+import { readPage } from "./html";
 import { deezerTracks, network } from "./network";
 import { sha256Bytes } from "../src/auth";
 import { database } from "../src/db";
@@ -200,7 +201,9 @@ describe("the For you mix", () => {
     );
     const response = await postForYou();
     expect(response.status).toBe(502);
-    expect(await response.text()).toContain("not available");
+    expect((await readPage(await response.text(), origin)).text).toContain(
+      "not available",
+    );
   });
 
   it("serves a full game to a player with no history", async () => {
@@ -238,10 +241,12 @@ describe("the hub's For you tile", () => {
       new Request(`${origin}/`),
       testEnv() as never,
     );
-    const body = await response.text();
-    expect(body).toContain("For you");
-    expect(body).toContain("Learns your taste as you play.");
-    expect(body).toContain('name="category" value="for-you"');
+    const hub = await readPage(await response.text(), origin);
+    const tile = hub.forms.find((form) => form.fields.category === "for-you");
+    expect(tile?.action).toBe(`${origin}/play`);
+    const [play] = tile!.buttons;
+    expect(play!.label).toContain("For you");
+    expect(play!.label).toContain("Learns your taste as you play.");
   });
 
   it("turns warm once the player has enough rounds", async () => {
@@ -335,8 +340,8 @@ describe("the hub's For you tile", () => {
       }),
       testEnv() as never,
     );
-    const body = await response.text();
-    expect(body).toContain("Game over");
-    expect(body).not.toContain("Top scores");
+    const over = await readPage(await response.text(), origin);
+    expect(over.text).toContain("Game over");
+    expect(over.text).not.toContain("Top scores");
   });
 });

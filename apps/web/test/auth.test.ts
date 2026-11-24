@@ -2,6 +2,7 @@ import { env } from "cloudflare:test";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
+import { readPage } from "./html";
 import { network } from "./network";
 
 const now = Math.floor(Date.now() / 1000);
@@ -73,10 +74,14 @@ describe("home page", () => {
       testEnv() as never,
     );
     expect(response.status).toBe(200);
-    const body = await response.text();
-    for (const href of ["/", "/play/board", "/groups", "/auth/github"])
-      expect(body).toContain(`href="${href}"`);
-    expect(body).toContain('class="genres"');
+    const page = await readPage(await response.text(), origin);
+    const hrefs = page.links.map((link) => link.href);
+    for (const path of ["/", "/play/board", "/groups", "/auth/github"])
+      expect(hrefs).toContain(origin + path);
+    // The games lead: genre tiles that each start one.
+    expect(
+      page.forms.filter((form) => form.action === `${origin}/play`).length,
+    ).toBeGreaterThan(0);
   });
 
   it("serves the home page to a signed-in visitor with profile links", async () => {
@@ -88,12 +93,10 @@ describe("home page", () => {
       testEnv() as never,
     );
     expect(response.status).toBe(200);
-    const body = await response.text();
-    expect(body).toContain('href="/u/octo"');
-    expect(body).toContain('href="/settings"');
-    expect(body).toContain('href="/"');
-    expect(body).toContain('href="/groups"');
-    expect(body).toContain('href="/friends"');
+    const page = await readPage(await response.text(), origin);
+    const hrefs = page.links.map((link) => link.href);
+    for (const path of ["/u/octo", "/settings", "/", "/groups", "/friends"])
+      expect(hrefs).toContain(origin + path);
   });
 });
 

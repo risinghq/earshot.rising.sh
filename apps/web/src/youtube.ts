@@ -143,7 +143,7 @@ function decodeHexEscapes(input: string) {
     length += 1;
   }
   try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(
+    return new TextDecoder("utf-8", { fatal: true, ignoreBOM: false }).decode(
       result.subarray(0, length),
     );
   } catch {
