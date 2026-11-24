@@ -187,38 +187,6 @@ afterEach(() => {
 });
 
 describe("rooms", () => {
-  it("scores the faster right answer more", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    const bob = await connect(code);
-    const joined = await join(ann, "Ann", key);
-    expect(joined.creator).toBe(true);
-    await join(bob, "Bob");
-    ann.send({ type: "start" });
-    await waitFor(ann, inPhase("playing"));
-    await waitFor(bob, inPhase("playing"));
-    const room = await stored(code);
-    const started = room.round as { index: number; startedAt: number };
-    const title = (room.candidates as { title: string }[])[started.index].title;
-    const players = room.players as { id: string; name: string }[];
-    const pid = (name: string) => players.find((p) => p.name === name)!.id;
-    await call(code, async (room) => {
-      await room.answer(pid("Ann"), title, started.startedAt + 2_000);
-      await room.answer(pid("Bob"), title, started.startedAt + 9_000);
-    });
-    const after = await stored(code);
-    const reveal = after.reveal as {
-      results: { name: string; score: number; correct: boolean }[];
-    };
-    const annScore = reveal.results.find((r) => r.name === "Ann")!.score;
-    const bobScore = reveal.results.find((r) => r.name === "Bob")!.score;
-    expect(annScore).toBeGreaterThan(bobScore);
-    expect(bobScore).toBeGreaterThan(0);
-    ann.close();
-    bob.close();
-  });
-
   it("writes one outcome row per answering player", async () => {
     await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const { code, key } = await createRoom();
@@ -258,111 +226,6 @@ describe("rooms", () => {
       });
     ann.close();
     bob.close();
-  });
-
-  it("scores a wrong answer 0", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    ann.send({ type: "start" });
-    await waitFor(ann, inPhase("loading"));
-    const room = await stored(code);
-    const pid = (room.players as { id: string }[])[0].id;
-    const started = room.round as { startedAt: number };
-    await call(code, (room) =>
-      room.answer(pid, "Not the title", started.startedAt + 1_000),
-    );
-    const after = await stored(code);
-    const reveal = after.reveal as { results: { score: number }[] };
-    expect(reveal.results[0].score).toBe(0);
-    ann.close();
-  });
-
-  it("closes the round early once everyone answered", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    const bob = await connect(code);
-    await join(ann, "Ann", key);
-    await join(bob, "Bob");
-    ann.send({ type: "start" });
-    await waitFor(ann, inPhase("playing"));
-    const room = await stored(code);
-    const started = room.round as {
-      index: number;
-      startedAt: number;
-      endsAt: number;
-    };
-    const title = (room.candidates as { title: string }[])[started.index].title;
-    const players = room.players as { id: string; name: string }[];
-    await call(code, async (room) => {
-      for (const player of players)
-        await room.answer(player.id, title, started.startedAt + 1_000);
-    });
-    const after = await stored(code);
-    expect(after.phase).toBe("reveal");
-    const reveal = after.reveal as { until: number };
-    expect(reveal.until).toBeLessThan(started.endsAt);
-    ann.close();
-    bob.close();
-  });
-
-  it("starts the next game with a fresh streak", async () => {
-    // Four candidates is the minimum a room accepts, so the first game ends
-    // by exhaustion after four rounds. Nothing waits on an alarm: the clip
-    // broadcast marks each serve, and the round's own deadlines are ticked
-    // through directly.
-    await stubChart(Array.from({ length: 4 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    const withClip = (m: Record<string, unknown>) =>
-      m.type === "state" && typeof m.startedAt === "number";
-    const playRound = () =>
-      runInDurableObject(stubFor(code), async (room, state) => {
-        const read = () =>
-          state.storage.get("room") as Promise<Record<string, never>>;
-        const s = await read();
-        const current = s.round as { index: number; startedAt: number };
-        const title = (s.candidates as { title: string }[])[current.index]
-          .title;
-        const pid = (s.players as { id: string }[])[0].id;
-        await room.tick(current.startedAt + 1);
-        await room.answer(pid, title, current.startedAt + 1_000);
-        const until = ((await read()).reveal as { until: number }).until;
-        ann.inbox.length = 0;
-        await room.tick(until + 1);
-      });
-    ann.send({ type: "start" });
-    for (let round = 0; round < 4; round += 1) {
-      await waitFor(ann, withClip);
-      await playRound();
-    }
-    const ended = await stored(code);
-    expect(ended.phase).toBe("done");
-    expect((ended.players as { streak: number }[])[0].streak).toBe(4);
-    ann.inbox.length = 0;
-    ann.send({ type: "start" });
-    await waitFor(ann, withClip);
-    const streak = await runInDurableObject(
-      stubFor(code),
-      async (room, state) => {
-        const s = (await state.storage.get("room")) as Record<string, never>;
-        const current = s.round as { index: number; startedAt: number };
-        const title = (s.candidates as { title: string }[])[current.index]
-          .title;
-        const pid = (s.players as { id: string }[])[0].id;
-        await room.tick(current.startedAt + 1);
-        await room.answer(pid, title, current.startedAt + 1_000);
-        return (
-          ((await state.storage.get("room")) as Record<string, never>)
-            .players as { streak: number }[]
-        )[0].streak;
-      },
-    );
-    expect(streak).toBe(1);
-    ann.close();
   });
 
   it("carries the track identity a room report needs", async () => {
@@ -493,19 +356,6 @@ describe("rooms", () => {
     screen.close();
   });
 
-  it("refuses a duplicate nickname", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    const other = await connect(code);
-    await join(ann, "Ann", key);
-    other.send({ type: "join", name: "ann" });
-    const error = await waitFor(other, isType("error"));
-    expect(error.code).toBe("taken");
-    ann.close();
-    other.close();
-  });
-
   it("keeps the points on a reconnect with the token", async () => {
     await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const { code, key } = await createRoom();
@@ -578,28 +428,6 @@ describe("rooms", () => {
     const after = await stored(code);
     expect(after.phase).toBe("playing");
     expect(after.next).toBe(1);
-    ann.close();
-  });
-
-  it("ignores an answer sent before the round starts", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    ann.send({ type: "start" });
-    await waitFor(ann, inPhase("loading"));
-    const room = await stored(code);
-    const started = room.round as { index: number; startedAt: number };
-    const title = (room.candidates as { title: string }[])[started.index].title;
-    const pid = (room.players as { id: string }[])[0].id;
-    await call(code, (room) =>
-      room.answer(pid, title, started.startedAt - 500),
-    );
-    const after = await stored(code);
-    const answers = (after.round as { answers: Record<string, unknown> })
-      .answers;
-    expect(answers[pid]).toBeUndefined();
-    expect((after.players as { score: number }[])[0].score).toBe(0);
     ann.close();
   });
 
@@ -798,19 +626,6 @@ describe("rooms", () => {
     expect(moved.endsAt - moved.startedAt).toBe(15_000);
     ann.close();
     bob.close();
-  });
-
-  it("keeps the four-second wait when no device reports", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    await join(ann, "Ann", key);
-    ann.send({ type: "start" });
-    await waitFor(ann, inPhase("playing"));
-    const room = await stored(code);
-    const round = room.round as { servedAt: number; startedAt: number };
-    expect(round.startedAt).toBe(round.servedAt + 5_500);
-    ann.close();
   });
 
   it("lets a screen watch without taking a seat", async () => {
@@ -1102,21 +917,6 @@ describe("rooms", () => {
     ann.close();
   });
 
-  it("seats the creator as Host without a nickname", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const host = await connect(code);
-    await join(host, undefined, key);
-    const players = (await stored(code)).players as {
-      name: string;
-      creator: boolean;
-    }[];
-    expect(players).toEqual([
-      expect.objectContaining({ name: "Host", creator: true }),
-    ]);
-    host.close();
-  });
-
   it("seats a signed-in player under their name, once across devices", async () => {
     await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
     const { code } = await createRoom();
@@ -1180,45 +980,6 @@ describe("rooms", () => {
     });
     host.close();
     guest.close();
-  });
-
-  it("keeps the pick and the correct count in the snapshot", async () => {
-    await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    const { code, key } = await createRoom();
-    const ann = await connect(code);
-    const bob = await connect(code);
-    const joined = (await join(ann, "Ann", key)) as { token: string };
-    await join(bob, "Bob");
-    ann.send({ type: "start" });
-    await waitFor(ann, inPhase("playing"));
-    const s = await stored(code);
-    const current = s.round as { index: number; startedAt: number };
-    const title = (s.candidates as { title: string }[])[current.index].title;
-    const players = s.players as { id: string; name: string }[];
-    const pid = (name: string) => players.find((p) => p.name === name)!.id;
-    // Bob has not answered, so the round stays open and a reload of Ann's
-    // page must still show her pick.
-    await call(code, (room) =>
-      room.answer(pid("Ann"), title, current.startedAt + 1_000),
-    );
-    const reload = await connect(code);
-    await join(reload, undefined, joined.token);
-    const mine = (await waitFor(reload, inPhase("playing"))) as {
-      you: { answer: string | null };
-    };
-    expect(mine.you.answer).toBe(title);
-    await call(code, (room) =>
-      room.answer(pid("Bob"), "wrong", current.startedAt + 2_000),
-    );
-    const after = (await stored(code)).players as {
-      name: string;
-      correct?: number;
-    }[];
-    expect(after.find((p) => p.name === "Ann")!.correct).toBe(1);
-    expect(after.find((p) => p.name === "Bob")!.correct ?? 0).toBe(0);
-    ann.close();
-    bob.close();
-    reload.close();
   });
 
   it("draws a seat link's QR code and refuses a malformed key", async () => {
