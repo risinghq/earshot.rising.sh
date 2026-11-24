@@ -1418,8 +1418,8 @@ for five minutes under `play:catboard:SLUG`.
 ### Adaptive difficulty
 
 For you and rooms draw songs a player is likely, but not certain, to know.
-Category, era and artist solo games and matches keep the plain shuffle. The
-code is `src/play/game/rating.ts`.
+Category, era and artist solo games and matches keep the plain shuffle. The code
+is `src/play/game/rating.ts`.
 
 - **Model.** Each player has a skill and each track a difficulty, in
   `player_ratings` and `track_ratings`. The chance of a right answer is
@@ -1428,25 +1428,25 @@ code is `src/play/game/rating.ts`.
   than titles alone and typing is harder than both. A mean player meets a mean
   track at 0.61, the hit rate `round_outcomes` showed on 2026-11-24.
 - **Prior.** One answer cannot rate a track, and on 2026-11-24 575 of 974
-  answered tracks had one, so a track starts from its popularity. Its
-  difficulty falls half a logit per standard deviation of log `streams` within
-  the category it is drawn from, clamped at 2.5 deviations. A track with no
-  count starts at the mean.
+  answered tracks had one, so a track starts from its popularity. Its difficulty
+  falls half a logit per standard deviation of log `streams` within the category
+  it is drawn from, clamped at 2.5 deviations. A track with no count starts at
+  the mean.
 - **Update.** `recordOutcomes` moves both ratings by the miss, the result minus
   the predicted chance. The player's step is 0.4. The track's step starts at 0.6
-  and halves after eight answers, so a well-answered track settles. A new
-  player starts at skill 0.
-- **Backfill.** The minutely cron walks `round_outcomes` in id order, 400 rows
-  a run, and records its place in `rating_state`. Until it marks itself done,
+  and halves after eight answers, so a well-answered track settles. A new player
+  starts at skill 0.
+- **Backfill.** The minutely cron walks `round_outcomes` in id order, 400 rows a
+  run, and records its place in `rating_state`. Until it marks itself done,
   `recordOutcomes` leaves the ratings alone and the walk counts the new rows
   too, so no answer is counted twice.
 - **Draw.** A track's weight is a Gaussian of its predicted chance around 0.7,
   width 0.2. That target sits above 0.61 so a game feels winnable, and below 1
-  so it still tests. The draw is a weighted shuffle (Efraimidis–Spirakis):
-  every track can still come up, and a weight decides how early it lands. For
-  you weights its known, new and fallback pools for the player. A room weights
-  its candidates when the game begins, for the median seated player, and falls
-  back to the plain shuffle when D1 fails.
+  so it still tests. The draw is a weighted shuffle (Efraimidis–Spirakis): every
+  track can still come up, and a weight decides how early it lands. For you
+  weights its known, new and fallback pools for the player. A room weights its
+  candidates when the game begins, for the median seated player, and falls back
+  to the plain shuffle when D1 fails.
 - **Boards.** A room's score still goes to its category board, so a room aimed
   at a weak table can post a score a solo game would not. A room is a social
   game; the category board keeps both kinds.
