@@ -1,4 +1,16 @@
 import {
+  and,
+  desc,
+  eq,
+  isNull,
+  lt,
+  sql,
+  type AnyColumn,
+  type SQL,
+} from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
+import { batchWrites, database, t, type Db } from "./db";
+import {
   deezerArtistPicture,
   deezerTrackCover,
   QuotaError,
@@ -21,36 +33,61 @@ interface Due {
   artist: string | null;
 }
 
-const dueSql: Record<Kind, { fresh: string; miss: string }> = {
-  tracks: {
-    fresh: `SELECT tracks.id, tracks.title AS name, artists.name AS artist
-            FROM tracks JOIN artists ON artists.id = tracks.artist_id
-            WHERE tracks.image_at IS NULL ORDER BY tracks.id DESC LIMIT ?1`,
-    miss: `SELECT tracks.id, tracks.title AS name, artists.name AS artist
-           FROM tracks JOIN artists ON artists.id = tracks.artist_id
-           WHERE tracks.image IS NULL AND tracks.image_at < ?2
-           ORDER BY tracks.image_at LIMIT ?1`,
-  },
-  artists: {
-    fresh: `SELECT id, name, NULL AS artist FROM artists
-            WHERE image_at IS NULL ORDER BY id DESC LIMIT ?1`,
-    miss: `SELECT id, name, NULL AS artist FROM artists
-           WHERE image IS NULL AND image_at < ?2 ORDER BY image_at LIMIT ?1`,
-  },
-};
+function selectDue(
+  db: Db,
+  kind: Kind,
+  where: SQL | undefined,
+  order: SQL | AnyColumn,
+  limit: number,
+): Promise<Due[]> {
+  if (kind === "tracks")
+    return db
+      .select({ id: t.tracks.id, name: t.tracks.title, artist: t.artists.name })
+      .from(t.tracks)
+      .innerJoin(t.artists, eq(t.artists.id, t.tracks.artistId))
+      .where(where)
+      .orderBy(order)
+      .limit(limit);
+  return db
+    .select({ id: t.artists.id, name: t.artists.name, artist: sql<null>`NULL` })
+    .from(t.artists)
+    .where(where)
+    .orderBy(order)
+    .limit(limit);
+}
 
-async function dueRows(db: D1Database, kind: Kind, now: number) {
-  const fresh = await db
-    .prepare(dueSql[kind].fresh)
-    .bind(imagesPerTick)
-    .all<Due>();
-  const left = imagesPerTick - fresh.results.length;
-  if (left === 0) return fresh.results;
-  const miss = await db
-    .prepare(dueSql[kind].miss)
-    .bind(left, now - missRetrySeconds)
-    .all<Due>();
-  return [...fresh.results, ...miss.results];
+// Rows never looked up come first, newest first; then misses old enough to
+// try again, oldest lookup first.
+async function dueRows(db: Db, kind: Kind, now: number) {
+  const table = t[kind];
+  const fresh = await selectDue(
+    db,
+    kind,
+    isNull(table.imageAt),
+    desc(table.id),
+    imagesPerTick,
+  );
+  const left = imagesPerTick - fresh.length;
+  if (left === 0) return fresh;
+  const miss = await selectDue(
+    db,
+    kind,
+    and(isNull(table.image), lt(table.imageAt, now - missRetrySeconds)),
+    table.imageAt,
+    left,
+  );
+  return [...fresh, ...miss];
+}
+
+function imageUpdate(
+  db: Db,
+  kind: Kind,
+  id: number,
+  image: string | null,
+  now: number,
+) {
+  const table = kind === "tracks" ? t.tracks : t.artists;
+  return db.update(table).set({ image, imageAt: now }).where(eq(table.id, id));
 }
 
 function lookUp(kind: Kind, row: Due) {
@@ -66,9 +103,10 @@ export async function fillImages(
   env: Env,
   now = Math.floor(Date.now() / 1000),
 ) {
+  const db = database(env.DB);
   for (const kind of ["tracks", "artists"] as const) {
-    const updates: D1PreparedStatement[] = [];
-    for (const row of await dueRows(env.DB, kind, now)) {
+    const updates: BatchItem<"sqlite">[] = [];
+    for (const row of await dueRows(db, kind, now)) {
       let image: string | null;
       try {
         image = await lookUp(kind, row);
@@ -76,12 +114,8 @@ export async function fillImages(
         if (error instanceof QuotaError) break;
         continue;
       }
-      updates.push(
-        env.DB.prepare(
-          `UPDATE ${kind} SET image = ?1, image_at = ?2 WHERE id = ?3`,
-        ).bind(image, now, row.id),
-      );
+      updates.push(imageUpdate(db, kind, row.id, image, now));
     }
-    if (updates.length > 0) await env.DB.batch(updates);
+    await batchWrites(db, updates);
   }
 }
