@@ -642,7 +642,7 @@ describe("cross-source duplicates", () => {
 
     const profile = await app.fetch(
       new Request("https://music.rising.sh/u/alice.json?period=all"),
-      { DB: env.DB },
+      env,
     );
     expect(profile.status).toBe(200);
     expect(await profile.json()).toMatchObject({

@@ -39,7 +39,7 @@ export async function recordResults(env: Env, rows: ResultRow[]) {
   const categories = new Set(rows.map((row) => row.category));
   await Promise.all(
     [...categories].map((category) =>
-      env.CACHE?.delete(`play:catboard:${category}`).catch(() => undefined),
+      env.CACHE.delete(`play:catboard:${category}`).catch(() => undefined),
     ),
   );
 }
@@ -104,7 +104,7 @@ const listedPlayer = and(eq(t.users.isPublic, 1), eq(t.users.adminHidden, 0));
 
 export async function readBoard(env: Env, period: BoardPeriod) {
   const key = `play:board:${period}`;
-  const cached = await env.CACHE?.get<BoardEntry[]>(key, "json").catch(
+  const cached = await env.CACHE.get<BoardEntry[]>(key, "json").catch(
     () => null,
   );
   if (cached) return cached;
@@ -124,10 +124,9 @@ export async function readBoard(env: Env, period: BoardPeriod) {
     .groupBy(gr.userId)
     .orderBy(desc(points), t.users.name)
     .limit(50);
-  if (env.CACHE)
-    await env.CACHE.put(key, JSON.stringify(entries), {
-      expirationTtl: boardTtlSeconds,
-    }).catch(() => undefined);
+  await env.CACHE.put(key, JSON.stringify(entries), {
+    expirationTtl: boardTtlSeconds,
+  }).catch(() => undefined);
   return entries;
 }
 
@@ -140,7 +139,7 @@ export const categoryBoardSize = 10;
 // category board is a list of people, not of games.
 export async function readCategoryBoard(env: Env, slug: string) {
   const key = `play:catboard:${slug}`;
-  const cached = await env.CACHE?.get<CategoryBoardEntry[]>(key, "json").catch(
+  const cached = await env.CACHE.get<CategoryBoardEntry[]>(key, "json").catch(
     () => null,
   );
   if (cached) return cached;
@@ -163,9 +162,8 @@ export async function readCategoryBoard(env: Env, slug: string) {
     .groupBy(gr.userId)
     .orderBy(desc(best), t.users.name)
     .limit(categoryBoardSize);
-  if (env.CACHE)
-    await env.CACHE.put(key, JSON.stringify(entries), {
-      expirationTtl: boardTtlSeconds,
-    }).catch(() => undefined);
+  await env.CACHE.put(key, JSON.stringify(entries), {
+    expirationTtl: boardTtlSeconds,
+  }).catch(() => undefined);
   return entries;
 }

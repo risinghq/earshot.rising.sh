@@ -69,7 +69,7 @@ export async function artistProfile(
   id: number,
 ): Promise<ArtistProfile | null> {
   const key = `play:artist:${id}`;
-  const cached = await env.CACHE?.get<ArtistProfile>(key, "json").catch(
+  const cached = await env.CACHE.get<ArtistProfile>(key, "json").catch(
     () => null,
   );
   if (cached?.name && typeof cached.fans === "number") return cached;
@@ -81,10 +81,9 @@ export async function artistProfile(
       picture: artist.picture,
       fans: artist.fans,
     };
-    if (env.CACHE)
-      await env.CACHE.put(key, JSON.stringify(profile), {
-        expirationTtl: artistNameTtlSeconds,
-      }).catch(() => undefined);
+    await env.CACHE.put(key, JSON.stringify(profile), {
+      expirationTtl: artistNameTtlSeconds,
+    }).catch(() => undefined);
     return profile;
   } catch {
     return { name: `Artist ${id}`, picture: null, fans: 0 };
@@ -151,7 +150,6 @@ async function userCatalog(db: Db, userId: number) {
 // expired chart per run: at most one upstream request a minute, and a
 // chart-fed genre shows covers whether or not anyone played it lately.
 export async function warmChartCache(env: Env) {
-  if (!env.CACHE) return;
   const charts = await database(env.DB)
     .select(categoryFields)
     .from(t.categories)
@@ -226,7 +224,7 @@ async function feedTracks(
     return userCatalog(database(env.DB), userId);
   }
   const key = `play:cat:${category.slug}`;
-  const cached = await env.CACHE?.get<Candidate[]>(key, "json").catch(
+  const cached = await env.CACHE.get<Candidate[]>(key, "json").catch(
     () => null,
   );
   if (cached && cached.length > 0) return cached;
@@ -245,7 +243,7 @@ async function feedTracks(
       throw new FeedError("artist has no top tracks", category.slug);
     tracks = interleave(lists);
   } else tracks = await appleChart(category.ref ?? "us");
-  if (env.CACHE && tracks.length > 0)
+  if (tracks.length > 0)
     await env.CACHE.put(key, JSON.stringify(tracks), {
       expirationTtl: catalogTtlSeconds,
     }).catch(() => undefined);

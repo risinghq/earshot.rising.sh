@@ -54,7 +54,8 @@ apps/web/
   src/                  the Worker, in TypeScript, one folder per feature
     index.tsx           the Worker's entry: fetch, the cron and the Durable Objects
     app.tsx             mounts each feature's routes
-    env.ts              the bindings and secrets the Worker reads
+    bindings.d.ts       the bindings and secrets the Worker reads
+    env.ts              names them Env for imports
     account/            sign-in, sessions, the sign-in page and settings
     listening/          sources and plays: upload, ListenBrainz API, Spotify,
                         YouTube Music, matching, duplicates and the pull cron

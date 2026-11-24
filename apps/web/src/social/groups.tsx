@@ -175,21 +175,14 @@ async function cachedPlaylist(env: Env, group: Group, members: Member[]) {
     .sort((a, b) => a - b)
     .join("-");
   const key = `group:${group.id}:${ids}`;
-  let items: PartyTrack[] | null = null;
-  if (env.CACHE !== undefined) {
-    try {
-      items = await env.CACHE.get<PartyTrack[]>(key, "json");
-    } catch {
-      items = null;
-    }
-  }
+  let items = await env.CACHE.get<PartyTrack[]>(key, "json").catch(() => null);
   if (items === null) {
     items = await buildPlaylist(
       database(env.DB),
       members,
       Math.floor(Date.now() / 1000),
     );
-    await env.CACHE?.put(key, JSON.stringify(items), {
+    await env.CACHE.put(key, JSON.stringify(items), {
       expirationTtl: cacheSeconds,
     }).catch(() => undefined);
   }

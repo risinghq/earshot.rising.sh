@@ -88,8 +88,6 @@ async function gameInput(
   // match would sit everyone in the creator's taste.
   if (slug === forYouSlug) {
     if (!forYou) return context.html(notFoundPage(user), 404);
-    if (!context.env.CACHE)
-      return context.html(feedErrorPage(forYouCategory.name, user), 503);
     const anon = anonKey(context);
     const playerKey = playerKeyOf(user?.id ?? null, anon);
     const tracks = await forYouMix(context.env, playerKey, user?.id ?? null);
@@ -105,8 +103,6 @@ async function gameInput(
   }
   const category = await getCategory(context.env, slug);
   if (category === null) return context.html(notFoundPage(user), 404);
-  if (!context.env.CACHE)
-    return context.html(feedErrorPage(category.name, user, back), 503);
   if (category.feed === "mine" && user === null)
     return context.redirect("/", 303);
   let tracks;
@@ -138,20 +134,17 @@ playApp.post("/room", async (context) => {
   const code = newRoomCode();
   const creatorToken = newRoomSecret();
   const room = context.env.ROOMS.get(context.env.ROOMS.idFromName(code));
-  const init = await room.fetch(
-    new Request("https://room/init", {
-      method: "POST",
-      body: JSON.stringify({
-        code,
-        categorySlug: input.category.slug,
-        categoryName: input.category.name,
-        mode: input.mode,
-        candidates: input.tracks,
-        creatorToken,
-      }),
-    }),
-  );
-  if (!init.ok)
+  const created = await room.init({
+    code,
+    kind: "room",
+    categorySlug: input.category.slug,
+    categoryName: input.category.name,
+    mode: input.mode,
+    candidates: input.tracks,
+    creatorToken,
+    players: [],
+  });
+  if (!created)
     return context.html(
       feedErrorPage(input.category.name, await sessionUser(context)),
       502,
@@ -169,22 +162,19 @@ playApp.post("/room/:code/switch", async (context) => {
   if (input instanceof Response) return input;
   const body = await context.req.parseBody();
   const room = context.env.ROOMS.get(context.env.ROOMS.idFromName(code));
-  const reply = await room.fetch(
-    new Request("https://room/retarget", {
-      method: "POST",
-      body: JSON.stringify({
-        token: typeof body.k === "string" ? body.k : "",
-        categorySlug: input.category.slug,
-        categoryName: input.category.name,
-        mode: input.mode,
-        candidates: input.tracks,
-        start: body.start === "1",
-      }),
-    }),
+  const status = await room.retarget(
+    typeof body.k === "string" ? body.k : "",
+    {
+      categorySlug: input.category.slug,
+      categoryName: input.category.name,
+      mode: input.mode,
+      candidates: input.tracks,
+    },
+    body.start === "1",
   );
-  if (reply.status === 404)
+  if (status === 404)
     return context.html(notFoundPage(await sessionUser(context)), 404);
-  if (reply.status === 403)
+  if (status === 403)
     return context.text("Only the room's creator picks the category.", 403);
   // 409: a game is running; the room page shows it.
   return context.redirect(`/play/room/${code}`, 303);
@@ -291,8 +281,7 @@ playApp.get("/room/:code/screen", async (context) => {
   const code = context.req.param("code");
   const user = await sessionUser(context);
   const room = context.env.ROOMS.get(context.env.ROOMS.idFromName(code));
-  const exists = await room.fetch(new Request("https://room/exists"));
-  if (!exists.ok) return context.html(notFoundPage(user), 404);
+  if (!(await room.exists())) return context.html(notFoundPage(user), 404);
   const joinUrl = `${new URL(context.req.url).origin}/play/room/${code}`;
   return context.html(screenPage(code, joinUrl));
 });
@@ -323,8 +312,7 @@ playApp.get("/room/:code", async (context) => {
   const code = context.req.param("code");
   const user = await sessionUser(context);
   const room = context.env.ROOMS.get(context.env.ROOMS.idFromName(code));
-  const exists = await room.fetch(new Request("https://room/exists"));
-  if (!exists.ok) return context.html(notFoundPage(user), 404);
+  if (!(await room.exists())) return context.html(notFoundPage(user), 404);
   if (user === null) anonKey(context);
   return context.html(roomPage(code, user));
 });

@@ -362,7 +362,7 @@ export async function forYouMix(
 ): Promise<Candidate[]> {
   const db = database(env.DB);
   const key = `play:foryou:${playerKey}`;
-  const cached = await env.CACHE?.get<Candidate[]>(key, "json").catch(
+  const cached = await env.CACHE.get<Candidate[]>(key, "json").catch(
     () => null,
   );
   if (cached && cached.length > 0) {
@@ -402,7 +402,7 @@ export async function forYouMix(
     const extra = takeDistinct([knownPool, newPool, fallback], spare, seen);
     tracks = interleave([known, fresh, extra]);
   }
-  if (env.CACHE && tracks.length > 0)
+  if (tracks.length > 0)
     await env.CACHE.put(key, JSON.stringify(tracks), {
       expirationTtl: mixTtlSeconds,
     }).catch(() => undefined);

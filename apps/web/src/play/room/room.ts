@@ -3,19 +3,12 @@
 import { DurableObject } from "cloudflare:workers";
 import { base64url } from "../../account/auth";
 import type { Env } from "../../env";
-import { candidatePreview, parseMode } from "../game/quiz";
-import type { RoomKind } from "./protocol";
+import { candidatePreview } from "../game/quiz";
 import { readCategoryBoard, recordResults } from "../game/results";
-import type { Candidate } from "../catalog/sources";
 import { recordGameStart, recordOutcomes } from "../game/outcomes";
 import { getCategory } from "../catalog/catalog";
 import { readClientMessage } from "./messages";
-import {
-  seatedOk,
-  type RoomTarget,
-  type SeatedPlayer,
-  type Stored,
-} from "./game";
+import type { RoomInit, RoomTarget, Stored } from "./game";
 import { RoomHost, type RoomPorts, type Socket, type SocketInfo } from "./host";
 
 export const roomCodeLength = 6;
@@ -109,49 +102,23 @@ export class Room extends DurableObject<Env> {
     };
   }
 
+  // False when a room already holds this code.
+  init(init: RoomInit): Promise<boolean> {
+    return this.host.init(init);
+  }
+
+  exists(): boolean {
+    return this.host.exists;
+  }
+
+  retarget(token: string, target: RoomTarget, start: boolean) {
+    return this.host.retarget(token, target, start);
+  }
+
+  // Only the WebSocket upgrade comes through fetch, because RPC cannot
+  // return a socket pair.
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    if (request.method === "POST" && url.pathname === "/init") {
-      const body = (await request.json()) as {
-        code?: string;
-        kind?: RoomKind;
-        categorySlug?: string;
-        categoryName?: string;
-        mode?: string;
-        candidates?: Candidate[];
-        creatorToken?: string;
-        players?: SeatedPlayer[];
-      };
-      const mode = parseMode(body.mode);
-      if (
-        typeof body.code !== "string" ||
-        (body.kind !== undefined &&
-          body.kind !== "room" &&
-          body.kind !== "match") ||
-        typeof body.categorySlug !== "string" ||
-        typeof body.categoryName !== "string" ||
-        mode === null ||
-        !Array.isArray(body.candidates) ||
-        typeof body.creatorToken !== "string" ||
-        (body.players !== undefined && !seatedOk(body.players))
-      )
-        return Response.json({ error: "bad init" }, { status: 400 });
-      const created = await this.host.init({
-        code: body.code,
-        kind: body.kind ?? "room",
-        categorySlug: body.categorySlug,
-        categoryName: body.categoryName,
-        mode,
-        candidates: body.candidates,
-        creatorToken: body.creatorToken,
-        players: body.players ?? [],
-      });
-      return created
-        ? Response.json({ ok: true })
-        : Response.json({ error: "room already exists" }, { status: 409 });
-    }
-    if (url.pathname === "/exists")
-      return new Response(null, { status: this.host.exists ? 200 : 404 });
     if (url.pathname === "/ws") {
       const pair = new WebSocketPair();
       this.ctx.acceptWebSocket(pair[1]);
@@ -165,31 +132,6 @@ export class Room extends DurableObject<Env> {
         anon: url.searchParams.get("a") ?? undefined,
       } satisfies SocketInfo);
       return new Response(null, { status: 101, webSocket: pair[0] });
-    }
-    if (request.method === "POST" && url.pathname === "/retarget") {
-      const body = (await request.json()) as Partial<RoomTarget> & {
-        token?: string;
-        start?: boolean;
-      };
-      const mode = parseMode(body.mode);
-      if (
-        typeof body.categorySlug !== "string" ||
-        typeof body.categoryName !== "string" ||
-        mode === null ||
-        !Array.isArray(body.candidates)
-      )
-        return Response.json({ error: "bad target" }, { status: 400 });
-      const status = await this.host.retarget(
-        body.token ?? "",
-        {
-          categorySlug: body.categorySlug,
-          categoryName: body.categoryName,
-          mode,
-          candidates: body.candidates,
-        },
-        body.start === true,
-      );
-      return new Response(null, { status });
     }
     return new Response("not found", { status: 404 });
   }

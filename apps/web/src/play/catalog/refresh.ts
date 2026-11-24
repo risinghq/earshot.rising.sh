@@ -162,7 +162,7 @@ export async function refreshSource(
       .set({ refreshedAt: now, tracksCount: tracks.length })
       .where(eq(t.categorySources.id, source.id)),
   ]);
-  await env.CACHE?.delete(`play:cat:${source.category}`).catch(() => undefined);
+  await env.CACHE.delete(`play:cat:${source.category}`).catch(() => undefined);
   return tracks.length;
 }
 
@@ -278,5 +278,5 @@ export async function dropTrackCaches(env: Env, ...trackKeys: string[]) {
     )
     .where(inArray(t.catalogMembers.trackKey, trackKeys));
   for (const row of rows)
-    await env.CACHE?.delete(`play:cat:${row.category}`).catch(() => undefined);
+    await env.CACHE.delete(`play:cat:${row.category}`).catch(() => undefined);
 }

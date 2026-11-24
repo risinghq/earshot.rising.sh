@@ -5,6 +5,7 @@ declare namespace Cloudflare {
     ROOMS: DurableObjectNamespace<import("./play/room/room").Room>;
     MATCHMAKER: DurableObjectNamespace<import("./play/match/match").Matchmaker>;
     SOLO: DurableObjectNamespace<import("./play/solo/store").SoloGame>;
+    ADMIN_GITHUB_IDS?: string;
     GITHUB_CLIENT_ID?: string;
     GITHUB_CLIENT_SECRET?: string;
     GOOGLE_CLIENT_ID?: string;
