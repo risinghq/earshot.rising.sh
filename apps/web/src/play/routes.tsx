@@ -90,7 +90,12 @@ async function gameInput(
     if (!forYou) return context.html(notFoundPage(user), 404);
     const anon = anonKey(context);
     const playerKey = playerKeyOf(user?.id ?? null, anon);
-    const tracks = await forYouMix(context.env, playerKey, user?.id ?? null);
+    const tracks = await forYouMix(
+      context.env,
+      playerKey,
+      user?.id ?? null,
+      mode,
+    );
     if (!enoughTracks(forYouCategory, tracks))
       return context.html(feedErrorPage(forYouCategory.name, user), 502);
     return {

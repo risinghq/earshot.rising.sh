@@ -5,7 +5,14 @@ import { base64url } from "../../account/auth";
 import type { Env } from "../../env";
 import { candidatePreview } from "../game/quiz";
 import { readCategoryBoard, recordResults } from "../game/results";
-import { recordGameStart, recordOutcomes } from "../game/outcomes";
+import {
+  playerKeyOf,
+  recordGameStart,
+  recordOutcomes,
+  trackKeyFor,
+} from "../game/outcomes";
+import { drawWeights, weightedShuffle } from "../game/rating";
+import { database } from "../../platform/db";
 import { getCategory } from "../catalog/catalog";
 import { readClientMessage } from "./messages";
 import type { RoomInit, RoomTarget, Stored } from "./game";
@@ -97,6 +104,19 @@ export class Room extends DurableObject<Env> {
       category: (slug) => getCategory(env, slug),
       recordGameStart: (start, at) => recordGameStart(env, start, at),
       recordOutcomes: (rows, at) => recordOutcomes(env, rows, at),
+      weightedDraw: async (players, candidates, mode, category) => {
+        const items = candidates.map((track) => ({
+          key: trackKeyFor(track),
+          category,
+        }));
+        const weights = await drawWeights(
+          database(env.DB),
+          players.map((player) => playerKeyOf(player.userId, player.anon)),
+          items,
+          mode,
+        );
+        return weightedShuffle(candidates, (_, index) => weights[index] ?? 1);
+      },
       recordResults: (rows) => recordResults(env, rows),
       readBoard: (slug) => readCategoryBoard(env, slug),
     };

@@ -6,6 +6,7 @@ import {
   index,
   integer,
   primaryKey,
+  real,
   sqliteTable,
   text,
   unique,
@@ -481,6 +482,9 @@ export const catalogTracks = sqliteTable("catalog_tracks", {
   preview: text(),
   year: integer(),
   yearAt: integer("year_at"),
+  // All-time Spotify streams from kworb, when the curated list carries one.
+  streams: integer(),
+
   answerTitle: text("answer_title"),
   answerYear: integer("answer_year"),
   bannedAt: integer("banned_at"),
@@ -544,6 +548,32 @@ export const roundOutcomes = sqliteTable(
     check("round_outcomes_check_9", sql`kind IN ('solo', 'room', 'match')`),
   ],
 );
+
+// One logistic rating per player and per track: the chance of a right answer
+// is σ(skill − difficulty + modeOffset). A track starts from its streams
+// prior and each recorded outcome moves both ratings.
+export const playerRatings = sqliteTable("player_ratings", {
+  playerKey: text("player_key").primaryKey(),
+  skill: real().notNull(),
+  rounds: integer().notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+export const trackRatings = sqliteTable("track_ratings", {
+  trackKey: text("track_key").primaryKey(),
+  difficulty: real().notNull(),
+  answers: integer().notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
+
+// One row: how far the rebuild over round_outcomes has run, and when it
+// finished. Until done_at is set, recordOutcomes leaves the ratings to the
+// rebuild so an outcome is never counted twice.
+export const ratingState = sqliteTable("rating_state", {
+  id: integer().primaryKey(),
+  lastOutcomeId: integer("last_outcome_id").notNull(),
+  doneAt: integer("done_at"),
+});
 
 export const games = sqliteTable(
   "games",

@@ -405,7 +405,7 @@ export function begin(
   presence: Presence,
   gameId: string,
   picked?: "pick",
-  shuffle: <T>(items: T[]) => T[] = shuffled,
+  order: (candidates: Candidate[]) => Candidate[] = shuffled,
 ): GameStart | null {
   if (s.phase !== "lobby" && s.phase !== "done") return null;
   const origin: GameOrigin =
@@ -420,7 +420,7 @@ export function begin(
   s.history = [];
   s.shown = [];
   s.suggestions = [];
-  s.candidates = shuffle(s.candidates);
+  s.candidates = order(s.candidates);
   s.gameId = gameId;
   // A seat that never held a live socket did not play: the result rows
   // count who was there at the start, not who was invited.

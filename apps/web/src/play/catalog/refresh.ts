@@ -30,6 +30,7 @@ interface CuratedTrack {
   year: number;
   work?: string;
   theme?: string;
+  streams?: number;
 }
 
 const curated = curatedList as Record<string, Record<string, CuratedTrack[]>>;
@@ -59,6 +60,7 @@ interface SourceTrack {
   link: string | null;
   preview: string | null;
   year: number | null;
+  streams: number | null;
 }
 
 // A curated source's ref is `<category>/<decade>`, a key into the bundled
@@ -90,6 +92,7 @@ function curatedTracks(ref: string): SourceTrack[] {
       link: track.link ?? `https://www.deezer.com/track/${track.id}`,
       preview: track.preview ?? null,
       year: track.year,
+      streams: track.streams ?? null,
     }));
 }
 
@@ -107,6 +110,7 @@ async function playlistTracks(ref: string): Promise<SourceTrack[]> {
     link: track.link ?? null,
     preview: null,
     year: null,
+    streams: null,
   }));
 }
 
@@ -147,6 +151,7 @@ export async function refreshSource(
           preview: track.preview,
           year: track.year,
           yearAt: track.year === null ? null : now,
+          streams: track.streams,
           updatedAt: now,
         })
         .onConflictDoUpdate({
@@ -161,6 +166,7 @@ export async function refreshSource(
             cover: sql`excluded.cover`,
             link: sql`excluded.link`,
             preview: sql`excluded.preview`,
+            streams: sql`COALESCE(excluded.streams, ${ct.streams})`,
             year: sql`COALESCE(excluded.year, ${ct.year})`,
             yearAt: sql`COALESCE(excluded.year_at, ${ct.yearAt})`,
             updatedAt: sql`excluded.updated_at`,
