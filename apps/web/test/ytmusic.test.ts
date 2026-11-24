@@ -1,6 +1,5 @@
-import { applyD1Migrations, env, reset } from "cloudflare:test";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env } from "cloudflare:test";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
 import { pullDueSources } from "../src/cron";
 import { openSecret, sealSecret } from "../src/secret";
@@ -195,11 +194,6 @@ async function playsCount(userId = 1) {
     .first<{ n: number }>();
   return row?.n ?? 0;
 }
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-});
 
 afterEach(() => {
   vi.unstubAllGlobals();

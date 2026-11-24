@@ -1,6 +1,5 @@
-import { applyD1Migrations, env, reset } from "cloudflare:test";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env } from "cloudflare:test";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
 import {
   openTokens,
@@ -99,11 +98,6 @@ const playsBody = () =>
     status: 200,
     headers: { "content-type": "application/json" },
   });
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-});
 
 afterEach(() => {
   vi.restoreAllMocks();

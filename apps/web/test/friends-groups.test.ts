@@ -1,6 +1,5 @@
-import { applyD1Migrations, env, reset } from "cloudflare:test";
-import { beforeEach, describe, expect, it } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env } from "cloudflare:test";
+import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
 
 const now = Math.floor(Date.now() / 1000);
@@ -124,11 +123,6 @@ async function friendLink(userId: number) {
     .first<{ friend_link: string | null }>();
   return row?.friend_link ?? null;
 }
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-});
 
 describe("the friend link", () => {
   it("shows the link on /friends and makes friends on one POST", async () => {

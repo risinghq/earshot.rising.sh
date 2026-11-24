@@ -1,11 +1,5 @@
-import {
-  applyD1Migrations,
-  env,
-  reset,
-  runInDurableObject,
-} from "cloudflare:test";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env, runInDurableObject } from "cloudflare:test";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
 import type { Matchmaker } from "../src/play/match";
@@ -219,11 +213,6 @@ async function finishRoom(code: string) {
     }
   });
 }
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-});
 
 afterEach(() => {
   vi.unstubAllGlobals();

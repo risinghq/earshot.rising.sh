@@ -35,6 +35,7 @@ export default defineConfig({
             process.env.PULL_BENCH === "1"
               ? ["test/bench.test.ts"]
               : ["test/**/*.test.ts", "!test/bench.test.ts"],
+          setupFiles: ["test/setup.ts"],
           sequence: { concurrent: false },
         },
       },

@@ -1,6 +1,5 @@
-import { applyD1Migrations, env, reset, SELF } from "cloudflare:test";
-import { beforeEach, describe, expect, it } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env, SELF } from "cloudflare:test";
+import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
 import { markDuplicates } from "../src/duplicates";
 import { storeListens } from "../src/matching";
@@ -115,11 +114,6 @@ function countedDb() {
   } as unknown as D1Database;
   return { db, counts };
 }
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-});
 
 describe("markDuplicates", () => {
   it.each<{

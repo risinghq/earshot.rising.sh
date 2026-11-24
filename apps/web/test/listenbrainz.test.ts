@@ -1,6 +1,5 @@
-import { applyD1Migrations, env, reset, SELF } from "cloudflare:test";
-import { beforeEach, describe, expect, it } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env, SELF } from "cloudflare:test";
+import { describe, expect, it } from "vitest";
 
 const now = Math.floor(Date.now() / 1000);
 const token = `msu_${"b".repeat(43)}`;
@@ -109,11 +108,6 @@ async function playsCount(userId = 1) {
     .first<{ count: number }>();
   return row?.count ?? 0;
 }
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-});
 
 describe("submit-listens", () => {
   it("stores a single listen once, even when sent twice", async () => {

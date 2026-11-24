@@ -1,6 +1,5 @@
-import { applyD1Migrations, env, reset } from "cloudflare:test";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env } from "cloudflare:test";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
 import { eraMinTracks } from "../src/play/pool";
@@ -130,11 +129,6 @@ async function signedIn(name: string) {
 
 const get = (path: string) =>
   app.fetch(new Request(`${origin}${path}`), testEnv() as never);
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-});
 
 afterEach(() => {
   vi.unstubAllGlobals();

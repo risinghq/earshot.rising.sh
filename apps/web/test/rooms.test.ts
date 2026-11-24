@@ -1,11 +1,5 @@
-import {
-  applyD1Migrations,
-  env,
-  reset,
-  runInDurableObject,
-} from "cloudflare:test";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env, runInDurableObject } from "cloudflare:test";
+import { afterEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
 import type { Room } from "../src/play/room";
@@ -186,11 +180,6 @@ const playGame = (code: string) =>
       await room.tick(current.startedAt + 60_000);
     }
   });
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-}, 20000);
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -428,7 +417,12 @@ describe("rooms", () => {
   });
   it("reaches the reveal when the outcome write fails", async () => {
     await stubChart(Array.from({ length: 10 }, (_, i) => `Song ${i}`));
-    await env.DB.prepare("DROP TABLE round_outcomes").run();
+    await env.DB.prepare(
+      "CREATE TRIGGER refuse_outcome BEFORE INSERT ON round_outcomes BEGIN SELECT RAISE(ABORT, 'refused'); END",
+    ).run();
+    onTestFinished(async () => {
+      await env.DB.prepare("DROP TRIGGER refuse_outcome").run();
+    });
     const { code, key } = await createRoom();
     const ann = await connect(code);
     const bob = await connect(code);
@@ -450,6 +444,9 @@ describe("rooms", () => {
     const after = await stored(code);
     expect(after.phase).toBe("reveal");
     expect(after.round).toBeNull();
+    expect(
+      await env.DB.prepare("SELECT COUNT(*) AS n FROM round_outcomes").first(),
+    ).toEqual({ n: 0 });
     ann.close();
     bob.close();
   });

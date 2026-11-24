@@ -1,6 +1,5 @@
-import { applyD1Migrations, env, reset } from "cloudflare:test";
+import { env } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import migrations from "virtual:web-migrations";
 import worker from "../bench/index";
 import { pullDueSources } from "../src/cron";
 
@@ -18,13 +17,11 @@ const testEnv = () =>
   }) as never;
 
 describe("bench worker", () => {
-  afterEach(async () => {
+  afterEach(() => {
     vi.restoreAllMocks();
-    await reset();
   });
 
   it("leaves the bench source idle after /pull", async () => {
-    await applyD1Migrations(env.DB, migrations);
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const response = await worker.fetch(
       new Request("http://bench/pull?repeat=1") as Request<
@@ -44,7 +41,6 @@ describe("bench worker", () => {
   });
 
   it("stores new plays on every repeat", async () => {
-    await applyD1Migrations(env.DB, migrations);
     const response = await worker.fetch(
       new Request("http://bench/store?repeat=2") as Request<
         unknown,

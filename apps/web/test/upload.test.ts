@@ -1,6 +1,5 @@
-import { applyD1Migrations, env, reset, SELF } from "cloudflare:test";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env, SELF } from "cloudflare:test";
+import { describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
 
 const now = Math.floor(Date.now() / 1000);
@@ -96,11 +95,6 @@ async function sourceRow(sourceId = 10) {
     .bind(sourceId)
     .first<Record<string, unknown>>();
 }
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-});
 
 describe("upload API", () => {
   it("stores the overlap once and marks a page that shares nothing", async () => {
