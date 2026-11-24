@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "db:generate": "drizzle-kit generate",
+    "db:check": "n=$(ls migrations | wc -l) && drizzle-kit generate && test \"$(ls migrations | wc -l)\" -eq \"$n\" || { echo 'src/db/schema.ts differs from migrations/: run npm run db:generate and commit the migration' >&2; exit 1; }",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "format": "oxfmt .",
@@ -16,6 +18,7 @@
   },
   "dependencies": {
     "@solidjs/web": "2.0.3",
+    "drizzle-orm": "^1.0.0-rc.6",
     "hono": "4.13.18",
     "solid-js": "2.0.3",
     "valibot": "1.5.0"
@@ -25,6 +28,7 @@
     "@cloudflare/workers-types": "5.20261112.1",
     "@msw/cloudflare": "^0.2.0",
     "@solidjs/vite-plugin": "3.0.1",
+    "drizzle-kit": "^1.0.0-rc.6",
     "happy-dom": "21.0.4",
     "msw": "^3.0.7",
     "oxfmt": "0.75.0",

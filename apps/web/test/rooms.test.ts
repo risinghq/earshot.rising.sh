@@ -13,7 +13,6 @@ import { idleMs } from "../src/play/room-game";
 import {
   connect,
   origin,
-  playOut,
   roomStub,
   setClock,
   stubChart,
@@ -174,13 +173,13 @@ describe("a room in the runtime", () => {
     });
   });
 
-  it("switches the room to the host's pick between games and starts it", async () => {
+  // room-host.test.ts plays a game out before the switch; here the route
+  // reaches the room and the room records the game it starts.
+  it("switches the room to the host's pick and starts it", async () => {
     await stubChart(4);
     const { code, key } = await createRoom();
     const ann = await connect(code);
     await ann.join("Ann", key);
-    ann.send({ type: "start" });
-    await playOut(ann, code, 4);
     const switchTo = (k: string) =>
       post(`/play/room/${code}/switch`, {
         category: "rock",
@@ -198,10 +197,7 @@ describe("a room in the runtime", () => {
     )
       .bind(code)
       .all();
-    expect(games.results).toEqual([
-      { category: "pop", origin: "start" },
-      { category: "rock", origin: "pick" },
-    ]);
+    expect(games.results).toEqual([{ category: "rock", origin: "pick" }]);
   });
 
   it("seats a signed-in player under their name, once across devices", async () => {

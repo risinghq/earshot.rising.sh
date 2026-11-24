@@ -561,7 +561,7 @@ function settingsPage(
                   id="is_public"
                   name="is_public"
                   type="checkbox"
-                  checked={user.is_public === 1}
+                  checked={user.isPublic === 1}
                 />
                 <span>
                   <b>Public profile</b>

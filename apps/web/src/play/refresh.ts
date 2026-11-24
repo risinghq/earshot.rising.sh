@@ -1,3 +1,16 @@
+import {
+  and,
+  asc,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  lte,
+  ne,
+  or,
+  sql,
+} from "drizzle-orm";
+import { batchWrites, database, t } from "../db";
 import type { Env } from "../types";
 import curatedList from "./curated.json";
 import { deezerPlaylistTracks, deezerTrackYear, QuotaError } from "./sources";
@@ -19,17 +32,7 @@ interface CuratedTrack {
 
 const curated = curatedList as Record<string, Record<string, CuratedTrack[]>>;
 
-export interface CategorySource {
-  id: number;
-  category: string;
-  kind: string;
-  ref: string;
-  title: string | null;
-  tracks_count: number | null;
-  decade: number | null;
-  position: number;
-  refreshed_at: number | null;
-}
+export type CategorySource = typeof t.categorySources.$inferSelect;
 
 const refreshIntervalSeconds = 86400;
 const retryDelaySeconds = 3600;
@@ -108,53 +111,56 @@ export async function refreshSource(
   now: number,
 ) {
   const tracks = await sourceTracks(source);
-  const statements: D1PreparedStatement[] = tracks.map((track) =>
-    env.DB.prepare(
-      `INSERT INTO catalog_tracks
-         (track_key, deezer_id, title, original_title, artist, artist_id,
-          cover, link, preview, year, year_at, updated_at)
-       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
-       ON CONFLICT (track_key) DO UPDATE SET
-         title = excluded.title,
-         original_title = excluded.original_title,
-         artist = excluded.artist,
-         artist_id = excluded.artist_id,
-         cover = excluded.cover,
-         link = excluded.link,
-         preview = excluded.preview,
-         year = COALESCE(excluded.year, catalog_tracks.year),
-         year_at = COALESCE(excluded.year_at, catalog_tracks.year_at),
-         updated_at = excluded.updated_at`,
-    ).bind(
-      track.key,
-      track.deezerId,
-      track.title,
-      track.original,
-      track.artist,
-      track.artistId,
-      track.cover,
-      track.link,
-      track.preview,
-      track.year,
-      track.year === null ? null : now,
-      now,
+  const db = database(env.DB);
+  const ct = t.catalogTracks;
+  await batchWrites(
+    db,
+    tracks.map((track) =>
+      db
+        .insert(ct)
+        .values({
+          trackKey: track.key,
+          deezerId: track.deezerId,
+          title: track.title,
+          originalTitle: track.original,
+          artist: track.artist,
+          artistId: track.artistId,
+          cover: track.cover,
+          link: track.link,
+          preview: track.preview,
+          year: track.year,
+          yearAt: track.year === null ? null : now,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: ct.trackKey,
+          set: {
+            title: sql`excluded.title`,
+            originalTitle: sql`excluded.original_title`,
+            artist: sql`excluded.artist`,
+            artistId: sql`excluded.artist_id`,
+            cover: sql`excluded.cover`,
+            link: sql`excluded.link`,
+            preview: sql`excluded.preview`,
+            year: sql`COALESCE(excluded.year, ${ct.year})`,
+            yearAt: sql`COALESCE(excluded.year_at, ${ct.yearAt})`,
+            updatedAt: sql`excluded.updated_at`,
+          },
+        }),
     ),
   );
-  for (let index = 0; index < statements.length; index += 100)
-    await env.DB.batch(statements.slice(index, index + 100));
-  await env.DB.batch([
-    env.DB.prepare("DELETE FROM catalog_members WHERE source_id = ?1").bind(
-      source.id,
-    ),
+  // One batch, so a reader never sees the source with half its members.
+  await db.batch([
+    db.delete(t.catalogMembers).where(eq(t.catalogMembers.sourceId, source.id)),
     ...tracks.map((track, position) =>
-      env.DB.prepare(
-        `INSERT INTO catalog_members (source_id, track_key, position)
-         VALUES (?1, ?2, ?3)`,
-      ).bind(source.id, track.key, position),
+      db
+        .insert(t.catalogMembers)
+        .values({ sourceId: source.id, trackKey: track.key, position }),
     ),
-    env.DB.prepare(
-      "UPDATE category_sources SET refreshed_at = ?1, tracks_count = ?2 WHERE id = ?3",
-    ).bind(now, tracks.length, source.id),
+    db
+      .update(t.categorySources)
+      .set({ refreshedAt: now, tracksCount: tracks.length })
+      .where(eq(t.categorySources.id, source.id)),
   ]);
   await env.CACHE?.delete(`play:cat:${source.category}`).catch(() => undefined);
   return tracks.length;
@@ -165,20 +171,38 @@ export async function refreshCategorySources(
   category: string,
   now = Math.floor(Date.now() / 1000),
 ) {
-  const sources = await env.DB.prepare(
-    "SELECT * FROM category_sources WHERE category = ?1 ORDER BY position, id",
-  )
-    .bind(category)
-    .all<CategorySource>();
-  for (const source of sources.results) await refreshSource(env, source, now);
-  return sources.results.length;
+  const cs = t.categorySources;
+  const sources = await database(env.DB)
+    .select()
+    .from(cs)
+    .where(eq(cs.category, category))
+    .orderBy(cs.position, cs.id);
+  for (const source of sources) await refreshSource(env, source, now);
+  return sources.length;
 }
 
-async function markRetry(db: D1Database, sourceId: number, retryAt: number) {
-  await db
-    .prepare("UPDATE category_sources SET refreshed_at = ?1 WHERE id = ?2")
-    .bind(retryAt - refreshIntervalSeconds, sourceId)
-    .run();
+function markRetry(env: Env, sourceId: number, retryAt: number) {
+  return database(env.DB)
+    .update(t.categorySources)
+    .set({ refreshedAt: retryAt - refreshIntervalSeconds })
+    .where(eq(t.categorySources.id, sourceId));
+}
+
+// The sources of one kind or the others whose day-old refill is due, oldest
+// first.
+function dueSources(env: Env, curated: boolean, cutoff: number, limit: number) {
+  const cs = t.categorySources;
+  return database(env.DB)
+    .select()
+    .from(cs)
+    .where(
+      and(
+        curated ? eq(cs.kind, "curated") : ne(cs.kind, "curated"),
+        or(isNull(cs.refreshedAt), lte(cs.refreshedAt, cutoff)),
+      ),
+    )
+    .orderBy(asc(cs.refreshedAt))
+    .limit(limit);
 }
 
 // Each cron run refreshes the sources due for a day-old refill and then
@@ -188,27 +212,17 @@ export async function refreshCatalog(
   env: Env,
   now = Math.floor(Date.now() / 1000),
 ) {
-  const due = await env.DB.prepare(
-    `SELECT * FROM (
-       SELECT * FROM category_sources
-       WHERE kind = 'curated' AND (refreshed_at IS NULL OR refreshed_at <= ?1)
-       ORDER BY refreshed_at LIMIT ?3
-     )
-     UNION ALL
-     SELECT * FROM (
-       SELECT * FROM category_sources
-       WHERE kind <> 'curated' AND (refreshed_at IS NULL OR refreshed_at <= ?1)
-       ORDER BY refreshed_at LIMIT ?2
-     )`,
-  )
-    .bind(now - refreshIntervalSeconds, sourcesPerRun, curatedPerRun)
-    .all<CategorySource>();
-  for (const source of due.results) {
+  const cutoff = now - refreshIntervalSeconds;
+  const [curatedDue, playlistsDue] = await database(env.DB).batch([
+    dueSources(env, true, cutoff, curatedPerRun),
+    dueSources(env, false, cutoff, sourcesPerRun),
+  ]);
+  for (const source of [...curatedDue, ...playlistsDue]) {
     try {
       await refreshSource(env, source, now);
     } catch (error) {
       if (error instanceof QuotaError) return;
-      await markRetry(env.DB, source.id, now + retryDelaySeconds);
+      await markRetry(env, source.id, now + retryDelaySeconds);
     }
   }
   try {
@@ -222,58 +236,47 @@ export async function refreshCatalog(
 // stays a null year without costing a request on every later run. Only a
 // playlist track lacks a year, and playlists are Deezer's.
 export async function fillMissingYears(env: Env, limit = yearsPerRun) {
-  const missing = await env.DB.prepare(
-    `SELECT track_key, deezer_id FROM catalog_tracks
-     WHERE year IS NULL AND year_at IS NULL AND deezer_id IS NOT NULL
-     LIMIT ?1`,
-  )
-    .bind(limit)
-    .all<{ track_key: string; deezer_id: number }>();
+  const db = database(env.DB);
+  const ct = t.catalogTracks;
+  const missing = await db
+    .select({ trackKey: ct.trackKey, deezerId: ct.deezerId })
+    .from(ct)
+    .where(and(isNull(ct.year), isNull(ct.yearAt), isNotNull(ct.deezerId)))
+    .limit(limit);
   const updated: string[] = [];
   try {
-    for (const row of missing.results) {
+    for (const row of missing) {
+      if (row.deezerId === null) continue;
       try {
-        const year = await deezerTrackYear(row.deezer_id);
-        const wrote = await env.DB.prepare(
-          `UPDATE catalog_tracks SET year = ?1, year_at = ?2
-           WHERE track_key = ?3 AND year IS NULL`,
-        )
-          .bind(year, Math.floor(Date.now() / 1000), row.track_key)
-          .run();
-        if ((wrote.meta.changes ?? 0) > 0) updated.push(row.track_key);
+        const year = await deezerTrackYear(row.deezerId);
+        const wrote = await db
+          .update(ct)
+          .set({ year, yearAt: Math.floor(Date.now() / 1000) })
+          .where(and(eq(ct.trackKey, row.trackKey), isNull(ct.year)));
+        if ((wrote.meta.changes ?? 0) > 0) updated.push(row.trackKey);
       } catch (error) {
         if (error instanceof QuotaError) throw error;
         // A failed lookup stays unmarked and is retried on the next run.
       }
     }
   } finally {
-    if (updated.length > 0) {
-      const rows = await env.DB.prepare(
-        `SELECT DISTINCT cs.category FROM catalog_members cm
-         JOIN category_sources cs ON cs.id = cm.source_id
-         WHERE cm.track_key IN (${updated.map(() => "?").join(",")})`,
-      )
-        .bind(...updated)
-        .all<{ category: string }>();
-      for (const row of rows.results)
-        await env.CACHE?.delete(`play:cat:${row.category}`).catch(
-          () => undefined,
-        );
-    }
+    await dropTrackCaches(env, ...updated);
   }
-  return missing.results.length;
+  return missing.length;
 }
 
 // A catalog_tracks row is shared by every category whose sources list it,
 // so a track-level change (ban, override, year) invalidates each cache.
-export async function dropTrackCaches(env: Env, trackKey: string) {
-  const rows = await env.DB.prepare(
-    `SELECT DISTINCT cs.category FROM catalog_members cm
-     JOIN category_sources cs ON cs.id = cm.source_id
-     WHERE cm.track_key = ?1`,
-  )
-    .bind(trackKey)
-    .all<{ category: string }>();
-  for (const row of rows.results)
+export async function dropTrackCaches(env: Env, ...trackKeys: string[]) {
+  if (trackKeys.length === 0) return;
+  const rows = await database(env.DB)
+    .selectDistinct({ category: t.categorySources.category })
+    .from(t.catalogMembers)
+    .innerJoin(
+      t.categorySources,
+      eq(t.categorySources.id, t.catalogMembers.sourceId),
+    )
+    .where(inArray(t.catalogMembers.trackKey, trackKeys));
+  for (const row of rows)
     await env.CACHE?.delete(`play:cat:${row.category}`).catch(() => undefined);
 }

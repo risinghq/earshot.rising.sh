@@ -3,9 +3,12 @@ import { readD1Migrations } from "@cloudflare/vitest-plugin";
 import solidPlugin from "@solidjs/vite-plugin";
 import { defineConfig } from "vitest/config";
 
-const migrations = await readD1Migrations(
-  new URL("./migrations", import.meta.url).pathname,
-);
+// The same files wrangler applies; wrangler.jsonc explains the pattern.
+const migrations = await readD1Migrations({
+  projectPath: new URL(".", import.meta.url).pathname,
+  migrationsDir: "migrations",
+  migrationsPattern: "migrations/{*.sql,*/migration.sql}",
+});
 const migrationModule = "virtual:web-migrations";
 const migrationPlugin = {
   name: "web-migrations",

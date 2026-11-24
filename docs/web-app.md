@@ -48,6 +48,7 @@ crates/music-stats/     the Rust crate: Cargo.toml, src/, tests/
 apps/web/
   wrangler.jsonc        Worker, D1, KV, cron, custom domain, assets
   migrations/           D1 migrations, applied with wrangler
+  drizzle.config.ts     where drizzle-kit reads the schema and writes migrations
   client/               browser scripts, stylesheets and fonts, built by Vite
   public/               files served under a fixed name: favicon, _headers
   src/                  the Worker, in TypeScript
@@ -170,8 +171,24 @@ one.
 
 ## 2. Data model
 
-All times are Unix seconds in UTC. The schema lives in `apps/web/migrations/`,
-numbered in order. A table holds only what a query reads.
+All times are Unix seconds in UTC. A table holds only what a query reads.
+
+`apps/web/src/db/schema.ts` declares the schema in
+[Drizzle](https://orm.drizzle.team/docs/connect-cloudflare-d1), and queries are
+built from it, so a row's type comes from its table. Columns are camelCase in
+TypeScript and snake_case in SQL. `src/db/index.ts` holds one query builder per
+D1 binding and `batchWrites`, which runs a list of writes in batches.
+
+`npm run db:generate` diffs the schema against the last migration's snapshot and
+writes `migrations/<timestamp>_<name>/migration.sql`. CI runs
+`npm run db:check`, which fails when the schema has a change no migration holds.
+Drizzle does not model triggers: a trigger goes in an empty migration from
+`npx drizzle-kit generate --custom --name <name>`. Migrations 0001 to 0022 are
+flat files from before Drizzle, and production recorded them by those names. The
+`20261124141330_baseline` folder runs nothing; its snapshot is the schema they
+built. `migrations_pattern` in `wrangler.jsonc` applies both shapes in order.
+
+The SQL below is what those migrations build.
 
 ```sql
 CREATE TABLE users (

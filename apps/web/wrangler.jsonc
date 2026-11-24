@@ -26,6 +26,9 @@
       "database_name": "music-stats",
       "database_id": "1c5179e3-3b60-4dfe-89d2-271170894ef0",
       "migrations_dir": "migrations",
+      // 0001 to 0022 are flat files and production recorded them by those
+      // names; drizzle-kit writes one folder per migration after them.
+      "migrations_pattern": "migrations/{*.sql,*/migration.sql}",
     },
   ],
   "kv_namespaces": [
