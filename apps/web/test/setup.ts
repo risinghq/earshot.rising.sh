@@ -10,8 +10,13 @@
 // listDurableObjectIds keeps every id ever created until reset(), so clearing
 // objects one by one costs more with each test.
 import { env, listDurableObjectIds, reset } from "cloudflare:test";
-import { beforeAll, beforeEach } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach } from "vitest";
 import migrations from "virtual:web-migrations";
+import { network } from "./network";
+
+beforeAll(() => network.enable());
+afterEach(() => network.resetHandlers());
+afterAll(() => network.disable());
 
 let restore: D1PreparedStatement[] = [];
 

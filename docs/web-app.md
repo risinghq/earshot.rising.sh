@@ -81,8 +81,10 @@ Libraries: [Hono](https://hono.dev) for routing and its JSX for server HTML,
 [Solid](https://solidjs.com) for the room's phone and TV pages, Vite to build
 the browser assets, valibot to validate the upload body and every socket message
 (`src/play/messages.ts`), vitest with `@cloudflare/vitest-plugin` so the tests
-run against real workerd and D1. Formatting and linting follow the repository:
-oxfmt and oxlint.
+run against real workerd and D1, and msw through `@msw/cloudflare` for the
+Worker's outbound requests. `test/network.ts` owns the mock network: a test adds
+handlers for the services it reaches, and a request no handler matches fails the
+test. Formatting and linting follow the repository: oxfmt and oxlint.
 
 ### The component layer
 
@@ -1296,7 +1298,8 @@ guest sends a nickname in its first message.
   the clock, the category's tracks and opening the room. `match.ts` is the
   Durable Object that supplies them. `test/match-host.test.ts` covers the queue
   with fake ports, including a partner who leaves mid-pair; `test/match.test.ts`
-  keeps the route, eviction and the room it opens.
+  keeps the route, the session the Worker reads into a seat, eviction and the
+  room it opens.
 - **No creator.** A match room has no creator: it starts by itself once every
   seated player holds a live socket, and if one never connects the game starts
   with whoever showed up after 90 seconds. There is no rematch button, and

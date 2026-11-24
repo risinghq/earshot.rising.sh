@@ -1,6 +1,8 @@
 import { env, SELF } from "cloudflare:test";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { http, HttpResponse } from "msw";
+import { describe, expect, it } from "vitest";
 import { fillImages, missRetrySeconds } from "../src/images";
+import { network } from "./network";
 
 const now = Math.floor(Date.now() / 1000);
 const cover = "https://cdn-images.dzcdn.net/images/cover/abc/250x250.jpg";
@@ -11,15 +13,14 @@ function stubDeezer(
   artists: unknown[],
   seen: string[] = [],
 ) {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (input: RequestInfo | URL) => {
-      const url = typeof input === "string" ? input : input.toString();
-      seen.push(url);
-      const data = url.includes("/search/artist") ? artists : tracks;
-      return new Response(JSON.stringify({ data }), {
-        headers: { "content-type": "application/json" },
-      });
+  network.use(
+    http.get("https://api.deezer.com/search/artist", ({ request }) => {
+      seen.push(request.url);
+      return HttpResponse.json({ data: artists });
+    }),
+    http.get("https://api.deezer.com/search", ({ request }) => {
+      seen.push(request.url);
+      return HttpResponse.json({ data: tracks });
     }),
   );
 }
@@ -43,10 +44,6 @@ async function seed() {
     ).bind(now - 60),
   ]);
 }
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
 
 describe("fillImages", () => {
   it("stores a cover by the same artist and a picture by the same name", async () => {
@@ -105,9 +102,11 @@ describe("fillImages", () => {
 
   it("leaves a row due when Deezer fails", async () => {
     await seed();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => new Response("busy", { status: 503 })),
+    network.use(
+      http.get(
+        "https://api.deezer.com/*",
+        () => new HttpResponse("busy", { status: 503 }),
+      ),
     );
     await fillImages(env, now);
     expect(await env.DB.prepare("SELECT image_at FROM tracks").first()).toEqual(

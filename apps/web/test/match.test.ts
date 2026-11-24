@@ -1,24 +1,10 @@
 // The match queue as the runtime runs it: the route, the Matchmaker's
 // hibernated sockets and the room it opens. The queue's rules are in
 // match-host.test.ts.
-import {
-  env,
-  evictDurableObject,
-  runDurableObjectAlarm,
-} from "cloudflare:test";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { env, evictDurableObject } from "cloudflare:test";
+import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
-import { scoreFor } from "../src/play/quiz";
-import { matchWaitMs } from "../src/play/room-game";
-import {
-  connect,
-  openSocket,
-  playOut,
-  roomStub,
-  setClock,
-  stubChart,
-  type Message,
-} from "./room-client";
+import { connect, openSocket, stubChart, type Message } from "./room-client";
 
 const origin = "https://earshot.rising.sh";
 const testEnv = () => ({
@@ -80,19 +66,8 @@ async function pair() {
   return { ann, bob, matched, matchedBob };
 }
 
-const resultRows = () =>
-  env.DB.prepare("SELECT * FROM game_results ORDER BY user_id")
-    .all()
-    .then((r) => r.results);
-
 const matchmaker = () =>
   env.MATCHMAKER.get(env.MATCHMAKER.idFromName("global"));
-
-afterEach(() => {
-  vi.useRealTimers();
-  vi.unstubAllGlobals();
-  vi.restoreAllMocks();
-});
 
 describe("matchmaker", () => {
   it("pairs two players queued in one category into one room", async () => {
@@ -123,7 +98,10 @@ describe("matchmaker", () => {
     expect(matchedAnn.code).toBe(matchedBob.code);
   });
 
-  it("starts a match with whoever came once the wait is over, and writes their result", async () => {
+  // The Worker reads the session into the queue's seat; without it, a join
+  // with no nickname is refused. The room's own rules for that seat, up to
+  // its result row, are in room-host.test.ts.
+  it("seats a signed-in player under their account, with no nickname", async () => {
     await stubChart(4);
     const ann = await signIn("ann");
     const cookie = `__Host-session=${ann.token}`;
@@ -136,21 +114,13 @@ describe("matchmaker", () => {
       code: string;
       token: string;
     };
-    // Only one side shows up; the wait's deadline starts the game.
     const a = await joinRoom(matched.code, matched.token, cookie);
-    await a.state("lobby");
-    setClock(Date.now() + matchWaitMs + 1);
-    expect(await runDurableObjectAlarm(roomStub(matched.code))).toBe(true);
-    await playOut(a, matched.code, 4);
-    expect(await resultRows()).toMatchObject([
-      {
-        user_id: ann.id,
-        kind: "match",
-        rank: 1,
-        players: 1,
-        score: 4 * scoreFor(1_000),
-      },
-    ]);
+    const lobby = (await a.state("lobby")) as {
+      you: { name: string; user: boolean };
+      players: { name: string }[];
+    };
+    expect(lobby.you).toMatchObject({ name: "ann", user: true });
+    expect(lobby.players.map((p) => p.name).sort()).toEqual(["Guesty", "ann"]);
   });
 
   it("refuses a stranger joining a match without a seated token", async () => {

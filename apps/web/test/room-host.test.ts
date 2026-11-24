@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Category } from "../src/play/catalog";
 import type { GameStart, Outcome } from "../src/play/outcomes";
 import type { ServerMessage } from "../src/play/protocol";
+import { scoreFor } from "../src/play/quiz";
 import type { CategoryBoardEntry, ResultRow } from "../src/play/results";
 import { QuotaError, type Candidate, type Preview } from "../src/play/sources";
 import type { RoomInit, Stored } from "../src/play/room-game";
@@ -485,20 +486,31 @@ describe("deadlines", () => {
     expect(ann.state).toMatchObject({ phase: "playing", round: 2 });
   });
 
-  it("starts a match with whoever came once the wait is over", async () => {
+  it("starts a match with whoever came once the wait is over, and writes their result", async () => {
     const room = world({
       kind: "match",
       creatorToken: "",
+      candidates: songs(4),
       players: [
-        { name: "Ann", token: "a", userId: null },
+        { name: "ann", token: "a", userId: 7 },
         { name: "Bob", token: "b", userId: null },
       ],
     });
-    const ann = await room.seat(undefined, "a");
+    const ann = await room.seat(undefined, "a", { uid: 7, name: "ann" });
     expect(room.w.alarm).toBe(1_000_000 + matchWaitMs);
     await room.fire();
     expect(room.w.starts).toMatchObject([{ origin: "match", players: 1 }]);
     expect(ann.state).toMatchObject({ phase: "playing" });
+    await room.playOut(ann);
+    expect(room.w.results).toMatchObject([
+      {
+        userId: 7,
+        kind: "match",
+        rank: 1,
+        players: 1,
+        score: 4 * scoreFor(1_000),
+      },
+    ]);
   });
 
   it("deletes an idle room and closes its sockets", async () => {

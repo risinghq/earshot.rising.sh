@@ -1,6 +1,8 @@
 import { env } from "cloudflare:test";
+import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
+import { network } from "./network";
 import {
   catalog,
   getCategory,
@@ -31,20 +33,14 @@ const deezerArtist = (id: number, name: string, fans = 1000) => ({
 function stubFetch(
   handlers: Array<[RegExp, unknown | ((url: string) => unknown)]>,
 ) {
-  vi.stubGlobal(
-    "fetch",
-    vi.fn(async (input: RequestInfo | URL) => {
-      const url = typeof input === "string" ? input : input.toString();
-      for (const [pattern, body] of handlers) {
-        if (pattern.test(url)) {
-          const data = typeof body === "function" ? body(url) : body;
-          return new Response(JSON.stringify(data), {
-            headers: { "content-type": "application/json" },
-          });
-        }
-      }
-      return new Response("not found", { status: 404 });
-    }),
+  network.use(
+    ...handlers.map(([pattern, body]) =>
+      http.get(pattern, ({ request }) =>
+        HttpResponse.json(
+          (typeof body === "function" ? body(request.url) : body) as never,
+        ),
+      ),
+    ),
   );
 }
 
@@ -65,7 +61,6 @@ const get = (path: string) =>
   app.fetch(new Request(`${origin}${path}`), testEnv() as never);
 
 afterEach(() => {
-  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 

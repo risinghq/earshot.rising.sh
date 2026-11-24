@@ -1,7 +1,9 @@
 import { env } from "cloudflare:test";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { http, HttpResponse } from "msw";
+import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
+import { network } from "./network";
 import { sha256Bytes } from "../src/auth";
 import { catalogPool, poolEras, byDecade } from "../src/play/pool";
 import { catalog, warmChartCache } from "../src/play/catalog";
@@ -33,11 +35,6 @@ const post = (path: string, fields: Record<string, string>, cookie = "") =>
     }),
     testEnv() as never,
   );
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-  vi.restoreAllMocks();
-});
 
 describe("catalog pool", () => {
   it("unions sources and dedupes by id and answer, dropping banned tracks", async () => {
@@ -90,10 +87,9 @@ describe("catalog pool", () => {
        SET answer_title = 'Fixed Title', answer_year = 1985, banned_at = 1
        WHERE deezer_id = 1`,
     ).run();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () =>
-        Response.json({
+    network.use(
+      http.get("https://api.deezer.com/*", () =>
+        HttpResponse.json({
           data: [
             {
               id: 1,
@@ -191,6 +187,11 @@ describe("round outcomes", () => {
     artist: { name: "Artist" },
     album: {},
   });
+  // Every track lookup answers track 1, so every round plays "Song 1".
+  const oneTrack = () =>
+    http.get("https://api.deezer.com/track/:id", () =>
+      HttpResponse.json(deezerTrack(1)),
+    );
 
   it("writes one row for a solo answer under the anonymous key", async () => {
     await seedCatalog(
@@ -198,10 +199,7 @@ describe("round outcomes", () => {
       "pop",
       [1, 2, 3, 4].map((i) => ({ id: i, title: `Song ${i}` })),
     );
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => Response.json(deezerTrack(1))),
-    );
+    network.use(oneTrack());
     const started = await post("/play", { category: "pop", mode: "normal" });
     expect(started.status).toBe(303);
     const cookie = started.headers.get("set-cookie") ?? "";
@@ -263,10 +261,7 @@ describe("round outcomes", () => {
       [1, 2, 3, 4].map((i) => ({ id: i, title: `Song ${i}`, year: 2012 })),
       2000,
     );
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => Response.json(deezerTrack(1))),
-    );
+    network.use(oneTrack());
     const started = await post("/play", {
       category: "rock",
       mode: "normal",
@@ -395,8 +390,13 @@ describe("curated sources", () => {
       )
         .bind(`dz:${first.id}`, first.id)
         .run();
-      const fetch = vi.fn(async () => Response.json({ data: [] }));
-      vi.stubGlobal("fetch", fetch);
+      const asked: string[] = [];
+      network.use(
+        http.all("*", ({ request }) => {
+          asked.push(request.url);
+          return HttpResponse.json({ data: [] });
+        }),
+      );
       const unfilled = () =>
         env.DB.prepare(
           `SELECT COUNT(*) n FROM category_sources
@@ -404,7 +404,7 @@ describe("curated sources", () => {
         ).first<number>("n");
       for (let run = 0; run < 20 && ((await unfilled()) ?? 0) > 0; run++)
         await refreshCatalog(testEnv() as never, 1000);
-      expect(fetch).not.toHaveBeenCalled();
+      expect(asked).toEqual([]);
 
       const sources = await env.DB.prepare(
         `SELECT ref, refreshed_at, tracks_count FROM category_sources
@@ -447,17 +447,12 @@ describe("year backfill", () => {
     ).first()) as never;
     await catalog(testEnv() as never, category, null);
     let calls = 0;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        if (url.includes("api.deezer.com/track/")) {
-          calls += 1;
-          if (calls === 1)
-            return Response.json({ id: 1, release_date: "2005-01-01" });
-          return Response.json({ error: { code: 4, message: "quota" } });
-        }
-        return Response.json({ data: [] });
+    network.use(
+      http.get("https://api.deezer.com/track/:id", () => {
+        calls += 1;
+        if (calls === 1)
+          return HttpResponse.json({ id: 1, release_date: "2005-01-01" });
+        return HttpResponse.json({ error: { code: 4, message: "quota" } });
       }),
     );
     const { fillMissingYears } = await import("../src/play/refresh");
@@ -541,14 +536,10 @@ describe("admin", () => {
 
   it("resolves a pasted Deezer playlist URL in the source lookup", async () => {
     await seedAdmin();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
-        if (url.includes("api.deezer.com/playlist/14464057043"))
-          return Response.json({ title: "K-pop 2000s", nb_tracks: 50 });
-        return new Response("not found", { status: 404 });
-      }),
+    network.use(
+      http.get("https://api.deezer.com/playlist/14464057043", () =>
+        HttpResponse.json({ title: "K-pop 2000s", nb_tracks: 50 }),
+      ),
     );
     for (const url of [
       "https://www.deezer.com/en/playlist/14464057043?utm_source=user_sharing",
@@ -806,13 +797,12 @@ describe("admin", () => {
 describe("chart warming", () => {
   it("loads one cold chart per run and shows its covers on the home tile", async () => {
     const requested: string[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: RequestInfo | URL) => {
-        const url = String(input);
+    network.use(
+      http.get(/\/api\/v2\/\w+\//, ({ request }) => {
+        const url = request.url;
         requested.push(url);
         const country = /api\/v2\/(\w+)\//.exec(url)?.[1] ?? "xx";
-        return Response.json({
+        return HttpResponse.json({
           feed: {
             results: [1, 2, 3, 4].map((n) => ({
               name: `Song ${n}`,

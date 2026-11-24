@@ -68,7 +68,6 @@ const answerable = (playing: Message) =>
 
 afterEach(() => {
   vi.useRealTimers();
-  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
