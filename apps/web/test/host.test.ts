@@ -1,5 +1,6 @@
 import { env, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
+import { readPage, textAt } from "./html";
 
 const oldOrigin = "https://music.rising.sh";
 const newOrigin = "https://earshot.rising.sh";
@@ -84,7 +85,10 @@ describe("the new host", () => {
     const response = await SELF.fetch(`${newOrigin}/u/alice`);
     expect(response.status).toBe(200);
     const html = await response.text();
-    expect(html).toContain("<title>alice · Earshot</title>");
-    expect(html).toContain(">Earshot</a>");
+    expect(await textAt(html, "title")).toEqual(["alice · Earshot"]);
+    const page = await readPage(html, newOrigin);
+    expect(
+      page.links.find((link) => link.href === `${newOrigin}/`)?.label,
+    ).toBe("Earshot");
   });
 });

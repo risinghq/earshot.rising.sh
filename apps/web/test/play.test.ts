@@ -3,6 +3,7 @@ import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
+import { readPage, textAt, type ReadPage } from "./html";
 import { network } from "./network";
 import { eraMinTracks } from "../src/play/pool";
 import {
@@ -126,25 +127,35 @@ async function signedIn(name: string) {
 const get = (path: string) =>
   app.fetch(new Request(`${origin}${path}`), testEnv() as never);
 
+const open = async (path: string) =>
+  readPage(await (await get(path)).text(), origin);
+
+// The titles a player can pick in the round's answer form.
+const picks = (page: ReadPage) =>
+  page.forms
+    .find((form) => form.action.endsWith("/answer"))!
+    .buttons.map((button) => button.value);
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
 describe("the play hub", () => {
-  it("carries the site nav", async () => {
-    const response = await get("/");
-    const body = await response.text();
-    expect(body).toContain('class="site-nav"');
-    for (const href of ["/", "/play/board", "/groups", "/auth/github"])
-      expect(body).toContain(`href="${href}"`);
+  it("links to the board, groups and sign-in", async () => {
+    const hrefs = (await open("/")).links.map((link) => link.href);
+    for (const path of ["/", "/play/board", "/groups", "/auth/github"])
+      expect(hrefs).toContain(origin + path);
   });
 
   it("moves old /play links to the home page with their choices", async () => {
     const response = await get("/play?who=room&mode=hard");
     expect(response.status).toBe(301);
     expect(response.headers.get("location")).toBe("/?who=room&mode=hard");
-    const hub = await (await get("/?mode=hard")).text();
-    expect(hub).toMatch(/name="mode" value="hard"/);
+    const hub = await open("/?mode=hard");
+    // The setup shows two modes; hard rides on every tile that starts a game.
+    const tiles = hub.forms.filter((form) => "category" in form.fields);
+    expect(tiles.length).toBeGreaterThan(0);
+    for (const tile of tiles) expect(tile.fields.mode).toBe("hard");
   });
 
   it("starts a game from the home page in one tap, with covers and decades", async () => {
@@ -161,12 +172,15 @@ describe("the play hub", () => {
     await env.DB.prepare(
       "UPDATE catalog_tracks SET cover = 'https://cdn.test/' || deezer_id || '.jpg' WHERE deezer_id >= 500",
     ).run();
-    const body = await (await get("/")).text();
-    const pop = body.slice(body.indexOf('value="pop"'));
-    expect(pop.slice(0, pop.indexOf("</form>"))).toContain(
-      'name="era" value="1990"',
+    const hub = await open("/");
+    const pop = hub.forms.find((form) => form.fields.category === "pop")!;
+    expect(pop.buttons).toContainEqual(
+      expect.objectContaining({ name: "era", value: "1990" }),
     );
-    expect(body.match(/src="https:\/\/cdn\.test\/\d+\.jpg"/g)).toHaveLength(4);
+    const covers = hub.images.filter((src) =>
+      src.startsWith("https://cdn.test/"),
+    );
+    expect(covers).toHaveLength(4);
   });
 
   it("draws the hub's tiles from one cached entry", async () => {
@@ -181,27 +195,29 @@ describe("the play hub", () => {
     await env.DB.prepare(
       "UPDATE categories SET hidden = 1 WHERE slug = 'rock'",
     ).run();
-    expect(await (await get("/")).text()).toContain('value="rock"');
+    const offered = async () =>
+      (await open("/")).forms.map((form) => form.fields.category);
+    expect(await offered()).toContain("rock");
     await env.CACHE.delete("play:hub");
-    expect(await (await get("/")).text()).not.toContain('value="rock"');
+    expect(await offered()).not.toContain("rock");
   });
 
   it("lists the seeded categories", async () => {
     const response = await get("/");
     expect(response.status).toBe(200);
-    const body = await response.text();
+    const hub = await readPage(await response.text(), origin);
     for (const name of [
       "Pop",
       "Rock",
       "Metal",
       "K-pop",
       "Anime",
-      'value="top-50-japan"',
-      'value="top-50-peru"',
-      'value="top-50-global"',
       "From my listening",
     ])
-      expect(body).toContain(name);
+      expect(hub.text).toContain(name);
+    const offered = hub.forms.map((form) => form.fields.category);
+    for (const chart of ["top-50-japan", "top-50-peru", "top-50-global"])
+      expect(offered).toContain(chart);
   });
 
   it("gives the room's pick sheet the genres and the top artists", async () => {
@@ -268,13 +284,16 @@ describe("the play hub", () => {
       ],
     ]);
     const id = await startGame("pop", "normal");
-    const first = await (await get(`/play/${id}`)).text();
-    const second = await (await get(`/play/${id}`)).text();
-    const pick = (body: string) =>
-      [...body.matchAll(/name="choice" value="([^"]*)"/g)].map((m) => m[1]);
-    expect(pick(first)).toHaveLength(4);
-    expect(pick(first)).toEqual(pick(second));
-    expect(first).not.toContain('class="choice-artist"');
+    const first = await open(`/play/${id}`);
+    const second = await open(`/play/${id}`);
+    expect(picks(first)).toHaveLength(4);
+    expect(picks(first)).toEqual(picks(second));
+    // Off easy, a choice is named by its title alone.
+    const answers = first.forms.find((form) =>
+      form.action.endsWith("/answer"),
+    )!;
+    for (const button of answers.buttons)
+      expect(button.label).toBe(button.value);
   });
 
   it("names the artist beside each title on easy", async () => {
@@ -294,14 +313,15 @@ describe("the play hub", () => {
       ],
     ]);
     const id = await startGame("pop", "easy");
-    const body = await (await get(`/play/${id}`)).text();
-    const labels = [
-      ...body.matchAll(
-        /class="choice-title">Track (\d)<\/span><span class="choice-artist">Band (\d)</g,
-      ),
-    ];
-    expect(labels).toHaveLength(4);
-    for (const [, title, band] of labels) expect(band).toBe(title);
+    const round = await open(`/play/${id}`);
+    const answers = round.forms.find((form) =>
+      form.action.endsWith("/answer"),
+    )!;
+    expect(answers.buttons).toHaveLength(4);
+    for (const button of answers.buttons)
+      expect(button.label).toBe(
+        `${button.value} ${button.value.replace("Track", "Band")}`,
+      );
   });
 
   it("keeps the right answer out of the round response", async () => {
@@ -326,8 +346,12 @@ describe("the play hub", () => {
     const body = await (await get(`/play/${id}`)).text();
     const served = (await getGame(testEnv() as never, id))!;
     const answer = served.candidates[served.current!.index];
+    // Anywhere in the response, scripts included, the title would leak.
     expect(body).not.toContain(answer.title);
-    expect(body).toContain(`${answer.deezerId}.mp3`);
+    const round = await readPage(body, origin);
+    expect(round.data.get("round")!.src).toBe(
+      `https://cdn.example/${answer.deezerId}.mp3`,
+    );
   });
 
   it("advances a round through the form endpoints the in-page script posts to", async () => {
@@ -343,24 +367,26 @@ describe("the play hub", () => {
       ],
     ]);
     const id = await startGame("pop", "normal");
-    const question = await (await get(`/play/${id}`)).text();
-    expect(question).toContain('id="game"');
-    expect(question).toContain('data-phase="question"');
-    // solo.js follows each POST's redirect and swaps #game into the page, so
-    // the contract is: a 303 to /play/:id whose GET body carries that region.
+    // solo.js follows each POST's redirect and swaps #game into the page, and
+    // reads the phase from #round inside it.
+    const phase = (page: ReadPage) => {
+      expect(page.ids).toContain("game");
+      return page.data.get("round")?.phase;
+    };
+    const question = await open(`/play/${id}`);
+    expect(phase(question)).toBe("question");
+    expect(picks(question)).toHaveLength(4);
     const answered = await answer(id, { choice: "Song 0" });
     expect(answered.status).toBe(303);
-    const reveal = await (await get(answered.headers.get("location")!)).text();
-    expect(reveal).toContain('id="game"');
-    expect(reveal).toContain('data-phase="reveal"');
+    const reveal = await open(answered.headers.get("location")!);
+    expect(phase(reveal)).toBe("reveal");
     const advanced = await next(id);
     expect(advanced.status).toBe(303);
-    const nextRound = await (
-      await get(advanced.headers.get("location")!)
-    ).text();
-    expect(nextRound).toContain('id="game"');
-    expect(nextRound).toContain('data-phase="question"');
-    expect(nextRound).toContain('action="/play/' + id + '/answer"');
+    const nextRound = await open(advanced.headers.get("location")!);
+    expect(phase(nextRound)).toBe("question");
+    expect(nextRound.forms.map((form) => form.action)).toContain(
+      `${origin}/play/${id}/answer`,
+    );
   });
 
   it("answers inline and serves the round /prepare already rendered", async () => {
@@ -391,27 +417,33 @@ describe("the play hub", () => {
         testEnv() as never,
       );
     const answered = await inline("answer", { choice: "Song 1" });
+    const round = async (response: Response | string) =>
+      readPage(
+        typeof response === "string" ? response : await response.text(),
+        origin,
+      );
     expect(answered.status).toBe(200);
-    expect(await answered.text()).toContain('data-phase="reveal"');
+    expect((await round(answered)).data.get("round")!.phase).toBe("reveal");
     // A second answer to the same round neither scores nor moves the game.
     const again = await inline("answer", { choice: "Song 2" });
-    expect(await again.text()).toContain('data-phase="reveal"');
+    expect((await round(again)).data.get("round")!.phase).toBe("reveal");
     expect((await getGame(testEnv() as never, id))!.results).toHaveLength(1);
 
     const prepared = (await (await inline("prepare")).json()) as {
       url: string;
       html: string;
     };
-    expect(prepared.html).toContain('data-phase="question"');
-    expect(prepared.html).toContain(`data-src="${prepared.url}"`);
+    const ready = await round(prepared.html);
+    expect(ready.data.get("round")).toMatchObject({
+      phase: "question",
+      src: prepared.url,
+    });
     const served = await inline("next");
     expect(served.status).toBe(200);
-    const body = await served.text();
-    expect(body).toContain(`data-src="${prepared.url}"`);
-    const choices = (html: string) =>
-      [...html.matchAll(/name="choice" value="([^"]+)"/g)].map((m) => m[1]);
-    expect(choices(body)).toEqual(choices(prepared.html));
-    expect(choices(body)).toHaveLength(4);
+    const shown = await round(served);
+    expect(shown.data.get("round")!.src).toBe(prepared.url);
+    expect(picks(shown)).toEqual(picks(ready));
+    expect(picks(shown)).toHaveLength(4);
   });
 
   it("updates the header's round and score after an answer", async () => {
@@ -427,28 +459,29 @@ describe("the play hub", () => {
       ],
     ]);
     const id = await startGame("pop", "normal");
-    const question = await (await get(`/play/${id}`)).text();
-    expect(question).toContain(`aria-label="Round 1 of ${roundsPerGame}"`);
-    expect(question).toContain('<span class="game-score-n">0</span>');
+    const header = async (path: string) => {
+      const html = await (await get(path)).text();
+      return {
+        labels: (await readPage(html, origin)).labels,
+        score: (await textAt(html, ".game-score"))[0],
+      };
+    };
+    const question = await header(`/play/${id}`);
+    expect(question.labels).toContain(`Round 1 of ${roundsPerGame}`);
+    expect(question.score).toBe("0");
     const game = (await getGame(testEnv() as never, id))!;
     const answerTitle = game.candidates[game.current!.index].title;
     game.current!.servedAt = Date.now() - 5_000;
     await putGame(testEnv() as never, game);
     const answered = await answer(id, { choice: answerTitle });
-    const reveal = await (await get(answered.headers.get("location")!)).text();
+    const reveal = await header(answered.headers.get("location")!);
     const total = (await getGame(testEnv() as never, id))!.total;
     expect(total).toBeGreaterThan(0);
-    expect(reveal).toContain(
-      `<span class="game-score-n">${total.toLocaleString("en-US")}</span>`,
-    );
+    expect(reveal.score).toBe(total.toLocaleString("en-US"));
     const advanced = await next(id);
-    const nextRound = await (
-      await get(advanced.headers.get("location")!)
-    ).text();
-    expect(nextRound).toContain(`aria-label="Round 2 of ${roundsPerGame}"`);
-    expect(nextRound).toContain(
-      `<span class="game-score-n">${total.toLocaleString("en-US")}</span>`,
-    );
+    const nextRound = await header(advanced.headers.get("location")!);
+    expect(nextRound.labels).toContain(`Round 2 of ${roundsPerGame}`);
+    expect(nextRound.score).toBe(total.toLocaleString("en-US"));
   });
 
   it("scores by the time the server measured, not a client value", async () => {
@@ -551,8 +584,9 @@ describe("the play hub", () => {
     await next(id);
     const stored = (await getGame(testEnv() as never, id))!;
     expect(stored.phase).toBe("done");
-    const done = await get(`/play/${id}`);
-    expect(await done.text()).toContain("Game over");
+    const done = await open(`/play/${id}`);
+    expect(done.data.get("round")!.phase).toBe("done");
+    expect(done.text).toContain("Game over");
   });
 
   it("offers a guest's finished game to the account they sign in with", async () => {
@@ -588,12 +622,12 @@ describe("the play hub", () => {
     });
     const id = "g".repeat(22);
     await putGame(testEnv() as never, finished(id));
-    const guestPage = await (await get(`/play/${id}`)).text();
-    expect(guestPage).toContain("Continue with Google");
-    expect(guestPage).toContain("#1 on Pop");
-    expect(guestPage).toContain(
-      `/auth/google?next=${encodeURIComponent(`/play/${id}`)}`,
-    );
+    const signIn = `${origin}/auth/google?next=${encodeURIComponent(`/play/${id}`)}`;
+    const offersSignIn = (page: ReadPage) =>
+      page.links.some((link) => link.href === signIn);
+    const guestPage = await open(`/play/${id}`);
+    expect(offersSignIn(guestPage)).toBe(true);
+    expect(guestPage.text).toContain("#1 on Pop");
 
     const session = await signedIn("ann");
     const page = (cookie: string) =>
@@ -606,10 +640,11 @@ describe("the play hub", () => {
     // Another browser's guest id does not take the game.
     await page(`${session}; __Host-play-id=guest-2`);
     expect((await rows()).results).toEqual([]);
-    const claimed = await (
-      await page(`${session}; __Host-play-id=guest-1`)
-    ).text();
-    expect(claimed).not.toContain("Continue with Google");
+    const claimed = await readPage(
+      await (await page(`${session}; __Host-play-id=guest-1`)).text(),
+      origin,
+    );
+    expect(offersSignIn(claimed)).toBe(false);
     expect((await rows()).results).toEqual([{ user_id: 1, score: 900 }]);
   });
 
@@ -677,8 +712,8 @@ describe("the play hub", () => {
     const id = await startGame("top-50-japan", "hard");
     const response = await get(`/play/${id}`);
     expect(response.status).toBe(200);
-    const body = await response.text();
-    expect(body).toContain("https://cdn.example/42.mp3");
+    const round = await readPage(await response.text(), origin);
+    expect(round.data.get("round")!.src).toBe("https://cdn.example/42.mp3");
     expect(calls.some((url) => url.includes("itunes.apple.com"))).toBe(false);
   });
 
@@ -697,9 +732,9 @@ describe("the play hub", () => {
     const id = await startGame("top-50-japan", "hard");
     const response = await get(`/play/${id}`);
     expect(response.status).toBe(502);
-    const body = await response.text();
-    expect(body).toContain("Top 50 Japan is not available right now");
-    expect(body).not.toContain("Game over");
+    const page = await readPage(await response.text(), origin);
+    expect(page.text).toContain("Top 50 Japan is not available right now");
+    expect(page.ids).not.toContain("round");
   });
 });
 
@@ -993,9 +1028,11 @@ describe("preview resolution", () => {
     ]);
     const first = await get(`/play/${built.id}`);
     expect(first.status).toBe(503);
-    const body = await first.text();
-    expect(body).toContain("The clip service is busy");
-    expect(body).toContain(`/play/${built.id}`);
+    const busy = await readPage(await first.text(), origin);
+    expect(busy.text).toContain("The clip service is busy");
+    expect(busy.links.map((link) => link.href)).toContain(
+      `${origin}/play/${built.id}`,
+    );
     const held = (await getGame(testEnv() as never, built.id))!;
     expect(held.next).toBe(0);
     expect(held.current).toBeNull();
@@ -1003,7 +1040,9 @@ describe("preview resolution", () => {
     limited = false;
     const retry = await get(`/play/${built.id}`);
     expect(retry.status).toBe(200);
-    expect(await retry.text()).toContain("https://cdn.example/7.mp3");
+    expect(
+      (await readPage(await retry.text(), origin)).data.get("round")!.src,
+    ).toBe("https://cdn.example/7.mp3");
     const served = (await getGame(testEnv() as never, built.id))!;
     expect(served.candidates[served.current!.index].title).toBe("Kept Song");
   });

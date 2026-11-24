@@ -10,7 +10,7 @@ import {
   type ExistingTrack,
 } from "../src/matching";
 import { normalizeText, trackKey } from "../src/normalize";
-import { readPage, speculates } from "./html";
+import { readPage, speculates, textAt } from "./html";
 
 const now = Math.floor(Date.now() / 1000);
 
@@ -529,13 +529,16 @@ describe("profile API", () => {
     const response = await SELF.fetch("https://earshot.rising.sh/u/alice");
     expect(response.status).toBe(200);
     const html = await response.text();
-    expect(html).toContain('<h1 class="profile-name">alice</h1>');
-    expect(html).toContain('<span class="source-pill">Spotify</span>');
-    expect(html).toContain('<span class="source-pill">YouTube Music</span>');
-    expect(html).toMatch(
-      /Updated\s*<time datetime="[^"]+">\d{1,2} \w{3} \d{4}, \d\d:\d\d UTC/,
-    );
-    expect(html).toContain('aria-current="page"');
+    expect(await textAt(html, "h1")).toEqual(["alice"]);
+    expect(await textAt(html, ".source-pill")).toEqual([
+      "Spotify",
+      "YouTube Music",
+    ]);
+    const [updated] = await textAt(html, ".updated");
+    expect(updated).toMatch(/^Updated \d{1,2} \w{3} \d{4}, \d\d:\d\d UTC$/);
+    // The default period's tab marks itself as the page being read.
+    const page = await readPage(html, "https://earshot.rising.sh");
+    expect(page.links.filter((link) => link.current).length).toBeGreaterThan(0);
   });
 
   it("leads each period choice to a page holding the region it replaces", async () => {

@@ -24,6 +24,10 @@ const testEnv = (extra: Record<string, unknown> = {}) =>
 const get = (path: string, extra: Record<string, unknown> = {}) =>
   app.fetch(new Request(`${origin}${path}`), testEnv(extra) as never);
 
+// The text a visitor reads on the page at path.
+const shown = async (path: string) =>
+  (await readPage(await (await get(path)).text(), origin)).text;
+
 const post = (path: string, fields: Record<string, string>, cookie = "") =>
   app.fetch(
     new Request(`${origin}${path}`, {
@@ -583,7 +587,9 @@ describe("admin", () => {
         testEnv(adminEnv) as never,
       );
       expect(response.status).toBe(200);
-      expect(await response.text()).toContain("K-pop 2000s");
+      expect((await readPage(await response.text(), origin)).text).toContain(
+        "K-pop 2000s",
+      );
     }
   });
 
@@ -642,10 +648,8 @@ describe("admin", () => {
     )
       .bind(Math.floor(Date.now() / 1000))
       .run();
-    expect(await (await get("/play/board")).text()).toContain("bad");
-    expect(await (await get("/play/board?category=pop")).text()).toContain(
-      "bad",
-    );
+    expect(await shown("/play/board")).toContain("bad");
+    expect(await shown("/play/board?category=pop")).toContain("bad");
     const response = await app.fetch(
       new Request(`${origin}/admin/users/hide`, {
         method: "POST",
@@ -659,10 +663,8 @@ describe("admin", () => {
       testEnv(adminEnv) as never,
     );
     expect(response.status).toBe(303);
-    expect(await (await get("/play/board")).text()).not.toContain("bad");
-    expect(await (await get("/play/board?category=pop")).text()).not.toContain(
-      "bad",
-    );
+    expect(await shown("/play/board")).not.toContain("bad");
+    expect(await shown("/play/board?category=pop")).not.toContain("bad");
   });
 
   it("404s every admin route and POST for a non-admin", async () => {
@@ -732,10 +734,12 @@ describe("admin", () => {
       );
     const hit = await page("2000");
     expect(hit.status).toBe(200);
-    expect(await hit.text()).toContain("Moved");
+    const text = async (response: Response) =>
+      (await readPage(await response.text(), origin)).text;
+    expect(await text(hit)).toContain("Moved");
     const miss = await page("2010");
     expect(miss.status).toBe(200);
-    expect(await miss.text()).not.toContain("Moved");
+    expect(await text(miss)).not.toContain("Moved");
   });
 
   it("drops the cached pool when a source is removed", async () => {

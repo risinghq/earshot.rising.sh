@@ -2,6 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { cutToWidth, displayWidth, renderCard } from "../src/card";
 import type { PeriodStats } from "../src/types";
+import { readPage, textAt } from "./html";
 
 const now = Math.floor(Date.now() / 1000);
 
@@ -136,20 +137,35 @@ describe("card", () => {
       .bind(now - 30, track?.id)
       .run();
     const card = await (await fetchCard("?period=month")).text();
-    const profile = await (
+    const profileHtml = await (
       await SELF.fetch("https://earshot.rising.sh/u/alice?period=month")
     ).text();
+    const profile = await readPage(profileHtml, "https://earshot.rising.sh");
     const updated = new Date(json.updated_at * 1000)
       .toISOString()
       .slice(0, 16)
       .replace("T", " ");
     expect(card).toContain(`${json.plays} plays`);
     expect(card).toContain(`Updated ${updated} UTC`);
-    expect(profile).toContain(`<dd>${json.plays.toLocaleString("en-US")}</dd>`);
-    expect(profile).toContain(
-      `<time datetime="${new Date(json.updated_at * 1000).toISOString()}">`,
+    expect(await textAt(profileHtml, "dd")).toContain(
+      json.plays.toLocaleString("en-US"),
     );
-    expect(profile).toContain("u/alice.svg");
+    // The profile writes the same instant for a reader: "24 Nov 2026, 16:32".
+    const readable = new Date(json.updated_at * 1000).toLocaleString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "UTC",
+    });
+    expect(await textAt(profileHtml, ".updated")).toEqual([
+      `Updated ${readable} UTC`,
+    ]);
+    // A shared profile link previews as this same card.
+    expect(profile.meta.get("og:image")).toBe(
+      "https://earshot.rising.sh/u/alice.svg",
+    );
     const secondCard = await (await fetchCard("?period=month&n=2")).text();
     expect(secondCard).toContain(`Updated ${updated} UTC`);
   });

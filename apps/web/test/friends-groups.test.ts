@@ -1,7 +1,7 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
-import { readPage } from "./html";
+import { readPage, type ReadPage } from "./html";
 
 const now = Math.floor(Date.now() / 1000);
 const origin = "https://earshot.rising.sh";
@@ -58,6 +58,15 @@ function request(
 }
 
 const get = (path: string, session: string | null) => request(path, session);
+
+const read = async (response: Response) =>
+  readPage(await response.text(), origin);
+
+// The friend link the page offers to copy.
+const offered = async (response: Response) =>
+  (await read(response)).inputs.find(
+    (input) => input.label === "Your friend link",
+  )?.value;
 const post = (
   path: string,
   session: string | null,
@@ -133,13 +142,13 @@ describe("the friend link", () => {
     expect(page.status).toBe(200);
     const link = await friendLink(1);
     expect(link).not.toBeNull();
-    expect(await page.text()).toContain(`/friends/add/${link}`);
+    expect(await offered(page)).toBe(`${origin}/friends/add/${link}`);
 
-    const confirm = await get(`/friends/add/${link}`, bob);
-    expect(confirm.status).toBe(200);
-    const confirmHtml = await confirm.text();
-    expect(confirmHtml).toContain("alice");
-    expect(confirmHtml).toContain('method="post"');
+    const confirm = await read(await get(`/friends/add/${link}`, bob));
+    expect(confirm.text).toContain("alice");
+    expect(confirm.forms.map((form) => form.action)).toContain(
+      `${origin}/friends/add/${link}`,
+    );
 
     const added = await post(`/friends/add/${link}`, bob, {});
     expect(added.status).toBe(303);
@@ -167,10 +176,10 @@ describe("the friend link", () => {
     const two = await get("/friends", alice);
     const link = await friendLink(1);
     for (const page of [one, two])
-      expect(await page.text()).toContain(`/friends/add/${link}`);
+      expect(await offered(page)).toBe(`${origin}/friends/add/${link}`);
     const confirm = await get(`/friends/add/${link}`, bob);
     expect(confirm.status).toBe(200);
-    expect(await confirm.text()).toContain("alice");
+    expect((await read(confirm)).text).toContain("alice");
   });
 
   it("refuses your own link and repeats for existing friends", async () => {
@@ -180,10 +189,10 @@ describe("the friend link", () => {
     const link = await friendLink(1);
     const own = await get(`/friends/add/${link}`, alice);
     expect(own.status).toBe(200);
-    expect(await own.text()).toContain("your own friend link");
+    expect((await read(own)).text).toContain("your own friend link");
     await makeFriends(1, 2);
     const again = await get(`/friends/add/${link}`, bob);
-    expect(await again.text()).toContain("already friends");
+    expect((await read(again)).text).toContain("already friends");
   });
 });
 
@@ -192,14 +201,14 @@ describe("friend requests", () => {
     const alice = await seedUser(1, "alice");
     const bob = await seedUser(2, "bob");
     const sent = await post("/friends/request", alice, { name: "bob" });
-    expect(await sent.text()).toContain("Request sent to bob.");
+    expect((await read(sent)).text).toContain("Request sent to bob.");
     const request = await env.DB.prepare(
       "SELECT id FROM friend_requests WHERE from_user = 1 AND to_user = 2",
     ).first<{ id: number }>();
     expect(request).not.toBeNull();
 
     const bobsPage = await get("/friends", bob);
-    expect(await bobsPage.text()).toContain("alice");
+    expect((await read(bobsPage)).text).toContain("alice");
 
     const accept = await post("/friends/requests/accept", bob, {
       id: String(request!.id),
@@ -237,8 +246,8 @@ describe("friend requests", () => {
     await seedUser(3, "carol", 0);
     const hidden = await post("/friends/request", alice, { name: "carol" });
     const missing = await post("/friends/request", alice, { name: "nobody" });
-    expect(await hidden.text()).toContain("Request sent to carol.");
-    expect(await missing.text()).toContain("Request sent to nobody.");
+    expect((await read(hidden)).text).toContain("Request sent to carol.");
+    expect((await read(missing)).text).toContain("Request sent to nobody.");
     expect(
       await count("friend_requests", "from_user = 1 AND to_user = 3"),
     ).toBe(1);
@@ -265,7 +274,7 @@ describe("friend requests", () => {
     ).run();
     const response = await post("/friends/request", alice, { name: "bob" });
     expect(response.status).toBe(400);
-    expect(await response.text()).toContain("20 requests waiting");
+    expect((await read(response)).text).toContain("20 requests waiting");
   });
 
   it("lets only one of two back-to-back requests pass the cap", async () => {
@@ -301,7 +310,7 @@ describe("friend requests", () => {
     const bob = await seedUser(2, "bob");
     await post("/friends/request", bob, { name: "alice" });
     const reply = await post("/friends/request", alice, { name: "bob" });
-    expect(await reply.text()).toContain("friends now");
+    expect((await read(reply)).text).toContain("friends now");
     expect(await count("friendships")).toBe(2);
     expect(await count("friend_requests")).toBe(0);
   });
@@ -356,9 +365,12 @@ describe("groups", () => {
     const { alice, groupPath } = await seedGroup();
     expect(groupPath).toBe("/groups/1");
     const list = await get("/groups", alice);
-    const html = await list.text();
-    expect(html).toContain("Kitchen");
-    expect(html).toContain("1 member");
+    const groups = await read(list);
+    expect(
+      groups.links.some((link) => link.href === `${origin}${groupPath}`),
+    ).toBe(true);
+    expect(groups.text).toContain("Kitchen");
+    expect(groups.text).toContain("1 member");
   });
 
   it("adds picked friends on create and refuses a non-friend id", async () => {
@@ -428,12 +440,11 @@ describe("groups", () => {
     expect((await get(groupPath, eve)).status).toBe(404);
     expect((await get("/groups/99", eve)).status).toBe(404);
     const out = await get("/groups", null);
-    const html = await out.text();
     expect(out.status).toBe(200);
-    expect(html).toContain("Sign in");
+    expect((await read(out)).text).toContain("Sign in");
     const friends = await get("/friends", null);
     expect(friends.status).toBe(200);
-    expect(await friends.text()).toContain("Sign in");
+    expect((await read(friends)).text).toContain("Sign in");
   });
 
   it("lets a member add their own friend, and refuses anyone else", async () => {
@@ -469,7 +480,7 @@ describe("groups", () => {
       (await post(`${groupPath}/rename`, bob, { name: "Nope" })).status,
     ).toBe(403);
     const page = await get(groupPath, alice);
-    expect(await page.text()).toContain("Porch");
+    expect((await read(page)).text).toContain("Porch");
   });
 
   it("deletes the group when the last member leaves", async () => {
@@ -503,12 +514,14 @@ describe("groups", () => {
 
     const page = await get(groupPath, alice);
     expect(page.status).toBe(200);
-    const html = await page.text();
-    expect(html).toContain("Play on YouTube");
-    expect(html).toContain("watch_videos?video_ids=vid-one,vid-two");
+    const group = await read(page);
+    const play = group.links.find((link) => link.label === "Play on YouTube");
+    expect(new URL(play!.href).searchParams.get("video_ids")).toBe(
+      "vid-one,vid-two",
+    );
     // Song 4 and 5 are carol's; her hidden profile still feeds the group.
-    expect(html).toContain("Song 4");
-    expect(html).toContain("carol");
+    expect(group.text).toContain("Song 4");
+    expect(group.text).toContain("carol");
     // Her profile page stays hidden.
     const profile = await get("/u/carol", alice);
     expect(profile.status).toBe(404);
@@ -522,24 +535,31 @@ describe("the profile footer", () => {
     await seedTracks(1);
     await seedPlays(2, 20, [1]);
 
-    const none = await get("/u/bob", alice);
-    expect((await none.text()).match(/Add friend/)).not.toBeNull();
+    const asks = (page: ReadPage) =>
+      page.forms.find((form) => form.action === `${origin}/friends/request`);
+
+    const none = await read(await get("/u/bob", alice));
+    expect(asks(none)?.fields.name).toBe("bob");
+    expect(asks(none)?.buttons.map((button) => button.label)).toEqual([
+      "Add friend",
+    ]);
 
     await post("/friends/request", alice, { name: "bob" });
-    const sent = await get("/u/bob", alice);
-    expect(await sent.text()).toContain("Request sent");
+    const sent = await read(await get("/u/bob", alice));
+    expect(sent.text).toContain("Request sent");
+    expect(asks(sent)).toBeUndefined();
 
     await makeFriends(1, 2);
-    const friends = await get("/u/bob", alice);
-    const html = await friends.text();
-    expect(html).toContain('href="/friends"');
-    expect(html).not.toContain("Add friend");
+    const friends = await read(await get("/u/bob", alice));
+    expect(
+      friends.links.find((link) => link.href === `${origin}/friends`)?.label,
+    ).toBe("Friends");
+    expect(asks(friends)).toBeUndefined();
 
     // The viewer's own profile carries no friend action.
-    const own = await get("/u/bob", bob);
-    const ownHtml = await own.text();
-    expect(ownHtml).not.toContain("Add friend");
-    expect(ownHtml).not.toContain("Request sent");
+    const own = await read(await get("/u/bob", bob));
+    expect(asks(own)).toBeUndefined();
+    expect(own.text).not.toContain("Request sent");
   });
 });
 

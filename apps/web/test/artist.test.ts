@@ -2,6 +2,7 @@ import { env } from "cloudflare:test";
 import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
+import { readPage, textAt, type ReadPage } from "./html";
 import { network } from "./network";
 import {
   catalog,
@@ -59,6 +60,11 @@ const post = (path: string, fields: Record<string, string>) =>
 
 const get = (path: string) =>
   app.fetch(new Request(`${origin}${path}`), testEnv() as never);
+
+const read = async (response: Response) =>
+  readPage(await response.text(), origin);
+
+const hrefs = (page: ReadPage) => page.links.map((link) => link.href);
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -125,15 +131,20 @@ describe("artist slugs", () => {
       ],
       [/api\.deezer\.com\/artist\/27$/, deezerArtist(27, "Radiohead", 1234567)],
     ]);
-    const body = await (await get("/play/artist/27")).text();
-    expect(body).toContain("https://img.example/27.jpg");
-    expect(body).toContain("1,234,567 fans");
-    expect(body.match(/class="artist-song-art"/g)).toHaveLength(6);
-    expect(body).toContain("<b>S0</b>");
-    expect(body.match(/<form/g)).toHaveLength(1);
-    for (const action of ["/play", "/play/room", "/play/match"])
-      expect(body).toContain(`formaction="${action}"`);
-    expect(body).toContain('href="/play/artists?with=27&amp;n=Radiohead"');
+    const html = await (await get("/play/artist/27")).text();
+    const page = await readPage(html, origin);
+    expect(page.images).toContain("https://img.example/27.jpg");
+    expect(page.text).toContain("1,234,567 fans");
+    const songs = await textAt(html, ".artist-songs li");
+    expect(songs).toHaveLength(6);
+    expect(songs[0]).toBe("S0");
+    expect(page.forms).toHaveLength(1);
+    expect(page.forms[0]!.buttons.map((button) => button.action)).toEqual(
+      expect.arrayContaining(
+        ["/play", "/play/room", "/play/match"].map((path) => origin + path),
+      ),
+    );
+    expect(hrefs(page)).toContain(`${origin}/play/artists?with=27&n=Radiohead`);
   });
 
   it("keeps the start form when the song feed fails", async () => {
@@ -143,9 +154,12 @@ describe("artist slugs", () => {
     ]);
     const response = await get("/play/artist/27");
     expect(response.status).toBe(200);
-    const body = await response.text();
-    expect(body).not.toContain("In this game");
-    expect(body).toContain('formaction="/play/room"');
+    const html = await response.text();
+    expect(await textAt(html, ".artist-songs li")).toEqual([]);
+    const page = await readPage(html, origin);
+    expect(page.forms[0]!.buttons.map((button) => button.action)).toContain(
+      `${origin}/play/room`,
+    );
   });
 
   it("returns null for a malformed artist slug, so the routes answer 404", async () => {
@@ -176,15 +190,12 @@ describe("artist search", () => {
     ]);
     const response = await get("/play/artists?q=bts");
     expect(response.status).toBe(200);
-    const body = await response.text();
-    const real = body.indexOf("BTS</b>");
-    const tribute = body.indexOf("BTS Tribute");
-    const cover = body.indexOf("bts cover band");
-    expect(real).toBeGreaterThan(-1);
-    expect(real).toBeLessThan(tribute);
-    expect(tribute).toBeLessThan(cover);
-    expect(body).toContain("3,900,000 fans");
-    expect(body).toContain("/play/artist/13");
+    const page = await read(response);
+    const opened = hrefs(page)
+      .map((href) => /\/play\/artist\/(\d+)$/.exec(href)?.[1])
+      .filter((id) => id !== undefined);
+    expect([...new Set(opened)]).toEqual(["13", "11", "12"]);
+    expect(page.text).toContain("3,900,000 fans");
   });
 
   it("keeps the first pick in the blend links", async () => {
@@ -197,11 +208,14 @@ describe("artist search", () => {
     const response = await get(
       "/play/artists?q=portishead&with=27&n=Radiohead",
     );
-    const body = await response.text();
-    expect(body).toContain("Blending with Radiohead");
-    expect(body).toContain("/play/artist/27-85");
-    expect(body).toContain("Blend with Radiohead");
-    expect(body).toContain('href="/play/artist/85"');
+    const page = await read(response);
+    expect(page.text).toContain("Blending with Radiohead");
+    expect(page.text).toContain("Blend with Radiohead");
+    expect(hrefs(page)).toEqual(
+      expect.arrayContaining(
+        ["/play/artist/27-85", "/play/artist/85"].map((path) => origin + path),
+      ),
+    );
   });
 
   it("shows the top hit as a card and folds hits past the first seven", async () => {
@@ -215,27 +229,39 @@ describe("artist search", () => {
         },
       ],
     ]);
-    const body = await (await get("/play/artists?q=act")).text();
-    expect(body).toContain("Open Act 0");
-    expect(body).toContain("with=100&amp;n=Act+0");
-    expect(body).toContain("Show all 10");
-    expect(body.match(/class="artist-hits"/g)).toHaveLength(2);
+    const html = await (await get("/play/artists?q=act")).text();
+    const page = await readPage(html, origin);
+    expect(page.text).toContain("Open Act 0");
+    expect(hrefs(page)).toContain(
+      `${origin}/play/artists?q=act&with=100&n=Act+0`,
+    );
+    expect(page.text).toContain("Show all 10");
+    expect(await textAt(html, ".artist-others > ul li")).toHaveLength(6);
+    expect(await textAt(html, "details li")).toHaveLength(3);
   });
 
   it("offers genres when the search fails or finds nothing", async () => {
     stubFetch([[/api\.deezer\.com\/search\/artist/, { error: { code: 4 } }]]);
     const down = await get("/play/artists?q=daft");
     expect(down.status).toBe(502);
-    const downBody = await down.text();
-    expect(downBody).toContain("Search is down");
-    expect(downBody).toContain('name="category"');
-    expect(downBody).toContain('value="daft"');
+    // A genre is one press of a category button away.
+    const genres = (page: ReadPage) =>
+      page.forms.flatMap((form) =>
+        form.buttons.filter((button) => button.name === "category"),
+      );
+    const downPage = await read(down);
+    expect(downPage.text).toContain("Search is down");
+    expect(genres(downPage).length).toBeGreaterThan(0);
+    const search = downPage.forms.find((form) =>
+      form.action.endsWith("/play/artists"),
+    )!;
+    expect(search.fields.q).toBe("daft");
     stubFetch([[/api\.deezer\.com\/search\/artist/, { data: [] }]]);
     const empty = await get("/play/artists?q=zzz");
     expect(empty.status).toBe(200);
-    const emptyBody = await empty.text();
-    expect(emptyBody).toContain("No artist called “zzz”");
-    expect(emptyBody).toContain('name="category"');
+    const emptyPage = await read(empty);
+    expect(emptyPage.text).toContain("No artist called “zzz”");
+    expect(genres(emptyPage).length).toBeGreaterThan(0);
   });
 });
 
@@ -341,12 +367,12 @@ describe("deezer_artist feed", () => {
     stubFetch([[/api\.deezer\.com\/artist\/999$/, { error: { code: 700 } }]]);
     const busy = await get("/play/artist/999");
     expect(busy.status).toBe(200);
-    expect(await busy.text()).toContain("Artist 999");
+    expect((await read(busy)).text).toContain("Artist 999");
     const category = await getCategory(testEnv() as never, "artist-999");
     expect(category?.name).toBe("Artist 999");
     const dead = await get("/play/artist/888");
     expect(dead.status).toBe(200);
-    expect(await dead.text()).toContain("Artist 888");
+    expect((await read(dead)).text).toContain("Artist 888");
   });
 
   it("rejects a blend when one artist's top list is empty", async () => {
@@ -367,13 +393,13 @@ describe("deezer_artist feed", () => {
       mode: "hard",
     });
     expect(unknown.status).toBe(502);
-    expect(await unknown.text()).toContain("is not available right now");
+    expect((await read(unknown)).text).toContain("is not available right now");
     const empty = await post("/play", {
       category: "artist-27-888",
       mode: "hard",
     });
     expect(empty.status).toBe(502);
-    expect(await empty.text()).toContain("is not available right now");
+    expect((await read(empty)).text).toContain("is not available right now");
   });
 
   it("rejects an artist with fewer than four distinct titles", async () => {
@@ -397,7 +423,7 @@ describe("deezer_artist feed", () => {
       mode: "hard",
     });
     expect(response.status).toBe(502);
-    expect(await response.text()).toContain(
+    expect((await read(response)).text).toContain(
       "Thin Artist is not available right now",
     );
   });
@@ -435,7 +461,7 @@ describe("artist categories in rooms and matches", () => {
     expect(queued.headers.get("location")).toBe("/play/match/artist-27");
     const page = await get("/play/match/artist-27");
     expect(page.status).toBe(200);
-    expect(await page.text()).toContain("Radiohead");
+    expect((await read(page)).text).toContain("Radiohead");
   });
 });
 
@@ -500,11 +526,11 @@ describe("category board", () => {
         finished_at: inside,
       },
     ]);
-    const weekly = await (await get("/play/board")).text();
-    expect(weekly).toContain("/play/board?category=pop");
-    const board = await (await get("/play/board?category=pop")).text();
-    expect(board).toContain("/u/ann");
-    expect(board).toContain("5,000");
+    const weekly = await read(await get("/play/board"));
+    expect(hrefs(weekly)).toContain(`${origin}/play/board?category=pop`);
+    const board = await read(await get("/play/board?category=pop"));
+    expect(hrefs(board)).toContain(`${origin}/u/ann`);
+    expect(board.text).toContain("5,000");
   });
 
   it("boards artist slugs like any category and shows them on /play", async () => {
@@ -515,8 +541,8 @@ describe("category board", () => {
     const entries = await readCategoryBoard(testEnv() as never, "artist-27");
     expect(entries).toMatchObject([{ name: "ann", score: 4300 }]);
     // Tiles show the name and eras only; scores live one click away on the board.
-    const body = await (await get("/")).text();
-    expect(body).not.toContain("/u/ann");
-    expect(body).not.toContain("6,100");
+    const hub = await read(await get("/"));
+    expect(hrefs(hub)).not.toContain(`${origin}/u/ann`);
+    expect(hub.text).not.toContain("6,100");
   });
 });

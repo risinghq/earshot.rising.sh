@@ -2,6 +2,7 @@ import { env } from "cloudflare:test";
 import { http } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
+import { readPage } from "./html";
 import { network } from "./network";
 import {
   openTokens,
@@ -162,7 +163,9 @@ describe("connect", () => {
     });
     const response = await callback("code=c&state=good", "good");
     expect(response.status).toBe(403);
-    expect(await response.text()).toContain("allowed list");
+    expect((await readPage(await response.text(), origin)).text).toContain(
+      "allowed list",
+    );
     expect(
       await env.DB.prepare("SELECT COUNT(*) AS n FROM sources").first(),
     ).toEqual({ n: 0 });

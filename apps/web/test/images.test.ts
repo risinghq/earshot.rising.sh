@@ -2,6 +2,7 @@ import { env, SELF } from "cloudflare:test";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { fillImages, missRetrySeconds } from "../src/images";
+import { readPage } from "./html";
 import { network } from "./network";
 
 const now = Math.floor(Date.now() / 1000);
@@ -73,10 +74,13 @@ describe("fillImages", () => {
     ).json<any>();
     expect(json.top_tracks[0].image).toBe(cover);
     expect(json.top_artists[0].image).toBe(picture);
-    const page = await (
-      await SELF.fetch("https://earshot.rising.sh/u/alice?period=month")
-    ).text();
-    expect(page).toContain(`<img src="${cover}"`);
+    const page = await readPage(
+      await (
+        await SELF.fetch("https://earshot.rising.sh/u/alice?period=month")
+      ).text(),
+      "https://earshot.rising.sh",
+    );
+    expect(page.images).toContain(cover);
   });
 
   it("records a miss and looks it up again only after the retry window", async () => {
