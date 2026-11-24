@@ -1,12 +1,12 @@
 import { Hono, type Context } from "hono";
 import { csrf } from "hono/csrf";
-import { notFoundPage } from "../app";
 import { and, eq, gt, lt, sql } from "drizzle-orm";
-import { sessionUser } from "../auth";
-import { database, t } from "../db";
-import type { Env } from "../types";
-import type { Candidate } from "./sources";
-import { defaultMode, parseMode } from "./quiz";
+import { sessionUser } from "../account/auth";
+import type { Env } from "../env";
+import { database, t } from "../platform/db";
+import { notFoundPage } from "../ui/not-found";
+import type { Candidate } from "./catalog/sources";
+import { defaultMode, parseMode } from "./game/quiz";
 import {
   artistProfile,
   catalog,
@@ -14,7 +14,7 @@ import {
   getCategory,
   listCategories,
   type Category,
-} from "./catalog";
+} from "./catalog/catalog";
 import {
   advance,
   answerRound,
@@ -27,23 +27,33 @@ import {
   serveRound,
   type Game,
   type Mode,
-} from "./game";
-import { artistPage, artistsPage } from "./artist-page";
-import { boardPage, categoryBoardPage } from "./board-page";
-import { gamePage } from "./game-page";
-import { feedErrorPage, hubPage } from "./hub-page";
-import { matchPage } from "./match-page";
-import { hubTiles } from "./hub";
-import { claimGame, readBoard, readCategoryBoard, recordGame } from "./results";
-import { forYouCategory, forYouCold, forYouMix, forYouSlug } from "./foryou";
-import { deezerSearchArtists } from "./sources";
-import { byDecade } from "./pool";
-import { eraName } from "./eras";
-import { anonKey, anonOf, playerKeyOf } from "./outcomes";
-import { qrPath } from "./qr";
-import { isRoomCode, newRoomCode, newRoomSecret } from "./room";
-import { roomPage } from "./room-page";
-import { screenPage } from "./screen-page";
+} from "./game/game";
+import { artistPage, artistsPage } from "./artist/page";
+import { boardPage, categoryBoardPage } from "./board/page";
+import { gamePage } from "./solo/page";
+import { feedErrorPage, hubPage } from "./hub/page";
+import { matchPage } from "./match/page";
+import { hubTiles } from "./hub/hub";
+import {
+  claimGame,
+  readBoard,
+  readCategoryBoard,
+  recordGame,
+} from "./game/results";
+import {
+  forYouCategory,
+  forYouCold,
+  forYouMix,
+  forYouSlug,
+} from "./catalog/foryou";
+import { deezerSearchArtists } from "./catalog/sources";
+import { byDecade } from "./catalog/pool";
+import { eraName } from "./catalog/eras";
+import { anonKey, anonOf, playerKeyOf } from "./game/outcomes";
+import { qrPath } from "./room/qr";
+import { isRoomCode, newRoomCode, newRoomSecret } from "./room/room";
+import { roomPage } from "./room/page";
+import { screenPage } from "./room/screen-page";
 
 export const playApp = new Hono<{ Bindings: Env }>();
 

@@ -1,9 +1,9 @@
 import { env } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
-import { pullDueSources } from "../src/cron";
-import { openSecret, sealSecret } from "../src/secret";
-import { pullIntervalSeconds } from "../src/ytmusic";
+import { pullDueSources } from "../src/listening/cron";
+import { openSecret, sealSecret } from "../src/platform/secret";
+import { pullIntervalSeconds } from "../src/listening/ytmusic";
 import { readPage } from "./html";
 
 // Noon UTC today: pulls an hour apart must fall on the same civil day, or a

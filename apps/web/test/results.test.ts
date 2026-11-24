@@ -7,7 +7,7 @@ import {
   readCategoryBoard,
   recordResults,
   type ResultRow,
-} from "../src/play/results";
+} from "../src/play/game/results";
 
 const testEnv = () => ({ DB: env.DB, CACHE: env.CACHE }) as never;
 

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { maxChoices, sampleChoices, upcomingTitles } from "../src/play/quiz";
+import {
+  maxChoices,
+  sampleChoices,
+  upcomingTitles,
+} from "../src/play/game/quiz";
 
 const entry = (title: string) => ({ title, artist: `${title} artist` });
 const titles = (n: number) =>

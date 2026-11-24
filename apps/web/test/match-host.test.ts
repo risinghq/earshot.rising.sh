@@ -8,9 +8,9 @@ import {
   type MatchSocket,
   type Pool,
   type Seat,
-} from "../src/play/match-host";
-import type { MatchServerMessage } from "../src/play/protocol";
-import type { RoomInit } from "../src/play/room-game";
+} from "../src/play/match/host";
+import type { MatchServerMessage } from "../src/play/room/protocol";
+import type { RoomInit } from "../src/play/room/game";
 
 class FakeSocket implements MatchSocket {
   inbox: MatchServerMessage[] = [];

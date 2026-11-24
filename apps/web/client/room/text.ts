@@ -1,7 +1,7 @@
 // The room's words and numbers: pure functions of the room state, so the
 // components only place them.
-import type { Reveal, RoomState, UpNext } from "../../src/play/protocol";
-import { modeNames, type Mode } from "../../src/play/rules";
+import type { Reveal, RoomState, UpNext } from "../../src/play/room/protocol";
+import { modeNames, type Mode } from "../../src/play/game/rules";
 
 export const number = (value: number) => value.toLocaleString("en-US");
 

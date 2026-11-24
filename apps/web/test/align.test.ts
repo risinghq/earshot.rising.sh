@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alignPage, type PagePair } from "../src/align";
+import { alignPage, type PagePair } from "../src/listening/align";
 
 const page = (items: string): PagePair[] =>
   items

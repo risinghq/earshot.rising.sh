@@ -8,7 +8,7 @@ import type {
   RoomPlayer,
   RoomState,
   ServerMessage,
-} from "../../src/play/protocol";
+} from "../../src/play/room/protocol";
 import { createClip } from "./clip";
 import { createRoom, type Room as RoomModel } from "./model";
 import { createPicker } from "./picker";

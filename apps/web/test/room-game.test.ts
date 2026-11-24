@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import * as game from "../src/play/room-game";
-import type { Presence, RoomInit, Stored } from "../src/play/room-game";
-import { roundsPerGame, scoreFor } from "../src/play/rules";
+import * as game from "../src/play/room/game";
+import type { Presence, RoomInit, Stored } from "../src/play/room/game";
+import { roundsPerGame, scoreFor } from "../src/play/game/rules";
 
 const songs = (count: number) =>
   Array.from({ length: count }, (_, i) => ({

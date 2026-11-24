@@ -44,7 +44,8 @@ npx wrangler d1 migrations apply music-stats --remote
 
 The migration creates the complete schema used by the current and later web
 milestones. Do not edit a deployed migration. When the schema changes, edit
-`src/db/schema.ts` and run `npm run db:generate` to write the next migration.
+`src/platform/db/schema.ts` and run `npm run db:generate` to write the next
+migration.
 
 After this first setup, the `web` workflow applies new migrations on each push
 to master, after the tests and before `wrangler deploy`. A migration must only
@@ -69,8 +70,9 @@ organization. Every rising.sh product uses it, each with its own exact redirect
 URI. Wildcard matching is off. Do not register a new OAuth App.
 
 The Worker sends `redirect_uri` as the origin of the request plus
-`/auth/github/callback` ([`apps/web/src/auth.ts`](../apps/web/src/auth.ts)). It
-is `https://earshot.rising.sh/auth/github/callback` when deployed and
+`/auth/github/callback`
+([`apps/web/src/account/auth.ts`](../apps/web/src/account/auth.ts)). It is
+`https://earshot.rising.sh/auth/github/callback` when deployed and
 `http://localhost:8787/auth/github/callback` under `wrangler dev`.
 
 Open the app as an organization owner: **risinghq → Settings → Developer

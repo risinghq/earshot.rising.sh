@@ -2,11 +2,11 @@ import { env } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import migrations from "virtual:web-migrations";
 import worker from "../src/index";
-import { pullDueSources } from "../src/cron";
-import { maxSourcesPerPull } from "../src/pull";
-import { sealTokens } from "../src/spotify";
+import { pullDueSources } from "../src/listening/cron";
+import { maxSourcesPerPull } from "../src/listening/pull";
+import { sealTokens } from "../src/listening/spotify";
 import { eq } from "drizzle-orm";
-import { database, t } from "../src/db";
+import { database, t } from "../src/platform/db";
 import fixture from "./fixtures/spotify-recently-played.json";
 
 const now = Math.floor(Date.now() / 1000);

@@ -9,8 +9,8 @@ import {
   playInputs,
   pullSpotify,
   sealTokens,
-} from "../src/spotify";
-import { database, t } from "../src/db";
+} from "../src/listening/spotify";
+import { database, t } from "../src/platform/db";
 import fixture from "./fixtures/spotify-recently-played.json";
 
 const now = Math.floor(Date.now() / 1000);

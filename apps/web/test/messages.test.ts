@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readClientMessage, readMatchMessage } from "../src/play/messages";
+import { readClientMessage, readMatchMessage } from "../src/play/room/messages";
 
 const read = (value: unknown) => readClientMessage(JSON.stringify(value));
 

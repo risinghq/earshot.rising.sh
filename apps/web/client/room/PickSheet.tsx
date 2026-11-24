@@ -1,6 +1,6 @@
 // The sheet that picks the room's next category.
 import { For, Show, createEffect, flush } from "solid-js";
-import { modeNames, modes } from "../../src/play/rules";
+import { modeNames, modes } from "../../src/play/game/rules";
 import { CloseIcon, SearchIcon } from "./icons";
 import type { Room } from "./model";
 import type { PickItem, Picker } from "./picker";

@@ -9,7 +9,7 @@ import {
   SELF,
 } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { idleMs } from "../src/play/room-game";
+import { idleMs } from "../src/play/room/game";
 import {
   connect,
   origin,

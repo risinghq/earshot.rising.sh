@@ -9,8 +9,8 @@ import {
   getCategory,
   interleave,
   parseArtistSlug,
-} from "../src/play/catalog";
-import { readCategoryBoard } from "../src/play/results";
+} from "../src/play/catalog/catalog";
+import { readCategoryBoard } from "../src/play/game/results";
 
 const origin = "https://earshot.rising.sh";
 const testEnv = () => env;

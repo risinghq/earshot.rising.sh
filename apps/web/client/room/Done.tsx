@@ -3,8 +3,8 @@
 // Neither list repeats the other. Next game is a step of the results, not a
 // sheet: choosing takes the room a minute, and everyone sees the same list.
 import { For, Show, createEffect, flush } from "solid-js";
-import type { RoomState } from "../../src/play/protocol";
-import { byline, modeNames } from "../../src/play/rules";
+import type { RoomState } from "../../src/play/room/protocol";
+import { byline, modeNames } from "../../src/play/game/rules";
 import { hueOf } from "../../src/ui/marks";
 import { BackIcon, CrossIcon } from "./icons";
 import type { Room } from "./model";

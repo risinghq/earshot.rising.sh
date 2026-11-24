@@ -5,12 +5,12 @@ import {
   RecentlyPlayedSchema,
   sealTokens,
   type RecentlyPlayed,
-} from "../src/spotify";
-import { markDuplicates } from "../src/duplicates";
-import { resolvePageTracks, storeListens } from "../src/matching";
+} from "../src/listening/spotify";
+import { markDuplicates } from "../src/listening/duplicates";
+import { resolvePageTracks, storeListens } from "../src/listening/matching";
 import { eq } from "drizzle-orm";
-import { database, t } from "../src/db";
-import type { Env } from "../src/types";
+import { database, t } from "../src/platform/db";
+import type { Env } from "../src/env";
 import fixture from "../test/fixtures/spotify-recently-played.json";
 
 const page = { items: fixture.items };

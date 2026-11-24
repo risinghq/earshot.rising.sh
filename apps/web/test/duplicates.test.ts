@@ -1,9 +1,9 @@
 import { env, SELF } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
-import { database } from "../src/db";
-import { markDuplicates } from "../src/duplicates";
-import { storeListens } from "../src/matching";
+import { database } from "../src/platform/db";
+import { markDuplicates } from "../src/listening/duplicates";
+import { storeListens } from "../src/listening/matching";
 
 const db = database(env.DB);
 const now = Math.floor(Date.now() / 1000);

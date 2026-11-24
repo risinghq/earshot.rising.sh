@@ -1,8 +1,9 @@
-// The answered song, as the server's nowPlaying draws it (src/play/round-page.tsx),
+// The answered song, as the server's nowPlaying draws it
+// (src/play/solo/round-page.tsx),
 // with its report form. Reports go over fetch so the room socket stays
 // connected.
 import { Show, createSignal } from "solid-js";
-import { byline, linkService } from "../../src/play/rules";
+import { byline, linkService } from "../../src/play/game/rules";
 import { FlagIcon, OutIcon } from "./icons";
 import type { Room } from "./model";
 

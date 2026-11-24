@@ -1,7 +1,7 @@
 // Drives the match page with matchmaker messages, as its socket delivers
 // them, and reads the cards it shows.
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import type { MatchServerMessage } from "../src/play/protocol";
+import type { MatchServerMessage } from "../src/play/room/protocol";
 
 class FakeSocket {
   static last: FakeSocket;

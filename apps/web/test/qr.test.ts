@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { qrMatrix } from "../src/play/qr";
+import { qrMatrix } from "../src/play/room/qr";
 
 // The expected symbol is segno 1.6.6's output for this URL at level M,
 // mask 5, so the encoder's data, error correction and placement are all
