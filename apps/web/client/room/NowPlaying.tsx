@@ -51,6 +51,9 @@ export function NowPlaying(props: { room: Room }) {
       <div class="now-song">
         <b class="now-title">{r()?.title}</b>
         <span class="now-by">{r() ? byline(r()!) : ""}</span>
+        <Show when={r()?.work}>
+          {(work) => <span class="now-work">{work()}</span>}
+        </Show>
       </div>
       <div class="now-links">
         <Show when={r()?.link}>

@@ -33,6 +33,7 @@ export interface RoundResult {
   trackKey: string;
   title: string;
   original?: string;
+  work?: string;
   artist: string;
   cover: string | null;
   link: string | null;
@@ -390,6 +391,7 @@ export async function answerRound(
     trackKey: trackKeyFor(candidate),
     title: candidate.title,
     ...(candidate.original ? { original: candidate.original } : {}),
+    ...(candidate.work ? { work: candidate.work } : {}),
     artist: game.current.reveal.credit ?? candidate.artist,
     cover: game.current.reveal.cover,
     link: game.current.reveal.link,

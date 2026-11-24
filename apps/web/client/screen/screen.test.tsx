@@ -144,7 +144,8 @@ describe("screen", () => {
           number: 10,
           track: "t",
           title: "Song",
-          original: null,
+          original: "ソング",
+          work: "Bubblegum Crisis · OP2",
           artist: "Artist",
           cover: null,
           link: null,
@@ -163,6 +164,8 @@ describe("screen", () => {
         },
       }),
     );
+    expect(byId("screen-reveal-artist").textContent).toBe("ソング · Artist");
+    expect(texts(".tv-work")).toEqual(["Bubblegum Crisis · OP2"]);
     expect(texts("#screen-reveal-scores b")).toEqual(["Bo", "Ann"]);
     expect(texts("#screen-reveal-scores .tv-total")).toEqual(["2,400", "900"]);
     expect(byId("screen-next").textContent).toBe("results in 5 s");

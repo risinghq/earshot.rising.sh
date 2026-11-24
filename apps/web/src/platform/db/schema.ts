@@ -471,6 +471,9 @@ export const catalogTracks = sqliteTable("catalog_tracks", {
   deezerId: integer("deezer_id"),
   title: text().notNull(),
   originalTitle: text("original_title"),
+  // The show or film a curated song comes from, and its slot there ("OP2").
+  work: text(),
+  theme: text(),
   artist: text().notNull(),
   artistId: integer("artist_id"),
   cover: text(),

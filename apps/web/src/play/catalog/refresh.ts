@@ -28,6 +28,8 @@ interface CuratedTrack {
   artistId: number | null;
   cover: string | null;
   year: number;
+  work?: string;
+  theme?: string;
 }
 
 const curated = curatedList as Record<string, Record<string, CuratedTrack[]>>;
@@ -49,6 +51,8 @@ interface SourceTrack {
   deezerId: number | null;
   title: string;
   original: string | null;
+  work: string | null;
+  theme: string | null;
   artist: string;
   artistId: number | null;
   cover: string | null;
@@ -71,6 +75,8 @@ function curatedTracks(ref: string): SourceTrack[] {
     deezerId: track.id ?? null,
     title: track.title,
     original: track.original ?? null,
+    work: track.work ?? null,
+    theme: track.theme ?? null,
     artist: track.artist,
     artistId: track.artistId,
     cover: track.cover,
@@ -86,6 +92,8 @@ async function playlistTracks(ref: string): Promise<SourceTrack[]> {
     deezerId: track.id,
     title: track.title ?? "",
     original: null,
+    work: null,
+    theme: null,
     artist: track.artist?.name ?? "",
     artistId: track.artist?.id ?? null,
     cover: track.album?.cover_medium ?? null,
@@ -123,6 +131,8 @@ export async function refreshSource(
           deezerId: track.deezerId,
           title: track.title,
           originalTitle: track.original,
+          work: track.work,
+          theme: track.theme,
           artist: track.artist,
           artistId: track.artistId,
           cover: track.cover,
@@ -137,6 +147,8 @@ export async function refreshSource(
           set: {
             title: sql`excluded.title`,
             originalTitle: sql`excluded.original_title`,
+            work: sql`excluded.work`,
+            theme: sql`excluded.theme`,
             artist: sql`excluded.artist`,
             artistId: sql`excluded.artist_id`,
             cover: sql`excluded.cover`,

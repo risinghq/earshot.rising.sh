@@ -3,7 +3,7 @@
 // standings. The layout comes from the Claude Design file "Earshot Room".
 import { For, Repeat, Show, createEffect, createSignal } from "solid-js";
 import type { Reveal, RoomState } from "../../src/play/room/protocol";
-import { modeNames, scoreFor } from "../../src/play/game/rules";
+import { byline, modeNames, scoreFor } from "../../src/play/game/rules";
 import { hueOf, waveBars } from "../../src/ui/marks";
 import { Mono, Mosaic } from "../ui/marks";
 import { Part } from "../ui/part";
@@ -261,8 +261,11 @@ function RevealPanel(props: { screen: ScreenModel; s: RoomState; r: Reveal }) {
             {r().title}
           </h1>
           <p class="tv-artist" id="screen-reveal-artist">
-            {r().original ? `${r().original} · ${r().artist}` : r().artist}
+            {byline(r())}
           </p>
+          <Show when={r().work}>
+            {(work) => <p class="tv-work">{work()}</p>}
+          </Show>
           <ul class="tv-results" id="screen-reveal-scores">
             <For each={sorted()} keyed={(x) => x.name}>
               {(result) => (

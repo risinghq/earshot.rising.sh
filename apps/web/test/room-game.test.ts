@@ -245,6 +245,20 @@ describe("reveal", () => {
     expect(s.reveal!.until).toBe(round.startedAt + 2_000 + game.revealMs);
   });
 
+  it("names the song's show and slot in the reveal and the history", () => {
+    const s = newRoom({
+      candidates: songs(10).map((song) => ({
+        ...song,
+        work: "Bubblegum Crisis · OP2",
+      })),
+    });
+    const ann = seated(s, "Ann");
+    const round = playing(s, present(ann.id));
+    game.closeRound(s, round.endsAt);
+    expect(s.reveal!.work).toBe("Bubblegum Crisis · OP2");
+    expect(s.history!.at(-1)!.work).toBe("Bubblegum Crisis · OP2");
+  });
+
   it("breaks the streak of a player who did not answer", () => {
     const s = newRoom();
     const ann = seated(s, "Ann");

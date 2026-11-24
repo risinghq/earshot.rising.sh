@@ -629,8 +629,8 @@ body:not(.clip-live) .now-eq i {
   margin-top: 4px;
   min-width: 0;
 }
-/* Two title lines and one byline keep the card within the question stage's
-   height on a phone. */
+/* Two title lines, one byline and one work line keep the card within the
+   question stage's height on a phone. */
 .now-title {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -642,12 +642,16 @@ body:not(.clip-live) .now-eq i {
   overflow: hidden;
   overflow-wrap: anywhere;
 }
-.now-by {
+.now-by,
+.now-work {
   color: var(--stage-ink-2);
   font-size: 15px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.now-work {
+  font-size: 13px;
 }
 .now-links {
   align-items: center;

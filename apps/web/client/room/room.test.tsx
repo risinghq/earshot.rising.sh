@@ -146,6 +146,18 @@ describe("room round", () => {
     expect(byId("round").querySelector(".now")).not.toBe(card);
   });
 
+  it("names the show and its slot under the artist", () => {
+    deliver(reveal(1, "dz:1"));
+    expect(byId("round").querySelector(".now-work")).toBeNull();
+    const themed = reveal(2, "dz:2");
+    themed.reveal!.work = "Bubblegum Crisis · OP2";
+    deliver(playing(2));
+    deliver(themed);
+    expect(byId("round").querySelector(".now-work")?.textContent).toBe(
+      "Bubblegum Crisis · OP2",
+    );
+  });
+
   it("heads the final reveal's card with the verdict and the results", () => {
     deliver(reveal(10, "dz:10"));
     expect(byId("verdict-word").textContent).toBe("Time ran out");
