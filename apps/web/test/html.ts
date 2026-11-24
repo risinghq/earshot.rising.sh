@@ -8,8 +8,16 @@ export interface PageLink {
   current: boolean;
 }
 
+// A form a visitor can submit: where it posts and the values its fields
+// carry before anyone types.
+export interface PageForm {
+  action: string;
+  fields: Record<string, string>;
+}
+
 export interface ReadPage {
   links: PageLink[];
+  forms: PageForm[];
   ids: Set<string>;
   speculation: SpeculationRules | null;
 }
@@ -28,6 +36,7 @@ export interface SpeculationRules {
 
 export async function readPage(html: string, base: string): Promise<ReadPage> {
   const links: PageLink[] = [];
+  const forms: PageForm[] = [];
   const ids = new Set<string>();
   const swaps: string[] = [];
   let rules = "";
@@ -42,6 +51,20 @@ export async function readPage(html: string, base: string): Promise<ReadPage> {
       element(element) {
         swaps.push(element.getAttribute("data-swap")!);
         element.onEndTag(() => void swaps.pop());
+      },
+    })
+    .on("form", {
+      element(element) {
+        forms.push({
+          action: new URL(element.getAttribute("action") ?? "", base).href,
+          fields: {},
+        });
+      },
+    })
+    .on("form input[name]", {
+      element(element) {
+        forms.at(-1)!.fields[element.getAttribute("name")!] =
+          element.getAttribute("value") ?? "";
       },
     })
     .on("a[href]", {
@@ -66,6 +89,7 @@ export async function readPage(html: string, base: string): Promise<ReadPage> {
     .text();
   return {
     links,
+    forms,
     ids,
     speculation: rules === "" ? null : (JSON.parse(rules) as SpeculationRules),
   };

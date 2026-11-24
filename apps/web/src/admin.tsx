@@ -1,8 +1,21 @@
 import { Hono, type Context } from "hono";
 import type { Child } from "hono/jsx";
 import { csrf } from "hono/csrf";
+import {
+  and,
+  count,
+  countDistinct,
+  desc,
+  eq,
+  isNull,
+  like,
+  max,
+  or,
+  sql,
+} from "drizzle-orm";
 import { notFoundPage } from "./app";
 import { hasGithub, sessionUser, type SignedInUser } from "./auth";
+import { database, t } from "./db";
 import {
   dropTrackCaches,
   fillMissingYears,
@@ -30,45 +43,41 @@ function adminIds(env: Env) {
   );
 }
 
-interface AdminCategory {
-  slug: string;
-  name: string;
-  feed: string;
-  ref: string | null;
-  position: number;
-  hidden: number;
-  tracks?: number;
-}
+type AdminCategory = typeof t.categories.$inferSelect & { tracks?: number };
 
 async function logAction(
-  db: D1Database,
+  env: Env,
   admin: SignedInUser,
   action: string,
   target: string,
   detail = "",
 ) {
-  await db
-    .prepare(
-      `INSERT INTO admin_actions (github_id, action, target, detail, created_at)
-       VALUES (?1, ?2, ?3, ?4, ?5)`,
-    )
-    .bind(
-      admin.github_id,
+  await database(env.DB)
+    .insert(t.adminActions)
+    .values({
+      githubId: admin.githubId,
       action,
       target,
       detail,
-      Math.floor(Date.now() / 1000),
-    )
-    .run();
+      createdAt: Math.floor(Date.now() / 1000),
+    });
 }
 
-async function findCategory(db: D1Database, slug: string) {
-  return db
-    .prepare(
-      "SELECT slug, name, feed, ref, position, hidden FROM categories WHERE slug = ?1",
-    )
-    .bind(slug)
-    .first<AdminCategory>();
+async function findCategory(env: Env, slug: string) {
+  const category = await database(env.DB)
+    .select()
+    .from(t.categories)
+    .where(eq(t.categories.slug, slug))
+    .get();
+  return category ?? null;
+}
+
+function categorySources(env: Env, slug: string) {
+  return database(env.DB)
+    .select()
+    .from(t.categorySources)
+    .where(eq(t.categorySources.category, slug))
+    .orderBy(t.categorySources.position, t.categorySources.id);
 }
 
 async function field(context: AdminContext, name: string) {
@@ -78,7 +87,13 @@ async function field(context: AdminContext, name: string) {
 }
 
 const decadeChoices = [
-  ...["1960", "1970", "1980", "1990", "2000", "2010", "2020"],
+  "1960",
+  "1970",
+  "1980",
+  "1990",
+  "2000",
+  "2010",
+  "2020",
   ...Object.keys(generations),
 ].sort();
 
@@ -88,13 +103,11 @@ function kindLabel(kind: string) {
   return kind.replaceAll("_", " ");
 }
 
-async function openReports(db: D1Database) {
-  const row = await db
-    .prepare(
-      "SELECT COUNT(*) AS n FROM track_reports WHERE resolved_at IS NULL",
-    )
-    .first<{ n: number }>();
-  return row?.n ?? 0;
+function openReports(env: Env) {
+  return database(env.DB).$count(
+    t.trackReports,
+    isNull(t.trackReports.resolvedAt),
+  );
 }
 
 function adminNav(current: AdminSection, open: number) {
@@ -348,10 +361,10 @@ function categoryPage(
               <small>
                 {source.ref}
                 {source.decade !== null && ` · ${eraLabel(source.decade)}`}
-                {source.tracks_count !== null &&
-                  ` · ${source.tracks_count} tracks`}
-                {source.refreshed_at !== null &&
-                  ` · refreshed ${new Date(source.refreshed_at * 1000)
+                {source.tracksCount !== null &&
+                  ` · ${source.tracksCount} tracks`}
+                {source.refreshedAt !== null &&
+                  ` · refreshed ${new Date(source.refreshedAt * 1000)
                     .toISOString()
                     .slice(0, 10)}`}
               </small>
@@ -428,21 +441,77 @@ function categoryPage(
   );
 }
 
-interface TrackRow {
-  track_key: string;
-  title: string;
-  original_title: string | null;
-  preview: string | null;
-  artist: string;
-  year: number | null;
-  answer_title: string | null;
-  ban_reason: string | null;
-  answer_year: number | null;
-  banned_at: number | null;
-  plays: number;
-  correct_rate: number | null;
-  open_reports: number;
+// The decade a track counts under: its answer year, else the decade its
+// playlist is filed under, else its release year.
+const trackDecade = sql<number | null>`COALESCE(
+  CASE WHEN ${t.catalogTracks.answerYear} > 0
+    THEN ${t.catalogTracks.answerYear} / 10 * 10 END,
+  MIN(${t.categorySources.decade}),
+  CASE WHEN ${t.catalogTracks.year} > 0
+    THEN ${t.catalogTracks.year} / 10 * 10 END
+)`;
+
+function categoryTracks(env: Env, slug: string, q: string, decade: string) {
+  const db = database(env.DB);
+  const ct = t.catalogTracks;
+  const ro = t.roundOutcomes;
+  const outcomes = and(eq(ro.trackKey, ct.trackKey), eq(ro.category, slug));
+  const plays = db.select({ n: count() }).from(ro).where(outcomes);
+  const correctRate = db
+    .select({ rate: sql`AVG(${ro.correct})` })
+    .from(ro)
+    .where(outcomes);
+  const openReports = db
+    .select({ n: count() })
+    .from(t.trackReports)
+    .where(
+      and(
+        eq(t.trackReports.trackKey, ct.trackKey),
+        isNull(t.trackReports.resolvedAt),
+      ),
+    );
+  const pattern = `%${q}%`;
+  return db
+    .select({
+      trackKey: ct.trackKey,
+      title: ct.title,
+      originalTitle: ct.originalTitle,
+      preview: ct.preview,
+      artist: ct.artist,
+      year: ct.year,
+      answerTitle: ct.answerTitle,
+      answerYear: ct.answerYear,
+      bannedAt: ct.bannedAt,
+      banReason: ct.banReason,
+      plays: sql<number>`(${plays})`,
+      correctRate: sql<number | null>`(${correctRate})`,
+      openReports: sql<number>`(${openReports})`,
+    })
+    .from(t.categorySources)
+    .innerJoin(
+      t.catalogMembers,
+      eq(t.catalogMembers.sourceId, t.categorySources.id),
+    )
+    .innerJoin(ct, eq(ct.trackKey, t.catalogMembers.trackKey))
+    .where(
+      and(
+        eq(t.categorySources.category, slug),
+        q === ""
+          ? undefined
+          : or(like(ct.title, pattern), like(ct.artist, pattern)),
+      ),
+    )
+    .groupBy(ct.trackKey)
+    .having(
+      /^\d{4}$/.test(decade)
+        ? sql`${trackDecade} = ${Number(decade)}`
+        : undefined,
+    )
+    .orderBy(ct.title)
+    .limit(300);
 }
+
+type TrackRow = Awaited<ReturnType<typeof categoryTracks>>[number];
 
 function tracksPage(
   user: SignedInUser,
@@ -508,29 +577,29 @@ function tracksPage(
           </div>
         ) : (
           tracks.map((track) => (
-            <details class="track-row" key={track.track_key}>
+            <details class="track-row" key={track.trackKey}>
               <summary>
                 <span class="row-text">
-                  <b>{track.answer_title ?? track.title}</b>
+                  <b>{track.answerTitle ?? track.title}</b>
                   <small>
-                    {track.original_title !== null &&
-                      `${track.original_title} · `}
+                    {track.originalTitle !== null &&
+                      `${track.originalTitle} · `}
                     {track.artist}
                     {track.year !== null && ` · ${track.year}`}
                     {` · ${track.plays} plays`}
-                    {track.correct_rate !== null &&
-                      ` · ${Math.round(track.correct_rate * 100)}% correct`}
-                    {track.banned_at !== null &&
-                      ` · banned${track.ban_reason ? ` (${track.ban_reason})` : ""}`}
+                    {track.correctRate !== null &&
+                      ` · ${Math.round(track.correctRate * 100)}% correct`}
+                    {track.bannedAt !== null &&
+                      ` · banned${track.banReason ? ` (${track.banReason})` : ""}`}
                   </small>
                 </span>
                 <span class="badges">
                   {track.preview !== null && <span class="badge">iTunes</span>}
-                  {track.banned_at !== null && (
+                  {track.bannedAt !== null && (
                     <span class="badge danger">banned</span>
                   )}
-                  {track.open_reports > 0 && (
-                    <span class="badge danger">{track.open_reports} open</span>
+                  {track.openReports > 0 && (
+                    <span class="badge danger">{track.openReports} open</span>
                   )}
                 </span>
               </summary>
@@ -540,24 +609,24 @@ function tracksPage(
                   <input
                     type="hidden"
                     name="track_key"
-                    value={track.track_key}
+                    value={track.trackKey}
                   />
                   <span class="form-row">
-                    <label for={`at-${track.track_key}`}>Answer title</label>
+                    <label for={`at-${track.trackKey}`}>Answer title</label>
                     <input
-                      id={`at-${track.track_key}`}
+                      id={`at-${track.trackKey}`}
                       name="answer_title"
                       type="text"
-                      value={track.answer_title ?? ""}
+                      value={track.answerTitle ?? ""}
                     />
                   </span>
                   <span class="form-row">
-                    <label for={`ay-${track.track_key}`}>Answer year</label>
+                    <label for={`ay-${track.trackKey}`}>Answer year</label>
                     <input
-                      id={`ay-${track.track_key}`}
+                      id={`ay-${track.trackKey}`}
                       name="answer_year"
                       type="number"
-                      value={track.answer_year ?? ""}
+                      value={track.answerYear ?? ""}
                     />
                   </span>
                   <PillButton variant="primary" small type="submit">
@@ -568,7 +637,7 @@ function tracksPage(
                   method="post"
                   action="/admin/tracks/ban"
                   onsubmit={
-                    track.banned_at === null
+                    track.bannedAt === null
                       ? "return confirm('Ban this track?')"
                       : undefined
                   }
@@ -577,29 +646,29 @@ function tracksPage(
                   <input
                     type="hidden"
                     name="track_key"
-                    value={track.track_key}
+                    value={track.trackKey}
                   />
                   <input
                     type="hidden"
                     name="ban"
-                    value={track.banned_at === null ? "1" : "0"}
+                    value={track.bannedAt === null ? "1" : "0"}
                   />
-                  {track.banned_at === null && (
+                  {track.bannedAt === null && (
                     <span class="form-row">
-                      <label for={`rs-${track.track_key}`}>Ban reason</label>
+                      <label for={`rs-${track.trackKey}`}>Ban reason</label>
                       <input
-                        id={`rs-${track.track_key}`}
+                        id={`rs-${track.trackKey}`}
                         name="reason"
                         type="text"
-                        value={track.ban_reason ?? ""}
+                        value={track.banReason ?? ""}
                       />
                     </span>
                   )}
                   <PillButton
-                    variant={track.banned_at === null ? "danger" : "ghost"}
+                    variant={track.bannedAt === null ? "danger" : "ghost"}
                     small
                   >
-                    {track.banned_at === null ? "Ban" : "Unban"}
+                    {track.bannedAt === null ? "Ban" : "Unban"}
                   </PillButton>
                 </form>
               </div>
@@ -611,16 +680,7 @@ function tracksPage(
   );
 }
 
-interface ReportRow {
-  id: number;
-  track_key: string;
-  title: string;
-  artist: string;
-  category: string | null;
-  reason: string;
-  detail: string | null;
-  created_at: number;
-}
+type ReportRow = typeof t.trackReports.$inferSelect;
 
 function reportsPage(user: SignedInUser, reports: ReportRow[]) {
   return adminPage(
@@ -647,7 +707,7 @@ function reportsPage(user: SignedInUser, reports: ReportRow[]) {
                 {report.reason.replaceAll("_", " ")}
                 {report.detail && ` · ${report.detail}`}
                 {report.category && ` · ${report.category}`}
-                {` · ${new Date(report.created_at * 1000)
+                {` · ${new Date(report.createdAt * 1000)
                   .toISOString()
                   .slice(0, 10)}`}
                 {report.category && (
@@ -681,13 +741,10 @@ function reportsPage(user: SignedInUser, reports: ReportRow[]) {
   );
 }
 
-interface UserRow {
-  id: number;
-  name: string;
-  github_id: number;
-  is_public: number;
-  admin_hidden: number;
-}
+type UserRow = Pick<
+  typeof t.users.$inferSelect,
+  "id" | "name" | "githubId" | "isPublic" | "adminHidden"
+>;
 
 function usersPage(
   user: SignedInUser,
@@ -737,14 +794,14 @@ function usersPage(
               <span class="row-text">
                 <b>{row.name}</b>
                 <small>
-                  {hasGithub(row) ? `GitHub ${row.github_id}` : "Google only"}
+                  {hasGithub(row) ? `GitHub ${row.githubId}` : "Google only"}
                 </small>
               </span>
               <span class="badges">
-                {row.is_public === 0 && (
+                {row.isPublic === 0 && (
                   <span class="badge accent">profile hidden</span>
                 )}
-                {row.admin_hidden === 1 && (
+                {row.adminHidden === 1 && (
                   <span class="badge danger">hidden</span>
                 )}
               </span>
@@ -752,7 +809,7 @@ function usersPage(
                 method="post"
                 action="/admin/users/hide"
                 onsubmit={
-                  row.admin_hidden === 1
+                  row.adminHidden === 1
                     ? undefined
                     : "return confirm('Hide this user?')"
                 }
@@ -761,13 +818,13 @@ function usersPage(
                 <input
                   type="hidden"
                   name="hidden"
-                  value={row.admin_hidden === 1 ? "0" : "1"}
+                  value={row.adminHidden === 1 ? "0" : "1"}
                 />
                 <PillButton
-                  variant={row.admin_hidden === 1 ? "ghost" : "danger"}
+                  variant={row.adminHidden === 1 ? "ghost" : "danger"}
                   small
                 >
-                  {row.admin_hidden === 1 ? "Show" : "Hide"}
+                  {row.adminHidden === 1 ? "Show" : "Hide"}
                 </PillButton>
               </form>
             </div>
@@ -785,7 +842,7 @@ export const adminApp = new Hono<{
 
 adminApp.use("*", async (context, next) => {
   const user = await sessionUser(context);
-  if (user === null || !adminIds(context.env).has(user.github_id))
+  if (user === null || !adminIds(context.env).has(user.githubId))
     return context.html(notFoundPage(user), 404);
   context.set("admin", user);
   await next();
@@ -794,20 +851,31 @@ adminApp.use("*", async (context, next) => {
 adminApp.use("*", csrf());
 
 adminApp.get("/", async (context) => {
+  const db = database(context.env.DB);
+  const tracks = db
+    .select({ n: countDistinct(t.catalogMembers.trackKey) })
+    .from(t.categorySources)
+    .innerJoin(
+      t.catalogMembers,
+      eq(t.catalogMembers.sourceId, t.categorySources.id),
+    )
+    .where(eq(t.categorySources.category, t.categories.slug));
   const [categories, open] = await Promise.all([
-    context.env.DB.prepare(
-      `SELECT c.slug, c.name, c.feed, c.ref, c.position, c.hidden,
-              (SELECT COUNT(DISTINCT cm.track_key)
-               FROM category_sources cs
-               JOIN catalog_members cm ON cm.source_id = cs.id
-               WHERE cs.category = c.slug) AS tracks
-       FROM categories c ORDER BY c.position, c.slug`,
-    ).all<AdminCategory>(),
-    openReports(context.env.DB),
+    db
+      .select({
+        slug: t.categories.slug,
+        name: t.categories.name,
+        feed: t.categories.feed,
+        ref: t.categories.ref,
+        position: t.categories.position,
+        hidden: t.categories.hidden,
+        tracks: sql<number>`(${tracks})`,
+      })
+      .from(t.categories)
+      .orderBy(t.categories.position, t.categories.slug),
+    openReports(context.env),
   ]);
-  return context.html(
-    indexPage(context.get("admin"), categories.results, open),
-  );
+  return context.html(indexPage(context.get("admin"), categories, open));
 });
 
 adminApp.post("/categories", async (context) => {
@@ -819,20 +887,23 @@ adminApp.post("/categories", async (context) => {
       "A slug is lowercase letters, digits and hyphens.",
       400,
     );
-  const next = await context.env.DB.prepare(
-    "SELECT COALESCE(MAX(position), 0) + 10 AS p FROM categories",
-  ).first<{ p: number }>();
+  const db = database(context.env.DB);
+  const last = await db
+    .select({ position: max(t.categories.position) })
+    .from(t.categories)
+    .get();
   try {
-    await context.env.DB.prepare(
-      "INSERT INTO categories (slug, name, feed, ref, position) VALUES (?1, ?2, 'deezer_playlist', NULL, ?3)",
-    )
-      .bind(slug, name, next?.p ?? 10)
-      .run();
+    await db.insert(t.categories).values({
+      slug,
+      name,
+      feed: "deezer_playlist",
+      position: (last?.position ?? 0) + 10,
+    });
   } catch {
     return context.text("That slug is taken.", 400);
   }
   await context.env.CACHE?.delete(hubTilesKey).catch(() => undefined);
-  await logAction(context.env.DB, admin, "category.create", slug, name);
+  await logAction(context.env, admin, "category.create", slug, name);
   return context.redirect(`/admin/categories/${slug}`, 303);
 });
 
@@ -844,18 +915,17 @@ adminApp.post("/categories/save", async (context) => {
   const hidden = (await context.req.parseBody()).hidden === "on" ? 1 : 0;
   if (name === "" || !Number.isInteger(position))
     return context.text("Name and order are required.", 400);
-  await context.env.DB.prepare(
-    "UPDATE categories SET name = ?1, position = ?2, hidden = ?3 WHERE slug = ?4",
-  )
-    .bind(name, position, hidden, slug)
-    .run();
+  await database(context.env.DB)
+    .update(t.categories)
+    .set({ name, position, hidden })
+    .where(eq(t.categories.slug, slug));
   await Promise.all(
     [`play:cat:${slug}`, hubTilesKey].map((key) =>
       context.env.CACHE?.delete(key).catch(() => undefined),
     ),
   );
   await logAction(
-    context.env.DB,
+    context.env,
     admin,
     "category.save",
     slug,
@@ -866,22 +936,20 @@ adminApp.post("/categories/save", async (context) => {
 
 adminApp.get("/categories/:slug", async (context) => {
   const slug = context.req.param("slug");
-  const category = await findCategory(context.env.DB, slug);
+  const category = await findCategory(context.env, slug);
   if (category === null) return context.html(notFoundPage(), 404);
-  const sources = await context.env.DB.prepare(
-    "SELECT * FROM category_sources WHERE category = ?1 ORDER BY position, id",
-  )
-    .bind(slug)
-    .all<CategorySource>();
-  const open = await openReports(context.env.DB);
+  const [sources, open] = await Promise.all([
+    categorySources(context.env, slug),
+    openReports(context.env),
+  ]);
   return context.html(
-    categoryPage(context.get("admin"), category, sources.results, null, open),
+    categoryPage(context.get("admin"), category, sources, null, open),
   );
 });
 
 adminApp.post("/sources/lookup", async (context) => {
   const slug = await field(context, "category");
-  const category = await findCategory(context.env.DB, slug);
+  const category = await findCategory(context.env, slug);
   if (category === null) return context.html(notFoundPage(), 404);
   const url = await field(context, "url");
   const trimmed = url.trim();
@@ -895,16 +963,12 @@ adminApp.post("/sources/lookup", async (context) => {
       id = segments[at + 1];
   }
   const [sources, open] = await Promise.all([
-    context.env.DB.prepare(
-      "SELECT * FROM category_sources WHERE category = ?1 ORDER BY position, id",
-    )
-      .bind(slug)
-      .all<CategorySource>(),
-    openReports(context.env.DB),
+    categorySources(context.env, slug),
+    openReports(context.env),
   ]);
   if (id === undefined)
     return context.html(
-      categoryPage(context.get("admin"), category, sources.results, null, open),
+      categoryPage(context.get("admin"), category, sources, null, open),
       400,
     );
   const info = await deezerPlaylistInfo(id).catch(() => null);
@@ -913,7 +977,7 @@ adminApp.post("/sources/lookup", async (context) => {
     categoryPage(
       context.get("admin"),
       category,
-      sources.results,
+      sources,
       {
         ref: id,
         title: info.title,
@@ -934,30 +998,26 @@ adminApp.post("/sources", async (context) => {
   const decadeRaw = await field(context, "decade");
   const decade = /^\d{4}$/.test(decadeRaw) ? Number(decadeRaw) : null;
   if (!/^\d{4,}$/.test(ref)) return context.text("Bad playlist id.", 400);
-  const next = await context.env.DB.prepare(
-    "SELECT COALESCE(MAX(position), -1) + 1 AS p FROM category_sources WHERE category = ?1",
-  )
-    .bind(slug)
-    .first<{ p: number }>();
+  const db = database(context.env.DB);
+  const last = await db
+    .select({ position: max(t.categorySources.position) })
+    .from(t.categorySources)
+    .where(eq(t.categorySources.category, slug))
+    .get();
   try {
-    await context.env.DB.prepare(
-      `INSERT INTO category_sources
-         (category, kind, ref, title, tracks_count, decade, position)
-       VALUES (?1, 'deezer_playlist', ?2, ?3, ?4, ?5, ?6)`,
-    )
-      .bind(
-        slug,
-        ref,
-        title || null,
-        Number.isInteger(tracksCount) ? tracksCount : null,
-        decade,
-        next?.p ?? 0,
-      )
-      .run();
+    await db.insert(t.categorySources).values({
+      category: slug,
+      kind: "deezer_playlist",
+      ref,
+      title: title || null,
+      tracksCount: Number.isInteger(tracksCount) ? tracksCount : null,
+      decade,
+      position: (last?.position ?? -1) + 1,
+    });
   } catch {
     return context.text("That source is already listed.", 400);
   }
-  await logAction(context.env.DB, admin, "source.add", slug, ref);
+  await logAction(context.env, admin, "source.add", slug, ref);
   return context.redirect(`/admin/categories/${slug}`, 303);
 });
 
@@ -965,11 +1025,11 @@ adminApp.post("/sources/remove", async (context) => {
   const admin = context.get("admin");
   const id = Number(await field(context, "id"));
   const slug = await field(context, "category");
-  await context.env.DB.prepare("DELETE FROM category_sources WHERE id = ?1")
-    .bind(id)
-    .run();
+  await database(context.env.DB)
+    .delete(t.categorySources)
+    .where(eq(t.categorySources.id, id));
   await context.env.CACHE?.delete(`play:cat:${slug}`).catch(() => undefined);
-  await logAction(context.env.DB, admin, "source.remove", slug, String(id));
+  await logAction(context.env, admin, "source.remove", slug, String(id));
   return context.redirect(`/admin/categories/${slug}`, 303);
 });
 
@@ -985,58 +1045,22 @@ adminApp.post("/refresh", async (context) => {
       502,
     );
   }
-  await logAction(context.env.DB, admin, "source.refresh", slug);
+  await logAction(context.env, admin, "source.refresh", slug);
   return context.redirect(`/admin/categories/${slug}`, 303);
 });
 
 adminApp.get("/categories/:slug/tracks", async (context) => {
   const slug = context.req.param("slug");
-  const category = await findCategory(context.env.DB, slug);
+  const category = await findCategory(context.env, slug);
   if (category === null) return context.html(notFoundPage(), 404);
   const q = context.req.query("q") ?? "";
   const decade = context.req.query("decade") ?? "";
-  const clauses = ["cs.category = ?1"];
-  const params: (string | number)[] = [slug];
-  if (q !== "") {
-    clauses.push("(ct.title LIKE ?2 OR ct.artist LIKE ?2)");
-    params.push(`%${q}%`);
-  }
-  let having = "";
-  if (/^\d{4}$/.test(decade)) {
-    params.push(Number(decade));
-    having = `HAVING COALESCE(
-       CASE WHEN ct.answer_year > 0 THEN ct.answer_year / 10 * 10 END,
-       MIN(cs.decade),
-       CASE WHEN ct.year > 0 THEN ct.year / 10 * 10 END
-     ) = ?${params.length}`;
-  }
-  const rows = await context.env.DB.prepare(
-    `SELECT ct.track_key, ct.title, ct.original_title, ct.preview, ct.artist,
-            ct.year, ct.answer_title, ct.answer_year, ct.banned_at,
-            ct.ban_reason,
-            (SELECT COUNT(*) FROM round_outcomes ro
-              WHERE ro.track_key = ct.track_key
-                AND ro.category = ?1) AS plays,
-            (SELECT AVG(ro.correct) FROM round_outcomes ro
-              WHERE ro.track_key = ct.track_key
-                AND ro.category = ?1) AS correct_rate,
-            (SELECT COUNT(*) FROM track_reports tr
-              WHERE tr.track_key = ct.track_key
-                AND tr.resolved_at IS NULL) AS open_reports
-     FROM category_sources cs
-     JOIN catalog_members cm ON cm.source_id = cs.id
-     JOIN catalog_tracks ct ON ct.track_key = cm.track_key
-     WHERE ${clauses.join(" AND ")}
-     GROUP BY ct.track_key
-     ${having}
-     ORDER BY ct.title
-     LIMIT 300`,
-  )
-    .bind(...params)
-    .all<TrackRow>();
-  const open = await openReports(context.env.DB);
+  const [rows, open] = await Promise.all([
+    categoryTracks(context.env, slug, q, decade),
+    openReports(context.env),
+  ]);
   return context.html(
-    tracksPage(context.get("admin"), category, rows.results, q, decade, open),
+    tracksPage(context.get("admin"), category, rows, q, decade, open),
   );
 });
 
@@ -1046,18 +1070,16 @@ adminApp.post("/tracks/save", async (context) => {
   const trackKey = await field(context, "track_key");
   const answerTitle = await field(context, "answer_title");
   const answerYear = Number(await field(context, "answer_year"));
-  await context.env.DB.prepare(
-    `UPDATE catalog_tracks
-     SET answer_title = ?1, answer_year = ?2 WHERE track_key = ?3`,
-  )
-    .bind(
-      answerTitle || null,
-      Number.isInteger(answerYear) && answerYear > 0 ? answerYear : null,
-      trackKey,
-    )
-    .run();
+  await database(context.env.DB)
+    .update(t.catalogTracks)
+    .set({
+      answerTitle: answerTitle || null,
+      answerYear:
+        Number.isInteger(answerYear) && answerYear > 0 ? answerYear : null,
+    })
+    .where(eq(t.catalogTracks.trackKey, trackKey));
   await dropTrackCaches(context.env, trackKey);
-  await logAction(context.env.DB, admin, "track.save", trackKey, slug);
+  await logAction(context.env, admin, "track.save", trackKey, slug);
   return context.redirect(`/admin/categories/${slug}/tracks`, 303);
 });
 
@@ -1067,18 +1089,16 @@ adminApp.post("/tracks/ban", async (context) => {
   const trackKey = await field(context, "track_key");
   const ban = (await field(context, "ban")) === "1";
   const reason = await field(context, "reason");
-  await context.env.DB.prepare(
-    "UPDATE catalog_tracks SET banned_at = ?1, ban_reason = ?2 WHERE track_key = ?3",
-  )
-    .bind(
-      ban ? Math.floor(Date.now() / 1000) : null,
-      ban ? reason || null : null,
-      trackKey,
-    )
-    .run();
+  await database(context.env.DB)
+    .update(t.catalogTracks)
+    .set({
+      bannedAt: ban ? Math.floor(Date.now() / 1000) : null,
+      banReason: ban ? reason || null : null,
+    })
+    .where(eq(t.catalogTracks.trackKey, trackKey));
   await dropTrackCaches(context.env, trackKey);
   await logAction(
-    context.env.DB,
+    context.env,
     admin,
     ban ? "track.ban" : "track.unban",
     trackKey,
@@ -1088,74 +1108,69 @@ adminApp.post("/tracks/ban", async (context) => {
 });
 
 adminApp.get("/reports", async (context) => {
-  const reports = await context.env.DB.prepare(
-    `SELECT id, track_key, title, artist, category, reason,
-            detail, created_at
-     FROM track_reports WHERE resolved_at IS NULL ORDER BY created_at DESC`,
-  ).all<ReportRow>();
-  return context.html(reportsPage(context.get("admin"), reports.results));
+  const reports = await database(context.env.DB)
+    .select()
+    .from(t.trackReports)
+    .where(isNull(t.trackReports.resolvedAt))
+    .orderBy(desc(t.trackReports.createdAt));
+  return context.html(reportsPage(context.get("admin"), reports));
 });
 
 adminApp.post("/reports/resolve", async (context) => {
   const admin = context.get("admin");
   const id = Number(await field(context, "id"));
   const resolution = await field(context, "resolution");
-  await context.env.DB.prepare(
-    `UPDATE track_reports
-     SET resolved_at = ?1, resolved_by = ?2, resolution = ?3
-     WHERE id = ?4 AND resolved_at IS NULL`,
-  )
-    .bind(
-      Math.floor(Date.now() / 1000),
-      admin.github_id,
-      resolution || null,
-      id,
-    )
-    .run();
-  await logAction(
-    context.env.DB,
-    admin,
-    "report.resolve",
-    String(id),
-    resolution,
-  );
+  await database(context.env.DB)
+    .update(t.trackReports)
+    .set({
+      resolvedAt: Math.floor(Date.now() / 1000),
+      resolvedBy: admin.githubId,
+      resolution: resolution || null,
+    })
+    .where(and(eq(t.trackReports.id, id), isNull(t.trackReports.resolvedAt)));
+  await logAction(context.env, admin, "report.resolve", String(id), resolution);
   return context.redirect("/admin/reports", 303);
 });
 
 adminApp.get("/users", async (context) => {
   const q = context.req.query("q") ?? "";
-  const rows = await context.env.DB.prepare(
-    `SELECT id, name, github_id, is_public, admin_hidden
-     FROM users
-     WHERE ?1 = '' OR name LIKE ?2
-     ORDER BY name LIMIT 100`,
-  )
-    .bind(q, `%${q}%`)
-    .all<UserRow>();
-  const open = await openReports(context.env.DB);
-  return context.html(usersPage(context.get("admin"), rows.results, q, open));
+  const [rows, open] = await Promise.all([
+    database(context.env.DB)
+      .select({
+        id: t.users.id,
+        name: t.users.name,
+        githubId: t.users.githubId,
+        isPublic: t.users.isPublic,
+        adminHidden: t.users.adminHidden,
+      })
+      .from(t.users)
+      .where(q === "" ? undefined : like(t.users.name, `%${q}%`))
+      .orderBy(t.users.name)
+      .limit(100),
+    openReports(context.env),
+  ]);
+  return context.html(usersPage(context.get("admin"), rows, q, open));
 });
 
 adminApp.post("/users/hide", async (context) => {
   const admin = context.get("admin");
   const userId = Number(await field(context, "user_id"));
   const hidden = (await field(context, "hidden")) === "1" ? 1 : 0;
-  await context.env.DB.prepare(
-    "UPDATE users SET admin_hidden = ?1 WHERE id = ?2",
-  )
-    .bind(hidden, userId)
-    .run();
+  const db = database(context.env.DB);
+  await db
+    .update(t.users)
+    .set({ adminHidden: hidden })
+    .where(eq(t.users.id, userId));
   const boards = ["play:board:week", "play:board:all"];
-  const cats = await context.env.DB.prepare(
-    "SELECT DISTINCT category FROM game_results WHERE user_id = ?1",
-  )
-    .bind(userId)
-    .all<{ category: string }>();
-  boards.push(...cats.results.map((c) => `play:catboard:${c.category}`));
+  const cats = await db
+    .selectDistinct({ category: t.gameResults.category })
+    .from(t.gameResults)
+    .where(eq(t.gameResults.userId, userId));
+  boards.push(...cats.map((c) => `play:catboard:${c.category}`));
   for (const key of boards)
     await context.env.CACHE?.delete(key).catch(() => undefined);
   await logAction(
-    context.env.DB,
+    context.env,
     admin,
     hidden === 1 ? "user.hide" : "user.show",
     String(userId),

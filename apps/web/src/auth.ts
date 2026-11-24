@@ -1,4 +1,6 @@
+import { and, eq, gt, isNull, lt, lte, sql } from "drizzle-orm";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
+import { database, t, type Db } from "./db";
 import { mergeAnonOutcomes } from "./play/outcomes";
 import type { Context } from "hono";
 import type { Env } from "./types";
@@ -20,12 +22,17 @@ export const cookieClear = {
   path: "/",
 } as const;
 
-export interface SignedInUser {
-  id: number;
-  github_id: number;
-  name: string;
-  is_public: number;
-}
+const signedInColumns = {
+  id: t.users.id,
+  githubId: t.users.githubId,
+  name: t.users.name,
+  isPublic: t.users.isPublic,
+};
+
+export type SignedInUser = Pick<
+  typeof t.users.$inferSelect,
+  keyof typeof signedInColumns
+>;
 
 export type Provider = "github" | "google";
 
@@ -49,8 +56,8 @@ export function validName(name: string) {
 
 // An account made through Google holds a negative github_id until GitHub is
 // linked (migrations/0020_google_login.sql).
-export function hasGithub(user: { github_id: number }) {
-  return user.github_id > 0;
+export function hasGithub(user: { githubId: number }) {
+  return user.githubId > 0;
 }
 
 export function base64url(bytes: Uint8Array) {
@@ -76,25 +83,23 @@ export async function sessionUser<E extends { Bindings: Env }>(
   const env = context.env;
   const now = Math.floor(Date.now() / 1000);
   const hash = await sha256Bytes(value);
-  return env.DB.prepare(
-    `SELECT users.id, users.github_id, users.name, users.is_public
-     FROM sessions JOIN users ON users.id = sessions.user_id
-     WHERE sessions.hash = ?1 AND sessions.expires_at > ?2`,
-  )
-    .bind(hash, now)
-    .first<SignedInUser>();
+  const user = await database(env.DB)
+    .select(signedInColumns)
+    .from(t.sessions)
+    .innerJoin(t.users, eq(t.users.id, t.sessions.userId))
+    .where(and(eq(t.sessions.hash, hash), gt(t.sessions.expiresAt, now)))
+    .get();
+  return user ?? null;
 }
 
-export async function newSession(db: D1Database, userId: number, now: number) {
+export async function newSession(db: Db, userId: number, now: number) {
   const value = base64url(crypto.getRandomValues(new Uint8Array(32)));
   const hash = await sha256Bytes(value);
   await db.batch([
-    db.prepare("DELETE FROM sessions WHERE expires_at <= ?1").bind(now),
+    db.delete(t.sessions).where(lte(t.sessions.expiresAt, now)),
     db
-      .prepare(
-        "INSERT INTO sessions (hash, user_id, expires_at) VALUES (?1, ?2, ?3)",
-      )
-      .bind(hash, userId, now + sessionSeconds),
+      .insert(t.sessions)
+      .values({ hash, userId, expiresAt: now + sessionSeconds }),
   ]);
   return value;
 }
@@ -105,9 +110,9 @@ export async function endSession<E extends { Bindings: Env }>(
   const value = getCookie(context, "session", "host");
   if (value === undefined) return;
   const hash = await sha256Bytes(value);
-  await context.env.DB.prepare("DELETE FROM sessions WHERE hash = ?1")
-    .bind(hash)
-    .run();
+  await database(context.env.DB)
+    .delete(t.sessions)
+    .where(eq(t.sessions.hash, hash));
 }
 
 function credentials(context: AuthContext, provider: Provider) {
@@ -174,7 +179,7 @@ export function beginSignIn(context: AuthContext, provider: Provider) {
   return context.redirect(target.toString(), 302);
 }
 
-async function availableName(db: D1Database, seed: string) {
+async function availableName(db: Db, seed: string) {
   const base =
     seed
       .normalize("NFD")
@@ -189,90 +194,88 @@ async function availableName(db: D1Database, seed: string) {
     const name = `${base.slice(0, 39 - suffix.length).replace(/-+$/, "")}${suffix}`;
     if (!validName(name)) continue;
     const taken = await db
-      .prepare("SELECT 1 AS taken FROM users WHERE name = ?1 COLLATE NOCASE")
-      .bind(name)
-      .first();
-    if (taken === null) return name;
+      .select({ id: t.users.id })
+      .from(t.users)
+      .where(sql`${t.users.name} = ${name} COLLATE NOCASE`)
+      .get();
+    if (taken === undefined) return name;
   }
   return `user-${base64url(crypto.getRandomValues(new Uint8Array(6)))
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "0")}`;
 }
 
-interface UserRow {
-  id: number;
-  name: string;
+const userColumns = { id: t.users.id, name: t.users.name };
+
+type UserRow = Pick<typeof t.users.$inferSelect, keyof typeof userColumns>;
+
+function identityMatch(identity: Identity) {
+  return identity.provider === "github"
+    ? eq(t.users.githubId, identity.id)
+    : eq(t.users.googleSub, identity.sub);
 }
 
-function findByIdentity(db: D1Database, identity: Identity) {
-  return identity.provider === "github"
-    ? db
-        .prepare("SELECT id, name FROM users WHERE github_id = ?1")
-        .bind(identity.id)
-        .first<UserRow>()
-    : db
-        .prepare("SELECT id, name FROM users WHERE google_sub = ?1")
-        .bind(identity.sub)
-        .first<UserRow>();
+async function findByIdentity(db: Db, identity: Identity) {
+  const user = await db
+    .select(userColumns)
+    .from(t.users)
+    .where(identityMatch(identity))
+    .get();
+  return user ?? null;
 }
 
 // Keeps the login or address the provider shows now, for the settings page.
-function refreshIdentity(db: D1Database, userId: number, identity: Identity) {
-  return identity.provider === "github"
-    ? db
-        .prepare("UPDATE users SET github_login = ?1 WHERE id = ?2")
-        .bind(identity.login, userId)
-    : db
-        .prepare("UPDATE users SET google_email = ?1 WHERE id = ?2")
-        .bind(identity.email, userId);
+function refreshIdentity(db: Db, userId: number, identity: Identity) {
+  return db
+    .update(t.users)
+    .set(
+      identity.provider === "github"
+        ? { githubLogin: identity.login }
+        : { googleEmail: identity.email },
+    )
+    .where(eq(t.users.id, userId));
 }
 
 // Links the identity to a signed-in user who has none from that provider yet.
 // Returns false when the user already has one.
-async function linkIdentity(
-  db: D1Database,
-  userId: number,
-  identity: Identity,
-) {
-  const result = await (
+async function linkIdentity(db: Db, userId: number, identity: Identity) {
+  const result =
     identity.provider === "github"
-      ? db
-          .prepare(
-            `UPDATE users SET github_id = ?1, github_login = ?2
-           WHERE id = ?3 AND github_id < 0`,
-          )
-          .bind(identity.id, identity.login, userId)
-      : db
-          .prepare(
-            `UPDATE users SET google_sub = ?1, google_email = ?2
-           WHERE id = ?3 AND google_sub IS NULL`,
-          )
-          .bind(identity.sub, identity.email, userId)
-  ).run();
+      ? await db
+          .update(t.users)
+          .set({ githubId: identity.id, githubLogin: identity.login })
+          .where(and(eq(t.users.id, userId), lt(t.users.githubId, 0)))
+      : await db
+          .update(t.users)
+          .set({ googleSub: identity.sub, googleEmail: identity.email })
+          .where(and(eq(t.users.id, userId), isNull(t.users.googleSub)));
   return result.meta.changes === 1;
 }
 
-async function createUser(db: D1Database, identity: Identity, now: number) {
+async function createUser(db: Db, identity: Identity, now: number) {
   const name = await availableName(db, identity.name);
-  const statement =
+  const values =
     identity.provider === "github"
-      ? db
-          .prepare(
-            `INSERT INTO users (github_id, github_login, name, created_at)
-             VALUES (?1, ?2, ?3, ?4) RETURNING id, name`,
-          )
-          .bind(identity.id, identity.login, name, now)
-      : db
-          .prepare(
-            `INSERT INTO users
-             (github_id, google_sub, google_email, name, created_at)
-             VALUES (-1 - abs(random() % 1000000000000), ?1, ?2, ?3, ?4)
-             RETURNING id, name`,
-          )
-          .bind(identity.sub, identity.email, name, now);
+      ? {
+          githubId: identity.id,
+          githubLogin: identity.login,
+          name,
+          createdAt: now,
+        }
+      : {
+          githubId: sql`-1 - abs(random() % 1000000000000)`,
+          googleSub: identity.sub,
+          googleEmail: identity.email,
+          name,
+          createdAt: now,
+        };
   try {
-    const created = await statement.first<UserRow>();
-    if (created !== null) return created;
+    const created = await db
+      .insert(t.users)
+      .values(values)
+      .returning(userColumns)
+      .get();
+    if (created !== undefined) return created;
   } catch {
     // Two sign-ins raced on the same account.
   }
@@ -290,7 +293,7 @@ type Outcome =
 // A visitor already signed in links the identity to their own account; anyone
 // else signs in to the account that holds it, or a new one.
 async function resolveIdentity(
-  db: D1Database,
+  db: Db,
   identity: Identity,
   current: SignedInUser | null,
   now: number,
@@ -306,7 +309,7 @@ async function resolveIdentity(
       : { kind: "has-one" };
   }
   if (existing !== null) {
-    await refreshIdentity(db, existing.id, identity).run();
+    await refreshIdentity(db, existing.id, identity);
     return { kind: "signed-in", user: existing };
   }
   return { kind: "signed-in", user: await createUser(db, identity, now) };
@@ -437,7 +440,7 @@ export async function signInCallback(context: AuthContext, provider: Provider) {
     );
 
   const now = Math.floor(Date.now() / 1000);
-  const db = context.env.DB;
+  const db = database(context.env.DB);
   const outcome = await resolveIdentity(
     db,
     identity,
@@ -453,7 +456,8 @@ export async function signInCallback(context: AuthContext, provider: Provider) {
     return context.redirect(next ?? "/settings#account", 303);
 
   const anon = getCookie(context, "play-id", "host");
-  if (anon !== undefined) await mergeAnonOutcomes(db, anon, outcome.user.id);
+  if (anon !== undefined)
+    await mergeAnonOutcomes(context.env.DB, anon, outcome.user.id);
   const session = await newSession(db, outcome.user.id, now);
   setCookie(context, "session", session, {
     ...cookieBase,

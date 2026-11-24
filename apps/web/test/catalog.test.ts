@@ -3,6 +3,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
+import { readPage } from "./html";
 import { network } from "./network";
 import { sha256Bytes } from "../src/auth";
 import { catalogPool, poolEras, byDecade } from "../src/play/pool";
@@ -791,6 +792,149 @@ describe("admin", () => {
     expect(name!.name).toBe("Pop Music");
     // The hub's tiles show the new name on the next visit.
     expect(await env.CACHE.get("play:hub")).toBeNull();
+  });
+
+  it("builds a category, overrides a track's answer and resolves its report", async () => {
+    await seedAdmin();
+    const admin = (path: string, fields: Record<string, string>) =>
+      app.fetch(
+        new Request(`${origin}${path}`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/x-www-form-urlencoded",
+            origin,
+            cookie: adminCookie,
+          },
+          body: new URLSearchParams(fields).toString(),
+        }),
+        testEnv(adminEnv) as never,
+      );
+    const page = (path: string) =>
+      app.fetch(
+        new Request(`${origin}${path}`, { headers: { cookie: adminCookie } }),
+        testEnv(adminEnv) as never,
+      );
+
+    const created = await admin("/admin/categories", {
+      slug: "city-pop",
+      name: "City pop",
+    });
+    expect(created.headers.get("location")).toBe("/admin/categories/city-pop");
+    expect((await page("/admin/categories/city-pop")).status).toBe(200);
+    const again = await admin("/admin/categories", {
+      slug: "city-pop",
+      name: "Again",
+    });
+    expect(again.status).toBe(400);
+    const positions = await env.DB.prepare(
+      "SELECT slug, position FROM categories ORDER BY position DESC LIMIT 2",
+    ).all<{ slug: string; position: number }>();
+    expect(positions.results[0].slug).toBe("city-pop");
+    expect(positions.results[0].position).toBe(
+      positions.results[1].position + 10,
+    );
+
+    const added = await admin("/admin/sources", {
+      category: "city-pop",
+      ref: "14464057043",
+      title: "Tokyo nights",
+      tracks_count: "12",
+      decade: "1980",
+    });
+    expect(added.status).toBe(303);
+    const twice = await admin("/admin/sources", {
+      category: "city-pop",
+      ref: "14464057043",
+    });
+    expect(twice.status).toBe(400);
+    const sources = await env.DB.prepare(
+      `SELECT ref, title, tracks_count, decade, position
+       FROM category_sources WHERE category = 'city-pop'`,
+    ).all();
+    expect(sources.results).toEqual([
+      {
+        ref: "14464057043",
+        title: "Tokyo nights",
+        tracks_count: 12,
+        decade: 1980,
+        position: 0,
+      },
+    ]);
+
+    await seedCatalog(env.DB, "pop", [
+      { id: 5, title: "Plastic Love (Remaster)", year: 2021 },
+    ]);
+    const saved = await admin("/admin/tracks/save", {
+      category: "pop",
+      track_key: "dz:5",
+      answer_title: "Plastic Love",
+      answer_year: "1984",
+    });
+    expect(saved.headers.get("location")).toBe("/admin/categories/pop/tracks");
+    const pop = (await env.DB.prepare(
+      "SELECT slug, name, feed, ref FROM categories WHERE slug = 'pop'",
+    ).first()) as never;
+    const [track] = await catalog(testEnv() as never, pop, null);
+    expect({ title: track.title, year: track.year }).toEqual({
+      title: "Plastic Love",
+      year: 1984,
+    });
+    const eighties = await page("/admin/categories/pop/tracks?decade=1980");
+    expect(eighties.status).toBe(200);
+
+    await env.DB.prepare(
+      `INSERT INTO track_reports
+         (id, track_key, title, artist, reason, player_key, created_at)
+       VALUES (9, 'dz:5', 'Plastic Love', 'Mariya Takeuchi', 'wrong_title', 'p', 1)`,
+    ).run();
+    expect((await page("/admin/reports")).status).toBe(200);
+    const resolved = await admin("/admin/reports/resolve", {
+      id: "9",
+      resolution: "fixed",
+    });
+    expect(resolved.status).toBe(303);
+    const report = await env.DB.prepare(
+      `SELECT resolved_by, resolution, resolved_at > 0 AS resolved
+       FROM track_reports WHERE id = 9`,
+    ).first();
+    expect(report).toEqual({
+      resolved_by: 42,
+      resolution: "fixed",
+      resolved: 1,
+    });
+
+    const log = await env.DB.prepare(
+      "SELECT action FROM admin_actions ORDER BY id",
+    ).all<{ action: string }>();
+    expect(log.results.map((row) => row.action)).toEqual([
+      "category.create",
+      "source.add",
+      "track.save",
+      "report.resolve",
+    ]);
+  });
+
+  it("finds users by name for an admin", async () => {
+    await seedAdmin();
+    await env.DB.prepare(
+      `INSERT INTO users (id, github_id, name, is_public, created_at)
+       VALUES (2, 2, 'mira', 0, 1), (3, 3, 'otto', 1, 1)`,
+    ).run();
+    // The users the page offers to hide, in the order it lists them.
+    const listed = async (q: string) => {
+      const response = await app.fetch(
+        new Request(`${origin}/admin/users?q=${q}`, {
+          headers: { cookie: adminCookie },
+        }),
+        testEnv(adminEnv) as never,
+      );
+      const page = await readPage(await response.text(), origin);
+      return page.forms
+        .filter((form) => form.action === `${origin}/admin/users/hide`)
+        .map((form) => form.fields.user_id);
+    };
+    expect(await listed("")).toEqual(["2", "3", "1"]);
+    expect(await listed("ir")).toEqual(["2"]);
   });
 });
 

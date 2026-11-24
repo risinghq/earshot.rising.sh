@@ -1,0 +1,3 @@
+-- The schema that 0001 to 0022 built, as drizzle-kit read it. This
+-- migration runs nothing: its snapshot is what the next generated
+-- migration diffs against.

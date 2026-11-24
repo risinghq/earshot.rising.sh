@@ -2,7 +2,7 @@
 // tests that need the Workers runtime. Every request goes through SELF: a
 // stub made inside the test's own request context would keep the object
 // referenced and block its eviction.
-import { env, runDurableObjectAlarm, SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
 import { expect, vi } from "vitest";
 import { seedCatalog } from "./catalog";
 import { deezerTracks, network } from "./network";
@@ -88,23 +88,3 @@ export async function openSocket(path: string, cookie?: string) {
 
 export const connect = (code: string, cookie?: string) =>
   openSocket(`/play/room/${code}/ws`, cookie);
-
-// Answers each round right as soon as it opens, and ends each reveal on the
-// room's alarm, until the game is over.
-export async function playOut(client: Client, code: string, rounds: number) {
-  for (let round = 1; round <= rounds; round += 1) {
-    const playing = await client.next(
-      (m) => m.type === "state" && m.phase === "playing" && m.round === round,
-    );
-    setClock((playing.startedAt as number) + 1_000);
-    client.send({ type: "answer", answer: titleOfClip(playing) });
-    const { reveal } = (await client.next(
-      (m) =>
-        m.phase === "reveal" &&
-        (m.reveal as { number: number }).number === round,
-    )) as { reveal: { until: number } };
-    setClock(reveal.until);
-    expect(await runDurableObjectAlarm(roomStub(code))).toBe(true);
-  }
-  return client.state("done");
-}

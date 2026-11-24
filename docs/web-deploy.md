@@ -43,8 +43,8 @@ npx wrangler d1 migrations apply music-stats --remote
 ```
 
 The migration creates the complete schema used by the current and later web
-milestones. Do not edit a deployed migration. Add a later migration when the
-schema changes.
+milestones. Do not edit a deployed migration. When the schema changes, edit
+`src/db/schema.ts` and run `npm run db:generate` to write the next migration.
 
 After this first setup, the `web` workflow applies new migrations on each push
 to master, after the tests and before `wrangler deploy`. A migration must only
