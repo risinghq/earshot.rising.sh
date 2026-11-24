@@ -118,13 +118,6 @@ export function ClipPlayer({
         </span>
       </div>
       <audio id={audioId} src={src} controls preload="auto" />
-      <noscript>
-        <style
-          dangerouslySetInnerHTML={{
-            __html: ".player audio { display: block; }",
-          }}
-        />
-      </noscript>
     </div>
   );
 }

@@ -128,7 +128,13 @@ dark theme is a second set of the same names under
 transition off. Bricolage Grotesque is self-hosted as a variable woff2 (weight
 and optical size) in `client/fonts/` with its OFL licence. The site pages' only
 script is `client/site.ts`: it closes the account menu, copies an issued token,
-and posts a `data-inline` form over fetch. Through `client/swap.ts` it follows a
+and posts a `data-inline` form over fetch. Its `client/behaviours.ts` keys the
+rest on data attributes: `data-confirm` asks before a form posts,
+`data-arms="ID"` keeps button ID disabled until the input holds its `data-name`,
+`data-local-zone` defaults a select to the browser's zone, `data-fold` and
+`data-unfold` fold a long list, `data-setup` points the hub's tiles at the
+chosen way to play, and `data-export-all` saves every export page. A swap runs
+them again on the region it brings in. Through `client/swap.ts` it follows a
 link inside `data-swap="ID"` by fetching the page and swapping in its element
 with that id. The profile's periods, the board's periods and the genre chips
 swap `#main` this way: the page keeps its header and scroll, the address and
@@ -974,8 +980,8 @@ list by name, and the member can leave any group.
   play per line, in pages of 1,000 rows by key. A full page carries a
   `Link: rel="next"` header whose `?after=` query resumes at the next key, so
   the client downloads page after page and the 50 MB D1 result limit and the CPU
-  budget are never near. The settings page's download control runs a small
-  inline script that follows the next links and saves the joined pages as
+  budget are never near. With JavaScript the settings page's download link
+  follows the next links and saves the joined pages as
   `music-stats-NAME.ndjson`; the plain link keeps working for curl, which reads
   the Link header itself.
 

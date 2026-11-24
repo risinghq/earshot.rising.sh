@@ -39,53 +39,6 @@ const timeZones = (() => {
   return zones.includes("UTC") ? zones : ["UTC", ...zones];
 })();
 
-// A stored zone wins; otherwise the browser's own zone replaces UTC.
-const tzScript = `
-const tzField = document.getElementById("ytmusic-tz");
-const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-if (tzField && tzField.dataset.stored === undefined &&
-    [...tzField.options].some((option) => option.value === zone))
-  tzField.value = zone;
-`;
-
-// The server checks the typed name again; this only arms the button.
-const deleteScript = `
-const confirmField = document.getElementById("confirm");
-const deleteButton = document.getElementById("delete-account");
-if (confirmField && deleteButton) {
-  const arm = () => {
-    deleteButton.disabled = confirmField.value.trim() !== confirmField.dataset.name;
-  };
-  arm();
-  confirmField.addEventListener("input", arm);
-}
-`;
-
-const exportScript = `
-const exportAll = document.getElementById("export-all");
-exportAll?.addEventListener("click", async (event) => {
-  event.preventDefault();
-  const label = exportAll.textContent;
-  exportAll.textContent = "Exporting…";
-  const parts = [];
-  let url = "/settings/export";
-  while (url !== null) {
-    const page = await fetch(url);
-    parts.push(await page.text());
-    const link = page.headers.get("link");
-    url = /<([^>]+)>;\\s*rel="next"/.exec(link ?? "")?.[1] ?? null;
-  }
-  const anchor = document.createElement("a");
-  anchor.href = URL.createObjectURL(
-    new Blob(parts, { type: "application/x-ndjson" }),
-  );
-  anchor.download = \`music-stats-\${exportAll.dataset.name}.ndjson\`;
-  anchor.click();
-  URL.revokeObjectURL(anchor.href);
-  exportAll.textContent = label;
-});
-`;
-
 type PageData = Awaited<ReturnType<typeof pageData>>;
 type SourceInfo = PageData["sources"][number];
 type TokenInfo = PageData["tokens"][number];
@@ -365,6 +318,7 @@ function settingsPage(
                         class="field"
                         id="ytmusic-tz"
                         name="tz"
+                        data-local-zone
                         data-stored={ytmusic?.tz ?? undefined}
                         {...invalid("tz")}
                       >
@@ -409,10 +363,6 @@ function settingsPage(
                     </button>
                   </div>
                 </form>
-                <script
-                  type="module"
-                  dangerouslySetInnerHTML={{ __html: tzScript }}
-                />
                 {ytmusic !== undefined && <RemoveSource source={ytmusic} />}
               </div>
               <div class="source" id="upload">
@@ -562,7 +512,7 @@ function settingsPage(
                     class="btn"
                     href="/settings/export"
                     id="export-all"
-                    data-name={user.name}
+                    data-export-all={user.name}
                   >
                     {downloadIcon}
                     Download your plays
@@ -573,10 +523,6 @@ function settingsPage(
                 </p>
               </div>
             </div>
-            <script
-              type="module"
-              dangerouslySetInnerHTML={{ __html: exportScript }}
-            />
           </section>
           <section class="danger-card" id="delete">
             <h2>Delete account</h2>
@@ -595,6 +541,7 @@ function settingsPage(
                   id="confirm"
                   name="confirm"
                   type="text"
+                  data-arms="delete-account"
                   data-name={user.name}
                   required
                   spellcheck={false}
@@ -606,10 +553,6 @@ function settingsPage(
                 </button>
               </div>
             </form>
-            <script
-              type="module"
-              dangerouslySetInnerHTML={{ __html: deleteScript }}
-            />
           </section>
         </div>
       </div>

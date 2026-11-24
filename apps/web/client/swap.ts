@@ -114,6 +114,9 @@ export function enableSwap(
     if (id) void swapTo(location.href, id, false);
   });
 
+  // Safari has no requestIdleCallback. After load the page's own resources
+  // are done, which is the part of idle that matters here.
   if ("requestIdleCallback" in window) requestIdleCallback(prefetchChoices);
-  else setTimeout(prefetchChoices, 1000);
+  else if (document.readyState === "complete") prefetchChoices();
+  else addEventListener("load", prefetchChoices, { once: true });
 }
