@@ -518,6 +518,11 @@
   font-size: calc(44 * var(--u));
   margin-top: calc(16 * var(--u));
 }
+.tv-work {
+  color: var(--stage-ink-2);
+  font-size: calc(32 * var(--u));
+  margin-top: calc(8 * var(--u));
+}
 .tv-results {
   display: flex;
   flex-direction: column;

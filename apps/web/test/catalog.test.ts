@@ -441,6 +441,23 @@ describe("curated sources", () => {
       answer_title: "Fixed Title",
       banned_at: 7,
     });
+
+    const themed: { title: string; work?: string; theme?: string }[] =
+      Object.values(curated.anime)
+        .flat()
+        .filter((song: { theme?: string }) => song.theme);
+    const stored = await env.DB.prepare(
+      `SELECT title, work, theme FROM catalog_tracks WHERE theme IS NOT NULL`,
+    ).all<{ title: string; work: string; theme: string }>();
+    expect(stored.results).toContainEqual({
+      title: themed[0].title,
+      work: themed[0].work,
+      theme: themed[0].theme,
+    });
+    const pool = await catalogPool(database(env.DB), "anime");
+    expect(pool.find((song) => song.title === themed[0].title)?.work).toBe(
+      `${themed[0].work} · ${themed[0].theme}`,
+    );
   });
 });
 

@@ -25,6 +25,7 @@ import {
   type PoolRow,
 } from "./pool";
 import { answerKey, roundSeconds, roundsPerGame } from "../game/quiz";
+import { workLabel } from "../game/rules";
 import type { Candidate } from "./sources";
 
 export const forYouSlug = "for-you";
@@ -331,6 +332,7 @@ async function revalidate(db: Db, cached: Candidate[]) {
       ...track,
       title: row.title,
       original: row.originalTitle ?? undefined,
+      work: workLabel(row.work, row.theme),
       artist: row.artist,
       cover: row.cover,
       link: row.link,

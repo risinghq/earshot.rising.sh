@@ -324,6 +324,30 @@ describe("the play hub", () => {
       );
   });
 
+  it("names the show and its slot on the reveal", async () => {
+    await seedCatalog(
+      env.DB,
+      "pop",
+      [1, 2, 3, 4, 5, 6].map((i) => ({ id: i, title: `Track ${i}` })),
+    );
+    await env.DB.prepare(
+      "UPDATE catalog_tracks SET work = 'Bubblegum Crisis', theme = 'OP2'",
+    ).run();
+    stubFetch([
+      [
+        /api\.deezer\.com\/track\/\d+/,
+        (url: string) => deezerTrack(Number(/track\/(\d+)/.exec(url)![1]), "x"),
+      ],
+    ]);
+    const id = await startGame("pop", "normal");
+    await get(`/play/${id}`);
+    await answer(id, { choice: "Track 1" });
+    const reveal = await (await get(`/play/${id}`)).text();
+    expect(await textAt(reveal, ".now-work")).toEqual([
+      "Bubblegum Crisis · OP2",
+    ]);
+  });
+
   it("keeps the right answer out of the round response", async () => {
     await seedCatalog(
       env.DB,

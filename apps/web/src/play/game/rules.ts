@@ -38,3 +38,7 @@ export const linkService = (link: string) =>
 // A romanized title keeps its own script beside the artist.
 export const byline = (song: { original?: string | null; artist: string }) =>
   song.original ? `${song.original} · ${song.artist}` : song.artist;
+
+// "Bubblegum Crisis · OP2", or the show alone when the slot is unknown.
+export const workLabel = (work: string | null, theme: string | null) =>
+  work === null ? undefined : theme ? `${work} · ${theme}` : work;

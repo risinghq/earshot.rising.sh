@@ -3,6 +3,7 @@ import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
 import { t, type Db } from "../../platform/db";
 import { normalizeText } from "../../listening/normalize";
 import { answerKey, isVersion } from "../game/quiz";
+import { workLabel } from "../game/rules";
 import type { Candidate } from "./sources";
 
 // A decade a category offers as its own game needs enough distinct songs to
@@ -45,6 +46,8 @@ export function poolFields() {
     originalTitle: sql<
       string | null
     >`CASE WHEN ${ct.answerTitle} IS NULL THEN ${ct.originalTitle} END`,
+    work: ct.work,
+    theme: ct.theme,
     artist: ct.artist,
     cover: ct.cover,
     link: ct.link,
@@ -58,6 +61,8 @@ export interface PoolRow {
   deezerId: number | null;
   title: string;
   originalTitle: string | null;
+  work: string | null;
+  theme: string | null;
   artist: string;
   cover: string | null;
   link: string | null;
@@ -100,9 +105,11 @@ export function dedupePool(rows: PoolRow[]): Candidate[] {
     seenKeys.add(row.trackKey);
     seenAnswers.add(answer);
     const itunes = /^it:(\d+)$/.exec(row.trackKey);
+    const work = workLabel(row.work, row.theme);
     pool.push({
       title: row.title,
       ...(row.originalTitle ? { original: row.originalTitle } : {}),
+      ...(work ? { work } : {}),
       artist: row.artist,
       cover: row.cover,
       link: row.link,

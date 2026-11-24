@@ -10,6 +10,8 @@ import { FeedError, fetchJson } from "../../platform/fetch-json";
 export interface Candidate {
   title: string;
   original?: string;
+  // The show and slot a reveal names (rules.ts workLabel).
+  work?: string;
   artist: string;
   cover: string | null;
   link: string | null;

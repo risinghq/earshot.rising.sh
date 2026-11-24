@@ -23,6 +23,8 @@ export interface Reveal {
   track: string;
   title: string;
   original: string | null;
+  // Absent from a room state saved before the field existed.
+  work?: string;
   artist: string;
   cover: string | null;
   link: string | null;

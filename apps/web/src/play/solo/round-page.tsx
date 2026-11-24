@@ -23,7 +23,7 @@ import {
 // The song a reveal shows. client/room/NowPlaying.tsx draws the same card.
 type ShownSong = Pick<
   RoundResult,
-  "trackKey" | "title" | "original" | "artist" | "cover" | "link"
+  "trackKey" | "title" | "original" | "work" | "artist" | "cover" | "link"
 >;
 
 function reportForm(result: ShownSong, categorySlug: string, back: string) {
@@ -82,6 +82,7 @@ function nowPlaying(result: ShownSong, categorySlug: string, back: string) {
       <div class="now-song">
         <b class="now-title">{result.title}</b>
         <span class="now-by">{byline(result)}</span>
+        {result.work && <span class="now-work">{result.work}</span>}
       </div>
       <div class="now-links">
         {result.link && (
