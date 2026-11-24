@@ -1,3 +1,6 @@
+import { and, eq, isNull, min, sql, type SQL } from "drizzle-orm";
+import type { SQLiteColumn } from "drizzle-orm/sqlite-core";
+import { t, type Db } from "../db";
 import { normalizeText } from "../normalize";
 import { answerKey, isVersion } from "./quiz";
 import type { Candidate } from "./sources";
@@ -12,15 +15,53 @@ export function decadeOf(year: number | null | undefined) {
     : null;
 }
 
+const ct = t.catalogTracks;
+const cs = t.categorySources;
+const cm = t.catalogMembers;
+
+// A catalog track's decade: the answer-year override, then the decade its
+// source playlist declares, then the release year.
+function catalogDecade(declared: SQL | SQLiteColumn) {
+  return sql<number | null>`COALESCE(
+    CASE WHEN ${ct.answerYear} > 0 THEN ${ct.answerYear} / 10 * 10 END,
+    ${declared},
+    CASE WHEN ${ct.year} > 0 THEN ${ct.year} / 10 * 10 END
+  )`;
+}
+
+// One row per catalog membership.
+export const rowDecade = () => catalogDecade(cs.decade);
+
+// One row per track grouped over its sources: the earliest declared decade,
+// as dedupePool keeps one row per Deezer id.
+export const groupDecade = () => catalogDecade(min(cs.decade));
+
+// A track as a round plays it, with the answer overrides applied.
+export function poolFields() {
+  return {
+    trackKey: ct.trackKey,
+    deezerId: ct.deezerId,
+    title: sql<string>`COALESCE(${ct.answerTitle}, ${ct.title})`,
+    originalTitle: sql<
+      string | null
+    >`CASE WHEN ${ct.answerTitle} IS NULL THEN ${ct.originalTitle} END`,
+    artist: ct.artist,
+    cover: ct.cover,
+    link: ct.link,
+    preview: ct.preview,
+    year: sql<number | null>`COALESCE(${ct.answerYear}, ${ct.year})`,
+  };
+}
+
 export interface PoolRow {
-  track_key: string;
-  deezer_id: number | null;
+  trackKey: string;
+  deezerId: number | null;
   title: string;
-  original_title?: string | null;
+  originalTitle: string | null;
   artist: string;
   cover: string | null;
   link: string | null;
-  preview?: string | null;
+  preview: string | null;
   year: number | null;
   decade: number | null;
   category?: string | null;
@@ -53,19 +94,19 @@ export function dedupePool(rows: PoolRow[]): Candidate[] {
   const seenAnswers = new Set<string>();
   const pool: Candidate[] = [];
   for (const row of rows) {
-    if (seenKeys.has(row.track_key)) continue;
+    if (seenKeys.has(row.trackKey)) continue;
     const answer = `${normalizeText(row.artist)}|${answerKey(row.title)}`;
     if (seenAnswers.has(answer)) continue;
-    seenKeys.add(row.track_key);
+    seenKeys.add(row.trackKey);
     seenAnswers.add(answer);
-    const itunes = /^it:(\d+)$/.exec(row.track_key);
+    const itunes = /^it:(\d+)$/.exec(row.trackKey);
     pool.push({
       title: row.title,
-      ...(row.original_title ? { original: row.original_title } : {}),
+      ...(row.originalTitle ? { original: row.originalTitle } : {}),
       artist: row.artist,
       cover: row.cover,
       link: row.link,
-      ...(row.deezer_id === null ? {} : { deezerId: row.deezer_id }),
+      ...(row.deezerId === null ? {} : { deezerId: row.deezerId }),
       ...(itunes ? { itunesId: Number(itunes[1]) } : {}),
       ...(row.preview ? { preview: row.preview } : {}),
       year: row.year ?? undefined,
@@ -76,35 +117,19 @@ export function dedupePool(rows: PoolRow[]): Candidate[] {
   return pool;
 }
 
-export async function catalogPool(db: D1Database, category: string) {
+export async function catalogPool(db: Db, category: string) {
   const rows = await db
-    .prepare(
-      `SELECT ct.track_key, ct.deezer_id,
-              COALESCE(ct.answer_title, ct.title) AS title,
-              CASE WHEN ct.answer_title IS NULL THEN ct.original_title END
-                AS original_title,
-              ct.artist, ct.cover, ct.link, ct.preview,
-              COALESCE(ct.answer_year, ct.year) AS year,
-              COALESCE(
-                CASE WHEN ct.answer_year > 0
-                     THEN ct.answer_year / 10 * 10 END,
-                MIN(cs.decade),
-                CASE WHEN ct.year > 0 THEN ct.year / 10 * 10 END
-              ) AS decade
-       FROM category_sources cs
-       JOIN catalog_members cm ON cm.source_id = cs.id
-       JOIN catalog_tracks ct ON ct.track_key = cm.track_key
-       WHERE cs.category = ?1 AND ct.banned_at IS NULL
-       GROUP BY ct.track_key
-       ORDER BY MIN(cs.position), MIN(cs.id), MIN(cm.position)`,
-    )
-    .bind(category)
-    .all<PoolRow>();
-  return dedupePool(rows.results);
+    .select({ ...poolFields(), decade: groupDecade() })
+    .from(cs)
+    .innerJoin(cm, eq(cm.sourceId, cs.id))
+    .innerJoin(ct, eq(ct.trackKey, cm.trackKey))
+    .where(and(eq(cs.category, category), isNull(ct.bannedAt)))
+    .groupBy(ct.trackKey)
+    .orderBy(min(cs.position), min(cs.id), min(cm.position));
+  return dedupePool(rows);
 }
 
-// A catalog track's decade is its answer-year override, then the decade its
-// source playlist declares, then its release year.
+// The decade catalogDecade gave the track, else its release year's.
 export function trackDecade(track: Candidate) {
   return track.decade ?? decadeOf(track.year);
 }

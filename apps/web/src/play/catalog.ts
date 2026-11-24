@@ -1,3 +1,5 @@
+import { and, desc, eq, inArray } from "drizzle-orm";
+import { database, t, type Db } from "../db";
 import type { Env } from "../types";
 import { catalogPool, songsOnce } from "./pool";
 import { answerKey, roundsPerGame } from "./quiz";
@@ -41,14 +43,19 @@ export function parseArtistSlug(slug: string): number[] | null {
   return ids[1] === ids[0] ? [ids[0]] : ids;
 }
 
-export function listCategories(db: D1Database) {
+const categoryFields = {
+  slug: t.categories.slug,
+  name: t.categories.name,
+  feed: t.categories.feed,
+  ref: t.categories.ref,
+};
+
+export function listCategories(db: Db): Promise<Category[]> {
   return db
-    .prepare(
-      `SELECT slug, name, feed, ref FROM categories
-       WHERE hidden = 0 ORDER BY position, slug`,
-    )
-    .all<Category>()
-    .then((result) => result.results);
+    .select(categoryFields)
+    .from(t.categories)
+    .where(eq(t.categories.hidden, 0))
+    .orderBy(t.categories.position, t.categories.slug);
 }
 
 // A null is a definite unknown id: Deezer answered the artist endpoint with
@@ -108,29 +115,30 @@ export async function getCategory(env: Env, slug: string) {
   const ids = parseArtistSlug(slug);
   if (ids !== null) return artistCategory(env, ids);
   if (slug.startsWith("artist-")) return null;
-  return env.DB.prepare(
-    "SELECT slug, name, feed, ref FROM categories WHERE slug = ?1 AND hidden = 0",
-  )
-    .bind(slug)
-    .first<Category>();
+  const category: Category | undefined = await database(env.DB)
+    .select(categoryFields)
+    .from(t.categories)
+    .where(and(eq(t.categories.slug, slug), eq(t.categories.hidden, 0)))
+    .get();
+  return category ?? null;
 }
 
 export { FeedError };
 
-async function userCatalog(db: D1Database, userId: number) {
-  const result = await db
-    .prepare(
-      `SELECT tracks.title, artists.name AS artist, tracks.isrc
-       FROM track_totals
-       JOIN tracks ON tracks.id = track_totals.track_id
-       JOIN artists ON artists.id = tracks.artist_id
-       WHERE track_totals.user_id = ?1
-       ORDER BY track_totals.plays DESC
-       LIMIT 40`,
-    )
-    .bind(userId)
-    .all<{ title: string; artist: string; isrc: string | null }>();
-  return result.results.map((row) => ({
+async function userCatalog(db: Db, userId: number) {
+  const rows = await db
+    .select({
+      title: t.tracks.title,
+      artist: t.artists.name,
+      isrc: t.tracks.isrc,
+    })
+    .from(t.trackTotals)
+    .innerJoin(t.tracks, eq(t.tracks.id, t.trackTotals.trackId))
+    .innerJoin(t.artists, eq(t.artists.id, t.tracks.artistId))
+    .where(eq(t.trackTotals.userId, userId))
+    .orderBy(desc(t.trackTotals.plays))
+    .limit(40);
+  return rows.map((row) => ({
     title: row.title,
     artist: row.artist,
     cover: null,
@@ -144,12 +152,17 @@ async function userCatalog(db: D1Database, userId: number) {
 // chart-fed genre shows covers whether or not anyone played it lately.
 export async function warmChartCache(env: Env) {
   if (!env.CACHE) return;
-  const charts = await env.DB.prepare(
-    `SELECT slug, name, feed, ref FROM categories
-     WHERE feed IN ('deezer_chart', 'apple_chart') AND hidden = 0
-     ORDER BY position`,
-  ).all<Category>();
-  for (const chart of charts.results) {
+  const charts = await database(env.DB)
+    .select(categoryFields)
+    .from(t.categories)
+    .where(
+      and(
+        inArray(t.categories.feed, ["deezer_chart", "apple_chart"]),
+        eq(t.categories.hidden, 0),
+      ),
+    )
+    .orderBy(t.categories.position);
+  for (const chart of charts) {
     const cached = await env.CACHE.get(`play:cat:${chart.slug}`).catch(
       () => null,
     );
@@ -210,7 +223,7 @@ async function feedTracks(
 ): Promise<Candidate[]> {
   if (category.feed === "mine") {
     if (userId === null) throw new FeedError("sign-in required", category.slug);
-    return userCatalog(env.DB, userId);
+    return userCatalog(database(env.DB), userId);
   }
   const key = `play:cat:${category.slug}`;
   const cached = await env.CACHE?.get<Candidate[]>(key, "json").catch(
@@ -221,7 +234,7 @@ async function feedTracks(
   if (category.feed === "deezer_chart")
     tracks = await deezerChart(category.ref ?? "0");
   else if (category.feed === "deezer_playlist")
-    tracks = await catalogPool(env.DB, category.slug);
+    tracks = await catalogPool(database(env.DB), category.slug);
   else if (category.feed === "deezer_artist") {
     const lists = await Promise.all(
       (category.ref ?? "").split(",").map((id) => deezerArtistTop(Number(id))),

@@ -6,6 +6,7 @@ import { seedCatalog } from "./catalog";
 import { readPage } from "./html";
 import { network } from "./network";
 import { sha256Bytes } from "../src/auth";
+import { database } from "../src/db";
 import { catalogPool, poolEras, byDecade } from "../src/play/pool";
 import { catalog, warmChartCache } from "../src/play/catalog";
 import { refreshCatalog, refreshSource } from "../src/play/refresh";
@@ -53,7 +54,7 @@ describe("catalog pool", () => {
     await env.DB.prepare(
       "UPDATE catalog_tracks SET banned_at = 1 WHERE deezer_id = 4",
     ).run();
-    const pool = await catalogPool(env.DB, "pop");
+    const pool = await catalogPool(database(env.DB), "pop");
     expect(pool.map((track) => track.deezerId).sort()).toEqual([1, 2, 5]);
   });
 
@@ -136,11 +137,15 @@ describe("catalog pool", () => {
         year: 1990 + (i % 10),
       })),
     );
-    expect(poolEras(await catalogPool(env.DB, "pop"))).toContain(1990);
+    expect(poolEras(await catalogPool(database(env.DB), "pop"))).toContain(
+      1990,
+    );
     await env.DB.prepare(
       "DELETE FROM catalog_members WHERE track_key = 'dz:0'",
     ).run();
-    expect(poolEras(await catalogPool(env.DB, "pop"))).not.toContain(1990);
+    expect(poolEras(await catalogPool(database(env.DB), "pop"))).not.toContain(
+      1990,
+    );
   });
 
   it("filters a pool to one decade", async () => {
@@ -149,7 +154,7 @@ describe("catalog pool", () => {
       { id: 2, title: "New", year: 2005 },
       { id: 3, title: "Undated" },
     ]);
-    const pool = await catalogPool(env.DB, "pop");
+    const pool = await catalogPool(database(env.DB), "pop");
     expect(byDecade(pool, 1980).map((t) => t.title)).toEqual(["Old"]);
   });
 
@@ -163,7 +168,7 @@ describe("catalog pool", () => {
       })),
       2000,
     );
-    const pool = await catalogPool(env.DB, "k-pop");
+    const pool = await catalogPool(database(env.DB), "k-pop");
     expect(poolEras(pool)).toEqual([2000]);
     expect(byDecade(pool, 2000)).toHaveLength(20);
     expect(byDecade(pool, 2010)).toHaveLength(0);
@@ -174,7 +179,7 @@ describe("catalog pool", () => {
     await env.DB.prepare(
       "UPDATE catalog_tracks SET answer_year = 2012 WHERE deezer_id = 300",
     ).run();
-    const pool = await catalogPool(env.DB, "k-pop");
+    const pool = await catalogPool(database(env.DB), "k-pop");
     expect(byDecade(pool, 2010)).toHaveLength(1);
     expect(byDecade(pool, 2000)).toHaveLength(0);
   });
@@ -293,7 +298,7 @@ describe("round outcomes", () => {
     await env.DB.prepare(
       "INSERT INTO users (id, github_id, name, created_at) VALUES (7, 7, 'u7', 0)",
     ).run();
-    await mergeAnonOutcomes(env.DB, "abc", 7);
+    await mergeAnonOutcomes(database(env.DB), "abc", 7);
     const row = await env.DB.prepare(
       "SELECT player_key, user_id FROM round_outcomes",
     ).first<{ player_key: string; user_id: number }>();
@@ -416,9 +421,9 @@ describe("curated sources", () => {
         expect(source, source.ref).toMatchObject({ refreshed_at: 1000 });
       const empty = sources.results.filter((s) => s.tracks_count < 20);
       expect(empty.map((s) => s.ref)).toEqual([]);
-      expect(await poolEras(await catalogPool(env.DB, "k-pop"))).toEqual(
-        Object.keys(generations).map(Number),
-      );
+      expect(
+        await poolEras(await catalogPool(database(env.DB), "k-pop")),
+      ).toEqual(Object.keys(generations).map(Number));
 
       const track = await env.DB.prepare(
         `SELECT title, year, answer_title, banned_at FROM catalog_tracks
@@ -513,6 +518,24 @@ describe("reports", () => {
       testEnv() as never,
     );
     expect(response.status).toBe(429);
+  });
+
+  it("lets only one of two simultaneous reports take the last slot", async () => {
+    for (let i = 0; i < 9; i += 1)
+      await env.DB.prepare(
+        `INSERT INTO track_reports
+           (track_key, title, artist, reason, player_key, created_at)
+         VALUES ('dz:1', 'S', 'A', 'other', 'a:', ?1)`,
+      )
+        .bind(Math.floor(Date.now() / 1000))
+        .run();
+    const statuses = await Promise.all([report(), report()]);
+    expect(statuses.map((response) => response.status).sort()).toEqual([
+      303, 429,
+    ]);
+    expect(
+      await env.DB.prepare("SELECT COUNT(*) AS n FROM track_reports").first(),
+    ).toEqual({ n: 10 });
   });
 });
 

@@ -1,6 +1,8 @@
 import { getCookie, setCookie } from "hono/cookie";
 import type { Context } from "hono";
+import { eq } from "drizzle-orm";
 import { base64url } from "../auth";
+import { batchWrites, database, t, type Db } from "../db";
 import { normalizeText } from "../normalize";
 import type { Env } from "../types";
 import { trackDecade } from "./pool";
@@ -88,22 +90,10 @@ export async function recordGameStart(
   game: GameStart,
   now = Math.floor(Date.now() / 1000),
 ) {
-  await env.DB.prepare(
-    `INSERT OR IGNORE INTO games
-       (id, kind, room, category, mode, origin, players, started_at)
-     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`,
-  )
-    .bind(
-      game.id,
-      game.kind,
-      game.room,
-      game.category,
-      game.mode,
-      game.origin,
-      game.players,
-      now,
-    )
-    .run();
+  await database(env.DB)
+    .insert(t.games)
+    .values({ ...game, startedAt: now })
+    .onConflictDoNothing();
 }
 
 export async function recordOutcomes(
@@ -111,45 +101,36 @@ export async function recordOutcomes(
   rows: Outcome[],
   now = Math.floor(Date.now() / 1000),
 ) {
-  if (rows.length === 0) return;
-  await env.DB.batch(
+  const db = database(env.DB);
+  // One statement per row: D1 binds at most 100 values per statement.
+  await batchWrites(
+    db,
     rows.map((row) =>
-      env.DB.prepare(
-        `INSERT INTO round_outcomes
-           (player_key, user_id, track_key, category, era, mode, kind,
-            correct, elapsed_ms, answered_at, game_id, round, title, artist)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`,
-      ).bind(
-        row.playerKey,
-        row.userId,
-        trackKeyFor(row.track),
-        row.category,
-        trackDecade(row.track),
-        row.mode,
-        row.kind,
-        row.correct ? 1 : 0,
-        row.elapsedMs,
-        now,
-        row.gameId,
-        row.round,
-        row.track.title,
-        row.track.artist,
-      ),
+      db.insert(t.roundOutcomes).values({
+        playerKey: row.playerKey,
+        userId: row.userId,
+        trackKey: trackKeyFor(row.track),
+        category: row.category,
+        era: trackDecade(row.track),
+        mode: row.mode,
+        kind: row.kind,
+        correct: row.correct ? 1 : 0,
+        elapsedMs: row.elapsedMs,
+        answeredAt: now,
+        gameId: row.gameId,
+        round: row.round,
+        title: row.track.title,
+        artist: row.track.artist,
+      }),
     ),
   );
 }
 
 // Answers an anonymous browser left behind belong to the account once it
 // signs in; the cookie stays, so later guest games merge on the next sign-in.
-export async function mergeAnonOutcomes(
-  db: D1Database,
-  anon: string,
-  userId: number,
-) {
+export async function mergeAnonOutcomes(db: Db, anon: string, userId: number) {
   await db
-    .prepare(
-      "UPDATE round_outcomes SET player_key = ?1, user_id = ?2 WHERE player_key = ?3",
-    )
-    .bind(`u:${userId}`, userId, `a:${anon}`)
-    .run();
+    .update(t.roundOutcomes)
+    .set({ playerKey: `u:${userId}`, userId })
+    .where(eq(t.roundOutcomes.playerKey, `a:${anon}`));
 }

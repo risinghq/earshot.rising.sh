@@ -1,3 +1,5 @@
+import { and, desc, eq, gte, sql } from "drizzle-orm";
+import { batchWrites, database, t } from "../db";
 import type { Env } from "../types";
 import { putGame, type Game } from "./game";
 import { playerKeyOf } from "./outcomes";
@@ -23,25 +25,12 @@ export interface ResultRow {
 // time.
 export async function recordResults(env: Env, rows: ResultRow[]) {
   if (rows.length === 0) return;
-  await env.DB.batch(
+  const db = database(env.DB);
+  // One statement per row: D1 binds at most 100 values per statement.
+  await batchWrites(
+    db,
     rows.map((row) =>
-      env.DB.prepare(
-        `INSERT OR IGNORE INTO game_results
-         (id, user_id, finished_at, category, kind, score, rank, players,
-          correct, rounds)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)`,
-      ).bind(
-        row.id,
-        row.userId,
-        row.finishedAt,
-        row.category,
-        row.kind,
-        row.score,
-        row.rank,
-        row.players,
-        row.correct,
-        row.rounds,
-      ),
+      db.insert(t.gameResults).values(row).onConflictDoNothing(),
     ),
   );
   // A written result changes its category's board, so the cached copy must
@@ -110,6 +99,9 @@ export function weekStart(nowSeconds: number) {
 
 const boardTtlSeconds = 300;
 
+// Boards list public players an admin has not hidden.
+const listedPlayer = and(eq(t.users.isPublic, 1), eq(t.users.adminHidden, 0));
+
 export async function readBoard(env: Env, period: BoardPeriod) {
   const key = `play:board:${period}`;
   const cached = await env.CACHE?.get<BoardEntry[]>(key, "json").catch(
@@ -117,23 +109,21 @@ export async function readBoard(env: Env, period: BoardPeriod) {
   );
   if (cached) return cached;
   const since = period === "week" ? weekStart(Date.now() / 1000) : 0;
-  const rows = await env.DB.prepare(
-    `SELECT users.name,
-            SUM(game_results.score) AS points,
-            SUM(CASE WHEN game_results.kind IN ('match', 'room')
-                      AND game_results.rank = 1
-                      AND game_results.players > 1 THEN 1 ELSE 0 END) AS wins
-     FROM game_results
-     JOIN users ON users.id = game_results.user_id
-     WHERE users.is_public = 1 AND users.admin_hidden = 0
-       AND game_results.finished_at >= ?1
-     GROUP BY game_results.user_id
-     ORDER BY points DESC, users.name
-     LIMIT 50`,
-  )
-    .bind(since)
-    .all<BoardEntry>();
-  const entries = rows.results;
+  const gr = t.gameResults;
+  const points = sql<number>`SUM(${gr.score})`;
+  const entries: BoardEntry[] = await database(env.DB)
+    .select({
+      name: t.users.name,
+      points,
+      wins: sql<number>`SUM(CASE WHEN ${gr.kind} IN ('match', 'room')
+        AND ${gr.rank} = 1 AND ${gr.players} > 1 THEN 1 ELSE 0 END)`,
+    })
+    .from(gr)
+    .innerJoin(t.users, eq(t.users.id, gr.userId))
+    .where(and(listedPlayer, gte(gr.finishedAt, since)))
+    .groupBy(gr.userId)
+    .orderBy(desc(points), t.users.name)
+    .limit(50);
   if (env.CACHE)
     await env.CACHE.put(key, JSON.stringify(entries), {
       expirationTtl: boardTtlSeconds,
@@ -157,22 +147,22 @@ export async function readCategoryBoard(env: Env, slug: string) {
   const since = Math.floor(Date.now() / 1000) - categoryBoardDays * 86400;
   // SQLite fills bare columns beside a lone MAX() from the row that holds the
   // maximum, so correct, rounds and finished_at describe the best game.
-  const rows = await env.DB.prepare(
-    `SELECT users.name, MAX(game_results.score) AS score,
-            game_results.correct, game_results.rounds,
-            game_results.finished_at
-     FROM game_results
-     JOIN users ON users.id = game_results.user_id
-     WHERE users.is_public = 1 AND users.admin_hidden = 0
-       AND game_results.category = ?1
-       AND game_results.finished_at >= ?2
-     GROUP BY game_results.user_id
-     ORDER BY score DESC, users.name
-     LIMIT ?3`,
-  )
-    .bind(slug, since, categoryBoardSize)
-    .all<CategoryBoardEntry>();
-  const entries = rows.results;
+  const gr = t.gameResults;
+  const best = sql<number>`MAX(${gr.score})`;
+  const entries: CategoryBoardEntry[] = await database(env.DB)
+    .select({
+      name: t.users.name,
+      score: best,
+      correct: gr.correct,
+      rounds: gr.rounds,
+      finished_at: gr.finishedAt,
+    })
+    .from(gr)
+    .innerJoin(t.users, eq(t.users.id, gr.userId))
+    .where(and(listedPlayer, eq(gr.category, slug), gte(gr.finishedAt, since)))
+    .groupBy(gr.userId)
+    .orderBy(desc(best), t.users.name)
+    .limit(categoryBoardSize);
   if (env.CACHE)
     await env.CACHE.put(key, JSON.stringify(entries), {
       expirationTtl: boardTtlSeconds,

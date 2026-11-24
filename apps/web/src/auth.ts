@@ -457,7 +457,7 @@ export async function signInCallback(context: AuthContext, provider: Provider) {
 
   const anon = getCookie(context, "play-id", "host");
   if (anon !== undefined)
-    await mergeAnonOutcomes(context.env.DB, anon, outcome.user.id);
+    await mergeAnonOutcomes(database(context.env.DB), anon, outcome.user.id);
   const session = await newSession(db, outcome.user.id, now);
   setCookie(context, "session", session, {
     ...cookieBase,
