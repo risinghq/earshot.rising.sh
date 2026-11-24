@@ -1,6 +1,5 @@
-import { applyD1Migrations, env, reset, SELF } from "cloudflare:test";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env, SELF } from "cloudflare:test";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { fillImages, missRetrySeconds } from "../src/images";
 
 const now = Math.floor(Date.now() / 1000);
@@ -44,11 +43,6 @@ async function seed() {
     ).bind(now - 60),
   ]);
 }
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-});
 
 afterEach(() => {
   vi.unstubAllGlobals();

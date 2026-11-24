@@ -1,6 +1,5 @@
-import { applyD1Migrations, env, reset } from "cloudflare:test";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env } from "cloudflare:test";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
 import { sha256Bytes } from "../src/auth";
@@ -101,11 +100,6 @@ async function seedSession(githubId: number, name: string) {
     .run();
   return `__Host-session=${session}`;
 }
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-});
 
 afterEach(() => {
   vi.unstubAllGlobals();

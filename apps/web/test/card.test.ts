@@ -1,6 +1,5 @@
-import { applyD1Migrations, env, reset, SELF } from "cloudflare:test";
-import { beforeEach, describe, expect, it } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env, SELF } from "cloudflare:test";
+import { describe, expect, it } from "vitest";
 import { cutToWidth, displayWidth, renderCard } from "../src/card";
 import type { PeriodStats } from "../src/types";
 
@@ -43,11 +42,6 @@ async function seedTracks(titles: string[]) {
 async function fetchCard(query = "") {
   return SELF.fetch(`https://music.rising.sh/u/alice.svg${query}`);
 }
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-});
 
 describe("card", () => {
   it("renders each theme", async () => {

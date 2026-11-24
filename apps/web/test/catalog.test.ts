@@ -1,6 +1,5 @@
-import { applyD1Migrations, env, reset } from "cloudflare:test";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env } from "cloudflare:test";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
 import { seedCatalog } from "./catalog";
 import { sha256Bytes } from "../src/auth";
@@ -34,11 +33,6 @@ const post = (path: string, fields: Record<string, string>, cookie = "") =>
     }),
     testEnv() as never,
   );
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-}, 20000);
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -261,7 +255,8 @@ describe("round outcomes", () => {
 
   it("records the source decade, not the Deezer year, as the era", async () => {
     // Rock, not the previous test's pop: under load local KV can commit that
-    // test's cached pool after reset(), and a stale pop pool has no decade.
+    // test's cached pool after test/setup.ts clears KV, and a stale pop pool
+    // has no decade.
     await seedCatalog(
       env.DB,
       "rock",

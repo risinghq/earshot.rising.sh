@@ -1,6 +1,5 @@
-import { applyD1Migrations, env, reset, SELF } from "cloudflare:test";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env, SELF } from "cloudflare:test";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { getStats } from "../src/aggregate";
 import { app } from "../src/app";
 import {
@@ -39,11 +38,6 @@ async function count(table: string) {
   ).first<{ count: number }>();
   return result?.count ?? 0;
 }
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-});
 
 afterEach(() => {
   vi.restoreAllMocks();

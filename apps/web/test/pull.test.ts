@@ -1,5 +1,5 @@
-import { applyD1Migrations, env, reset } from "cloudflare:test";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { env } from "cloudflare:test";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import migrations from "virtual:web-migrations";
 import worker from "../src/index";
 import { pullDueSources } from "../src/cron";
@@ -51,11 +51,6 @@ const playsBody = () =>
     status: 200,
     headers: { "content-type": "application/json" },
   });
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-});
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -203,7 +198,7 @@ describe("migration 0006", () => {
         )
           .bind(now - 3600 * (i + 1) - sourceId, sourceId, `${sourceId}r${i}`)
           .run();
-    // Migration 0006 already ran in beforeEach; re-run its deletes on the
+    // Migration 0006 already ran in test/setup.ts; re-run its deletes on the
     // seeded rows by applying its queries directly.
     const migration = migrations.find((item) => item.name.includes("0006"));
     for (const query of migration!.queries) await env.DB.prepare(query).run();

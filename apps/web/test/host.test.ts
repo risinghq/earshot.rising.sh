@@ -1,6 +1,5 @@
-import { applyD1Migrations, env, reset, SELF } from "cloudflare:test";
-import { beforeEach, describe, expect, it } from "vitest";
-import migrations from "virtual:web-migrations";
+import { env, SELF } from "cloudflare:test";
+import { describe, expect, it } from "vitest";
 
 const oldOrigin = "https://music.rising.sh";
 const newOrigin = "https://earshot.rising.sh";
@@ -16,11 +15,6 @@ async function seedUser() {
     ).bind(now),
   ]);
 }
-
-beforeEach(async () => {
-  await reset();
-  await applyD1Migrations(env.DB, migrations);
-});
 
 describe("the old host", () => {
   it.each([
