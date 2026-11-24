@@ -14,7 +14,7 @@
     "pretest": "vite build",
     "test": "vitest run",
     "pretypecheck": "vite build",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p client"
+    "typecheck": "tsc --noEmit && tsc --noEmit -p test && tsc --noEmit -p client"
   },
   "dependencies": {
     "@solidjs/web": "2.0.3",

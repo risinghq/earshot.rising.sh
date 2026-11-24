@@ -7,14 +7,10 @@
     "strict": true,
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
-    "types": [
-      "@cloudflare/workers-types",
-      "@cloudflare/vitest-plugin/types",
-      "vitest/globals"
-    ],
+    "types": ["@cloudflare/workers-types"],
     "noEmit": true,
     "resolveJsonModule": true,
     "skipLibCheck": true
   },
-  "include": ["src", "test", "bench", "vitest.config.ts", "vite.config.ts"]
+  "include": ["src", "bench", "vite.config.ts"]
 }

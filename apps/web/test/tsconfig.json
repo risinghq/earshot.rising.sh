@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "@cloudflare/workers-types",
+      "@cloudflare/vitest-plugin/types",
+      "vite/client"
+    ]
+  },
+  "include": [".", "../src/bindings.d.ts", "../vitest.config.ts"]
+}

@@ -193,8 +193,9 @@ sides. The solo page (`client/solo.ts`), the matchmaker (`client/match.ts`) and
 `client/site.ts` stay plain TypeScript over the server's markup: they enhance a
 page that already works, and Solid's runtime would add 16 kB gzipped to each
 without drawing anything. `client/tsconfig.json` typechecks the browser code
-with Solid's JSX, and `npm run typecheck` runs both projects. Markup only the
-server can build, such as the sign-in links, comes in a `<template>` the
+with Solid's JSX, `test/tsconfig.json` adds the test runtime's and Vite's types
+to the Worker's, and `npm run typecheck` runs all three projects. Markup only
+the server can build, such as the sign-in links, comes in a `<template>` the
 components copy from. The components' tests run in happy-dom, a second vitest
 project beside the workerd one.
 

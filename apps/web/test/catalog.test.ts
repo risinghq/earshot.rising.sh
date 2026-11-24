@@ -390,64 +390,58 @@ describe("curated sources", () => {
     expect(sameArtist("", "IU")).toBe(false);
   });
 
-  it(
-    "fills every curated source from the bundle without a request",
-    {
-      timeout: 60_000,
-    },
-    async () => {
-      const [first] = curated.pop["1980"];
-      await env.DB.prepare(
-        `INSERT INTO catalog_tracks
+  it("fills every curated source from the bundle without a request", async () => {
+    const [first] = curated.pop["1980"];
+    await env.DB.prepare(
+      `INSERT INTO catalog_tracks
          (track_key, deezer_id, title, artist, year, year_at, answer_title,
           banned_at, updated_at)
        VALUES (?1, ?2, 'Old', 'Old', 2011, 5, 'Fixed Title', 7, 0)`,
-      )
-        .bind(`dz:${first.id}`, first.id)
-        .run();
-      const asked: string[] = [];
-      network.use(
-        http.all("*", ({ request }) => {
-          asked.push(request.url);
-          return HttpResponse.json({ data: [] });
-        }),
-      );
-      const unfilled = () =>
-        env.DB.prepare(
-          `SELECT COUNT(*) n FROM category_sources
+    )
+      .bind(`dz:${first.id}`, first.id)
+      .run();
+    const asked: string[] = [];
+    network.use(
+      http.all("*", ({ request }) => {
+        asked.push(request.url);
+        return HttpResponse.json({ data: [] });
+      }),
+    );
+    const unfilled = () =>
+      env.DB.prepare(
+        `SELECT COUNT(*) n FROM category_sources
          WHERE kind = 'curated' AND refreshed_at IS NULL`,
-        ).first<number>("n");
-      for (let run = 0; run < 20 && ((await unfilled()) ?? 0) > 0; run++)
-        await refreshCatalog(testEnv() as never, 1000);
-      expect(asked).toEqual([]);
+      ).first<number>("n");
+    for (let run = 0; run < 20 && ((await unfilled()) ?? 0) > 0; run++)
+      await refreshCatalog(testEnv() as never, 1000);
+    expect(asked).toEqual([]);
 
-      const sources = await env.DB.prepare(
-        `SELECT ref, refreshed_at, tracks_count FROM category_sources
+    const sources = await env.DB.prepare(
+      `SELECT ref, refreshed_at, tracks_count FROM category_sources
        WHERE kind = 'curated'`,
-      ).all<{ ref: string; refreshed_at: number; tracks_count: number }>();
-      expect(sources.results.length).toBeGreaterThan(0);
-      for (const source of sources.results)
-        expect(source, source.ref).toMatchObject({ refreshed_at: 1000 });
-      const empty = sources.results.filter((s) => s.tracks_count < 20);
-      expect(empty.map((s) => s.ref)).toEqual([]);
-      expect(
-        await poolEras(await catalogPool(database(env.DB), "k-pop")),
-      ).toEqual(Object.keys(generations).map(Number));
+    ).all<{ ref: string; refreshed_at: number; tracks_count: number }>();
+    expect(sources.results.length).toBeGreaterThan(0);
+    for (const source of sources.results)
+      expect(source, source.ref).toMatchObject({ refreshed_at: 1000 });
+    const empty = sources.results.filter((s) => s.tracks_count < 20);
+    expect(empty.map((s) => s.ref)).toEqual([]);
+    expect(
+      await poolEras(await catalogPool(database(env.DB), "k-pop")),
+    ).toEqual(Object.keys(generations).map(Number));
 
-      const track = await env.DB.prepare(
-        `SELECT title, year, answer_title, banned_at FROM catalog_tracks
+    const track = await env.DB.prepare(
+      `SELECT title, year, answer_title, banned_at FROM catalog_tracks
        WHERE deezer_id = ?1`,
-      )
-        .bind(first.id)
-        .first();
-      expect(track).toEqual({
-        title: first.title,
-        year: first.year,
-        answer_title: "Fixed Title",
-        banned_at: 7,
-      });
-    },
-  );
+    )
+      .bind(first.id)
+      .first();
+    expect(track).toEqual({
+      title: first.title,
+      year: first.year,
+      answer_title: "Fixed Title",
+      banned_at: 7,
+    });
+  });
 });
 
 describe("year backfill", () => {

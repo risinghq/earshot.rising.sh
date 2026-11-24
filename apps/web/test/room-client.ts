@@ -41,30 +41,50 @@ export const setClock = (now: number) =>
 export const roomStub = (code: string) =>
   env.ROOMS.get(env.ROOMS.idFromName(code));
 
+interface Waiter {
+  match: (m: Message) => boolean;
+  resolve: (m: Message) => void;
+  reject: (error: Error) => void;
+}
+
 export class Client {
   inbox: Message[] = [];
-  closedWith: number | null = null;
+  readonly closed: Promise<number>;
+  private waiters: Waiter[] = [];
   constructor(readonly ws: WebSocket) {
     ws.accept();
     ws.addEventListener("message", (event) => {
-      this.inbox.push(JSON.parse(String(event.data)));
+      const message: Message = JSON.parse(String(event.data));
+      this.inbox.push(message);
+      this.waiters = this.waiters.filter((waiter) => {
+        if (!waiter.match(message)) return true;
+        waiter.resolve(message);
+        return false;
+      });
     });
-    ws.addEventListener("close", (event) => {
-      this.closedWith = event.code;
+    this.closed = new Promise((resolve) => {
+      ws.addEventListener("close", (event) => {
+        for (const waiter of this.waiters)
+          waiter.reject(
+            new Error(
+              `closed ${event.code}; got ${JSON.stringify(this.inbox)}`,
+            ),
+          );
+        this.waiters = [];
+        resolve(event.code);
+      });
     });
   }
   send(value: unknown) {
     this.ws.send(JSON.stringify(value));
   }
-  // The newest message that matches, waiting up to 3 s for it to arrive.
-  // It counts polls, since a test may hold Date still.
-  async next(match: (m: Message) => boolean) {
-    for (let poll = 0; poll < 150; poll += 1) {
-      const found = this.inbox.findLast(match);
-      if (found) return found;
-      await new Promise((resolve) => setTimeout(resolve, 20));
-    }
-    throw new Error(`no matching message; got ${JSON.stringify(this.inbox)}`);
+  // The newest message that matches, or the next one to arrive.
+  next(match: (m: Message) => boolean) {
+    const found = this.inbox.findLast(match);
+    if (found) return Promise.resolve(found);
+    return new Promise<Message>((resolve, reject) => {
+      this.waiters.push({ match, resolve, reject });
+    });
   }
   state(phase: string) {
     return this.next((m) => m.type === "state" && m.phase === phase);
