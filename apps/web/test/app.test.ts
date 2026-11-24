@@ -10,6 +10,7 @@ import {
   type ExistingTrack,
 } from "../src/matching";
 import { normalizeText, trackKey } from "../src/normalize";
+import { readPage, speculates } from "./html";
 
 const now = Math.floor(Date.now() / 1000);
 
@@ -550,30 +551,107 @@ describe("profile API", () => {
     expect(html).toContain('aria-current="page"');
   });
 
-  it("swaps periods in place and speculates only pages a GET leaves alone", async () => {
+  it("leads each period choice to a page holding the region it replaces", async () => {
     await seedUser();
-    const html = await (
-      await SELF.fetch("https://earshot.rising.sh/u/alice?period=week")
-    ).text();
-    expect(html).toMatch(
-      /<nav class="segmented is-stage" aria-label="Time period" data-swap="main">/,
-    );
-    expect(html).toContain('<main class="wrap shell" id="main">');
-    const rules = JSON.parse(
-      html.match(/<script type="speculationrules">(.*?)<\/script>/s)![1],
-    );
-    expect(rules.prefetch[0].eagerness).toBe("eager");
-    expect(rules.prerender[0].eagerness).toBe("moderate");
-    const [allowed, ...excluded] = rules.prerender[0].where.and;
-    expect(allowed.href_matches).toContain("/u/*");
-    for (const pattern of allowed.href_matches as string[])
-      expect(pattern).not.toMatch(
-        /room|match|auth|admin|\/play\/(?!board|artist)/,
+    const site = "https://earshot.rising.sh";
+    for (const start of ["/u/alice?period=week", "/play/board"]) {
+      const page = await readPage(
+        await (await SELF.fetch(site + start)).text(),
+        site + start,
       );
-    expect(excluded).toContainEqual({ not: { href_matches: "/u/*.*" } });
-    expect(excluded).toContainEqual({
-      not: { selector_matches: "[data-swap] a" },
-    });
+      const choices = page.links.filter((link) => link.swap !== null);
+      expect(choices.length, start).toBeGreaterThan(1);
+      for (const choice of choices) {
+        const next = await readPage(
+          await (await SELF.fetch(choice.href)).text(),
+          choice.href,
+        );
+        // The swapped-in region exists, and it marks the choice as current.
+        expect(next.ids, choice.href).toContain(choice.swap);
+        expect(
+          next.links.some(
+            (link) =>
+              link.swap !== null && link.href === choice.href && link.current,
+          ),
+          choice.href,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("speculates only links whose GET leaves the database as it was", async () => {
+    await seedUser();
+    const session = `sess_alice_${"s".repeat(30)}`;
+    const hash = new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(session)),
+    );
+    await env.DB.prepare(
+      "INSERT INTO sessions (hash, user_id, expires_at) VALUES (?1, 1, ?2)",
+    )
+      .bind(hash, now + 86400)
+      .run();
+    const site = "https://earshot.rising.sh";
+    const get = (url: string, signedIn: boolean) =>
+      SELF.fetch(url, {
+        headers: signedIn ? { cookie: `__Host-session=${session}` } : {},
+        redirect: "manual",
+      });
+    const dump = async () => {
+      const { results: tables } = await env.DB.prepare(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%'",
+      ).all<{ name: string }>();
+      const rows: Record<string, unknown[]> = {};
+      for (const { name } of tables)
+        rows[name] = (
+          await env.DB.prepare(`SELECT * FROM "${name}"`).all()
+        ).results;
+      return rows;
+    };
+
+    // A visitor signed out sees the sign-in links, a member the account ones.
+    const visits = [
+      {
+        signedIn: true,
+        paths: [
+          "/",
+          "/u/alice",
+          "/play/board",
+          "/groups",
+          "/friends",
+          "/settings",
+        ],
+      },
+      { signedIn: false, paths: ["/", "/sign-in", "/u/alice", "/play/board"] },
+    ];
+    const speculated = new Map<string, boolean>();
+    for (const { signedIn, paths } of visits)
+      for (const path of paths) {
+        const page = await readPage(
+          await (await get(site + path, signedIn)).text(),
+          site + path,
+        );
+        const rules = page.speculation!;
+        for (const link of page.links) {
+          if (new URL(link.href).origin !== site) continue;
+          if (
+            [...rules.prefetch!, ...rules.prerender!].some((rule) =>
+              speculates(rule.where, link),
+            )
+          )
+            speculated.set(
+              `${signedIn ? "member" : "visitor"} ${link.href}`,
+              signedIn,
+            );
+        }
+      }
+    expect([...speculated.keys()]).toContain(`member ${site}/u/alice`);
+    for (const [key, signedIn] of speculated) {
+      const url = key.slice(key.indexOf(" ") + 1);
+      const before = await dump();
+      const response = await get(url, signedIn);
+      expect(response.headers.get("set-cookie"), key).toBeNull();
+      expect(await dump(), key).toEqual(before);
+    }
   });
 
   it("pins the snapshot JSON for a fixed set of plays", async () => {
