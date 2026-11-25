@@ -8,6 +8,13 @@
 // same buttons, so nothing reflows. Continue paints the next question from
 // the copy /prepare sent during the reveal, while /next serves that round.
 import { roundSeconds, scoreFor } from "../src/play/game/rules";
+import {
+  canSetVolume,
+  levelOf,
+  measureClip,
+  playerVolume,
+  savePlayerVolume,
+} from "./level";
 import { clipWave, prefetchWave } from "./wave";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
@@ -18,35 +25,34 @@ const show = (el: HTMLElement, on: boolean) => {
 
 let audio = $<HTMLAudioElement>("clip");
 
-// The page can set clip volume everywhere except iOS, where setting it is
-// silently ignored; the slider stays hidden there.
-const volumeProbe = document.createElement("audio");
-volumeProbe.volume = 0.5;
-const canSetVolume = volumeProbe.volume !== 1;
-const volumeKey = "earshot-volume";
-const savedVolume = localStorage.getItem(volumeKey);
-const clipVolume = savedVolume === null ? 0.6 : Number(savedVolume) / 100;
-
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const roundMs = roundSeconds * 1000;
 
-// The fade each media element is running; a newer fade or a play bumps it,
-// and a frame of an older fade then stops.
-const fades = new WeakMap<HTMLMediaElement, number>();
+const levelFor = (media: HTMLMediaElement) =>
+  levelOf(media.currentSrc || media.src);
 
-// A clip never cuts off: it fades out, then pauses; `discard` then removes
-// an element swap parked in the body. iOS ignores the volume, so there it
-// stops at once.
+// The fade each media element is running; a newer fade or a play bumps it,
+// and a frame of an older fade then stops. A clip in `fading` counts as
+// paused: the player asked it to stop.
+const fades = new WeakMap<HTMLMediaElement, number>();
+const fading = new WeakSet<HTMLMediaElement>();
+
+// A clip never cuts off: it fades out, then pauses and goes back to its
+// level, whatever volume the fade started from; `discard` then removes an
+// element swap parked in the body. iOS ignores the volume, so there it stops
+// at once.
 function fadeOut(media: HTMLMediaElement | null, ms = 600, discard = false) {
   if (!media || media.paused) return;
+  const id = (fades.get(media) ?? 0) + 1;
+  fades.set(media, id);
   if (!canSetVolume || reducedMotion) {
     media.pause();
     if (discard) media.remove();
     return;
   }
+  fading.add(media);
+  syncIcon();
   const from = media.volume;
-  const id = (fades.get(media) ?? 0) + 1;
-  fades.set(media, id);
   const t0 = performance.now();
   const step = (t: number) => {
     if (fades.get(media) !== id) return;
@@ -55,16 +61,23 @@ function fadeOut(media: HTMLMediaElement | null, ms = 600, discard = false) {
     media.volume = from * (1 - k);
     if (k < 1) requestAnimationFrame(step);
     else {
+      fading.delete(media);
       media.pause();
-      media.volume = from;
+      media.volume = levelFor(media);
       if (discard) media.remove();
     }
   };
   requestAnimationFrame(step);
 }
-// Playing again cancels a fade in progress.
+
+// Playing again cancels a fade in progress at the clip's full level. A clip
+// that faded out at its end starts over.
 function playClip(media: HTMLMediaElement) {
   fades.set(media, (fades.get(media) ?? 0) + 1);
+  fading.delete(media);
+  if (media.duration - media.currentTime < 0.8) media.currentTime = 0;
+  media.volume = levelFor(media);
+  syncIcon();
   return media.play();
 }
 
@@ -98,12 +111,13 @@ async function post(url: string, body: FormData) {
 }
 
 // The icon follows the media element's real state through its events, never
-// a guess from play() resolving. `hidden` is set as an attribute because the
-// icons are SVG, where the .hidden property does not reflect.
+// a guess from play() resolving; a clip fading out already shows play.
+// `hidden` is set as an attribute because the icons are SVG, where the
+// .hidden property does not reflect.
 function syncIcon() {
   const toggle = $("clip-toggle");
   if (!toggle || !audio) return;
-  const playing = !audio.paused && !audio.ended;
+  const playing = !audio.paused && !audio.ended && !fading.has(audio);
   toggle.querySelector(".i-play")?.toggleAttribute("hidden", playing);
   toggle.querySelector(".i-pause")?.toggleAttribute("hidden", !playing);
   toggle.classList.toggle("needs-click", false);
@@ -143,17 +157,15 @@ function wireVolume() {
   wireMute();
   const input = $<HTMLInputElement>("clip-volume");
   if (!input) return;
-  if (audio) audio.volume = clipVolume;
   if (!canSetVolume) {
     input.hidden = true;
     return;
   }
   input.hidden = false;
-  input.value = String(Math.round(clipVolume * 100));
+  input.value = String(Math.round(playerVolume() * 100));
   input.oninput = () => {
-    const v = Number(input.value);
-    if (audio) audio.volume = v / 100;
-    localStorage.setItem(volumeKey, String(v));
+    savePlayerVolume(Number(input.value));
+    if (audio && !fading.has(audio)) audio.volume = levelFor(audio);
   };
 }
 
@@ -236,6 +248,11 @@ function wirePlayer(round: HTMLElement) {
   const src = round.dataset.src ?? "";
   if (media.getAttribute("src") !== src) media.src = src;
   wireVolume();
+  // A clip /prepare fetched is measured already; another one steps to its
+  // level once the measure lands.
+  measureClip(src).then(() => {
+    if (!fading.has(media)) media.volume = levelFor(media);
+  });
   clipWave(media, round.querySelector<HTMLElement>(".player-wave"));
   for (const event of ["play", "playing", "pause", "ended"])
     media.addEventListener(event, syncIcon);
@@ -247,11 +264,13 @@ function wirePlayer(round: HTMLElement) {
     setLoading(false);
     toggle.classList.add("needs-click");
   };
+  // A tap acts on what the player hears: a clip fading out plays again.
   toggle.onclick = () => {
-    if (media.paused) playClip(media).catch(blocked);
+    if (media.paused || fading.has(media)) playClip(media).catch(blocked);
     else fadeOut(media, 250);
   };
   media.addEventListener("timeupdate", () => {
+    if (media.paused || fading.has(media)) return;
     if (media.duration - media.currentTime < 0.8) fadeOut(media, 700);
   });
   playClip(media).catch(blocked);

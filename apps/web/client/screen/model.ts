@@ -7,6 +7,7 @@ import type {
   ServerMessage,
 } from "../../src/play/room/protocol";
 import { roundSeconds } from "../../src/play/game/rules";
+import { levelOf, measureClip } from "../level";
 import { clipWave } from "../wave";
 
 export const roundMs = roundSeconds * 1000;
@@ -161,8 +162,12 @@ export function createScreen(socket: {
     const media = audio;
     const live = s.phase === "playing";
     if (live && s.clip && media && playing !== s.clip) {
-      playing = s.clip;
-      media.src = s.clip;
+      const clip = s.clip;
+      playing = clip;
+      media.src = clip;
+      measureClip(clip).then(() => {
+        if (playing === clip) media.volume = levelOf(clip, 1);
+      });
     }
     // Like the phones, the screen tells the room once the clip can play;
     // the round starts on the last report or the server's timeout.
@@ -178,7 +183,9 @@ export function createScreen(socket: {
       wantsSound = true;
       // The clip starts on the server's stamp, the same moment the players'
       // phones open their answers, so speed points stay fair.
+      // The TV has no slider, so it levels the clip at full volume.
       const begin = () => {
+        media.volume = levelOf(s.clip!, 1);
         media.play().catch(() => {
           blocked = true;
           syncSound();
