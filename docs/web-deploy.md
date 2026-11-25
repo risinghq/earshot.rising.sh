@@ -257,42 +257,36 @@ OAuth app: the token lives hashed in the `tokens` table against the user's
 ## Take payments for Earshot+
 
 A $5 one-time payment upgrades a user to the `paid` tier, which unlocks the
-intro clip mode. Stripe sells it through a Payment Link and tells the Worker
-about the payment with a webhook. No Stripe library runs on the Worker: the
-webhook signature is checked with Web Crypto.
+intro clip mode. Polar sells it through a checkout link and tells the Worker
+about the payment with a webhook. No Polar library runs on the Worker: the
+Standard Webhooks signature is checked with Web Crypto.
 
-In the [Stripe dashboard](https://dashboard.stripe.com/), create a product with
-a one-time price of $5, then create a **Payment Link** for it. Under **After
-payment → Confirmation page**, set the redirect to
+In the [Polar dashboard](https://polar.sh/), create a product with a one-time
+price of $5, then create a **checkout link** for it and set its success URL to
 `https://earshot.rising.sh/settings`. Copy the link's URL and store it, from
 `apps/web/`:
 
 ```sh
-npx wrangler secret put STRIPE_PAYMENT_LINK
+npx wrangler secret put POLAR_CHECKOUT_LINK
 ```
 
-The settings page reads the link from `STRIPE_PAYMENT_LINK` and appends
-`?client_reference_id=<user id>`, which Stripe copies onto the checkout session.
+The settings page reads the link from `POLAR_CHECKOUT_LINK` and appends
+`?reference_id=<user id>`. Polar stores the reference in the checkout's metadata
+and copies it onto the order.
 
-Store the price's id (`price_...`) and the secret key under **Developers → API
-keys**:
+Under **Settings → Webhooks**, add an endpoint pointing at
+`https://earshot.rising.sh/billing/webhook` and subscribe it to `order.paid` and
+`order.refunded`. Copy the endpoint's signing secret (`whsec_...`) and store it:
 
 ```sh
-npx wrangler secret put STRIPE_PRICE_ID
-npx wrangler secret put STRIPE_SECRET_KEY
+npx wrangler secret put POLAR_WEBHOOK_SECRET
 ```
 
-Under **Developers → Webhooks**, add an endpoint pointing at
-`https://earshot.rising.sh/billing/webhook` and subscribe it to
-`checkout.session.completed` and `checkout.session.async_payment_succeeded`.
-Copy the endpoint's signing secret (`whsec_...`) and store it:
-
-```sh
-npx wrangler secret put STRIPE_WEBHOOK_SECRET
-```
-
-The webhook marks the `client_reference_id` user as `paid`. An operator can also
-grant or revoke the tier by hand on `/admin/users`.
+The webhook reads the user id from the order's `metadata.reference_id`. It marks
+that user as `paid` on `order.paid` and revokes the tier on `order.refunded`.
+The Worker checks the signature with the Standard Webhooks scheme, which Polar
+uses for every secret created since 8 September 2026. An operator can also grant
+or revoke the tier by hand on `/admin/users`.
 
 Intro clips come from the antra fetch pipeline. The Worker needs its base URL
 and credentials, and a clip length in seconds (10 by default):
@@ -312,13 +306,9 @@ For local development put the same names in `apps/web/.dev.vars`, and do not
 commit that file:
 
 ```sh
-STRIPE_PAYMENT_LINK=https://buy.stripe.com/test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+POLAR_CHECKOUT_LINK=https://polar.sh/checkout/test_...
+POLAR_WEBHOOK_SECRET=whsec_...
 ANTRA_BASE=https://antra.example
 ANTRA_USERNAME=name
 ANTRA_PASSWORD=password
 ```
-
-`stripe listen --forward-to localhost:8787/billing/webhook` from the
-[Stripe CLI](https://docs.stripe.com/stripe-cli) forwards live test events and
-prints the `whsec_` secret `.dev.vars` needs.
