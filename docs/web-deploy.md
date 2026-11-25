@@ -316,9 +316,9 @@ npx @polar-sh/cli auth login --sandbox
 npx @polar-sh/cli webhook listen http://localhost:8787/billing/webhook
 ```
 
-The forwarder prints its own signing secret. Put it in `apps/web/.dev.vars`
-with the sandbox checkout link and the antra credentials, and do not commit
-that file:
+The forwarder prints its own signing secret. Put it in `apps/web/.dev.vars` with
+the sandbox checkout link and the antra credentials, and do not commit that
+file:
 
 ```sh
 POLAR_CHECKOUT_LINK=https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_.../redirect
