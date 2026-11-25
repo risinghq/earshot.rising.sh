@@ -10,7 +10,7 @@ license-file.workspace = true
 repository.workspace = true
 homepage.workspace = true
 documentation = "https://docs.rs/music-stats"
-readme = "../../readme.md"
+readme = "../../docs/music-stats.md"
 include = ["src/**", "Cargo.toml"]
 
 [dependencies]
