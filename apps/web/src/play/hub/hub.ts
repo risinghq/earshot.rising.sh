@@ -1,6 +1,7 @@
 import { database } from "../../platform/db";
 import type { Env } from "../../env";
 import { catalog, listCategories, type Category } from "../catalog/catalog";
+import { readCachedCategory } from "../catalog/cache";
 import { poolEras } from "../catalog/pool";
 import type { Candidate } from "../catalog/sources";
 
@@ -34,10 +35,7 @@ async function factsOf(
       return { eras: poolEras(tracks), covers: distinctCovers(tracks) };
     }
     if (category.feed === "deezer_chart" || category.feed === "apple_chart") {
-      const cached = await env.CACHE.get<Candidate[]>(
-        `play:cat:${category.slug}`,
-        "json",
-      );
+      const cached = await readCachedCategory(env, category.slug);
       return { eras: [], covers: distinctCovers(cached ?? []) };
     }
     return { eras: [], covers: [] };
@@ -51,8 +49,11 @@ export interface HubTiles {
   facts: Record<string, TileFacts>;
 }
 
-export const hubTilesKey = "play:hub";
+const hubTilesKey = "play:hub";
 const hubTilesTtlSeconds = 600;
+
+export const forgetHubTiles = (env: Env) =>
+  env.CACHE.delete(hubTilesKey).catch(() => undefined);
 
 // The tiles' facts read every category's whole pool to keep four covers and
 // a few eras, so the hub keeps the result as one small entry. A pool refresh

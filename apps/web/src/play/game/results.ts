@@ -39,8 +39,27 @@ export async function recordResults(env: Env, rows: ResultRow[]) {
   const categories = new Set(rows.map((row) => row.category));
   await Promise.all(
     [...categories].map((category) =>
-      env.CACHE.delete(`play:catboard:${category}`).catch(() => undefined),
+      env.CACHE.delete(categoryBoardKey(category)).catch(() => undefined),
     ),
+  );
+}
+
+const boardKey = (period: BoardPeriod) => `play:board:${period}`;
+const categoryBoardKey = (slug: string) => `play:catboard:${slug}`;
+
+// Hiding or showing a player changes every board they appear on.
+export async function forgetBoardsOf(env: Env, userId: number) {
+  const played = await database(env.DB)
+    .selectDistinct({ category: t.gameResults.category })
+    .from(t.gameResults)
+    .where(eq(t.gameResults.userId, userId));
+  const keys = [
+    boardKey("week"),
+    boardKey("all"),
+    ...played.map((row) => categoryBoardKey(row.category)),
+  ];
+  await Promise.all(
+    keys.map((key) => env.CACHE.delete(key).catch(() => undefined)),
   );
 }
 
@@ -103,7 +122,7 @@ const boardTtlSeconds = 300;
 const listedPlayer = and(eq(t.users.isPublic, 1), eq(t.users.adminHidden, 0));
 
 export async function readBoard(env: Env, period: BoardPeriod) {
-  const key = `play:board:${period}`;
+  const key = boardKey(period);
   const cached = await env.CACHE.get<BoardEntry[]>(key, "json").catch(
     () => null,
   );
@@ -138,7 +157,7 @@ export const categoryBoardSize = 10;
 // Each player appears once with the best score they set in the window, so a
 // category board is a list of people, not of games.
 export async function readCategoryBoard(env: Env, slug: string) {
-  const key = `play:catboard:${slug}`;
+  const key = categoryBoardKey(slug);
   const cached = await env.CACHE.get<CategoryBoardEntry[]>(key, "json").catch(
     () => null,
   );
