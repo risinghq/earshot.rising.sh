@@ -41,7 +41,7 @@ export interface RoomPorts {
   background(work: Promise<unknown>): void;
   newId(): string;
   newSecret(): string;
-  preview(candidate: Candidate): Promise<Preview | null>;
+  preview(candidate: Candidate, intro: boolean): Promise<Preview | null>;
   category(slug: string): Promise<Category | null>;
   recordGameStart(start: GameStart, nowSec: number): Promise<void>;
   recordOutcomes(rows: Outcome[], nowSec: number): Promise<void>;
@@ -368,7 +368,10 @@ export class RoomHost {
     ) {
       let preview;
       try {
-        preview = await this.ports.preview(s.candidates[index]);
+        preview = await this.ports.preview(
+          s.candidates[index],
+          s.clip === "intro",
+        );
       } catch (error) {
         if (!(error instanceof QuotaError)) continue;
         // Stamped after the lookup, so a slow answer cannot leave a retry
@@ -392,7 +395,7 @@ export class RoomHost {
     const index = s.round.index;
     this.ports.background(
       this.ports
-        .preview(s.candidates[index])
+        .preview(s.candidates[index], s.clip === "intro")
         .then((preview) => {
           // The lookup may resolve after the round moved on; an index that
           // no longer matches must not overwrite the new clip.

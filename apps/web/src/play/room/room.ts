@@ -3,7 +3,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { base64url } from "../../account/auth";
 import type { Env } from "../../env";
-import { candidatePreview } from "../game/quiz";
+import { roundClip } from "../game/clip";
 import { readCategoryBoard, recordResults } from "../game/results";
 import {
   playerKeyOf,
@@ -100,7 +100,10 @@ export class Room extends DurableObject<Env> {
       background: (work) => ctx.waitUntil(work),
       newId,
       newSecret: newRoomSecret,
-      preview: candidatePreview,
+      preview: (candidate, intro) =>
+        roundClip(env, candidate, intro ? "intro" : "preview", (work) =>
+          ctx.waitUntil(work),
+        ),
       category: (slug) => getCategory(env, slug),
       recordGameStart: (start, at) => recordGameStart(env, start, at),
       recordOutcomes: (rows, at) => recordOutcomes(env, rows, at),

@@ -1051,6 +1051,24 @@ list by name, and the member can leave any group.
 
 ## Guess the song
 
+A paid player's rounds can instead play the first `INTRO_SECONDS` of each track.
+A track's intro clip moves through three states, and `roundClip` in
+`src/play/game/clip.ts` is the only mover:
+
+- **Cold** — nothing in KV and no `warm_claims` row. The serve plays the Deezer
+  preview and the claimer warms the track in `waitUntil`.
+- **Warming** — a row in the `warm_claims` table marks the antra job in flight.
+  D1 is the single writer, so the `INSERT … ON CONFLICT` claim is atomic across
+  isolates and only one job is ever submitted per track. The claimer stamps a
+  random `owner` token and releases only a row carrying that token, so a worker
+  that outlives its claim cannot drop one another isolate has since taken. The
+  lease (ten minutes) is longer than the longest poll loop; a claim that
+  outlives it means the worker died and can be reclaimed. Finishing — success or
+  failure — releases the row.
+- **Ready** — the fetched mp3 sits in `CACHE` at `antra:track:{id}` and a
+  one-byte `antra:ready:{id}` marker answers the existence check without reading
+  the clip. `GET /play/clip/{id}?k=` serves the bytes behind an HMAC-signed URL.
+
 The hub at `/` starts a solo quiz: ten rounds, each a 15-second preview clip.
 The player picks a category and a difficulty, the `Mode` in
 `src/play/game/quiz.ts`:

@@ -8,6 +8,12 @@ import { notFoundPage } from "../ui/not-found";
 import type { Candidate } from "./catalog/sources";
 import { defaultMode, parseMode } from "./game/quiz";
 import {
+  introSeconds,
+  parseClipKind,
+  serveClip,
+  type ClipKind,
+} from "./game/clip";
+import {
   artistProfile,
   catalog,
   enoughTracks,
@@ -71,6 +77,7 @@ async function gameInput(
       tracks: Candidate[];
       userId: number | null;
       playerKey: string;
+      clip: ClipKind | null;
     }
   | Response
 > {
@@ -81,6 +88,9 @@ async function gameInput(
   if (slug === "" || mode === null)
     return context.text("Pick a category and a mode.", 400);
   const user = await sessionUser(context);
+  // The intro clip is a paid feature; any other post leaves it unset, which
+  // keeps the room's current choice on a category switch.
+  const clip = user?.tier === "paid" ? parseClipKind(body.clip) : null;
   // A room's switch keeps its host in the room's category picker.
   const room = context.req.param("code");
   const back = room ? `/?room=${room}&mode=${mode}` : "/";
@@ -104,6 +114,7 @@ async function gameInput(
       tracks,
       userId: user?.id ?? null,
       playerKey,
+      clip,
     };
   }
   const category = await getCategory(context.env, slug);
@@ -130,6 +141,7 @@ async function gameInput(
     tracks,
     userId: user?.id ?? null,
     playerKey: playerKeyOf(user?.id ?? null, anon),
+    clip,
   };
 }
 
@@ -145,6 +157,7 @@ playApp.post("/room", async (context) => {
     categorySlug: input.category.slug,
     categoryName: input.category.name,
     mode: input.mode,
+    clip: input.clip ?? "preview",
     candidates: input.tracks,
     creatorToken,
     players: [],
@@ -173,6 +186,7 @@ playApp.post("/room/:code/switch", async (context) => {
       categorySlug: input.category.slug,
       categoryName: input.category.name,
       mode: input.mode,
+      clip: input.clip,
       candidates: input.tracks,
     },
     body.start === "1",
@@ -499,6 +513,11 @@ export async function renderHub(context: PlayContext) {
       user,
       who: who === "room" ? "room" : "solo",
       mode: parseMode(mode) ?? defaultMode,
+      clip:
+        user?.tier === "paid"
+          ? (parseClipKind(context.req.query("clip")) ?? "preview")
+          : "preview",
+      introSeconds: introSeconds(context.env),
       forYouColdStart: cold,
       room: room !== undefined && isRoomCode(room) ? room : undefined,
     }),
@@ -521,6 +540,7 @@ playApp.post("/", async (context) => {
     input.tracks,
     input.userId,
     input.playerKey,
+    input.clip ?? "preview",
   );
   return context.redirect(`/play/${game.id}`, 303);
 });
@@ -546,6 +566,10 @@ async function after(context: PlayContext, work: Promise<unknown>) {
   else await work;
 }
 
+const background = (context: PlayContext) => (work: Promise<unknown>) => {
+  void after(context, work);
+};
+
 // The page of a game at its phase, serving the round when one is due. Game
 // chrome carries no site header, so the question and reveal pages skip the
 // session lookup; the pages that show the account still make it.
@@ -553,7 +577,7 @@ async function renderGame(context: PlayContext, game: Game) {
   const now = Date.now();
   const { preview, quota } =
     game.phase === "question"
-      ? await serveRound(context.env, game, now)
+      ? await serveRound(context.env, game, now, background(context))
       : { preview: null, quota: false };
   if (game.phase === "reveal")
     return context.html(gamePage(game, { kind: "reveal" }, now));
@@ -587,6 +611,40 @@ async function renderGame(context: PlayContext, game: Game) {
     return context.html(gamePage(game, { kind: "busy" }, now, { user }), 503);
   return context.html(gamePage(game, { kind: "error" }, now, { user }));
 }
+
+// The intro clip a paid round plays: mp3 bytes warmed into KV by the fetch
+// pipeline. The k signature proves the URL was served; a guessed deezer id
+// gets nothing.
+playApp.get("/clip/:id", async (context) => {
+  const id = Number(context.req.param("id"));
+  const bytes = Number.isInteger(id)
+    ? await serveClip(context.env, id, context.req.query("k"))
+    : null;
+  if (bytes === null) return context.text("not found", 404);
+  // Safari fetches <audio> with Range requests; without 206 it never plays.
+  const total = bytes.byteLength;
+  const headers = {
+    "content-type": "audio/mpeg",
+    "cache-control": "private, max-age=3600",
+    "accept-ranges": "bytes",
+  };
+  const range = /^bytes=(\d+)-(\d*)$/.exec(context.req.header("range") ?? "");
+  if (range) {
+    const start = Number(range[1]);
+    const end =
+      range[2] === "" ? total - 1 : Math.min(Number(range[2]), total - 1);
+    if (start > end || start >= total)
+      return context.text("range not satisfiable", 416, {
+        "content-range": `bytes */${total}`,
+      });
+    return context.body(bytes.slice(start, end + 1), 206, {
+      ...headers,
+      "content-range": `bytes ${start}-${end}/${total}`,
+      "content-length": String(end - start + 1),
+    });
+  }
+  return context.body(bytes, 200, headers);
+});
 
 playApp.get("/:id", async (context) => {
   const game = await getGame(context.env, context.req.param("id"));
@@ -634,7 +692,7 @@ playApp.post("/:id/playing", async (context) => {
 playApp.post("/:id/prepare", async (context) => {
   const game = await getGame(context.env, context.req.param("id"));
   if (game === null) return context.json({ error: "no such game" }, 404);
-  const url = await prepareNext(context.env, game);
+  const url = await prepareNext(context.env, game, background(context));
   if (url === null) return context.json({ url: null, html: null });
   const fresh = await getGame(context.env, game.id);
   const next = fresh && previewNext(fresh, Date.now());

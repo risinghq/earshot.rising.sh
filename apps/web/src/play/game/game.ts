@@ -8,7 +8,6 @@ import {
   trackKeyFor,
 } from "./outcomes";
 import {
-  candidatePreview,
   roundSeconds,
   roundsPerGame,
   poolOf,
@@ -22,6 +21,7 @@ import type { Choice, Mode, PoolEntry } from "./quiz";
 import { withFinale } from "./rating";
 import { database } from "../../platform/db";
 import { QuotaError, type Candidate, type Preview } from "../catalog/sources";
+import { roundClip, type ClipKind } from "./clip";
 
 export { matchTyped, roundSeconds, roundsPerGame, scoreFor } from "./quiz";
 export type { Mode } from "./quiz";
@@ -52,6 +52,8 @@ export interface Game {
   userId: number | null;
   playerKey: string;
   mode: Mode;
+  // Missing from a game stored before the paid intro clip existed.
+  clip?: ClipKind;
   categorySlug: string;
   categoryName: string;
   candidates: Candidate[];
@@ -86,6 +88,10 @@ export interface Game {
   resultWritten?: boolean;
 }
 
+const drop = (work: Promise<unknown>) => {
+  work.catch(() => undefined);
+};
+
 const soloGame = (env: Env, id: string) =>
   env.SOLO.get(env.SOLO.idFromName(id));
 
@@ -118,12 +124,14 @@ export async function buildGame(
   candidates: Candidate[],
   userId: number | null = null,
   playerKey = playerKeyOf(userId, null),
+  clip: ClipKind = "preview",
 ): Promise<Game> {
   const game: Game = {
     id: base64url(crypto.getRandomValues(new Uint8Array(16))),
     userId,
     playerKey,
     mode,
+    clip,
     categorySlug: category.slug,
     categoryName: category.name,
     candidates: await drawGame(env, candidates, category.slug),
@@ -172,18 +180,22 @@ export interface Served {
 
 // Skips candidates with no resolvable preview; the round is served only once
 // a preview URL exists, so the timer never runs against a dead clip.
+// A cold intro cache resolves the Deezer preview while the track warms in
+// the background, so `background` is where the warm is parked: the caller
+// hands waitUntil, a test hands a collector.
 export async function serveRound(
   env: Env,
   game: Game,
   now: number,
+  background: (work: Promise<unknown>) => void = drop,
 ): Promise<Served> {
+  const clip = (candidate: Candidate) =>
+    roundClip(env, candidate, game.clip ?? "preview", background);
   if (game.current !== null) {
     // A refresh re-resolves the preview; the round's clock keeps its first
     // servedAt, so a reload cannot buy time.
     try {
-      const preview = await candidatePreview(
-        game.candidates[game.current.index],
-      );
+      const preview = await clip(game.candidates[game.current.index]);
       return { game, preview, quota: false };
     } catch (error) {
       return {
@@ -228,7 +240,7 @@ export async function serveRound(
     const candidate = game.candidates[index];
     let preview: Preview | null;
     try {
-      preview = await candidatePreview(candidate);
+      preview = await clip(candidate);
     } catch (error) {
       if (error instanceof QuotaError) {
         game.next = held;
@@ -287,6 +299,7 @@ export async function reportPlaying(
 export async function prepareNext(
   env: Env,
   game: Game,
+  background: (work: Promise<unknown>) => void = drop,
 ): Promise<string | null> {
   if (game.phase !== "reveal") return null;
   if (game.pending !== undefined && game.pending !== null)
@@ -304,7 +317,12 @@ export async function prepareNext(
     const candidate = game.candidates[index];
     let preview: Preview | null;
     try {
-      preview = await candidatePreview(candidate);
+      preview = await roundClip(
+        env,
+        candidate,
+        game.clip ?? "preview",
+        background,
+      );
     } catch (error) {
       if (error instanceof QuotaError) return null;
       continue;

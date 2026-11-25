@@ -7,6 +7,7 @@ import { forYouSlug } from "../catalog/foryou";
 import { tileCovers, type TileFacts } from "./hub";
 import { eraLabel, eraName, erasCount, isGeneration } from "../catalog/eras";
 import { roundSeconds } from "../game/game";
+import { type ClipKind } from "../game/clip";
 import { defaultMode, type Mode } from "../game/rules";
 import { type SignedInUser } from "../../account/auth";
 
@@ -56,6 +57,7 @@ function tileForm(
   category: Category,
   target: TileTarget,
   mode: Mode,
+  clip: ClipKind,
   body: Child,
 ) {
   const room = "room" in target ? target.room : null;
@@ -73,6 +75,7 @@ function tileForm(
     >
       <input type="hidden" name="category" value={category.slug} />
       <input type="hidden" name="mode" value={mode} />
+      {clip === "intro" && <input type="hidden" name="clip" value="intro" />}
       {room !== null && <input type="hidden" name="k" value="" />}
       {body}
     </form>
@@ -87,12 +90,14 @@ function genreRow(
   facts: TileFacts,
   target: TileTarget,
   mode: Mode,
+  clip: ClipKind,
 ) {
   const by = facts.eras.some(isGeneration) ? "generation" : "decade";
   return tileForm(
     category,
     target,
     mode,
+    clip,
     <>
       <button
         class="genre-art-button"
@@ -144,6 +149,7 @@ function chartChip(
   category: Category,
   target: TileTarget,
   mode: Mode,
+  clip: ClipKind,
   user: SignedInUser | null,
 ) {
   if (category.feed === "mine" && user === null)
@@ -156,6 +162,7 @@ function chartChip(
     category,
     target,
     mode,
+    clip,
     <button
       class={category.feed === "mine" ? "chip is-quiet" : "chip"}
       type="submit"
@@ -167,11 +174,12 @@ function chartChip(
 
 // The For you card is a solo game on every "who" choice, so the setup script
 // leaves its action alone.
-function forYouCard(mode: Mode, cold: boolean) {
+function forYouCard(mode: Mode, clip: ClipKind, cold: boolean) {
   return (
     <form class="tile for-you" method="post" action="/play" data-solo>
       <input type="hidden" name="category" value={forYouSlug} />
       <input type="hidden" name="mode" value={mode} />
+      {clip === "intro" && <input type="hidden" name="clip" value="intro" />}
       <button type="submit">
         <span class="for-you-text">
           <span class="label">For you</span>
@@ -209,6 +217,8 @@ export interface HubOptions {
   user: SignedInUser | null;
   who?: PlayWho;
   mode?: Mode;
+  clip?: ClipKind;
+  introSeconds?: number;
   forYouColdStart?: boolean;
   // A room code: the hub picks that room's next category.
   room?: string;
@@ -220,6 +230,8 @@ export function hubPage({
   user,
   who = "solo",
   mode = defaultMode,
+  clip = "preview",
+  introSeconds = 10,
   forYouColdStart = true,
   room,
 }: HubOptions) {
@@ -303,6 +315,31 @@ export function hubPage({
                   ))}
                 </div>
               </fieldset>
+              {user?.tier === "paid" && (
+                <fieldset class="setup-row">
+                  <legend class="label">Clip</legend>
+                  <div class="segmented">
+                    <label>
+                      <input
+                        type="radio"
+                        name="clip"
+                        value="preview"
+                        {...(clip === "preview" ? { checked: true } : {})}
+                      />
+                      Middle {roundSeconds} s
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        name="clip"
+                        value="intro"
+                        {...(clip === "intro" ? { checked: true } : {})}
+                      />
+                      First {introSeconds} s
+                    </label>
+                  </div>
+                </fieldset>
+              )}
               <noscript>
                 <button class="pill" type="submit">
                   Apply
@@ -310,7 +347,7 @@ export function hubPage({
               </noscript>
             </form>
           </div>
-          {room === undefined && forYouCard(mode, forYouColdStart)}
+          {room === undefined && forYouCard(mode, clip, forYouColdStart)}
         </div>
         <div class="hub-lists">
           <section class="hub-section" aria-labelledby="genres-title">
@@ -328,6 +365,7 @@ export function hubPage({
                   facts[category.slug] ?? { eras: [], covers: [] },
                   target,
                   mode,
+                  clip,
                 ),
               )}
               <p class="genre-more">
@@ -346,7 +384,7 @@ export function hubPage({
                   <h3>Top 50 charts</h3>
                   <div class="chips">
                     {charts.map((category) =>
-                      chartChip(category, target, mode, user),
+                      chartChip(category, target, mode, clip, user),
                     )}
                   </div>
                 </div>

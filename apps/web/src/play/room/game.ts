@@ -21,6 +21,7 @@ import type {
   RoomState,
 } from "./protocol";
 import type { ResultRow } from "../game/results";
+import type { ClipKind } from "../game/clip";
 import type { Candidate } from "../catalog/sources";
 import {
   type GameOrigin,
@@ -112,6 +113,8 @@ export interface Stored {
   categorySlug: string;
   categoryName: string;
   mode: Mode;
+  // Which clip rounds play. Missing from a room stored before it existed.
+  clip?: ClipKind;
   candidates: Candidate[];
   pool: PoolEntry[];
   creatorToken: string;
@@ -139,6 +142,8 @@ export interface RoomTarget {
   categorySlug: string;
   categoryName: string;
   mode: Mode;
+  // Null leaves the room's current clip choice alone.
+  clip?: ClipKind | null;
   candidates: Candidate[];
 }
 
@@ -192,6 +197,7 @@ export function createRoom(
     categorySlug: init.categorySlug,
     categoryName: init.categoryName,
     mode: init.mode,
+    clip: init.clip ?? "preview",
     candidates: init.candidates,
     pool: poolOf(init.candidates),
     creatorToken: init.creatorToken,
@@ -226,6 +232,7 @@ export function upgrade(s: Stored) {
   s.seededAt ??= s.lastActive;
   s.playedBy ??= 0;
   s.board ??= [];
+  s.clip ??= "preview";
   for (const player of s.players) {
     player.userId ??= null;
     player.streak ??= 0;
@@ -344,6 +351,7 @@ export function retarget(
   s.categorySlug = target.categorySlug;
   s.categoryName = target.categoryName;
   s.mode = target.mode;
+  if (target.clip != null) s.clip = target.clip;
   s.candidates = target.candidates;
   s.pool = poolOf(target.candidates);
   s.phase = "lobby";
