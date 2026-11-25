@@ -143,7 +143,7 @@ export function doneSummary(s: RoomState) {
     pips: `${right} of ${marks.length} right`,
     stats: [
       ["Correct", `${right}/${marks.length}`],
-      ["Best streak", String(best)],
+      ["Streak", String(best)],
       ["Place", many ? ordinal(place) : "—"],
     ] as const,
     save,

@@ -1532,21 +1532,35 @@ body:not(.clip-live) .now-eq i {
   grid-template-columns: repeat(3, 1fr);
   margin: 0;
 }
+/* Each stat takes its own colour: the right answers green, the streak the
+   accent, the third (fastest answer, or the room's place) the dark stage. */
 .results-stats > div {
-  background: var(--surface);
-  border: 1.5px solid var(--line);
+  background: var(--right-tint);
   border-radius: 18px;
+  color: var(--right-ink);
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
   padding: 12px 12px 14px;
 }
+.results-stats > div:nth-child(2) {
+  background: var(--accent-tint);
+  color: var(--accent-text);
+}
+.results-stats > div:nth-child(3) {
+  background: var(--stage);
+  color: var(--stage-ink);
+}
 .results-stats dt {
-  color: var(--ink-3);
   font-size: 11px;
   font-weight: var(--weight-heavy);
   letter-spacing: 0.08em;
+  opacity: 0.75;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 .results-stats dd {
   font-size: 24px;

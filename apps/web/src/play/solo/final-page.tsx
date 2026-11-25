@@ -44,7 +44,7 @@ export function finalPage(
         : `Keep your ${game.total.toLocaleString("en-US")} points`;
   const stats = [
     { label: "Correct", value: `${correct}/${game.results.length}` },
-    { label: "Best streak", value: String(bestStreak(game.results)) },
+    { label: "Streak", value: String(bestStreak(game.results)) },
     {
       label: "Fastest",
       value: fastest === Infinity ? "—" : `${(fastest / 1000).toFixed(1)} s`,
