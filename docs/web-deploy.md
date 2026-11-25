@@ -288,27 +288,55 @@ The Worker checks the signature with the Standard Webhooks scheme, which Polar
 uses for every secret created since 8 September 2026. An operator can also grant
 or revoke the tier by hand on `/admin/users`.
 
-Intro clips come from the antra fetch pipeline. The Worker needs its base URL
-and credentials, and a clip length in seconds (10 by default):
+Intro clips come from the antra fetch pipeline at `https://antra.hoshi.cfd`. The
+Worker needs its credentials:
 
 ```sh
-npx wrangler secret put ANTRA_BASE
 npx wrangler secret put ANTRA_USERNAME
 npx wrangler secret put ANTRA_PASSWORD
 ```
 
-`INTRO_SECONDS` is optional and lives under `vars` in
-[`apps/web/wrangler.jsonc`](../apps/web/wrangler.jsonc) when it differs from 10.
-The fetched mp3 sits in the `CACHE` KV for 24 hours, so only a track's first
-paid play waits on antra.
+`ANTRA_BASE` overrides the base URL. `INTRO_SECONDS` sets the clip length, 10
+seconds by default, under `vars` in
+[`apps/web/wrangler.jsonc`](../apps/web/wrangler.jsonc). The fetched mp3 sits in
+the `CACHE` KV for 24 hours, so only a track's first paid play waits on antra.
 
-For local development put the same names in `apps/web/.dev.vars`, and do not
-commit that file:
+### Test payments locally
+
+Local development takes payments in the
+[Polar sandbox](https://sandbox.polar.sh/), which charges no real money. Create
+a sandbox organization, the same $5 product and a checkout link whose success
+URL is `http://localhost:8787/settings`.
+
+Polar cannot reach `localhost`, so the Polar CLI forwards the sandbox's webhook
+events to the local Worker. Sign in to the sandbox and start the forwarder:
 
 ```sh
-POLAR_CHECKOUT_LINK=https://polar.sh/checkout/test_...
-POLAR_WEBHOOK_SECRET=whsec_...
-ANTRA_BASE=https://antra.example
+npx @polar-sh/cli auth login --sandbox
+npx @polar-sh/cli webhook listen http://localhost:8787/billing/webhook
+```
+
+The forwarder prints its own signing secret. Put it in `apps/web/.dev.vars`
+with the sandbox checkout link and the antra credentials, and do not commit
+that file:
+
+```sh
+POLAR_CHECKOUT_LINK=https://sandbox-api.polar.sh/v1/checkout-links/polar_cl_.../redirect
+POLAR_WEBHOOK_SECRET=the-secret-printed-by-webhook-listen
 ANTRA_USERNAME=name
 ANTRA_PASSWORD=password
+```
+
+The forwarder's secret has no `whsec_` prefix and signs with its UTF-8 bytes;
+the Worker accepts both forms. Run `npm run dev`, sign in, and buy Earshot+ from
+the settings page with the test card `4242 4242 4242 4242`, any future expiry
+and any CVC. Polar refuses an `example.com` email. The forwarder logs
+`order.paid 200 OK` and the user turns `paid`.
+
+To skip the checkout, send a signed event for user 1 straight through the
+forwarder:
+
+```sh
+npx @polar-sh/cli webhook trigger order.paid \
+  --override 'data.metadata={"reference_id":"1"}'
 ```
