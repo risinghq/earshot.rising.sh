@@ -3,16 +3,18 @@
 // across rounds and reloads; iOS ignores a volume the page sets, so there
 // the slider stays hidden and a fade is a stop.
 import { createSignal } from "solid-js";
+import {
+  canSetVolume,
+  levelOf,
+  measureClip,
+  playerVolume,
+  savePlayerVolume,
+} from "../level";
 
-const volumeKey = "earshot-volume";
 const muteKey = "earshot-muted";
 
 export function createClip(reducedMotion: boolean) {
-  const probe = document.createElement("audio");
-  probe.volume = 0.5;
-  const canSetVolume = probe.volume !== 1;
-  const saved = localStorage.getItem(volumeKey);
-  let volume = saved === null ? 0.6 : Number(saved) / 100;
+  let volume = playerVolume();
 
   const [playing, setPlaying] = createSignal(false);
   const [muted, setMuted] = createSignal(localStorage.getItem(muteKey) === "1");
@@ -23,15 +25,21 @@ export function createClip(reducedMotion: boolean) {
   // The clip this round plays, kept apart from src while the silent unlock
   // file holds the element.
   let url: string | undefined;
+  // The fade running bumps `fading`; `stopping` holds while one runs, and a
+  // stopping clip counts as paused.
   let fading = 0;
+  let stopping = false;
   let unlocking = false;
   // The round whose answers are open; a round that opens during the unlock
   // owns the clip.
   let roundOf = () => 0;
 
+  // The level the round's clip plays at: the player's volume times its gain.
+  const level = () => (url === undefined ? volume : levelOf(url, volume));
+
   const sync = () => {
     if (!audio) return;
-    const on = !audio.paused && !audio.ended;
+    const on = !audio.paused && !audio.ended && !stopping;
     setPlaying(on);
     if (on) setNeedsClick(false);
   };
@@ -39,14 +47,14 @@ export function createClip(reducedMotion: boolean) {
   function attach(element: HTMLAudioElement, openedRound: () => number) {
     audio = element;
     roundOf = openedRound;
-    audio.volume = volume;
+    audio.volume = level();
     audio.muted = muted();
     for (const event of ["play", "playing", "pause", "ended"])
       audio.addEventListener(event, sync);
-    // A clip never cuts off: it fades out before its end.
+    // A clip never cuts off: it fades out once before its end.
     audio.addEventListener("timeupdate", () => {
-      if (audio && audio.duration - audio.currentTime < 0.8 && !audio.paused)
-        fadeOut(700);
+      if (!audio || audio.paused || stopping) return;
+      if (audio.duration - audio.currentTime < 0.8) fadeOut(700);
     });
   }
 
@@ -58,16 +66,20 @@ export function createClip(reducedMotion: boolean) {
       element.pause();
       return;
     }
+    stopping = true;
+    sync();
+    const from = element.volume;
     const t0 = performance.now();
     const step = (t: number) => {
       if (id !== fading) return;
       // A frame's timestamp can precede t0, which would push k below 0.
       const k = Math.min(1, Math.max(0, (t - t0) / ms));
-      element.volume = volume * (1 - k);
+      element.volume = from * (1 - k);
       if (k < 1) requestAnimationFrame(step);
       else {
+        stopping = false;
         element.pause();
-        element.volume = volume;
+        element.volume = level();
       }
     };
     requestAnimationFrame(step);
@@ -76,7 +88,8 @@ export function createClip(reducedMotion: boolean) {
   function play() {
     if (!audio) return Promise.reject(new Error("no audio"));
     fading += 1;
-    audio.volume = volume;
+    stopping = false;
+    audio.volume = level();
     return audio.play();
   }
 
@@ -91,11 +104,16 @@ export function createClip(reducedMotion: boolean) {
     if (!audio || url === next) return;
     url = next;
     audio.src = next;
+    measureClip(next).then(() => {
+      if (audio && url === next && !stopping) audio.volume = level();
+    });
   }
 
   // On a screened room the clip plays on the TV, never here.
   function clear() {
     if (!audio || url === undefined) return;
+    fading += 1;
+    stopping = false;
     audio.pause();
     audio.removeAttribute("src");
     url = undefined;
@@ -142,7 +160,8 @@ export function createClip(reducedMotion: boolean) {
 
   function toggle() {
     if (!audio) return;
-    if (audio.paused)
+    // A tap acts on what the player hears: a clip fading out plays again.
+    if (audio.paused || stopping)
       play().then(
         () => setUnlocked(true),
         () => {},
@@ -152,8 +171,8 @@ export function createClip(reducedMotion: boolean) {
 
   function setVolume(percent: number) {
     volume = percent / 100;
-    if (audio) audio.volume = volume;
-    localStorage.setItem(volumeKey, String(percent));
+    if (audio && !stopping) audio.volume = level();
+    savePlayerVolume(percent);
   }
 
   function toggleMute() {

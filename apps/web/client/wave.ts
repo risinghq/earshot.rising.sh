@@ -3,18 +3,20 @@
 // sets the bars from the curves at the audio's current time. Playback never
 // passes through Web Audio, because a connected <audio> goes silent while its
 // context is suspended and iOS mutes Web Audio under the ringer switch. Until
-// the curves exist, or when anything fails, the CSS animation stays.
+// the curves exist, or when anything fails, the CSS animation stays. The same
+// decode gives the clip's overall loudness, which level.ts levels clips by.
 const rate = 11025;
 const fps = 40;
 type Band = { type: BiquadFilterType; frequency: number; Q?: number };
 type Curves = Float32Array[];
+type Analysis = { curves: Curves; loudness: number };
 
 const bands: Band[] = [
   { type: "lowpass", frequency: 220 },
   { type: "bandpass", frequency: 1000, Q: 0.8 },
   { type: "highpass", frequency: 3200 },
 ];
-const curves = new Map<string, Promise<Curves | null>>();
+const analyses = new Map<string, Promise<Analysis | null>>();
 const playable = (url: string) =>
   /^https?:/.test(url) && !url.endsWith("/silence.wav");
 
@@ -38,6 +40,30 @@ function loudness(samples: Float32Array) {
   return out;
 }
 
+// Gated RMS of the mono downmix in dB, after EBU R 128: 400 ms blocks, with
+// the blocks 10 dB under the mean dropped so a quiet intro does not pull a
+// loud song down. On previews it reads within about 2 dB of integrated LUFS.
+export function gatedLoudness(channels: Float32Array[], sampleRate: number) {
+  const length = channels[0]?.length ?? 0;
+  const block = Math.floor(sampleRate * 0.4);
+  const hop = Math.floor(block / 4);
+  const powers: number[] = [];
+  for (let start = 0; start + block <= length; start += hop) {
+    let sum = 0;
+    for (let i = start; i < start + block; i += 1) {
+      let v = 0;
+      for (const data of channels) v += data[i];
+      v /= channels.length;
+      sum += v * v;
+    }
+    if (sum / block > 1e-7) powers.push(sum / block);
+  }
+  if (!powers.length) return null;
+  const mean = powers.reduce((a, b) => a + b, 0) / powers.length;
+  const loud = powers.filter((p) => p > mean * 0.1);
+  return 10 * Math.log10(loud.reduce((a, b) => a + b, 0) / loud.length);
+}
+
 async function render(buffer: AudioBuffer, band: Band) {
   const context = new OfflineAudioContext(1, buffer.length, rate);
   const source = context.createBufferSource();
@@ -51,11 +77,22 @@ async function render(buffer: AudioBuffer, band: Band) {
   return loudness((await context.startRendering()).getChannelData(0));
 }
 
+async function analyse(buffer: AudioBuffer): Promise<Analysis | null> {
+  const channels = Array.from({ length: buffer.numberOfChannels }, (_, c) =>
+    buffer.getChannelData(c),
+  );
+  const level = gatedLoudness(channels, buffer.sampleRate);
+  if (level === null) return null;
+  const curves = await Promise.all(bands.map((band) => render(buffer, band)));
+  return { curves, loudness: level };
+}
+
 // Keyed by the URL without its query: a re-signed link to the same clip
-// reuses the curves.
-function curvesFor(url: string): Promise<Curves | null> {
+// reuses the analysis.
+function analysisFor(url: string): Promise<Analysis | null> {
+  if (!globalThis.OfflineAudioContext) return Promise.resolve(null);
   const key = url.split("?")[0];
-  let found = curves.get(key);
+  let found = analyses.get(key);
   if (!found) {
     found = fetch(url, { mode: "cors", credentials: "omit" })
       .then((response) => {
@@ -65,11 +102,16 @@ function curvesFor(url: string): Promise<Curves | null> {
       .then((bytes) =>
         new OfflineAudioContext(1, rate, rate).decodeAudioData(bytes),
       )
-      .then((buffer) => Promise.all(bands.map((band) => render(buffer, band))))
+      .then(analyse)
       .catch(() => null);
-    curves.set(key, found);
+    analyses.set(key, found);
   }
   return found;
+}
+
+export async function clipLoudness(url: string) {
+  if (!playable(url)) return null;
+  return (await analysisFor(url))?.loudness ?? null;
 }
 
 export function clipWave(
@@ -118,10 +160,10 @@ export function clipWave(
   const start = async () => {
     const url = audio.currentSrc || audio.src;
     if (!playable(url)) return stop();
-    const found = await curvesFor(url);
+    const found = await analysisFor(url);
     if (!found || audio.paused || (audio.currentSrc || audio.src) !== url)
       return;
-    current = found;
+    current = found.curves;
     wave.classList.add("is-following");
     if (frame === 0) frame = requestAnimationFrame(draw);
   };
@@ -133,10 +175,10 @@ export function clipWave(
   // Fetch while the clip loads, so the first sound already has curves.
   audio.addEventListener("loadstart", () => {
     const url = audio.currentSrc || audio.src;
-    if (playable(url)) curvesFor(url);
+    if (playable(url)) analysisFor(url);
   });
 }
 
 export function prefetchWave(url: string) {
-  if (playable(url)) curvesFor(url);
+  if (playable(url)) analysisFor(url);
 }
