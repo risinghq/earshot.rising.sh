@@ -19,6 +19,8 @@ import {
   upcomingTitles,
 } from "./quiz";
 import type { Choice, Mode, PoolEntry } from "./quiz";
+import { withFinale } from "./rating";
+import { database } from "../../platform/db";
 import { QuotaError, type Candidate, type Preview } from "../catalog/sources";
 
 export { matchTyped, roundSeconds, roundsPerGame, scoreFor } from "./quiz";
@@ -100,6 +102,15 @@ export async function putGame(env: Env, game: Game) {
   await soloGame(env, game.id).write(game);
 }
 
+// A failed difficulty lookup keeps the plain shuffle.
+function drawGame(env: Env, candidates: Candidate[], category: string) {
+  const drawn = shuffled(candidates);
+  return withFinale(database(env.DB), drawn, (track) => ({
+    key: trackKeyFor(track),
+    category: track.category ?? category,
+  })).catch(() => drawn);
+}
+
 export async function buildGame(
   env: Env,
   category: Category,
@@ -115,7 +126,7 @@ export async function buildGame(
     mode,
     categorySlug: category.slug,
     categoryName: category.name,
-    candidates: shuffled(candidates),
+    candidates: await drawGame(env, candidates, category.slug),
     pool: poolOf(candidates),
     next: 0,
     served: 0,

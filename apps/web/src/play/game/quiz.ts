@@ -21,6 +21,30 @@ export {
   type Mode,
 } from "./rules";
 
+// The finale comes from the first tracks drawn, not the whole catalog, so
+// a category does not end every game on its one biggest hit.
+export const finaleWindow = roundsPerGame + 5;
+
+// Moves the best-known track among the first drawn into the last round's
+// slot, so a game ends on a song the players likely love. Lower difficulty
+// is better known. A clip skipped earlier in the game plays it a round
+// early.
+export function finaleOrder<T>(
+  tracks: T[],
+  difficulty: (track: T) => number,
+): T[] {
+  const window = tracks.slice(0, finaleWindow);
+  if (window.length < 2) return tracks;
+  const best = window.reduce(
+    (found, track, index) =>
+      difficulty(track) < difficulty(window[found]) ? index : found,
+    0,
+  );
+  const slot = Math.min(roundsPerGame, tracks.length) - 1;
+  const rest = tracks.filter((_, index) => index !== best);
+  return [...rest.slice(0, slot), tracks[best], ...rest.slice(slot)];
+}
+
 export interface PoolEntry {
   title: string;
   artist: string;

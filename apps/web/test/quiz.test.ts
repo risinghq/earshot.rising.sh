@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  finaleOrder,
+  finaleWindow,
   maxChoices,
+  roundsPerGame,
   sampleChoices,
   upcomingTitles,
 } from "../src/play/game/quiz";
@@ -51,5 +54,35 @@ describe("upcomingTitles", () => {
     expect(next[0]).toBe("Song 5");
     expect(next).not.toContain("Song 4");
     expect(next).toHaveLength(9);
+  });
+});
+
+describe("finaleOrder", () => {
+  const known = (song: { title: string }) => Number(song.title.split(" ")[1]);
+
+  it("moves the best-known early track to the last round", () => {
+    const drawn = [5, 9, 2, 7, 8, 6, 4, 3, 1, 11, 12].map((n) =>
+      entry(`Song ${n}`),
+    );
+    const order = finaleOrder(drawn, known).map((song) => song.title);
+    expect(order[roundsPerGame - 1]).toBe("Song 1");
+    expect(order.slice(0, roundsPerGame - 1)).toEqual(
+      [5, 9, 2, 7, 8, 6, 4, 3, 11].map((n) => `Song ${n}`),
+    );
+    expect(order).toHaveLength(drawn.length);
+  });
+
+  it("leaves tracks past the window to later games", () => {
+    const order = finaleOrder(titles(30).reverse(), known);
+    expect(order[roundsPerGame - 1]!.title).toBe(`Song ${30 - finaleWindow}`);
+  });
+
+  it("ends a short game on its best-known track", () => {
+    const drawn = [entry("Song 2"), entry("Song 0"), entry("Song 3")];
+    expect(finaleOrder(drawn, known).map((song) => song.title)).toEqual([
+      "Song 2",
+      "Song 3",
+      "Song 0",
+    ]);
   });
 });

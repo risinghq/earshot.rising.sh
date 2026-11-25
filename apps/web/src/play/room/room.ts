@@ -11,7 +11,7 @@ import {
   recordOutcomes,
   trackKeyFor,
 } from "../game/outcomes";
-import { drawWeights, weightedShuffle } from "../game/rating";
+import { drawWeights, weightedShuffle, withFinale } from "../game/rating";
 import { database } from "../../platform/db";
 import { getCategory } from "../catalog/catalog";
 import { readClientMessage } from "./messages";
@@ -117,6 +117,11 @@ export class Room extends DurableObject<Env> {
         );
         return weightedShuffle(candidates, (_, index) => weights[index] ?? 1);
       },
+      finale: (candidates, category) =>
+        withFinale(database(env.DB), candidates, (track) => ({
+          key: trackKeyFor(track),
+          category,
+        })),
       recordResults: (rows) => recordResults(env, rows),
       readBoard: (slug) => readCategoryBoard(env, slug),
     };

@@ -81,6 +81,8 @@ function world(init: Partial<RoomInit> = {}) {
     }),
     draw: null as Candidate[] | null,
     draws: [] as { players: number; candidates: number; mode: Mode }[],
+    finale: (candidates: Candidate[]) => candidates,
+    finales: [] as number[],
     failOutcomes: false,
   };
   const ports: RoomPorts = {
@@ -115,6 +117,10 @@ function world(init: Partial<RoomInit> = {}) {
         mode,
       });
       return w.draw;
+    },
+    finale: async (candidates) => {
+      w.finales.push(candidates.length);
+      return w.finale(candidates);
     },
     recordResults: async (rows) => {
       w.results.push(...rows);
@@ -225,6 +231,28 @@ describe("a game", () => {
     expect(room.w.saved!.candidates.map((song) => song.title)).toEqual(
       order.map((song) => song.title),
     );
+  });
+
+  it("plays the order the finale gives after the draw", async () => {
+    const room = world();
+    room.w.draw = songs(10);
+    room.w.finale = (candidates) => [...candidates.slice(1), candidates[0]];
+    const ann = await room.seat("Ann", "host");
+    await room.send(ann, { type: "start" });
+    expect(room.w.finales).toEqual([10]);
+    expect(room.w.saved!.candidates.at(-1)!.title).toBe("Song 0");
+  });
+
+  it("keeps the drawn order when the finale lookup fails", async () => {
+    const room = world();
+    room.w.draw = songs(10);
+    room.w.finale = () => {
+      throw new Error("D1 refused");
+    };
+    const ann = await room.seat("Ann", "host");
+    await room.send(ann, { type: "start" });
+    expect(room.w.saved!.candidates[0].title).toBe("Song 0");
+    expect(ann.state).toMatchObject({ phase: "playing" });
   });
 
   it("keeps the plain shuffle for a match", async () => {
