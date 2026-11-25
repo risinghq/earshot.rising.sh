@@ -4,99 +4,108 @@ import * as v from "valibot";
 import type { Env } from "../env";
 import { database, t } from "../platform/db";
 
-// Stripe signs the webhook body as `t.v1` where t is the timestamp in the
-// Stripe-Signature header and v1 is its HMAC-SHA256 hex. A signature older
-// than this is refused, so a recorded request cannot be replayed later.
+// Polar follows the Standard Webhooks scheme: the signature covers
+// `id.timestamp.body` and arrives in webhook-signature as space-separated
+// `v1,<base64-hmac>` pairs. A signature older than this is refused, so a
+// recorded request cannot be replayed later.
 const toleranceSeconds = 300;
 
-const hex = (bytes: ArrayBuffer) =>
-  [...new Uint8Array(bytes)]
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+const b64 = (bytes: ArrayBuffer | Uint8Array) =>
+  btoa(String.fromCharCode(...new Uint8Array(bytes)));
 
-export async function stripeSignatureOk(
+export async function polarSignatureOk(
   secret: string,
-  header: string | undefined,
+  headers: { id?: string; timestamp?: string; signature?: string },
   body: string,
   nowSeconds: number,
 ) {
-  if (header === undefined) return false;
-  const parts = new Map(
-    header
-      .split(",")
-      .map((part) => part.split("=", 2) as [string, string])
-      .filter(([key]) => key !== ""),
-  );
-  const stamp = Number(parts.get("t"));
-  const signatures = header
-    .split(",")
-    .filter((part) => part.startsWith("v1="))
-    .map((part) => part.slice(3));
-  if (!Number.isInteger(stamp) || signatures.length === 0) return false;
+  const { id, timestamp, signature } = headers;
+  if (!id || !timestamp || !signature) return false;
+  const stamp = Number(timestamp);
+  if (!Number.isInteger(stamp)) return false;
   if (Math.abs(nowSeconds - stamp) > toleranceSeconds) return false;
+  const offered = signature
+    .split(" ")
+    .map((part) => part.split(",", 2))
+    .filter(([version]) => version === "v1")
+    .map(([, value]) => value);
+  if (offered.length === 0) return false;
+  const raw = secret.startsWith("whsec_") ? secret.slice(6) : secret;
+  let keyBytes: Uint8Array;
+  try {
+    keyBytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
+  } catch {
+    return false;
+  }
   const key = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(secret),
+    keyBytes,
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
   );
-  const expected = hex(
+  const expected = b64(
     await crypto.subtle.sign(
       "HMAC",
       key,
-      new TextEncoder().encode(`${stamp}.${body}`),
+      new TextEncoder().encode(`${id}.${stamp}.${body}`),
     ),
   );
-  return signatures.some((signature) => signature === expected);
+  return offered.some((value) => value === expected);
 }
 
-const StripeEvent = v.object({
+// The settings page opens the checkout link with `?reference_id=<user id>`.
+// Polar stores that in the checkout's metadata and copies it onto the order.
+const PolarEvent = v.object({
   type: v.string(),
   data: v.object({
-    object: v.object({
-      client_reference_id: v.nullish(v.string()),
-      payment_status: v.nullish(v.string()),
-      metadata: v.nullish(v.object({ user_id: v.nullish(v.string()) })),
-    }),
+    metadata: v.nullish(
+      v.object({ reference_id: v.nullish(v.union([v.string(), v.number()])) }),
+    ),
   }),
 });
 
 export const billingApp = new Hono<{ Bindings: Env }>();
 
-// Stripe posts here; the signature, not a session, proves the event. A bad
-// or unsigned body gets a 400 so Stripe retries with the real one later.
+// Polar posts here; the signature, not a session, proves the event. A bad or
+// unsigned body gets a 403 so Polar retries with the real one later.
 billingApp.post("/webhook", async (context) => {
-  const secret = context.env.STRIPE_WEBHOOK_SECRET;
+  const secret = context.env.POLAR_WEBHOOK_SECRET;
   if (!secret) return context.text("billing is not configured", 503);
   const body = await context.req.text();
-  const ok = await stripeSignatureOk(
+  const ok = await polarSignatureOk(
     secret,
-    context.req.header("stripe-signature"),
+    {
+      id: context.req.header("webhook-id"),
+      timestamp: context.req.header("webhook-timestamp"),
+      signature: context.req.header("webhook-signature"),
+    },
     body,
     Math.floor(Date.now() / 1000),
   );
-  if (!ok) return context.text("bad signature", 400);
-  const parsed = v.safeParse(StripeEvent, JSON.parse(body));
+  if (!ok) return context.text("bad signature", 403);
+  let parsed: ReturnType<typeof v.safeParse<typeof PolarEvent>>;
+  try {
+    parsed = v.safeParse(PolarEvent, JSON.parse(body));
+  } catch {
+    return context.text("bad event", 400);
+  }
   if (!parsed.success) return context.text("bad event", 400);
   const event = parsed.output;
-  // checkout.session.completed also fires for delayed methods while the
-  // payment is still 'unpaid'; async_payment_succeeded arrives when it
-  // settles. Only a settled payment earns the tier.
-  if (
-    (event.type === "checkout.session.completed" ||
-      event.type === "checkout.session.async_payment_succeeded") &&
-    event.data.object.payment_status === "paid"
-  ) {
-    const ref =
-      event.data.object.client_reference_id ??
-      event.data.object.metadata?.user_id;
-    const userId = Number(ref);
-    if (Number.isInteger(userId) && userId > 0)
-      await database(context.env.DB)
-        .update(t.users)
-        .set({ tier: "paid" })
-        .where(eq(t.users.id, userId));
-  }
+  const userId = Number(event.data.metadata?.reference_id);
+  if (!Number.isInteger(userId) || userId <= 0) return context.text("ok");
+  // order.paid only fires once the payment settles; order.refunded takes the
+  // tier back. Other events are acknowledged and ignored.
+  const tier =
+    event.type === "order.paid"
+      ? "paid"
+      : event.type === "order.refunded"
+        ? "free"
+        : null;
+  if (tier !== null)
+    await database(context.env.DB)
+      .update(t.users)
+      .set({ tier })
+      .where(eq(t.users.id, userId));
   return context.text("ok");
 });

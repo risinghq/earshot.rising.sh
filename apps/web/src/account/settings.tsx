@@ -429,7 +429,7 @@ function settingsPage(
                     {user.tier !== "paid" && paymentLink !== undefined && (
                       <a
                         class="btn"
-                        href={`${paymentLink}?client_reference_id=${user.id}`}
+                        href={`${paymentLink}?reference_id=${user.id}`}
                       >
                         Get Earshot+
                       </a>
@@ -651,7 +651,7 @@ function render(
       data.logins,
       options,
       new URL(context.req.url).origin,
-      context.env.STRIPE_PAYMENT_LINK,
+      context.env.POLAR_CHECKOUT_LINK,
     ),
     status,
   );
