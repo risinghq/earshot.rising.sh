@@ -30,12 +30,17 @@ export async function polarSignatureOk(
     .filter(([version]) => version === "v1")
     .map(([, value]) => value);
   if (offered.length === 0) return false;
-  const raw = secret.startsWith("whsec_") ? secret.slice(6) : secret;
+  // A dashboard secret is `whsec_` plus the base64 key. `polar webhook
+  // listen` prints a bare secret and signs with its UTF-8 bytes.
   let keyBytes: Uint8Array;
-  try {
-    keyBytes = Uint8Array.from(atob(raw), (c) => c.charCodeAt(0));
-  } catch {
-    return false;
+  if (secret.startsWith("whsec_")) {
+    try {
+      keyBytes = Uint8Array.from(atob(secret.slice(6)), (c) => c.charCodeAt(0));
+    } catch {
+      return false;
+    }
+  } else {
+    keyBytes = new TextEncoder().encode(secret);
   }
   const key = await crypto.subtle.importKey(
     "raw",

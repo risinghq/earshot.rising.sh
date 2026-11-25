@@ -55,14 +55,22 @@ const b64 = (bytes: ArrayBuffer) =>
 
 const webhookId = "msg_test";
 
-async function polarPost(body: string, sign = true) {
+// The secret the Worker holds, and the key bytes Polar signs with.
+type Signer = { secret: string; key: Uint8Array };
+const dashboardSigner: Signer = {
+  secret: webhookSecret,
+  key: Uint8Array.from(atob(webhookSecret.slice(6)), (c) => c.charCodeAt(0)),
+};
+
+async function polarPost(
+  body: string,
+  sign = true,
+  signer: Signer = dashboardSigner,
+) {
   const stamp = now;
-  const keyBytes = Uint8Array.from(atob(webhookSecret.slice(6)), (c) =>
-    c.charCodeAt(0),
-  );
   const key = await crypto.subtle.importKey(
     "raw",
-    keyBytes,
+    signer.key,
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -86,7 +94,7 @@ async function polarPost(body: string, sign = true) {
         : {},
       body,
     }),
-    testEnv(),
+    testEnv({ POLAR_WEBHOOK_SECRET: signer.secret }),
   );
 }
 
@@ -105,6 +113,17 @@ describe("polar webhook", () => {
   it("marks the referenced user paid on order.paid", async () => {
     await seedUser();
     const response = await polarPost(paidEvent("1"));
+    expect(response.status).toBe(200);
+    expect(await tierOf(1)).toBe("paid");
+  });
+
+  it("accepts the bare secret printed by polar webhook listen", async () => {
+    await seedUser();
+    const secret = "0123456789abcdef0123456789abcdef";
+    const response = await polarPost(paidEvent("1"), true, {
+      secret,
+      key: new TextEncoder().encode(secret),
+    });
     expect(response.status).toBe(200);
     expect(await tierOf(1)).toBe("paid");
   });
