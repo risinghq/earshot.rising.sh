@@ -741,7 +741,7 @@ function reportsPage(user: SignedInUser, reports: ReportRow[]) {
 
 type UserRow = Pick<
   typeof t.users.$inferSelect,
-  "id" | "name" | "githubId" | "isPublic" | "adminHidden"
+  "id" | "name" | "githubId" | "isPublic" | "adminHidden" | "tier"
 >;
 
 function usersPage(
@@ -802,7 +802,21 @@ function usersPage(
                 {row.adminHidden === 1 && (
                   <span class="badge danger">hidden</span>
                 )}
+                {row.tier === "paid" && <span class="badge accent">paid</span>}
               </span>
+              <form method="post" action={`/admin/users/${row.id}/tier`}>
+                <input
+                  type="hidden"
+                  name="tier"
+                  value={row.tier === "paid" ? "free" : "paid"}
+                />
+                <PillButton
+                  variant={row.tier === "paid" ? "ghost" : "outline"}
+                  small
+                >
+                  {row.tier === "paid" ? "Revoke paid" : "Grant paid"}
+                </PillButton>
+              </form>
               <form
                 method="post"
                 action="/admin/users/hide"
@@ -1138,6 +1152,7 @@ adminApp.get("/users", async (context) => {
         githubId: t.users.githubId,
         isPublic: t.users.isPublic,
         adminHidden: t.users.adminHidden,
+        tier: t.users.tier,
       })
       .from(t.users)
       .where(q === "" ? undefined : like(t.users.name, `%${q}%`))
@@ -1171,5 +1186,19 @@ adminApp.post("/users/hide", async (context) => {
     hidden === 1 ? "user.hide" : "user.show",
     String(userId),
   );
+  return context.redirect("/admin/users", 303);
+});
+
+adminApp.post("/users/:id/tier", async (context) => {
+  const admin = context.get("admin");
+  const userId = Number(context.req.param("id"));
+  const tier = await field(context, "tier");
+  if (!Number.isInteger(userId) || (tier !== "free" && tier !== "paid"))
+    return context.text("bad tier grant", 400);
+  await database(context.env.DB)
+    .update(t.users)
+    .set({ tier })
+    .where(eq(t.users.id, userId));
+  await logAction(context.env, admin, "user.tier", String(userId), tier);
   return context.redirect("/admin/users", 303);
 });

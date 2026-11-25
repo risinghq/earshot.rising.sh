@@ -3,7 +3,9 @@ import { sessionUser } from "./account/auth";
 import { accountApp } from "./account/routes";
 import { settingsApp } from "./account/settings";
 import { adminApp } from "./admin/admin";
+import { billingApp } from "./billing/routes";
 import type { Env } from "./env";
+import { fetchApp } from "./fetch/routes";
 import { listeningApp } from "./listening/routes";
 import { legacyHostRedirect } from "./platform/host";
 import { playApp, renderHub } from "./play/routes";
@@ -31,6 +33,10 @@ app.route("/groups", groupsApp);
 app.route("/play", playApp);
 
 app.route("/admin", adminApp);
+
+app.route("/billing", billingApp);
+
+app.route("/fetch", fetchApp);
 
 app.get("/party", (context) => context.redirect("/groups", 301));
 

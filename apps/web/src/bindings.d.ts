@@ -13,6 +13,14 @@ declare namespace Cloudflare {
     SPOTIFY_CLIENT_ID?: string;
     SPOTIFY_CLIENT_SECRET?: string;
     SOURCE_ENCRYPTION_KEY?: string;
+    STRIPE_SECRET_KEY?: string;
+    STRIPE_WEBHOOK_SECRET?: string;
+    STRIPE_PRICE_ID?: string;
+    STRIPE_PAYMENT_LINK?: string;
+    INTRO_SECONDS?: string;
+    ANTRA_BASE?: string;
+    ANTRA_USERNAME?: string;
+    ANTRA_PASSWORD?: string;
   }
 }
 

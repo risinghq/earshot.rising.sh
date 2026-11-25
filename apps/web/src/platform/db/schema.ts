@@ -37,6 +37,7 @@ export const users = sqliteTable(
     adminHidden: integer("admin_hidden").default(0).notNull(),
     googleSub: text("google_sub"),
     googleEmail: text("google_email"),
+    tier: text().default("free").notNull(),
   },
   (table) => [
     uniqueIndex("users_google_sub").on(table.googleSub),
@@ -600,3 +601,14 @@ export const games = sqliteTable(
     ),
   ],
 );
+
+// The warm claim for an intro clip. One atomic INSERT wins the antra job for
+// a deezer track across every isolate; a claim older than two minutes is
+// stale and can be reclaimed.
+export const warmClaims = sqliteTable("warm_claims", {
+  deezerId: integer("deezer_id").primaryKey(),
+  claimedAt: integer("claimed_at").notNull(),
+  // Token the claimer generated; a release deletes only its own claim, so a
+  // slow worker cannot drop a claim another isolate has since taken.
+  owner: text().notNull(),
+});

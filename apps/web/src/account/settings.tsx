@@ -173,6 +173,7 @@ function settingsPage(
   logins: Logins,
   options: PageOptions,
   origin: string,
+  paymentLink: string | undefined,
 ) {
   const { notice, error, field, issuedToken, issuedKind } = options;
   const uploadTokens = tokens.filter((token) => token.kind === "ytmusic");
@@ -421,6 +422,32 @@ function settingsPage(
               </div>
             </div>
           </section>
+          {(user.tier === "paid" || paymentLink !== undefined) && (
+            <section id="supporter">
+              <h2>Earshot+</h2>
+              <div class="card sign-in-methods">
+                <div class="source">
+                  <div class="row">
+                    <p class="data-note">
+                      <b>{user.tier === "paid" ? "Supporter" : "Free plan"}</b>
+                      <br />
+                      {user.tier === "paid"
+                        ? "Intro mode is unlocked: rounds can play each track from its start."
+                        : "A $5 one-time payment unlocks intro mode: rounds play each track from its start."}
+                    </p>
+                    {user.tier !== "paid" && paymentLink !== undefined && (
+                      <a
+                        class="btn"
+                        href={`${paymentLink}?client_reference_id=${user.id}`}
+                      >
+                        Get Earshot+
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
           <section id="account">
             <h2>Account</h2>
             <div class="card sign-in-methods">
@@ -731,6 +758,7 @@ function render(
       data.logins,
       options,
       new URL(context.req.url).origin,
+      context.env.STRIPE_PAYMENT_LINK,
     ),
     status,
   );

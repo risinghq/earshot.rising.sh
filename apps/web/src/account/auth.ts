@@ -29,6 +29,7 @@ const signedInColumns = {
   githubId: t.users.githubId,
   name: t.users.name,
   isPublic: t.users.isPublic,
+  tier: t.users.tier,
 };
 
 export type SignedInUser = Pick<
