@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { database, t, type Db } from "../../platform/db";
 import type { Env } from "../../env";
+import { categoryKey, readCachedCategory } from "./cache";
 import { catalogPool, songsOnce } from "./pool";
 import { answerKey, roundsPerGame } from "../game/quiz";
 import { FeedError } from "../../platform/fetch-json";
@@ -161,10 +162,7 @@ export async function warmChartCache(env: Env) {
     )
     .orderBy(t.categories.position);
   for (const chart of charts) {
-    const cached = await env.CACHE.get(`play:cat:${chart.slug}`).catch(
-      () => null,
-    );
-    if (cached !== null) continue;
+    if ((await readCachedCategory(env, chart.slug)) !== null) continue;
     await catalog(env, chart, null).catch(() => undefined);
     return;
   }
@@ -223,10 +221,7 @@ async function feedTracks(
     if (userId === null) throw new FeedError("sign-in required", category.slug);
     return userCatalog(database(env.DB), userId);
   }
-  const key = `play:cat:${category.slug}`;
-  const cached = await env.CACHE.get<Candidate[]>(key, "json").catch(
-    () => null,
-  );
+  const cached = await readCachedCategory(env, category.slug);
   if (cached && cached.length > 0) return cached;
   let tracks: Candidate[];
   if (category.feed === "deezer_chart")
@@ -244,7 +239,7 @@ async function feedTracks(
     tracks = interleave(lists);
   } else tracks = await appleChart(category.ref ?? "us");
   if (tracks.length > 0)
-    await env.CACHE.put(key, JSON.stringify(tracks), {
+    await env.CACHE.put(categoryKey(category.slug), JSON.stringify(tracks), {
       expirationTtl: catalogTtlSeconds,
     }).catch(() => undefined);
   return tracks;

@@ -3,7 +3,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { app } from "../src/app";
 import { database } from "../src/platform/db";
-import { sourceRemovalStatements } from "../src/account/settings";
+import { sourceRemovalStatements } from "../src/listening/totals";
 import { readPage, textAt, type ReadPage } from "./html";
 import { network } from "./network";
 

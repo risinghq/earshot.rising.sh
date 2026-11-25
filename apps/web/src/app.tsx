@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { sessionUser } from "./account/auth";
 import { accountApp } from "./account/routes";
 import { settingsApp } from "./account/settings";
-import { adminApp } from "./admin/admin";
+import { adminApp } from "./admin/routes";
 import { billingApp } from "./billing/routes";
 import type { Env } from "./env";
 import { fetchApp } from "./fetch/routes";

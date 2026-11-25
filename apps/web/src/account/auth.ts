@@ -3,7 +3,6 @@ import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import * as v from "valibot";
 import { database, t, type Db } from "../platform/db";
 import { readJson } from "../platform/fetch-json";
-import { mergeAnonOutcomes } from "../play/game/outcomes";
 import type { Context } from "hono";
 import type { Env } from "../env";
 
@@ -419,7 +418,13 @@ const linkMessages = {
     `Your profile already has a ${provider} account.`,
 };
 
-export async function signInCallback(context: AuthContext, provider: Provider) {
+// `onSignIn` runs for a sign-in that starts a session, before the session
+// cookie is set; linking a second provider to a signed-in user skips it.
+export async function signInCallback(
+  context: AuthContext,
+  provider: Provider,
+  onSignIn: (userId: number) => Promise<void>,
+) {
   const client = credentials(context, provider);
   if (client instanceof Response) return client;
   const code = context.req.query("code");
@@ -456,9 +461,7 @@ export async function signInCallback(context: AuthContext, provider: Provider) {
   if (outcome.kind === "linked")
     return context.redirect(next ?? "/settings#account", 303);
 
-  const anon = getCookie(context, "play-id", "host");
-  if (anon !== undefined)
-    await mergeAnonOutcomes(database(context.env.DB), anon, outcome.user.id);
+  await onSignIn(outcome.user.id);
   const session = await newSession(db, outcome.user.id, now);
   setCookie(context, "session", session, {
     ...cookieBase,

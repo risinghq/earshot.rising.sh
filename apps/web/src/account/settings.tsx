@@ -12,27 +12,18 @@ import {
   validName,
   type SignedInUser,
 } from "./auth";
-import { and, count, eq, inArray, isNull, notExists, sql } from "drizzle-orm";
-import { database, t, type Db } from "../platform/db";
-import { ingestPage, pageSourceFields } from "../listening/ingest";
+import { and, eq, inArray, isNull, sql } from "drizzle-orm";
+import { database, t } from "../platform/db";
+import { exportPage, exportPageSize } from "../listening/export";
 import { sourceNames } from "../listening/names";
-import { sealSecret } from "../platform/secret";
+import { sourceRemovalStatements, sourcesOf } from "../listening/totals";
+import { connectYouTube, disconnectYouTube } from "../listening/ytmusic";
 import type { Env } from "../env";
-import { pullIntervalSeconds } from "../listening/ytmusic";
-import {
-  fetchHistoryPage,
-  hasSapisid,
-  HistoryPageError,
-  parseHistoryPage,
-  SignedOutError,
-  todayIn,
-} from "../listening/youtube";
+import { deletionStatements } from "./delete";
 import { memberOnly } from "./sign-in";
 import { Notice } from "../ui/notice";
 import { Page } from "../ui/shell";
 import { TokenDisplay } from "../ui/token";
-
-const exportPageSize = 1000;
 
 const timeZones = (() => {
   const zones = Intl.supportedValuesOf("timeZone");
@@ -587,104 +578,6 @@ function settingsPage(
   });
 }
 
-// Counted plays: a duplicate stays in plays but in no total.
-const countedPlays = (userId: number) =>
-  and(eq(t.plays.userId, userId), eq(t.plays.dup, 0));
-
-const playDay = sql<number>`${t.plays.playedAt} / 86400`;
-
-function recountStatements(db: Db, userId: number) {
-  return [
-    db.delete(t.trackTotals).where(eq(t.trackTotals.userId, userId)),
-    db.insert(t.trackTotals).select(
-      db
-        .select({
-          userId: t.plays.userId,
-          trackId: t.plays.trackId,
-          plays: count().as("plays"),
-          lastPlayedAt: sql<number>`max(${t.plays.playedAt})`.as(
-            "last_played_at",
-          ),
-        })
-        .from(t.plays)
-        .where(countedPlays(userId))
-        .groupBy(t.plays.trackId),
-    ),
-    db.delete(t.dailyTotals).where(eq(t.dailyTotals.userId, userId)),
-    db.insert(t.dailyTotals).select(
-      db
-        .select({
-          userId: t.plays.userId,
-          day: playDay.as("day"),
-          plays: count().as("plays"),
-        })
-        .from(t.plays)
-        .where(countedPlays(userId))
-        .groupBy(playDay),
-    ),
-    db.delete(t.artistTotals).where(eq(t.artistTotals.userId, userId)),
-    db.insert(t.artistTotals).select(
-      db
-        .select({
-          userId: t.plays.userId,
-          artistId: t.tracks.artistId,
-          plays: count().as("plays"),
-        })
-        .from(t.plays)
-        .innerJoin(t.tracks, eq(t.tracks.id, t.plays.trackId))
-        .where(countedPlays(userId))
-        .groupBy(t.tracks.artistId),
-    ),
-  ] as const;
-}
-
-export function sourceRemovalStatements(
-  db: Db,
-  userId: number,
-  sourceId: number,
-) {
-  return [
-    db
-      .delete(t.plays)
-      .where(and(eq(t.plays.userId, userId), eq(t.plays.sourceId, sourceId))),
-    db.delete(t.tokens).where(eq(t.tokens.sourceId, sourceId)),
-    db
-      .delete(t.sources)
-      .where(and(eq(t.sources.id, sourceId), eq(t.sources.userId, userId))),
-    ...recountStatements(db, userId),
-  ] as const;
-}
-
-const sourcesOf = (db: Db, userId: number) =>
-  db
-    .select({ id: t.sources.id })
-    .from(t.sources)
-    .where(eq(t.sources.userId, userId));
-
-export function deletionStatements(db: Db, userId: number) {
-  return [
-    db.delete(t.plays).where(eq(t.plays.userId, userId)),
-    db.delete(t.trackTotals).where(eq(t.trackTotals.userId, userId)),
-    db.delete(t.dailyTotals).where(eq(t.dailyTotals.userId, userId)),
-    db.delete(t.artistTotals).where(eq(t.artistTotals.userId, userId)),
-    db
-      .delete(t.tokens)
-      .where(inArray(t.tokens.sourceId, sourcesOf(db, userId))),
-    db.delete(t.sources).where(eq(t.sources.userId, userId)),
-    db.delete(t.sessions).where(eq(t.sessions.userId, userId)),
-    db.delete(t.users).where(eq(t.users.id, userId)),
-    // The cascade above can empty a group the deleted user did not make.
-    db.delete(t.friendGroups).where(
-      notExists(
-        db
-          .select({ one: sql`1` })
-          .from(t.groupMembers)
-          .where(eq(t.groupMembers.groupId, t.friendGroups.id)),
-      ),
-    ),
-  ] as const;
-}
-
 function newUploadToken() {
   return `msu_${base64url(crypto.getRandomValues(new Uint8Array(32)))}`;
 }
@@ -925,148 +818,22 @@ settingsApp.post("/tokens/revoke", async (context) => {
   return context.redirect("/settings", 303);
 });
 
-const ytmusicOf = (userId: number) =>
-  and(eq(t.sources.userId, userId), eq(t.sources.kind, "ytmusic"));
-
 settingsApp.post("/ytmusic", async (context) => {
   const user = context.get("user");
-  const db = database(context.env.DB);
   const cookie = await form(context, "cookie");
-  const tzInput = (await form(context, "tz")) || "UTC";
-  const data = await pageData(context);
-  const bad = (error: string, field: string) =>
-    render(context, data, { error, field }, 400);
-  let tz = tzInput;
-  try {
-    tz = new Intl.DateTimeFormat("en-US", {
-      timeZone: tzInput,
-    }).resolvedOptions().timeZone;
-  } catch {
-    return bad(
-      "The time zone is not a known IANA name, for example Europe/Berlin.",
-      "tz",
-    );
-  }
-  if (!hasSapisid(cookie))
-    return bad(
-      "The cookie has no __Secure-3PAPISID. Copy the whole Cookie request header, not one cookie.",
-      "cookie",
-    );
-
-  let html: string;
-  try {
-    html = await fetchHistoryPage(cookie);
-  } catch {
-    return bad(
-      "YouTube Music could not be reached. Try again in a moment.",
-      "cookie",
-    );
-  }
-  let plays;
-  try {
-    plays = parseHistoryPage(html, todayIn(Math.floor(Date.now() / 1000), tz));
-  } catch (error) {
-    if (error instanceof SignedOutError)
-      return bad(
-        "YouTube Music answered as signed out. Copy the cookie from a signed-in browser session.",
-        "cookie",
-      );
-    if (error instanceof HistoryPageError)
-      return bad("The YouTube Music history page did not parse.", "cookie");
-    throw error;
-  }
-
-  const now = Math.floor(Date.now() / 1000);
-  const secret = await sealSecret(context.env, cookie);
-  const [, [source]] = await db.batch([
-    db
-      .insert(t.sources)
-      .values({
-        userId: user.id,
-        kind: "ytmusic",
-        secret,
-        tz,
-        nextPullAt: now + pullIntervalSeconds,
-      })
-      .onConflictDoUpdate({
-        target: [t.sources.userId, t.sources.kind],
-        set: {
-          secret: sql`excluded.secret`,
-          tz: sql`excluded.tz`,
-          nextPullAt: sql`excluded.next_pull_at`,
-          error: null,
-        },
-      }),
-    db.select(pageSourceFields).from(t.sources).where(ytmusicOf(user.id)),
-  ]);
-  let inserted = 0;
-  if (source !== undefined) {
-    const result = await ingestPage(
-      db,
-      source,
-      plays
-        .filter(
-          (play) =>
-            play.day !== null &&
-            play.videoId !== null &&
-            [...play.title].length <= 512 &&
-            [...play.artist].length <= 512,
-        )
-        .map((play) => ({
-          day: play.day as string,
-          artist: play.artist,
-          title: play.title,
-          video_id: play.videoId as string,
-        })),
-      { now, pullNextAt: now + pullIntervalSeconds },
-    );
-    inserted = result.inserted;
-  }
+  const tz = (await form(context, "tz")) || "UTC";
+  const result = await connectYouTube(context.env, user.id, cookie, tz);
+  if ("error" in result)
+    return render(context, await pageData(context), result, 400);
   return render(context, await pageData(context), {
-    notice: `YouTube Music connected. ${inserted} plays stored.`,
+    notice: `YouTube Music connected. ${result.inserted} plays stored.`,
   });
 });
 
 settingsApp.post("/ytmusic/disconnect", async (context) => {
-  const user = context.get("user");
-  await database(context.env.DB)
-    .update(t.sources)
-    .set({
-      secret: null,
-      nextPullAt: null,
-      error: null,
-      status: sql`CASE WHEN ${t.sources.status} = 'error' THEN 'active' ELSE ${t.sources.status} END`,
-    })
-    .where(ytmusicOf(user.id));
+  await disconnectYouTube(context.env, context.get("user").id);
   return context.redirect("/settings", 303);
 });
-
-// One page of the export, after a (played_at, source_id, ref) key. The keys
-// are the export file's field names; source_id only orders the pages.
-function exportPage(db: Db, userId: number, after: [number, number, string]) {
-  const [playedAt, sourceId, ref] = after;
-  return db
-    .select({
-      played_at: t.plays.playedAt,
-      source_id: t.plays.sourceId,
-      source: t.sources.kind,
-      ref: t.plays.ref,
-      artist: t.artists.name,
-      title: t.tracks.title,
-    })
-    .from(t.plays)
-    .innerJoin(t.sources, eq(t.sources.id, t.plays.sourceId))
-    .innerJoin(t.tracks, eq(t.tracks.id, t.plays.trackId))
-    .innerJoin(t.artists, eq(t.artists.id, t.tracks.artistId))
-    .where(
-      and(
-        eq(t.plays.userId, userId),
-        sql`(${t.plays.playedAt}, ${t.plays.sourceId}, ${t.plays.ref}) > (${playedAt}, ${sourceId}, ${ref})`,
-      ),
-    )
-    .orderBy(t.plays.playedAt, t.plays.sourceId, t.plays.ref)
-    .limit(exportPageSize);
-}
 
 settingsApp.get("/export", async (context) => {
   const user = context.get("user");

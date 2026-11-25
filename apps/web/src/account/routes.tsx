@@ -1,5 +1,7 @@
 import { Hono } from "hono";
 import type { Env } from "../env";
+import { database } from "../platform/db";
+import { anonOf, mergeAnonOutcomes } from "../play/game/outcomes";
 import { beginSignIn, returnPath, sessionUser, signInCallback } from "./auth";
 import { signInPage } from "./sign-in";
 
@@ -25,6 +27,10 @@ for (const provider of ["github", "google"] as const) {
     beginSignIn(context, provider),
   );
   accountApp.get(`/auth/${provider}/callback`, (context) =>
-    signInCallback(context, provider),
+    signInCallback(context, provider, async (userId) => {
+      const anon = anonOf(context);
+      if (anon !== null)
+        await mergeAnonOutcomes(database(context.env.DB), anon, userId);
+    }),
   );
 }

@@ -40,8 +40,9 @@ asks for a WebSocket upgrade. One middleware holds the rule and its path list.
 One repository. The root `Cargo.toml` is a virtual Cargo workspace over
 `crates/*`, and each directory under `apps/` is a deployed app. The published
 crate is [`crates/music-stats/`](../crates/music-stats/Cargo.toml). Its
-`include` list names `src/**` and `Cargo.toml`, and Cargo adds `readme.md` and
-`LICENSE`, so `apps/web/` never enters the published crate.
+`include` list names `src/**` and `Cargo.toml`, and Cargo adds its readme,
+`docs/music-stats.md`, and `LICENSE`, so `apps/web/` never enters the published
+crate.
 
 ```text
 crates/music-stats/     the Rust crate: Cargo.toml, src/, tests/
@@ -61,21 +62,18 @@ apps/web/
                         YouTube Music, matching, duplicates and the pull cron
     profile/            the public profile page, its stats, card and images
     social/             friends, groups and the group blend
-    play/               the game; routes.tsx mounts it under /play
-      catalog/          categories, feeds, the track pool, eras, For you
+    play/               the game, under /play
+      catalog/          categories, feeds, the track pool, eras, For you,
+                        and the admin's catalogue edits
       game/             rules, rounds, outcomes and results every mode shares
       hub/ solo/ room/ match/ board/ artist/
-                        one folder per screen or mode, each with its page
-    admin/              the admin pages
+                        one folder per screen or mode, with its routes and page
+    admin/              the admin pages, one file per section
     platform/           the database, secrets, JSON fetch and host redirect
     ui/                 the shared Hono JSX components
   test/                 vitest tests that run in workerd; client/ holds the
                         browser components' own tests
 ```
-
-A feature folder owns its routes, pages and data. A module imports another
-feature's module directly; `platform/` and `ui/` import no feature but
-`account/auth` (the session user the shell shows).
 
 The Worker is TypeScript, for these reasons:
 

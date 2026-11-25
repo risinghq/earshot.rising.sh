@@ -12,6 +12,7 @@ import {
 } from "drizzle-orm";
 import { batchWrites, database, t } from "../../platform/db";
 import type { Env } from "../../env";
+import { forgetCategory } from "./cache";
 import curatedList from "./curated.json";
 import { deezerPlaylistTracks, deezerTrackYear, QuotaError } from "./sources";
 
@@ -187,7 +188,7 @@ export async function refreshSource(
       .set({ refreshedAt: now, tracksCount: tracks.length })
       .where(eq(t.categorySources.id, source.id)),
   ]);
-  await env.CACHE.delete(`play:cat:${source.category}`).catch(() => undefined);
+  await forgetCategory(env, source.category);
   return tracks.length;
 }
 
@@ -302,6 +303,5 @@ export async function dropTrackCaches(env: Env, ...trackKeys: string[]) {
       eq(t.categorySources.id, t.catalogMembers.sourceId),
     )
     .where(inArray(t.catalogMembers.trackKey, trackKeys));
-  for (const row of rows)
-    await env.CACHE.delete(`play:cat:${row.category}`).catch(() => undefined);
+  for (const row of rows) await forgetCategory(env, row.category);
 }
