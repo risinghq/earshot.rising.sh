@@ -9,15 +9,15 @@ import { deezerTracks, network } from "./network";
 const origin = "https://earshot.rising.sh";
 const now = Math.floor(Date.now() / 1000);
 const session = `sess_${"s".repeat(40)}`;
-const webhookSecret = "whsec_testsecret";
+const webhookSecret = `whsec_${btoa("w".repeat(32))}`;
 const clipKey = btoa("a".repeat(32));
 
 const testEnv = (extra: Record<string, string> = {}) =>
   ({
     DB: env.DB,
     CACHE: env.CACHE,
-    STRIPE_WEBHOOK_SECRET: webhookSecret,
-    STRIPE_PAYMENT_LINK: "https://buy.stripe.com/test_link",
+    POLAR_WEBHOOK_SECRET: webhookSecret,
+    POLAR_CHECKOUT_LINK: "https://polar.sh/test_link",
     SOURCE_ENCRYPTION_KEY: clipKey,
     ADMIN_GITHUB_IDS: "42",
     ...extra,
@@ -50,61 +50,69 @@ const tierOf = async (userId: number) =>
       .first<{ tier: string }>()
   )?.tier;
 
-const hex = (bytes: ArrayBuffer) =>
-  [...new Uint8Array(bytes)]
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+const b64 = (bytes: ArrayBuffer) =>
+  btoa(String.fromCharCode(...new Uint8Array(bytes)));
 
-async function stripePost(body: string, sign = true) {
+const webhookId = "msg_test";
+
+async function polarPost(body: string, sign = true) {
   const stamp = now;
+  const keyBytes = Uint8Array.from(atob(webhookSecret.slice(6)), (c) =>
+    c.charCodeAt(0),
+  );
   const key = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(webhookSecret),
+    keyBytes,
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
   );
-  const v1 = hex(
+  const v1 = b64(
     await crypto.subtle.sign(
       "HMAC",
       key,
-      new TextEncoder().encode(`${stamp}.${body}`),
+      new TextEncoder().encode(`${webhookId}.${stamp}.${body}`),
     ),
   );
   return app.fetch(
     new Request(`${origin}/billing/webhook`, {
       method: "POST",
-      headers: sign ? { "stripe-signature": `t=${stamp},v1=${v1}` } : {},
+      headers: sign
+        ? {
+            "webhook-id": webhookId,
+            "webhook-timestamp": String(stamp),
+            "webhook-signature": `v1,${v1}`,
+          }
+        : {},
       body,
     }),
     testEnv(),
   );
 }
 
-const checkoutEvent = (reference: string) =>
+const orderEvent = (type: string, referenceId: string) =>
   JSON.stringify({
-    type: "checkout.session.completed",
+    type,
     data: {
-      object: {
-        client_reference_id: reference,
-        payment_status: "paid",
-        metadata: { user_id: "9" },
-      },
+      customer: { external_id: null },
+      metadata: { reference_id: referenceId },
     },
   });
+const paidEvent = (referenceId: string) =>
+  orderEvent("order.paid", referenceId);
 
-describe("stripe webhook", () => {
-  it("marks the referenced user paid on checkout.session.completed", async () => {
+describe("polar webhook", () => {
+  it("marks the referenced user paid on order.paid", async () => {
     await seedUser();
-    const response = await stripePost(checkoutEvent("1"));
+    const response = await polarPost(paidEvent("1"));
     expect(response.status).toBe(200);
     expect(await tierOf(1)).toBe("paid");
   });
 
   it("refuses an unsigned body", async () => {
     await seedUser();
-    const response = await stripePost(checkoutEvent("1"), false);
-    expect(response.status).toBe(400);
+    const response = await polarPost(paidEvent("1"), false);
+    expect(response.status).toBe(403);
     expect(await tierOf(1)).toBe("free");
   });
 
@@ -113,50 +121,42 @@ describe("stripe webhook", () => {
     const response = await app.fetch(
       new Request(`${origin}/billing/webhook`, {
         method: "POST",
-        headers: { "stripe-signature": `t=${now},v1=deadbeef` },
-        body: checkoutEvent("1"),
+        headers: {
+          "webhook-id": webhookId,
+          "webhook-timestamp": String(now),
+          "webhook-signature": "v1,deadbeef",
+        },
+        body: paidEvent("1"),
       }),
       testEnv(),
     );
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(403);
     expect(await tierOf(1)).toBe("free");
   });
 
-  it("falls back to metadata user id", async () => {
-    await seedUser(9, 9000);
-    const body = JSON.stringify({
-      type: "checkout.session.completed",
-      data: {
-        object: { payment_status: "paid", metadata: { user_id: "9" } },
-      },
-    });
-    const response = await stripePost(body);
-    expect(response.status).toBe(200);
-    expect(await tierOf(9)).toBe("paid");
-  });
-
-  it("ignores an unpaid delayed-payment session until it settles", async () => {
+  it("acknowledges an order without a reference and changes nothing", async () => {
     await seedUser();
-    const unpaid = await stripePost(
-      JSON.stringify({
-        type: "checkout.session.completed",
-        data: {
-          object: { client_reference_id: "1", payment_status: "unpaid" },
-        },
-      }),
+    const response = await polarPost(
+      JSON.stringify({ type: "order.paid", data: { metadata: {} } }),
     );
-    expect(unpaid.status).toBe(200);
+    expect(response.status).toBe(200);
     expect(await tierOf(1)).toBe("free");
-    const settled = await stripePost(
-      JSON.stringify({
-        type: "checkout.session.async_payment_succeeded",
-        data: {
-          object: { client_reference_id: "1", payment_status: "paid" },
-        },
-      }),
-    );
-    expect(settled.status).toBe(200);
+  });
+
+  it("revokes the tier on order.refunded", async () => {
+    await seedUser();
+    expect((await polarPost(paidEvent("1"))).status).toBe(200);
     expect(await tierOf(1)).toBe("paid");
+    const refund = await polarPost(orderEvent("order.refunded", "1"));
+    expect(refund.status).toBe(200);
+    expect(await tierOf(1)).toBe("free");
+  });
+
+  it("ignores events that are not orders", async () => {
+    await seedUser();
+    const response = await polarPost(orderEvent("checkout.updated", "1"));
+    expect(response.status).toBe(200);
+    expect(await tierOf(1)).toBe("free");
   });
 });
 
@@ -206,7 +206,7 @@ describe("settings tier block", () => {
     );
     const html = await response.text();
     expect(html).toContain("Get Earshot+");
-    expect(html).toContain("client_reference_id=1");
+    expect(html).toContain("test_link?reference_id=1");
   });
 
   it("shows the supporter badge to a paid user", async () => {
