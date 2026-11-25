@@ -1260,6 +1260,15 @@ stops when the next round loads or the game ends.
   Continue shows the prepared question at once while `/next` commits it. The
   server's reply replaces the page only when it differs. The server still judges
   every answer and starts the clock on the playing report.
+- **Loudness.** Deezer and Apple previews are mastered up to about 11 dB apart,
+  so one game's clips jump in level. The browser decodes each clip for its
+  waveform anyway (`client/wave.ts`), and the same pass measures its gated
+  loudness. `client/level.ts` owns the player's saved volume and turns each
+  clip's loudness into a gain toward -10 dB, clamped to 0.3–3; the element's
+  volume is the player's volume times that gain, capped at 1. The solo page,
+  the room's phone and the TV all play through it; the TV has no slider and
+  levels at full volume. iOS ignores a media element's volume, so there the
+  clips play as mastered.
 - **Attribution.** Each reveal names the title and artist, shows the cover and
   links to the track on Deezer or Apple Music with the service's name, which
   both services require. A track with a work adds the show and its slot, as
