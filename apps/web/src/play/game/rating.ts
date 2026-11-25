@@ -6,6 +6,7 @@
 import { and, eq, gt, inArray, isNotNull, sql } from "drizzle-orm";
 import { batchWrites, database, jsonRows, t, type Db } from "../../platform/db";
 import type { Env } from "../../env";
+import { finaleOrder, finaleWindow } from "./quiz";
 import type { Mode } from "./rules";
 
 // The draw favours tracks a player is likely, but not certain, to know.
@@ -162,6 +163,22 @@ export async function trackDifficulties(
           stats.get(categories.get(key) ?? "") ?? null,
         ),
     ]),
+  );
+}
+
+// A drawn game reordered so its last round plays its best-known track.
+export async function withFinale<T>(
+  db: Db,
+  tracks: T[],
+  itemOf: (track: T) => { key: string; category: string },
+): Promise<T[]> {
+  const difficulties = await trackDifficulties(
+    db,
+    tracks.slice(0, finaleWindow).map(itemOf),
+  );
+  return finaleOrder(
+    tracks,
+    (track) => difficulties.get(itemOf(track).key) ?? baseDifficulty,
   );
 }
 

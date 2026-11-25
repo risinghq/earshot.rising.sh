@@ -1456,6 +1456,12 @@ is `src/play/game/rating.ts`.
   weights its known, new and fallback pools for the player. A room weights its
   candidates when the game begins, for the median seated player, and falls back
   to the plain shuffle when D1 fails.
+- **Finale.** Every solo game, room and match ends on a song players know, so
+  the results open on a high. After the draw, `finaleOrder` moves the
+  lowest-difficulty track among the first 15 to the tenth slot. Fifteen, not the
+  whole pool, so a category does not end every game on its one biggest hit. A
+  clip skipped earlier plays the finale one round early. A failed D1 lookup, or
+  a room with no category, keeps the drawn order.
 - **Boards.** A room's score still goes to its category board, so a room aimed
   at a weak table can post a score a solo game would not. A room is a social
   game; the category board keeps both kinds.

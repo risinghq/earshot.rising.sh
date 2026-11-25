@@ -10,7 +10,9 @@ import {
   rebuildRatings,
   trackDifficulties,
   weightedShuffle,
+  withFinale,
 } from "../src/play/game/rating";
+import { roundsPerGame } from "../src/play/game/rules";
 import { createRoom, begin, type Stored } from "../src/play/room/game";
 import type { Candidate } from "../src/play/catalog/sources";
 import type { Env } from "../src/env";
@@ -86,6 +88,26 @@ describe("the track prior", () => {
       [1, 2].map((id) => ({ key: `dz:${id}`, category: "pop" })),
     );
     expect(difficulties.get("dz:2")).toBe(baseDifficulty);
+  });
+});
+
+describe("the finale", () => {
+  it("ends the game on the most streamed early track", async () => {
+    await seedCatalog(
+      env.DB,
+      "pop",
+      Array.from({ length: 12 }, (_, i) => ({
+        id: i + 1,
+        title: `Song ${i + 1}`,
+        streams: i === 3 ? 1e10 : 1e6 * (i + 1),
+      })),
+    );
+    const drawn = Array.from({ length: 12 }, (_, i) => candidate(i + 1));
+    const order = await withFinale(db(), drawn, (track) => ({
+      key: `dz:${track.deezerId}`,
+      category: "pop",
+    }));
+    expect(order[roundsPerGame - 1].title).toBe("Song 4");
   });
 });
 

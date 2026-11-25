@@ -8,6 +8,7 @@ import { closeCodes, type ServerMessage } from "./protocol";
 import type { CategoryBoardEntry, ResultRow } from "../game/results";
 import type { readClientMessage } from "./messages";
 import type { Mode } from "../game/rules";
+import { shuffled } from "../game/quiz";
 import { QuotaError, type Candidate, type Preview } from "../catalog/sources";
 import * as game from "./game";
 import type { Presence, Player, RoomInit, RoomTarget, Stored } from "./game";
@@ -52,6 +53,8 @@ export interface RoomPorts {
     mode: Mode,
     category: string,
   ): Promise<Candidate[] | null>;
+  // The drawn order with its best-known track moved to the last round.
+  finale(candidates: Candidate[], category: string): Promise<Candidate[]>;
   recordResults(rows: ResultRow[]): Promise<void>;
   readBoard(slug: string): Promise<CategoryBoardEntry[]>;
 }
@@ -313,12 +316,18 @@ export class RoomHost {
     const s = this.s!;
     // A room aims its draw at the median seated player; a match keeps the
     // plain shuffle, like a solo category game.
-    const order =
+    const drawn =
       s.kind === "room" && s.categorySlug !== ""
         ? await this.ports
             .weightedDraw(s.players, s.candidates, s.mode, s.categorySlug)
             .catch(() => null)
         : null;
+    const order =
+      s.categorySlug === ""
+        ? drawn
+        : await this.ports
+            .finale(drawn ?? shuffled(s.candidates), s.categorySlug)
+            .catch(() => drawn);
     const started = game.begin(
       s,
       now,
